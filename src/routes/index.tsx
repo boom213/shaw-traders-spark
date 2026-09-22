@@ -1,18 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
-import heroImg from "@/assets/hero-ev.jpg";
 import { Button } from "@/components/ui/button";
-import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
+import { HeroCarousel, heroImageFor } from "@/components/home/HeroCarousel";
+import { CategoryCarousel } from "@/components/home/CategoryCarousel";
+import { ProductCarousel } from "@/components/home/ProductCarousel";
+import { OffersStrip } from "@/components/home/OffersStrip";
+import { ScooterStrip } from "@/components/home/ScooterStrip";
+import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { facetsQuery, homeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Shaw Traders EV — EV Parts, Batteries & Accessories | Bud Bud" },
       {
@@ -31,7 +35,7 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: canonical("/") },
-      { rel: "preload", as: "image", href: heroImg, fetchPriority: "high" },
+      { rel: "preload", as: "image", href: heroImageFor(loaderData?.heroSlides?.[0]), fetchPriority: "high" },
     ],
 
     scripts: [
@@ -94,52 +98,40 @@ function Home() {
   return (
     <div>
       <section className="border-b border-border bg-surface">
-        <div className="container-page grid items-center gap-8 py-10 lg:grid-cols-2 lg:py-16">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-primary">
-              Bud Bud, Bardhaman · West Bengal
-            </span>
-            <h1 className="mt-4 font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              Everything Your EV Needs. Under One Roof.
-            </h1>
-            <p className="mt-4 max-w-lg text-base text-muted-foreground">
-              Batteries, chargers, motors, controllers, body parts and EV accessories.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button size="lg" asChild>
-                <Link to="/shop">Shop Products</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <a href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)} target="_blank" rel="noreferrer">
-                  <MessageCircle className="size-4" /> WhatsApp Us
-                </a>
-              </Button>
-            </div>
-            <ul className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {TRUST.map(({ icon: Icon, label }) => (
-                <li key={label} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-medium">
-                  <Icon className="size-4 shrink-0 text-primary" />
-                  {label}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="overflow-hidden rounded-3xl border border-border bg-background shadow-[var(--shadow-lift)]">
-            <img
-              src={heroImg}
-              alt="Electric scooter with EV battery pack, charger, hub motor and controller"
-              width={1600}
-              height={1008}
-              fetchPriority="high"
-              decoding="async"
-              className="w-full"
-            />
+        <div className="container-page py-6 lg:py-10">
+          <HeroCarousel slides={home.heroSlides} />
 
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Button size="lg" variant="outline" asChild>
+              <a href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)} target="_blank" rel="noreferrer">
+                <MessageCircle className="size-4" /> WhatsApp Us
+              </a>
+            </Button>
+            <span className="text-xs font-semibold text-primary">Bud Bud, Bardhaman · West Bengal</span>
           </div>
+
+          <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {TRUST.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-medium">
+                <Icon className="size-4 shrink-0 text-primary" />
+                {label}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      <section className="container-page py-12 lg:py-16">
+      {home.offers.length > 0 && (
+        <section className="container-page py-6">
+          <OffersStrip offers={home.offers} />
+        </section>
+      )}
+
+      <section className="container-page py-6 lg:py-8">
+        <ScooterStrip />
+      </section>
+
+      <section className="container-page py-8 lg:py-12">
         <SectionHeading
           title="Shop by Category"
           subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
@@ -149,29 +141,31 @@ function Home() {
             </Button>
           }
         />
-        <CategoryGrid limit={10} />
+        <CategoryCarousel categories={home.categories} />
       </section>
 
       <section className="container-page py-4 lg:py-8">
         <SectionHeading
-          title="Latest Products"
-          subtitle="Fresh stock added regularly by our counter team."
+          title="New Arrivals"
+          subtitle="Fresh stock added recently by our counter team."
           action={
             <Button variant="ghost" asChild>
               <Link to="/shop">Browse shop</Link>
             </Button>
           }
         />
-        {home.latest.length === 0 ? (
-          <EmptyCatalogue />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {home.latest.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
+        {home.latest.length === 0 ? <EmptyCatalogue /> : <ProductCarousel items={home.latest} label="New arrivals" />}
       </section>
+
+      {home.bestSellers.length > 0 && (
+        <section className="container-page py-4 lg:py-8">
+          <SectionHeading title="Best Sellers" subtitle="Most ordered parts over the last 90 days." />
+          <ProductCarousel items={home.bestSellers} label="Best sellers" />
+        </section>
+      )}
+
+      <RecentlyViewedRow />
+
 
       {home.discounted.length > 0 && (
         <section className="container-page py-4 lg:py-8">

@@ -274,6 +274,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_slides: {
+        Row: {
+          button_href: string | null
+          button_label: string | null
+          created_at: string
+          heading: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          sort_order: number
+          subline: string | null
+          updated_at: string
+        }
+        Insert: {
+          button_href?: string | null
+          button_label?: string | null
+          created_at?: string
+          heading: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          subline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          button_href?: string | null
+          button_label?: string | null
+          created_at?: string
+          heading?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          sort_order?: number
+          subline?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1209,6 +1248,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      best_sellers: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: {
+          product_id: string
+          sold: number
+        }[]
+      }
       create_order: {
         Args: {
           p_address: Json

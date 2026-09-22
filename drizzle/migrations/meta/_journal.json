@@ -99,6 +99,13 @@
       "when": 1790111359396,
       "tag": "0013_ordering_mode_status_rack",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790112327280,
+      "tag": "0014_hero_slides_and_best_sellers",
+      "breakpoints": true
     }
   ]
 }

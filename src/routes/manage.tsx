@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { BellRing, Boxes, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Users } from "lucide-react";
+import { BellRing, Boxes, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/manage")({
 
 const NAV = [
   { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true },
+  { to: "/manage/home", label: "Home Banners", icon: Images, exact: false },
   { to: "/manage/catalogue", label: "Stock & Photos", icon: Boxes, exact: false },
   { to: "/manage/import", label: "Price List", icon: FileSpreadsheet, exact: false },
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
