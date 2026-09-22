@@ -11,6 +11,11 @@ export type ShopSettings = {
   codEnabled: boolean;
   codLimit: number;
   codPincodes: string[];
+  supportEmail: string | null;
+  grievanceName: string | null;
+  grievanceEmail: string | null;
+  grievancePhone: string | null;
+  policyUpdatedAt: string | null;
 };
 
 export const DEFAULT_SETTINGS: ShopSettings = {
@@ -23,6 +28,11 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   codEnabled: true,
   codLimit: 2000,
   codPincodes: [],
+  supportEmail: null,
+  grievanceName: null,
+  grievanceEmail: null,
+  grievancePhone: null,
+  policyUpdatedAt: null,
 };
 
 export const shopSettingsQuery = () =>
@@ -32,7 +42,7 @@ export const shopSettingsQuery = () =>
     queryFn: async (): Promise<ShopSettings> => {
       const { data } = await supabase
         .from("shop_settings")
-        .select("gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes")
+        .select("gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
         .maybeSingle();
       if (!data) return DEFAULT_SETTINGS;
       return {
@@ -45,6 +55,11 @@ export const shopSettingsQuery = () =>
         codEnabled: Boolean(data.cod_enabled),
         codLimit: Number(data.cod_limit ?? 0),
         codPincodes: (data.cod_pincodes ?? []) as string[],
+        supportEmail: data.support_email,
+        grievanceName: data.grievance_officer_name,
+        grievanceEmail: data.grievance_officer_email,
+        grievancePhone: data.grievance_officer_phone,
+        policyUpdatedAt: data.policy_updated_at,
       };
     },
   });
