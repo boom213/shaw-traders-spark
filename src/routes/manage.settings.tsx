@@ -105,6 +105,26 @@ function SettingsPage() {
       </section>
 
       <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-base font-bold">Business details on the website</h2>
+        <p className="text-xs text-muted-foreground">
+          These appear on the policy pages and the contact page. Indian online-selling rules ask every shop to
+          name a person who handles complaints, with their email and phone number.
+        </p>
+        <Field label="Email customers can write to">
+          <Input value={form.supportEmail} onChange={(e) => set("supportEmail", e.target.value)} placeholder="shawtradersev@gmail.com" />
+        </Field>
+        <Field label="Name of the person who handles complaints">
+          <Input value={form.grievanceName} onChange={(e) => set("grievanceName", e.target.value)} placeholder="Full name" />
+        </Field>
+        <Field label="Their email">
+          <Input value={form.grievanceEmail} onChange={(e) => set("grievanceEmail", e.target.value)} placeholder="name@example.com" />
+        </Field>
+        <Field label="Their phone number">
+          <Input value={form.grievancePhone} onChange={(e) => set("grievancePhone", e.target.value)} placeholder="7501849610" />
+        </Field>
+      </section>
+
+      <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display text-base font-bold">Cash on delivery</h2>
         <Row label="Allow cash on delivery">
           <Switch checked={form.codEnabled} onCheckedChange={(v) => set("codEnabled", v)} />

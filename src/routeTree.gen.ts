@@ -21,8 +21,13 @@ import { Route as FindPartsRouteImport } from './routes/find-parts'
 import { Route as ManageRouteImport } from './routes/manage'
 import { Route as ManageLoginRouteImport } from './routes/manage-login'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReturnsRouteImport } from './routes/returns'
+import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
@@ -102,14 +107,39 @@ const OffersRoute = OffersRouteImport.update({
   path: '/offers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReturnsRoute = ReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShippingRoute = ShippingRouteImport.update({
+  id: '/shipping',
+  path: '/shipping',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WarrantyRoute = WarrantyRouteImport.update({
+  id: '/warranty',
+  path: '/warranty',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
@@ -220,8 +250,13 @@ export interface FileRoutesByFullPath {
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
+  '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -253,8 +288,13 @@ export interface FileRoutesByTo {
   '/find-parts': typeof FindPartsRoute
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
+  '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -288,8 +328,13 @@ export interface FileRoutesById {
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
+  '/returns': typeof ReturnsRoute
+  '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -324,8 +369,13 @@ export interface FileRouteTypes {
     | '/manage'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
+    | '/returns'
+    | '/shipping'
     | '/shop'
+    | '/terms'
     | '/track'
+    | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -357,8 +407,13 @@ export interface FileRouteTypes {
     | '/find-parts'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
+    | '/returns'
+    | '/shipping'
     | '/shop'
+    | '/terms'
     | '/track'
+    | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -391,8 +446,13 @@ export interface FileRouteTypes {
     | '/manage'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
+    | '/returns'
+    | '/shipping'
     | '/shop'
+    | '/terms'
     | '/track'
+    | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -426,8 +486,13 @@ export interface RootRouteChildren {
   ManageRoute: typeof ManageRouteWithChildren
   ManageLoginRoute: typeof ManageLoginRoute
   OffersRoute: typeof OffersRoute
+  PrivacyRoute: typeof PrivacyRoute
+  ReturnsRoute: typeof ReturnsRoute
+  ShippingRoute: typeof ShippingRoute
   ShopRoute: typeof ShopRoute
+  TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
+  WarrantyRoute: typeof WarrantyRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
@@ -524,6 +589,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OffersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/returns': {
+      id: '/returns'
+      path: '/returns'
+      fullPath: '/returns'
+      preLoaderRoute: typeof ReturnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipping': {
+      id: '/shipping'
+      path: '/shipping'
+      fullPath: '/shipping'
+      preLoaderRoute: typeof ShippingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -531,11 +617,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/track': {
       id: '/track'
       path: '/track'
       fullPath: '/track'
       preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/warranty': {
+      id: '/warranty'
+      path: '/warranty'
+      fullPath: '/warranty'
+      preLoaderRoute: typeof WarrantyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/category/$slug': {
@@ -709,8 +809,13 @@ const rootRouteChildren: RootRouteChildren = {
   ManageRoute: ManageRouteWithChildren,
   ManageLoginRoute: ManageLoginRoute,
   OffersRoute: OffersRoute,
+  PrivacyRoute: PrivacyRoute,
+  ReturnsRoute: ReturnsRoute,
+  ShippingRoute: ShippingRoute,
   ShopRoute: ShopRoute,
+  TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
+  WarrantyRoute: WarrantyRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
