@@ -17,6 +17,7 @@ import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
+import { useTradeAccount } from "@/hooks/useTrade";
 import { abandonPayment, paymentsAvailable, retryPayment, startCheckout, verifyPayment } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
@@ -39,6 +40,7 @@ const DELIVERY = [
   { code: "standard", id: "Standard Delivery", note: "3–6 working days", fee: 0 },
   { code: "express", id: "Express Delivery", note: "1–3 working days", fee: 120 },
   { code: "pickup", id: "Pickup at Bud Bud counter", note: "Ready in 2 hours", fee: 0 },
+  { code: "freight", id: "Transport / freight", note: "Sent by transport, freight paid to the transporter", fee: 0 },
 ] as const;
 
 const PAYMENT = [
@@ -81,6 +83,8 @@ function CheckoutPage() {
   });
   const [delivery, setDelivery] = useState<(typeof DELIVERY)[number]>(DELIVERY[0]);
   const [payment, setPayment] = useState<string>(PAYMENT[0].id);
+  const { account, isTrade } = useTradeAccount();
+  const [freight, setFreight] = useState({ transportName: "", lrNumber: "" });
 
   const base = Math.max(0, subtotal - discount + delivery.fee);
   const taxed = settings ? withTax(base, settings) : { total: base, tax: 0 };
@@ -162,7 +166,8 @@ function CheckoutPage() {
       return;
     }
     if (payment === "Cash on Delivery" && !cod.allowed) return toast.error(cod.reason);
-    if (payment !== "Cash on Delivery" && !onlineReady) {
+    if (payment === "Credit (account)" && !isTrade) return toast.error("Credit is only for approved trade accounts.");
+    if (payment !== "Cash on Delivery" && payment !== "Credit (account)" && !onlineReady) {
       return toast.error("Online payment is not switched on yet. Please choose cash on delivery.");
     }
 
@@ -173,6 +178,7 @@ function CheckoutPage() {
         address: addr,
         shippingCode: delivery.code,
         paymentMethod: payment,
+        ...(delivery.code === "freight" ? { transportName: freight.transportName, lrNumber: freight.lrNumber } : {}),
         ...(coupon ? { coupon: coupon.code } : {}),
       },
     });
@@ -183,7 +189,12 @@ function CheckoutPage() {
     const order: PendingOrder = { orderId: res.orderId, humanId: res.humanId, token: res.token, total: res.total };
 
     if (!res.razorpay) {
-      await finish(order, `Order ${res.humanId} placed — pay cash on delivery`);
+      await finish(
+        order,
+        payment === "Credit (account)"
+          ? `Order ${res.humanId} placed on your account`
+          : `Order ${res.humanId} placed — pay cash on delivery`,
+      );
       return;
     }
 
