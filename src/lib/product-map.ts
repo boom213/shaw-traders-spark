@@ -7,7 +7,7 @@ import { isOrderingMode } from "@/lib/ordering";
  * must never reach a customer, an API response, the sitemap or structured data.
  */
 export const PRODUCT_SELECT =
-  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, created_at, categories!inner(slug, name, ordering_mode), product_images(url, sort_order), product_compatibility(vehicle_model)";
+  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, created_at, categories!inner(slug, name, ordering_mode), product_images(url, sort_order), product_compatibility(vehicle_model, year_from, year_to, variant)";
 
 type Row = Record<string, any>;
 
@@ -19,8 +19,15 @@ export function mapProduct(row: Row): Product {
     .filter(Boolean);
 
   const compatibility = ((row['product_compatibility'] ?? []) as Row[])
-    .map((c) => String(c['vehicle_model']))
-    .filter(Boolean);
+    .filter((c) => c['vehicle_model'])
+    .map((c) => {
+      const extras: string[] = [];
+      if (c['variant']) extras.push(String(c['variant']));
+      const from = c['year_from'] ? String(c['year_from']) : "";
+      const to = c['year_to'] ? String(c['year_to']) : "";
+      if (from || to) extras.push(from && to ? `${from}-${to}` : from ? `${from} onwards` : `up to ${to}`);
+      return extras.length ? `${String(c['vehicle_model'])} (${extras.join(", ")})` : String(c['vehicle_model']);
+    });
 
   const cat = row['categories'] as Row | null;
 
