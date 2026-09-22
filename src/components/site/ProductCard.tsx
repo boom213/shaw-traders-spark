@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/hooks/useStore";
 import { useVehicle } from "@/hooks/useVehicle";
-import { discountPct, formatINR, type Product } from "@/lib/catalog";
+import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { imageFor } from "@/lib/placeholders";
 import { cn } from "@/lib/utils";
 
@@ -93,7 +93,9 @@ export function ProductCard({ product }: { product: Product }) {
               )}
             </div>
           ) : (
-            <p className="text-sm font-medium text-muted-foreground">Contact us for price and availability.</p>
+            <p className="text-sm font-semibold text-foreground">
+              Price on request <span className="font-normal text-muted-foreground">— ask on WhatsApp</span>
+            </p>
           )}
         </div>
 
@@ -103,6 +105,19 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
+        {product.price === undefined ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" asChild>
+              <a
+                href={whatsappLink(`Hello, please share the price and availability of ${product.name} (${product.sku}).`)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ask price on WhatsApp
+              </a>
+            </Button>
+          </div>
+        ) : (
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
           <Button variant="outline" size="sm" disabled={!inStock} onClick={add}>
             Add to Cart
@@ -117,6 +132,7 @@ export function ProductCard({ product }: { product: Product }) {
             Buy Now
           </Button>
         </div>
+        )}
       </div>
     </article>
   );

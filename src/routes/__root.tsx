@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { StoreProvider } from "@/hooks/useStore";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { AnalyticsGate, CookieConsent } from "@/components/site/CookieConsent";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 import { Toaster } from "@/components/ui/sonner";
@@ -140,6 +141,8 @@ function RootComponent() {
         </div>
         <MobileTabBar />
         <WhatsAppFab />
+        <CookieConsent />
+        <AnalyticsGate />
         <Toaster position="top-center" />
       </StoreProvider>
     </QueryClientProvider>
