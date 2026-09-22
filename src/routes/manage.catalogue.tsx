@@ -10,6 +10,7 @@ import { catalogueList, quickSaveProduct, setProductImages, type CatalogueRow } 
 import { uploadProductPhoto } from "@/lib/photo-upload";
 import { categoriesQuery } from "@/lib/queries";
 import { placeholderFor } from "@/lib/placeholders";
+import { STATUS_CHIP, isProductStatus, type ProductStatus } from "@/lib/ordering";
 
 export const Route = createFileRoute("/manage/catalogue")({
   component: CataloguePage,
@@ -21,6 +22,10 @@ const FILTERS = [
   { value: "no-photo", label: "Needs photo" },
   { value: "low-stock", label: "Low stock" },
   { value: "no-stock", label: "Out of stock" },
+  { value: "visible", label: "Visible" },
+  { value: "draft", label: "Draft" },
+  { value: "hidden", label: "Hidden" },
+  { value: "no-rack", label: "No shelf location" },
 ] as const;
 
 function CataloguePage() {
@@ -51,7 +56,7 @@ function CataloguePage() {
             setPage(0);
           }}
         >
-          <Input placeholder="Search name, code or brand" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input placeholder="Search name, code, brand or shelf" value={q} onChange={(e) => setQ(e.target.value)} />
           <Button type="submit" variant="outline">Find</Button>
         </form>
 
@@ -108,6 +113,8 @@ function ProductCard({ product }: { product: CatalogueRow }) {
   const [mrp, setMrp] = useState(product.mrp === null ? "" : String(product.mrp));
   const [stock, setStock] = useState(String(product.stock));
   const [threshold, setThreshold] = useState(product.reorderThreshold === null ? "" : String(product.reorderThreshold));
+  const [rack, setRack] = useState(product.rackLocation ?? "");
+  const [status, setStatus] = useState<ProductStatus>(isProductStatus(product.status) ? product.status : "visible");
   const [saving, setSaving] = useState(false);
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
@@ -122,6 +129,8 @@ function ProductCard({ product }: { product: CatalogueRow }) {
         mrp: num(mrp),
         stock: Number(stock || 0),
         reorderThreshold: num(threshold),
+        rackLocation: rack,
+        status,
       },
     });
     setSaving(false);
@@ -136,6 +145,9 @@ function ProductCard({ product }: { product: CatalogueRow }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold leading-snug">{product.name}</p>
+          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_CHIP[status].className}`}>
+            {STATUS_CHIP[status].label}
+          </span>
           <p className="text-xs text-muted-foreground">
             {product.sku} · {product.categoryName}
             {product.price === null && " · no price yet"}
@@ -151,6 +163,18 @@ function ProductCard({ product }: { product: CatalogueRow }) {
         <Cell label="MRP ₹"><Input inputMode="decimal" value={mrp} onChange={(e) => setMrp(e.target.value)} /></Cell>
         <Cell label="Stock"><Input inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} /></Cell>
         <Cell label="Warn at"><Input inputMode="numeric" placeholder="3" value={threshold} onChange={(e) => setThreshold(e.target.value)} /></Cell>
+        <Cell label="Shelf"><Input placeholder="A-3 / Rack 2 / Bin 14" value={rack} onChange={(e) => setRack(e.target.value)} /></Cell>
+        <Cell label="Shown as">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as ProductStatus)}
+            className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
+          >
+            <option value="visible">Visible</option>
+            <option value="draft">Draft</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </Cell>
       </div>
 
       <Button className="mt-3 w-full sm:w-auto" disabled={saving} onClick={() => void save()}>
