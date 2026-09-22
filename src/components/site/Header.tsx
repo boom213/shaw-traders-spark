@@ -7,6 +7,7 @@ import { SearchBox } from "@/components/site/SearchBox";
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
+import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 
