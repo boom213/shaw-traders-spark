@@ -28,6 +28,7 @@ import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
+import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
@@ -127,6 +128,11 @@ const ManageCustomersRoute = ManageCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageDomainRoute = ManageDomainRouteImport.update({
+  id: '/domain',
+  path: '/domain',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageOrdersRoute = ManageOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
+  '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
+  '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
+  '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
+    | '/manage/domain'
     | '/manage/orders'
     | '/order/$id'
     | '/product/$slug'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
+    | '/manage/domain'
     | '/manage/orders'
     | '/order/$id'
     | '/product/$slug'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
+    | '/manage/domain'
     | '/manage/orders'
     | '/order/$id'
     | '/product/$slug'
@@ -445,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageCustomersRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/domain': {
+      id: '/manage/domain'
+      path: '/domain'
+      fullPath: '/manage/domain'
+      preLoaderRoute: typeof ManageDomainRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/orders': {
       id: '/manage/orders'
       path: '/orders'
@@ -472,6 +491,7 @@ declare module '@tanstack/react-router' {
 interface ManageRouteChildren {
   ManageCatalogueRoute: typeof ManageCatalogueRoute
   ManageCustomersRoute: typeof ManageCustomersRoute
+  ManageDomainRoute: typeof ManageDomainRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
@@ -479,6 +499,7 @@ interface ManageRouteChildren {
 const ManageRouteChildren: ManageRouteChildren = {
   ManageCatalogueRoute: ManageCatalogueRoute,
   ManageCustomersRoute: ManageCustomersRoute,
+  ManageDomainRoute: ManageDomainRoute,
   ManageOrdersRoute: ManageOrdersRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
