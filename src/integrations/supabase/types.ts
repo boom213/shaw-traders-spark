@@ -125,6 +125,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          ordering_mode: Database["public"]["Enums"]["ordering_mode"] | null
           slug: string
           sort_order: number
         }
@@ -134,6 +135,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           slug: string
           sort_order?: number
         }
@@ -143,6 +145,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           slug?: string
           sort_order?: number
         }
@@ -622,6 +625,53 @@ export type Database = {
           },
         ]
       }
+      product_enquiries: {
+        Row: {
+          created_at: string
+          handled_by: string | null
+          id: string
+          name: string
+          note: string | null
+          phone: string
+          product_id: string | null
+          product_name: string
+          qty: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          name: string
+          note?: string | null
+          phone: string
+          product_id?: string | null
+          product_name: string
+          qty?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          phone?: string
+          product_id?: string | null
+          product_name?: string
+          qty?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_enquiries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           alt: string | null
@@ -669,12 +719,15 @@ export type Database = {
           model: string | null
           mrp: number | null
           name: string
+          ordering_mode: Database["public"]["Enums"]["ordering_mode"] | null
           price: number | null
+          rack_location: string | null
           reorder_threshold: number | null
           shipping_info: string | null
           sku: string
           slug: string
           specs: Json
+          status: Database["public"]["Enums"]["product_status"]
           stock: number
           subcategory: string | null
           updated_at: string
@@ -697,12 +750,15 @@ export type Database = {
           model?: string | null
           mrp?: number | null
           name: string
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
+          rack_location?: string | null
           reorder_threshold?: number | null
           shipping_info?: string | null
           sku: string
           slug: string
           specs?: Json
+          status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           subcategory?: string | null
           updated_at?: string
@@ -725,12 +781,15 @@ export type Database = {
           model?: string | null
           mrp?: number | null
           name?: string
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
+          rack_location?: string | null
           reorder_threshold?: number | null
           shipping_info?: string | null
           sku?: string
           slug?: string
           specs?: Json
+          status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           subcategory?: string | null
           updated_at?: string
@@ -901,6 +960,7 @@ export type Database = {
       shop_settings: {
         Row: {
           billing_address: string | null
+          browse_banner: string | null
           cod_enabled: boolean
           cod_limit: number
           cod_pincodes: string[]
@@ -915,6 +975,7 @@ export type Database = {
           legal_name: string | null
           low_stock_threshold: number
           notify_enabled: boolean
+          ordering_mode: Database["public"]["Enums"]["ordering_mode"]
           owner_email: string | null
           owner_whatsapp: string
           policy_updated_at: string | null
@@ -924,6 +985,7 @@ export type Database = {
         }
         Insert: {
           billing_address?: string | null
+          browse_banner?: string | null
           cod_enabled?: boolean
           cod_limit?: number
           cod_pincodes?: string[]
@@ -938,6 +1000,7 @@ export type Database = {
           legal_name?: string | null
           low_stock_threshold?: number
           notify_enabled?: boolean
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"]
           owner_email?: string | null
           owner_whatsapp?: string
           policy_updated_at?: string | null
@@ -947,6 +1010,7 @@ export type Database = {
         }
         Update: {
           billing_address?: string | null
+          browse_banner?: string | null
           cod_enabled?: boolean
           cod_limit?: number
           cod_pincodes?: string[]
@@ -961,6 +1025,7 @@ export type Database = {
           legal_name?: string | null
           low_stock_threshold?: number
           notify_enabled?: boolean
+          ordering_mode?: Database["public"]["Enums"]["ordering_mode"]
           owner_email?: string | null
           owner_whatsapp?: string
           policy_updated_at?: string | null
@@ -1223,9 +1288,11 @@ export type Database = {
         | "delivered"
         | "cancelled"
         | "returned"
+      ordering_mode: "full" | "enquiry" | "browse"
       payment_status: "pending" | "paid" | "failed" | "refunded" | "cod_pending"
+      product_status: "draft" | "visible" | "hidden"
       review_status: "pending" | "approved" | "rejected"
-      staff_role: "owner" | "manager" | "staff"
+      staff_role: "super_admin" | "owner" | "manager" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1364,9 +1431,11 @@ export const Constants = {
         "cancelled",
         "returned",
       ],
+      ordering_mode: ["full", "enquiry", "browse"],
       payment_status: ["pending", "paid", "failed", "refunded", "cod_pending"],
+      product_status: ["draft", "visible", "hidden"],
       review_status: ["pending", "approved", "rejected"],
-      staff_role: ["owner", "manager", "staff"],
+      staff_role: ["super_admin", "owner", "manager", "staff"],
     },
   },
 } as const

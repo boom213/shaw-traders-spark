@@ -1,7 +1,10 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isOrderingMode, type OrderingMode } from "@/lib/ordering";
 
 export type ShopSettings = {
+  orderingMode: OrderingMode;
+  browseBanner: string | null;
   gstEnabled: boolean;
   gstRate: number;
   pricesIncludeGst: boolean;
@@ -19,6 +22,8 @@ export type ShopSettings = {
 };
 
 export const DEFAULT_SETTINGS: ShopSettings = {
+  orderingMode: "full",
+  browseBanner: null,
   gstEnabled: true,
   gstRate: 18,
   pricesIncludeGst: true,
@@ -38,14 +43,16 @@ export const DEFAULT_SETTINGS: ShopSettings = {
 export const shopSettingsQuery = () =>
   queryOptions({
     queryKey: ["shop-settings"],
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
     queryFn: async (): Promise<ShopSettings> => {
       const { data } = await supabase
         .from("shop_settings")
-        .select("gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
+        .select("ordering_mode, browse_banner, gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
         .maybeSingle();
       if (!data) return DEFAULT_SETTINGS;
       return {
+        orderingMode: isOrderingMode(data.ordering_mode) ? data.ordering_mode : "full",
+        browseBanner: data.browse_banner,
         gstEnabled: Boolean(data.gst_enabled),
         gstRate: Number(data.gst_rate ?? 0),
         pricesIncludeGst: Boolean(data.prices_include_gst),

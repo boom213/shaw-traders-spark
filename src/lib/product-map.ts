@@ -1,7 +1,13 @@
 import type { Product } from "@/lib/catalog";
+import { isOrderingMode } from "@/lib/ordering";
 
+/**
+ * Columns read for every customer-facing product view.
+ * rack_location is deliberately absent — it is shop-floor information and
+ * must never reach a customer, an API response, the sitemap or structured data.
+ */
 export const PRODUCT_SELECT =
-  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, created_at, categories!inner(slug, name), product_images(url, sort_order), product_compatibility(vehicle_model)";
+  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, created_at, categories!inner(slug, name, ordering_mode), product_images(url, sort_order), product_compatibility(vehicle_model)";
 
 type Row = Record<string, any>;
 
@@ -25,6 +31,8 @@ export function mapProduct(row: Row): Product {
     slug: String(row['slug']),
     category: String(cat?.['slug'] ?? ""),
     ...(cat?.['name'] ? { categoryName: String(cat['name']) } : {}),
+    ...(isOrderingMode(cat?.['ordering_mode']) ? { categoryOrderingMode: cat!['ordering_mode'] } : {}),
+    ...(isOrderingMode(row['ordering_mode']) ? { orderingMode: row['ordering_mode'] } : {}),
     ...(row['subcategory'] ? { subcategory: String(row['subcategory']) } : {}),
     ...(row['brand'] ? { brand: String(row['brand']) } : {}),
     ...(row['model'] ? { model: String(row['model']) } : {}),

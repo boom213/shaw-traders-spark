@@ -160,7 +160,7 @@ export const manageCustomers = createServerFn({ method: "POST" })
 export const manageStats = createServerFn({ method: "POST" }).handler(async () => {
   const sb = await admin();
   const [products, orders, categories] = await Promise.all([
-    sb.from("products").select("id, price, stock, product_images(url)").eq("is_active", true).limit(2000),
+    sb.from("products").select("id, price, stock, product_images(url)").eq("status", "visible").limit(2000),
     sb.from("orders").select("total, contact_phone").limit(2000),
     sb.from("categories").select("id"),
   ]);
