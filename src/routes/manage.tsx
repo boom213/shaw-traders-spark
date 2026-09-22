@@ -28,6 +28,7 @@ export const Route = createFileRoute("/manage")({
 const NAV = [
   { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true },
   { to: "/manage/catalogue", label: "Stock & Photos", icon: Boxes, exact: false },
+  { to: "/manage/import", label: "Price List", icon: FileSpreadsheet, exact: false },
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false },
   { to: "/manage/summary", label: "Daily Summary", icon: BellRing, exact: false },
