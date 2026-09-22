@@ -256,7 +256,13 @@ export type ShopSettingsRow = {
   codEnabled: boolean;
   codLimit: number;
   codPincodes: string;
+  ownerWhatsapp: string;
+  ownerEmail: string;
+  notifyEnabled: boolean;
+  defaultHsn: string;
+  lowStockThreshold: number;
   onlinePayments: boolean;
+  whatsappReady: boolean;
 };
 
 /** Shop-wide payment, GST and cash-on-delivery settings. */
@@ -274,12 +280,18 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
     codEnabled: Boolean(data?.cod_enabled ?? true),
     codLimit: Number(data?.cod_limit ?? 2000),
     codPincodes: ((data?.cod_pincodes ?? []) as string[]).join(", "),
+    ownerWhatsapp: String(data?.owner_whatsapp ?? "7501849610"),
+    ownerEmail: String(data?.owner_email ?? ""),
+    notifyEnabled: Boolean(data?.notify_enabled ?? true),
+    defaultHsn: String(data?.default_hsn ?? "8507"),
+    lowStockThreshold: Number(data?.low_stock_threshold ?? 3),
     onlinePayments: razorpayKeys().configured,
+    whatsappReady: (await import("@/lib/whatsapp.server")).whatsappConfigured(),
   };
 });
 
 export const saveShopSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments">) => data)
+  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments" | "whatsappReady">) => data)
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
     const pincodes = String(data.codPincodes ?? "")
@@ -296,6 +308,11 @@ export const saveShopSettings = createServerFn({ method: "POST" })
       cod_enabled: Boolean(data.codEnabled),
       cod_limit: Math.max(0, Number(data.codLimit) || 0),
       cod_pincodes: pincodes,
+      owner_whatsapp: String(data.ownerWhatsapp ?? "").replace(/\D/g, "").slice(-12) || "7501849610",
+      owner_email: String(data.ownerEmail ?? "").trim() || null,
+      notify_enabled: Boolean(data.notifyEnabled),
+      default_hsn: String(data.defaultHsn ?? "").trim() || "8507",
+      low_stock_threshold: Math.max(0, Math.min(99, Number(data.lowStockThreshold) || 3)),
     };
     const { error } = await sb.from("shop_settings").upsert(patch);
     if (error) return { ok: false as const, error: error.message };
