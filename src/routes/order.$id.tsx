@@ -154,8 +154,21 @@ function OrderPage() {
             <h3 className="font-display text-base font-bold">Payment & delivery</h3>
             <p className="mt-2 text-muted-foreground">{order.paymentMethod}</p>
             <p className="text-muted-foreground">{order.shippingMethod}</p>
-            {order.discount > 0 && <p className="mt-2 text-primary">Discount −{formatINR(order.discount)}</p>}
+            <dl className="mt-3 grid gap-1.5 border-t border-border pt-3">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{formatINR(order.subtotal)}</dd></div>
+              {order.discount > 0 && (
+                <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd className="text-primary">−{formatINR(order.discount)}</dd></div>
+              )}
+              <div className="flex justify-between"><dt className="text-muted-foreground">Delivery</dt><dd>{order.shippingFee === 0 ? "Free" : formatINR(order.shippingFee)}</dd></div>
+              {order.taxAmount > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">GST {order.gstRate}% {order.gstIncluded ? "(included)" : ""}</dt>
+                  <dd>{formatINR(order.taxAmount)}</dd>
+                </div>
+              )}
+            </dl>
             <p className="mt-3 font-display text-lg font-bold">Total {formatINR(order.total)}</p>
+            {order.gstin && <p className="mt-1 text-xs text-muted-foreground">GSTIN {order.gstin}</p>}
           </div>
         </aside>
       </div>

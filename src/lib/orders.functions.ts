@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { OrderStatus, OrderView } from "@/lib/catalog";
 
 const ORDER_SELECT =
-  "id, human_id, public_token, status, subtotal, shipping_fee, discount, total, payment_method, payment_status, shipping_method, address, placed_at, updated_at, profile_id, contact_phone, order_items(id, product_id, name_snapshot, price_snapshot, qty, image_snapshot), order_events(status, note, created_at)";
+  "id, human_id, public_token, status, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, placed_at, updated_at, profile_id, contact_phone, order_items(id, product_id, name_snapshot, price_snapshot, qty, image_snapshot), order_events(status, note, created_at)";
 
 type Row = Record<string, any>;
 
@@ -16,6 +16,10 @@ function mapOrder(row: Row): OrderView {
     shippingFee: Number(row['shipping_fee']),
     discount: Number(row['discount']),
     total: Number(row['total']),
+    taxAmount: Number(row['tax_amount'] ?? 0),
+    gstRate: Number(row['gst_rate'] ?? 0),
+    gstIncluded: Boolean(row['gst_included']),
+    gstin: row['gstin'] ?? null,
     paymentMethod: row['payment_method'] ?? null,
     paymentStatus: String(row['payment_status']),
     shippingMethod: row['shipping_method'] ?? null,

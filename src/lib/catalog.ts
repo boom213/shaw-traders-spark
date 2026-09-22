@@ -97,6 +97,10 @@ export type OrderView = {
   shippingFee: number;
   discount: number;
   total: number;
+  taxAmount: number;
+  gstRate: number;
+  gstIncluded: boolean;
+  gstin: string | null;
   paymentMethod: string | null;
   paymentStatus: string;
   shippingMethod: string | null;

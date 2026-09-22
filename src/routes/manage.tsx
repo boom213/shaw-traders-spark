@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { Boxes, Globe, LayoutDashboard, LogOut, Receipt, ShieldCheck, Users } from "lucide-react";
+import { Boxes, Globe, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
@@ -31,6 +31,7 @@ const NAV = [
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false },
   { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false },
+  { to: "/manage/settings", label: "Payments & GST", icon: Settings, exact: false },
   { to: "/manage/staff", label: "Staff", icon: ShieldCheck, exact: false },
 ] as const;
 

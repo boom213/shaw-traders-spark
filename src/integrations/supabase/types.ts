@@ -278,17 +278,25 @@ export type Database = {
           address: Json
           contact_phone: string | null
           discount: number
+          gst_included: boolean
+          gst_rate: number
+          gstin: string | null
           human_id: string
           id: string
           payment_method: string | null
+          payment_provider: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           placed_at: string
           profile_id: string | null
+          provider_order_id: string | null
+          provider_payment_id: string | null
           public_token: string
           shipping_fee: number
           shipping_method: string | null
           status: Database["public"]["Enums"]["order_status"]
+          stock_released: boolean
           subtotal: number
+          tax_amount: number
           total: number
           updated_at: string
         }
@@ -296,17 +304,25 @@ export type Database = {
           address?: Json
           contact_phone?: string | null
           discount?: number
+          gst_included?: boolean
+          gst_rate?: number
+          gstin?: string | null
           human_id: string
           id?: string
           payment_method?: string | null
+          payment_provider?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           profile_id?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
           public_token?: string
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_released?: boolean
           subtotal?: number
+          tax_amount?: number
           total?: number
           updated_at?: string
         }
@@ -314,17 +330,25 @@ export type Database = {
           address?: Json
           contact_phone?: string | null
           discount?: number
+          gst_included?: boolean
+          gst_rate?: number
+          gstin?: string | null
           human_id?: string
           id?: string
           payment_method?: string | null
+          payment_provider?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           profile_id?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
           public_token?: string
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
+          stock_released?: boolean
           subtotal?: number
+          tax_amount?: number
           total?: number
           updated_at?: string
         }
@@ -334,6 +358,44 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_events: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_type: string | null
+          id: string
+          order_id: string | null
+          payload: Json
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json
+          provider?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payload?: Json
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -557,6 +619,48 @@ export type Database = {
           },
         ]
       }
+      shop_settings: {
+        Row: {
+          billing_address: string | null
+          cod_enabled: boolean
+          cod_limit: number
+          cod_pincodes: string[]
+          gst_enabled: boolean
+          gst_rate: number
+          gstin: string | null
+          id: boolean
+          legal_name: string | null
+          prices_include_gst: boolean
+          updated_at: string
+        }
+        Insert: {
+          billing_address?: string | null
+          cod_enabled?: boolean
+          cod_limit?: number
+          cod_pincodes?: string[]
+          gst_enabled?: boolean
+          gst_rate?: number
+          gstin?: string | null
+          id?: boolean
+          legal_name?: string | null
+          prices_include_gst?: boolean
+          updated_at?: string
+        }
+        Update: {
+          billing_address?: string | null
+          cod_enabled?: boolean
+          cod_limit?: number
+          cod_pincodes?: string[]
+          gst_enabled?: boolean
+          gst_rate?: number
+          gstin?: string | null
+          id?: boolean
+          legal_name?: string | null
+          prices_include_gst?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       staff_roles: {
         Row: {
           created_at: string
@@ -626,7 +730,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_order: {
+        Args: {
+          p_address: Json
+          p_coupon_code?: string
+          p_items: Json
+          p_payment_method: string
+          p_shipping_code: string
+        }
+        Returns: {
+          human_id: string
+          order_id: string
+          payment_status: string
+          public_token: string
+          total: number
+        }[]
+      }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      mark_order_paid: {
+        Args: { p_order_id: string; p_payment_id: string }
+        Returns: boolean
+      }
       place_order: {
         Args: {
           p_address: Json
@@ -641,6 +765,14 @@ export type Database = {
           order_id: string
           public_token: string
         }[]
+      }
+      release_order: {
+        Args: { p_order_id: string; p_reason?: string }
+        Returns: boolean
+      }
+      set_order_gst: {
+        Args: { p_enabled: boolean; p_order_id: string; p_rate: number }
+        Returns: boolean
       }
       staff_bootstrap_needed: { Args: never; Returns: boolean }
       staff_role: {
