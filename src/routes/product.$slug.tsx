@@ -307,7 +307,16 @@ function ProductPage() {
                 : "Out of stock"}
             </p>
 
-            {product.price !== undefined && (
+            {mode === "enquiry" && (
+              <div className="mt-5 grid gap-2">
+                <Button onClick={() => setEnquiry(true)}>Check availability</Button>
+                <Button variant="secondary" asChild>
+                  <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> Ask on WhatsApp</a>
+                </Button>
+              </div>
+            )}
+
+            {mode === "full" && product.price !== undefined && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Button variant="outline" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
                 <Button
@@ -323,6 +332,16 @@ function ProductPage() {
                 </Button>
               </div>
             )}
+
+            {staffMeta?.staff && (
+              <p className="mt-4 rounded-xl border border-dashed border-border bg-surface p-3 text-sm">
+                <span className="font-semibold">Shelf location (staff only):</span>{" "}
+                {staffMeta.rackLocation || "not recorded yet"}
+              </p>
+            )}
+
+            <EnquiryDialog product={product} open={enquiry} onOpenChange={setEnquiry} />
+
             <Button variant="ghost" className="mt-2 w-full" onClick={() => toggleWishlist(product.id)}>
               {lists.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
             </Button>
