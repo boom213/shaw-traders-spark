@@ -143,7 +143,7 @@ function ProductPage() {
   const [enquiry, setEnquiry] = useState(false);
 
   const product = data?.product;
-  const mode = useProductOrdering(product ?? {});
+  const mode = useProductOrdering({ orderingMode: product?.orderingMode ?? null, categoryOrderingMode: product?.categoryOrderingMode ?? null });
   const { data: staffMeta } = useQuery({
     queryKey: ["staff-product-meta", product?.id],
     queryFn: () => staffProductMeta({ data: { productId: String(product?.id) } }),

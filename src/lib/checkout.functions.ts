@@ -87,10 +87,11 @@ export const startCheckout = createServerFn({ method: "POST" })
         | { status?: string | null; ordering_mode?: string | null; categories?: { ordering_mode?: string | null } | null }
         | undefined;
       if (!row || row.status !== "visible") return { error: "One of the parts in your cart is no longer available." };
+      const pick = (v: unknown) => (isOrderingMode(v) ? v : null);
       const mode = effectiveMode({
         site: siteMode,
-        category: row.categories?.ordering_mode ?? null,
-        product: row.ordering_mode ?? null,
+        category: pick(row.categories?.ordering_mode),
+        product: pick(row.ordering_mode),
       });
       if (mode !== "full") return { error: "Online ordering is paused for one of the parts in your cart." };
     }
