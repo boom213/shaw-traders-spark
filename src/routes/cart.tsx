@@ -68,6 +68,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 }
 
 function CartPage() {
+  const { mode: siteMode } = useSiteOrdering();
   const { lists, setQty, removeFromCart, saveForLater, moveToCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
