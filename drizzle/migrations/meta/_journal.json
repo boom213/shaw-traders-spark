@@ -8,6 +8,13 @@
       "when": 1790102370308,
       "tag": "0000_create_store_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790102729800,
+      "tag": "0001_store_runtime",
+      "breakpoints": true
     }
   ]
 }

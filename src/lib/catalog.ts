@@ -1,19 +1,10 @@
 /**
- * Shaw Traders EV — catalogue data layer.
+ * Shaw Traders EV — shared types and display helpers.
  *
- * IMPORTANT BUSINESS RULE: no product names, prices, brands, stock levels,
- * reviews, warranties or compatibility data are invented here. The catalogue
- * starts empty and is filled by the shop owner through the Admin panel.
- * Everything is persisted to localStorage so the store works today and can be
- * moved to a real database later without changing the UI.
+ * All catalogue, order, review and coupon data lives in the database.
+ * Only the shopper's own cart / wishlist / saved / recently-viewed lists are
+ * kept in local state (and mirrored to the database when signed in).
  */
-
-/**
- * The printed catalogue now lives in the database (categories / products /
- * product_compatibility tables), so no product data ships in the client bundle.
- */
-type SeedProduct = { sku?: string; name: string; category: string; model?: string };
-const CATALOGUE_SEED: SeedProduct[] = [];
 
 export type Product = {
   id: string;
@@ -21,12 +12,13 @@ export type Product = {
   name: string;
   slug: string;
   category: string; // category slug
+  categoryName?: string;
   subcategory?: string;
   brand?: string;
   model?: string;
-  price?: number; // undefined => "Contact us for price and availability."
+  price?: number;
   mrp?: number;
-  stock?: number;
+  stock: number;
   images: string[];
   description?: string;
   specs?: Record<string, string>;
@@ -38,60 +30,84 @@ export type Product = {
   weight?: string;
   dimensions?: string;
   shippingInfo?: string;
-  createdAt: number;
+  createdAt: string;
+};
+
+export type Category = {
+  slug: string;
+  name: string;
+  blurb: string;
+  imageUrl?: string;
+  productCount?: number;
 };
 
 export type Review = {
   id: string;
-  productId: string;
-  name: string;
   rating: number;
-  text: string;
+  title?: string;
+  body?: string;
+  name: string;
   verified: boolean;
-  approved: boolean;
-  createdAt: number;
+  createdAt: string;
 };
 
-export type Order = {
-  id: string;
-  createdAt: number;
-  status: OrderStatus;
-  items: { productId: string; name: string; price?: number; qty: number; image?: string }[];
-  address: Record<string, string>;
-  shippingMethod: string;
-  paymentMethod: string;
-  total: number;
-};
+export type OrderStatus =
+  | "order_confirmed"
+  | "processing"
+  | "packed"
+  | "shipped"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled"
+  | "returned";
 
-export const ORDER_STATUSES = [
-  "Order Confirmed",
-  "Processing",
-  "Packed",
-  "Shipped",
-  "Out for Delivery",
-  "Delivered",
-] as const;
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
-
-export type Category = { slug: string; name: string; blurb: string };
-
-export const CATEGORIES: Category[] = [
-  { slug: "ev-batteries", name: "EV Batteries", blurb: "Lithium & lead-acid packs" },
-  { slug: "chargers", name: "Chargers", blurb: "Scooter & e-rickshaw chargers" },
-  { slug: "motors", name: "Motors", blurb: "Hub and BLDC motors" },
-  { slug: "controllers", name: "Controllers", blurb: "Speed controllers" },
-  { slug: "body-parts", name: "Body Parts", blurb: "Panels, mudguards, covers" },
-  { slug: "brake-parts", name: "Brake Parts", blurb: "Shoes, discs, cables" },
-  { slug: "wheels-tyres", name: "Wheels & Tyres", blurb: "Rims, tyres, tubes" },
-  { slug: "suspension", name: "Suspension / Shockers", blurb: "Front & rear shockers" },
-  { slug: "lighting", name: "Lights & Reflectors", blurb: "Headlights, indicators" },
-  { slug: "footrests", name: "Footrests", blurb: "Foot rests & pedals" },
-  { slug: "locks-latches", name: "Locks & Latches", blurb: "Ignition locks, latches" },
-  { slug: "electrical-parts", name: "EV Electrical Parts", blurb: "Switches, converters" },
-  { slug: "cables-wiring", name: "Cables & Wiring", blurb: "Harnesses & connectors" },
-  { slug: "accessories", name: "Other Accessories", blurb: "Everyday EV add-ons" },
+export const ORDER_FLOW: { value: OrderStatus; label: string }[] = [
+  { value: "order_confirmed", label: "Order Confirmed" },
+  { value: "processing", label: "Processing" },
+  { value: "packed", label: "Packed" },
+  { value: "shipped", label: "Shipped" },
+  { value: "out_for_delivery", label: "Out for Delivery" },
+  { value: "delivered", label: "Delivered" },
 ];
 
+export const ORDER_EXTRA: { value: OrderStatus; label: string }[] = [
+  { value: "cancelled", label: "Cancelled" },
+  { value: "returned", label: "Returned" },
+];
+
+export const ALL_STATUSES = [...ORDER_FLOW, ...ORDER_EXTRA];
+
+export const statusLabel = (s: string) => ALL_STATUSES.find((x) => x.value === s)?.label ?? s;
+
+export type OrderItemView = {
+  id: string;
+  productId: string | null;
+  name: string;
+  price: number | null;
+  qty: number;
+  image: string | null;
+};
+
+export type OrderView = {
+  id: string;
+  humanId: string;
+  token: string;
+  status: OrderStatus;
+  subtotal: number;
+  shippingFee: number;
+  discount: number;
+  total: number;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  shippingMethod: string | null;
+  address: Record<string, string>;
+  placedAt: string;
+  updatedAt: string;
+  items: OrderItemView[];
+  events?: { status: OrderStatus; note: string | null; createdAt: string }[];
+};
+
+/** Slugs in display order — used for icons and quick nav only. */
 export const NAV_CATEGORIES = [
   "ev-batteries",
   "chargers",
@@ -105,14 +121,13 @@ export const NAV_CATEGORIES = [
   "accessories",
 ];
 
-export const categoryBySlug = (slug: string) => CATEGORIES.find((c) => c.slug === slug);
-
 export const BUSINESS = {
   name: "Shaw Traders EV",
   tagline: "Complete EV Parts & Accessories",
   phone: "7501849610",
   phoneIntl: "917501849610",
   address: "Defence Colony, Bud Bud, Bardhaman, West Bengal – 713403, India",
+  site: "https://shawtradersev.com",
 };
 
 export const whatsappLink = (message: string) =>
@@ -130,115 +145,4 @@ export const slugify = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-/* ------------------------------------------------------------------ */
-/* localStorage-backed store                                           */
-/* ------------------------------------------------------------------ */
-
-const KEY = "shaw-traders-ev";
-
-/** Bump when the printed catalogue import changes. */
-export const SEED_VERSION = 1;
-
-export type StoreState = {
-  products: Product[];
-  brands: string[];
-  reviews: Review[];
-  orders: Order[];
-  cart: { productId: string; qty: number }[];
-  saved: string[];
-  wishlist: string[];
-  recentlyViewed: string[];
-  coupons: { code: string; type: "percent" | "fixed"; value: number; minOrder: number; expiry: string }[];
-  vehicles: { brand: string; models: string[] }[];
-  banners: { title: string; text: string }[];
-  faqs: { q: string; a: string }[];
-  addresses: Record<string, string>[];
-  profile: { name?: string; email?: string; phone?: string } | null;
-  /** Customer account stored on this device (no server login). */
-  account: { name: string; phone: string; email?: string; pin: string } | null;
-  signedIn: boolean;
-  seedVersion?: number;
-};
-
-export const emptyState: StoreState = {
-  products: [],
-  brands: [],
-  reviews: [],
-  orders: [],
-  cart: [],
-  saved: [],
-  wishlist: [],
-  recentlyViewed: [],
-  coupons: [],
-  vehicles: [],
-  banners: [],
-  faqs: [],
-  addresses: [],
-  profile: null,
-  account: null,
-  signedIn: false,
-};
-
-/**
- * Adds the products printed in the Shaw Traders catalogue PDF, without
- * touching anything the shop owner has already edited (matched by SKU or name).
- */
-export function applySeed(state: StoreState): StoreState {
-  if (state.seedVersion === SEED_VERSION) return state;
-
-  const bySku = new Set(state.products.map((p) => p.sku.toUpperCase()));
-  const byName = new Set(state.products.map((p) => p.name.toUpperCase()));
-  const usedSlugs = new Set(state.products.map((p) => p.slug));
-  const added: Product[] = [];
-
-  for (const s of CATALOGUE_SEED) {
-    if (byName.has(s.name.toUpperCase())) continue;
-    if (s.sku && bySku.has(s.sku.toUpperCase())) continue;
-
-    let slug = slugify(s.name);
-    let n = 2;
-    while (usedSlugs.has(slug)) slug = `${slugify(s.name)}-${n++}`;
-    usedSlugs.add(slug);
-
-    added.push({
-      id: `seed-${slug}`,
-      sku: s.sku ?? slug.slice(0, 24).toUpperCase(),
-      name: s.name,
-      slug,
-      category: s.category,
-      model: s.model,
-      compatibility: s.model ? [s.model] : [],
-      images: [],
-      createdAt: Date.now(),
-    });
-  }
-
-  const vehicleModels = Array.from(new Set(CATALOGUE_SEED.map((s) => s.model).filter(Boolean) as string[])).sort();
-
-  return {
-    ...state,
-    products: [...state.products, ...added],
-    vehicles: state.vehicles.length ? state.vehicles : [{ brand: "Electric scooter models", models: vehicleModels }],
-    seedVersion: SEED_VERSION,
-  };
-}
-
-export function loadState(): StoreState {
-  if (typeof window === "undefined") return applySeed(emptyState);
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    const base = raw ? { ...emptyState, ...(JSON.parse(raw) as Partial<StoreState>) } : emptyState;
-    const seeded = applySeed(base);
-    if (seeded !== base) window.localStorage.setItem(KEY, JSON.stringify(seeded));
-    return seeded;
-  } catch {
-    return applySeed(emptyState);
-  }
-}
-
-export function saveState(state: StoreState) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(KEY, JSON.stringify(state));
-  window.dispatchEvent(new CustomEvent("shaw-store-change"));
-}
-
+export const canonical = (path: string) => `${BUSINESS.site}${path}`;

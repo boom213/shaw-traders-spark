@@ -1,59 +1,49 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useStore } from "@/hooks/useStore";
-import { CATEGORIES } from "@/lib/catalog";
+import { categoriesQuery, facetsQuery } from "@/lib/queries";
 
 export function FindPartsWidget() {
-  const { state } = useStore();
   const navigate = useNavigate();
-  const [brand, setBrand] = useState<string>("");
-  const [model, setModel] = useState<string>("");
-  const [category, setCategory] = useState<string>("");
+  const { data: facets, isPending } = useQuery(facetsQuery());
+  const { data: categories } = useQuery(categoriesQuery());
+  const [model, setModel] = useState("");
+  const [category, setCategory] = useState("");
 
-  const vehicles = state.vehicles;
-  const models = vehicles.find((v) => v.brand === brand)?.models ?? [];
+  const models = facets?.models ?? [];
 
   return (
     <div className="rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)] sm:p-7">
-      {vehicles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Vehicle compatibility data is maintained by Shaw Traders in the admin panel. Once vehicle brands and models are added, you can
-          pick your EV here and see matching parts. In the meantime, search the shop or message us on WhatsApp with your vehicle details.
-        </p>
-      ) : null}
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        <div className="grid gap-1.5">
-          <Label>Vehicle Brand</Label>
-          <Select value={brand} onValueChange={(v) => { setBrand(v); setModel(""); }} disabled={vehicles.length === 0}>
-            <SelectTrigger><SelectValue placeholder="Select brand" /></SelectTrigger>
-            <SelectContent>
-              {vehicles.map((v) => (
-                <SelectItem key={v.brand} value={v.brand}>{v.brand}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Model</Label>
-          <Select value={model} onValueChange={setModel} disabled={models.length === 0}>
-            <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
-            <SelectContent>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-1.5 sm:col-span-2">
+          <Label>Your EV model</Label>
+          <Select value={model} onValueChange={setModel} disabled={isPending || models.length === 0}>
+            <SelectTrigger>
+              <SelectValue placeholder={isPending ? "Loading models…" : "Select your model"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
               {models.map((m) => (
-                <SelectItem key={m} value={m}>{m}</SelectItem>
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>Part Category</Label>
+          <Label>Part category</Label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>
+            <SelectTrigger>
+              <SelectValue placeholder="Any category" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {(categories ?? []).map((c) => (
+                <SelectItem key={c.slug} value={c.slug}>
+                  {c.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -64,15 +54,17 @@ export function FindPartsWidget() {
         onClick={() =>
           navigate({
             to: "/shop",
-            search: {
-              q: [brand, model].filter(Boolean).join(" ") || undefined,
-              category: category || undefined,
-            },
+            search: { model: model || undefined, category: category || undefined },
           })
         }
       >
         Show matching parts
       </Button>
+      {!isPending && models.length === 0 && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Model compatibility is still being added. Message us on WhatsApp with your vehicle details and we will confirm the fit.
+        </p>
+      )}
     </div>
   );
 }

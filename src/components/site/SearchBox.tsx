@@ -1,43 +1,33 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { CATEGORIES } from "@/lib/catalog";
-import { useStore } from "@/hooks/useStore";
+import { categoriesQuery, productsQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
-const SPEC_HINTS = [
-  "48V battery",
-  "60V battery",
-  "72V charger",
-  "controller",
-  "hub motor",
-  "e-rickshaw battery",
-  "electric scooty mudguard",
-];
-
 export function SearchBox({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
-  const { state } = useStore();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const term = q.trim();
+  const { data: categories } = useQuery(categoriesQuery());
+  const { data: matches } = useQuery({
+    ...productsQuery({ q: term, pageSize: 6 }),
+    enabled: term.length >= 2,
+  });
+
   const suggestions = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return [];
-    const pool = [
-      ...state.products.map((p) => p.name),
-      ...state.products.flatMap((p) => [p.brand, p.model, p.voltage, p.ah, p.wattage].filter(Boolean) as string[]),
-      ...state.brands,
-      ...CATEGORIES.map((c) => c.name),
-      ...SPEC_HINTS,
-    ];
-    return Array.from(new Set(pool.filter((s) => s.toLowerCase().includes(term)))).slice(0, 7);
-  }, [q, state.products, state.brands]);
+    if (term.length < 2) return [];
+    const names = (matches?.items ?? []).map((p) => p.name);
+    const cats = (categories ?? []).filter((c) => c.name.toLowerCase().includes(term.toLowerCase())).map((c) => c.name);
+    return Array.from(new Set([...names, ...cats])).slice(0, 7);
+  }, [matches, categories, term]);
 
   const go = (value: string) => {
     setOpen(false);
-    navigate({ to: "/shop", search: { q: value || undefined } });
+    void navigate({ to: "/shop", search: { q: value || undefined } });
   };
 
   return (

@@ -1,0 +1,208 @@
+import { createServerFn } from "@tanstack/react-start";
+import type { OrderStatus, Product } from "@/lib/catalog";
+
+type Row = Record<string, any>;
+
+export type ManageOrder = {
+  id: string;
+  humanId: string;
+  token: string;
+  status: OrderStatus;
+  total: number;
+  paymentMethod: string | null;
+  paymentStatus: string;
+  shippingMethod: string | null;
+  address: Record<string, string>;
+  placedAt: string;
+  items: { name: string; qty: number; price: number | null }[];
+};
+
+const mapManageOrder = (row: Row): ManageOrder => ({
+  id: String(row['id']),
+  humanId: String(row['human_id']),
+  token: String(row['public_token']),
+  status: row['status'] as OrderStatus,
+  total: Number(row['total']),
+  paymentMethod: row['payment_method'] ?? null,
+  paymentStatus: String(row['payment_status']),
+  shippingMethod: row['shipping_method'] ?? null,
+  address: (row['address'] ?? {}) as Record<string, string>,
+  placedAt: String(row['placed_at']),
+  items: ((row['order_items'] ?? []) as Row[]).map((i) => ({
+    name: String(i['name_snapshot']),
+    qty: Number(i['qty']),
+    price: i['price_snapshot'] === null || i['price_snapshot'] === undefined ? null : Number(i['price_snapshot']),
+  })),
+});
+
+async function admin() {
+  const { requireManager } = await import("@/lib/manage-session.server");
+  await requireManager();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+export const manageOrders = createServerFn({ method: "POST" })
+  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim() }))
+  .handler(async ({ data }): Promise<ManageOrder[]> => {
+    const sb = await admin();
+    let query = sb
+      .from("orders")
+      .select(
+        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, order_items(name_snapshot, price_snapshot, qty)",
+      )
+      .order("placed_at", { ascending: false })
+      .limit(300);
+    if (data.q) {
+      const t = data.q.replace(/[%,()]/g, " ");
+      query = query.or(`human_id.ilike.%${t}%,contact_phone.ilike.%${t}%,address->>name.ilike.%${t}%`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(mapManageOrder);
+  });
+
+export const setOrderStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; status: OrderStatus }) => ({
+    id: String(data?.id ?? ""),
+    status: String(data?.status ?? "") as OrderStatus,
+  }))
+  .handler(async ({ data }) => {
+    const sb = await admin();
+    const { error } = await sb.from("orders").update({ status: data.status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await sb.from("order_events").insert({ order_id: data.id, status: data.status, created_by: "manager" });
+    return { ok: true as const };
+  });
+
+export type ManageCustomer = {
+  phone: string;
+  name: string;
+  email?: string;
+  city?: string;
+  orders: { humanId: string; token: string }[];
+  spend: number;
+  last: string;
+};
+
+export const manageCustomers = createServerFn({ method: "POST" })
+  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase() }))
+  .handler(async ({ data }): Promise<ManageCustomer[]> => {
+    const sb = await admin();
+    const { data: rows, error } = await sb
+      .from("orders")
+      .select("human_id, public_token, total, address, contact_phone, placed_at")
+      .order("placed_at", { ascending: false })
+      .limit(1000);
+    if (error) throw new Error(error.message);
+
+    const map = new Map<string, ManageCustomer>();
+    for (const o of (rows ?? []) as Row[]) {
+      const addr = (o['address'] ?? {}) as Record<string, string>;
+      const phone = String(o['contact_phone'] ?? addr['phone'] ?? "unknown");
+      const entry = map.get(phone);
+      const ref = { humanId: String(o['human_id']), token: String(o['public_token']) };
+      if (entry) {
+        entry.orders.push(ref);
+        entry.spend += Number(o['total']);
+        if (String(o['placed_at']) > entry.last) entry.last = String(o['placed_at']);
+      } else {
+        map.set(phone, {
+          phone,
+          name: addr['name'] ?? "Customer",
+          ...(addr['email'] ? { email: addr['email'] } : {}),
+          ...(addr['city'] ? { city: addr['city'] } : {}),
+          orders: [ref],
+          spend: Number(o['total']),
+          last: String(o['placed_at']),
+        });
+      }
+    }
+    const list = [...map.values()].sort((a, b) => b.last.localeCompare(a.last));
+    return data.q
+      ? list.filter((c) => `${c.name} ${c.phone} ${c.city ?? ""}`.toLowerCase().includes(data.q))
+      : list;
+  });
+
+export const manageStats = createServerFn({ method: "POST" }).handler(async () => {
+  const sb = await admin();
+  const [products, orders, categories] = await Promise.all([
+    sb.from("products").select("id, price, stock, product_images(url)").eq("is_active", true).limit(2000),
+    sb.from("orders").select("total, contact_phone").limit(2000),
+    sb.from("categories").select("id"),
+  ]);
+  const prod = (products.data ?? []) as Row[];
+  const ords = (orders.data ?? []) as Row[];
+  return {
+    products: prod.length,
+    categories: (categories.data ?? []).length,
+    noPrice: prod.filter((p) => p['price'] === null).length,
+    noPhoto: prod.filter((p) => ((p['product_images'] ?? []) as Row[]).length === 0).length,
+    lowStock: prod.filter((p) => Number(p['stock']) > 0 && Number(p['stock']) <= 3).length,
+    outOfStock: prod.filter((p) => Number(p['stock']) === 0).length,
+    orders: ords.length,
+    revenue: ords.reduce((n, o) => n + Number(o['total']), 0),
+    customers: new Set(ords.map((o) => String(o['contact_phone'] ?? ""))).size,
+  };
+});
+
+export const manageProducts = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: { q?: string; category?: string; only?: string; page?: number } | undefined) => ({
+      q: String(data?.q ?? "").trim(),
+      category: String(data?.category ?? ""),
+      only: String(data?.only ?? "all"),
+      page: Math.max(0, Number(data?.page ?? 0)),
+    }),
+  )
+  .handler(async ({ data }): Promise<{ items: Product[]; total: number }> => {
+    const sb = await admin();
+    const { PRODUCT_SELECT, mapProduct } = await import("@/lib/product-map");
+    const size = 40;
+    let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" });
+    if (data.q) {
+      const t = data.q.replace(/[%,()]/g, " ");
+      query = query.or(`name.ilike.%${t}%,sku.ilike.%${t}%,brand.ilike.%${t}%,model.ilike.%${t}%`);
+    }
+    if (data.category) query = query.eq("categories.slug", data.category);
+    if (data.only === "no-price") query = query.is("price", null);
+    if (data.only === "no-stock") query = query.eq("stock", 0);
+    const { data: rows, count, error } = await query
+      .order("name")
+      .range(data.page * size, data.page * size + size - 1);
+    if (error) throw new Error(error.message);
+    let items = (rows ?? []).map(mapProduct);
+    if (data.only === "no-photo") items = items.filter((p) => p.images.length === 0);
+    return { items, total: count ?? 0 };
+  });
+
+export const saveProducts = createServerFn({ method: "POST" })
+  .inputValidator(
+    (data: {
+      updates: { id: string; price?: number | null; mrp?: number | null; stock?: number; brand?: string | null; image?: string }[];
+    }) => ({ updates: Array.isArray(data?.updates) ? data.updates.slice(0, 200) : [] }),
+  )
+  .handler(async ({ data }) => {
+    const sb = await admin();
+    for (const u of data.updates) {
+      const patch: Record<string, unknown> = {};
+      if (u.price !== undefined) patch['price'] = u.price;
+      if (u.mrp !== undefined) patch['mrp'] = u.mrp;
+      if (u.stock !== undefined) patch['stock'] = u.stock;
+      if (u.brand !== undefined) patch['brand'] = u.brand;
+      if (Object.keys(patch).length > 0) await sb.from("products").update(patch).eq("id", u.id);
+      if (u.image !== undefined) {
+        await sb.from("product_images").delete().eq("product_id", u.id).eq("sort_order", 0);
+        if (u.image.trim()) {
+          await sb.from("product_images").insert({ product_id: u.id, url: u.image.trim(), sort_order: 0 });
+        }
+      }
+    }
+    await sb.from("audit_log").insert({
+      actor: "manager",
+      action: "products.bulk_update",
+      entity: "products",
+      diff: { count: data.updates.length } as never,
+    });
+    return { saved: data.updates.length };
+  });

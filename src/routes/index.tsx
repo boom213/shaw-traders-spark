@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
 import heroImg from "@/assets/hero-ev.jpg";
 import { Button } from "@/components/ui/button";
@@ -6,11 +7,11 @@ import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
-import { useStore } from "@/hooks/useStore";
-import { BUSINESS, CATEGORIES, whatsappLink } from "@/lib/catalog";
-import { imageFor } from "@/lib/placeholders";
+import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
+import { facetsQuery, homeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
   head: () => ({
     meta: [
       { title: "Shaw Traders EV — EV Parts, Batteries & Accessories | Bud Bud" },
@@ -24,8 +25,17 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Batteries, chargers, motors, controllers, body parts and EV accessories under one roof.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: canonical("/") }],
   }),
+  errorComponent: ({ error }) => (
+    <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">
+      {error.message}
+    </div>
+  ),
+  notFoundComponent: () => <div className="container-page py-20 text-center">Page not found.</div>,
   component: Home,
 });
 
@@ -36,11 +46,11 @@ const TRUST = [
   { icon: Handshake, label: "Dealer & Retail Support" },
 ];
 
-const HIGHLIGHTS = ["ev-batteries", "chargers", "motors", "body-parts", "lighting", "brake-parts"];
-
 function Home() {
-  const { state } = useStore();
-  const products = state.products;
+  const { data: home } = useSuspenseQuery(homeQuery());
+  const { data: facets } = useQuery(facetsQuery());
+  const brands = facets?.brands ?? [];
+  const highlights = home.categories.slice(0, 6);
 
   return (
     <div>
@@ -84,7 +94,7 @@ function Home() {
       <section className="container-page py-12 lg:py-16">
         <SectionHeading
           title="Shop by Category"
-          subtitle="Fourteen part categories for electric scooters, e-bikes and e-rickshaws."
+          subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
           action={
             <Button variant="ghost" asChild>
               <Link to="/categories">View all</Link>
@@ -96,7 +106,7 @@ function Home() {
 
       <section className="container-page py-4 lg:py-8">
         <SectionHeading
-          title="Shop All Products"
+          title="Latest Products"
           subtitle="Fresh stock added regularly by our counter team."
           action={
             <Button variant="ghost" asChild>
@@ -104,51 +114,62 @@ function Home() {
             </Button>
           }
         />
-        {products.length === 0 ? (
+        {home.latest.length === 0 ? (
           <EmptyCatalogue />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {products.slice(0, 8).map((p) => (
+            {home.latest.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
         )}
       </section>
 
+      {home.discounted.length > 0 && (
+        <section className="container-page py-4 lg:py-8">
+          <SectionHeading
+            title="Deals of the Day"
+            subtitle="Parts currently selling below MRP."
+            action={
+              <Button variant="ghost" asChild>
+                <Link to="/offers">All offers</Link>
+              </Button>
+            }
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {home.discounted.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="container-page py-12 lg:py-16">
         <SectionHeading title="Popular Departments" subtitle="Jump straight to the parts our counter sells the most." />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {HIGHLIGHTS.map((slug) => {
-            const cat = CATEGORIES.find((c) => c.slug === slug);
-            if (!cat) return null;
-            const items = products.filter((p) => p.category === slug);
-            return (
-              <Link
-                key={slug}
-                to="/category/$slug"
-                params={{ slug }}
-                className="card-lift rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-display text-lg font-bold">{cat.name}</h3>
-                  <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-primary">{items.length} parts</span>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {items.slice(0, 3).map((p) => (
-                    <img key={p.id} src={imageFor(p)} alt={p.name} loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
-                  ))}
-                </div>
-                <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">
-                  {items.slice(0, 3).map((p) => p.name).join(" · ") || "Contact us for price and availability."}
-                </p>
-              </Link>
-            );
-          })}
+          {highlights.map((cat) => (
+            <Link
+              key={cat.slug}
+              to="/category/$slug"
+              params={{ slug: cat.slug }}
+              className="card-lift rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)]"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-display text-lg font-bold">{cat.name}</h3>
+                <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-primary">
+                  {cat.productCount ?? 0} parts
+                </span>
+              </div>
+              <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">
+                {cat.blurb || "Contact us for price and availability."}
+              </p>
+            </Link>
+          ))}
         </div>
       </section>
 
       <section className="container-page py-12 lg:py-16">
-        <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle brand, model and the part category you need." />
+        <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle model and the part category you need." />
         <FindPartsWidget />
       </section>
 
@@ -172,17 +193,22 @@ function Home() {
       </section>
 
       <section className="container-page pb-16">
-        <SectionHeading title="Brands We Deal In" subtitle="Maintained by Shaw Traders from the admin panel." />
-        {state.brands.length === 0 ? (
+        <SectionHeading title="Brands We Deal In" subtitle="Brands currently listed in our catalogue." />
+        {brands.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted-foreground">
             Brand list is being updated. Contact us on WhatsApp to check the brands currently in stock.
           </div>
         ) : (
           <div className="flex flex-wrap gap-3">
-            {state.brands.map((b) => (
-              <span key={b} className="rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-[var(--shadow-card)]">
+            {brands.slice(0, 24).map((b) => (
+              <Link
+                key={b}
+                to="/shop"
+                search={{ brand: b }}
+                className="rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-[var(--shadow-card)] hover:border-primary"
+              >
                 {b}
-              </span>
+              </Link>
             ))}
           </div>
         )}

@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2, MessageCircle, ShieldCheck, Star, Truck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -7,17 +8,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
+import { SectionHeading } from "@/components/site/Empty";
 import { ProductCard, ProductRating } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
-import { BUSINESS, discountPct, formatINR, whatsappLink } from "@/lib/catalog";
+import { supabase } from "@/integrations/supabase/client";
+import { BUSINESS, canonical, discountPct, formatINR, whatsappLink } from "@/lib/catalog";
+import { productQuery } from "@/lib/queries";
 import { imageFor, isPlaceholder } from "@/lib/placeholders";
 
 export const Route = createFileRoute("/product/$slug")({
-  head: ({ params }) => {
-    const readable = params.slug.replace(/-/g, " ");
-    const title = `${readable} — Shaw Traders EV`;
-    const description = `${readable} available at Shaw Traders EV, Bud Bud, Bardhaman. Check price, specifications, compatibility and availability.`;
+  loader: async ({ context, params }) => {
+    const data = await context.queryClient.ensureQueryData(productQuery(params.slug));
+    if (!data) throw notFound();
+    return { name: data.product.name, description: data.product.description ?? "" };
+  },
+  head: ({ loaderData, params }) => {
+    const name = loaderData?.name ?? params.slug.replace(/-/g, " ");
+    const title = `${name} — Shaw Traders EV`;
+    const description =
+      (loaderData?.description || "").slice(0, 160) ||
+      `${name} available at Shaw Traders EV, Bud Bud, Bardhaman. Check price, specifications, compatibility and availability.`;
     return {
       meta: [
         { title },
@@ -25,41 +35,86 @@ export const Route = createFileRoute("/product/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "product" },
+        { name: "twitter:card", content: "summary_large_image" },
       ],
+      links: [{ rel: "canonical", href: canonical(`/product/${params.slug}`) }],
     };
   },
+  errorComponent: ({ error }) => (
+    <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error.message}</div>
+  ),
+  notFoundComponent: () => (
+    <div className="container-page py-16 text-center">
+      <h1 className="font-display text-2xl font-bold">Product not available</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        This part is not in the online catalogue. Contact us for price and availability.
+      </p>
+      <Button className="mt-5" asChild><Link to="/shop">Browse the shop</Link></Button>
+    </div>
+  ),
   component: ProductPage,
 });
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { state, addToCart, addReview, markViewed, toggleWishlist } = useStore();
-  const product = state.products.find((p) => p.slug === slug);
+  const { data } = useSuspenseQuery(productQuery(slug));
+  const { lists, user, addToCart, markViewed, toggleWishlist } = useStore();
+  const navigate = useNavigate();
   const [active, setActive] = useState(0);
-  const [fit, setFit] = useState<{ brand: string; model: string; year: string }>({ brand: "", model: "", year: "" });
+  const [fit, setFit] = useState({ brand: "", model: "", year: "" });
   const [fitResult, setFitResult] = useState<string | null>(null);
-  const [review, setReview] = useState({ name: "", rating: "5", text: "" });
+  const [review, setReview] = useState({ rating: "5", title: "", text: "" });
+  const [sending, setSending] = useState(false);
+
+  const product = data?.product;
 
   useEffect(() => {
     if (product) markViewed(product.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
-  if (!product) {
-    return (
-      <div className="container-page py-12">
-        <EmptyCatalogue
-          title="Product not available"
-          note="This product is not in the online catalogue yet. Contact us for price and availability, or browse the shop."
-        />
-      </div>
-    );
-  }
+  if (!data || !product) return null;
 
+  const reviews = data.reviews;
+  const related = data.related;
   const off = discountPct(product.price, product.mrp);
-  const reviews = state.reviews.filter((r) => r.productId === product.id && r.approved);
-  const related = state.products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const avg = reviews.length ? reviews.reduce((n, r) => n + r.rating, 0) / reviews.length : undefined;
   const waMsg = `Hello ${BUSINESS.name}, I am interested in ${product.name}. Please share availability and final price.`;
+
+  const add = (qty = 1) => {
+    if (product.stock <= 0) {
+      toast.error("This part is out of stock right now");
+      return false;
+    }
+    const ok = addToCart(product.id, qty, product.stock);
+    if (!ok) toast.error(`Only ${product.stock} in stock`);
+    else toast.success("Added to cart");
+    return ok;
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please sign in to write a review");
+      void navigate({ to: "/account" });
+      return;
+    }
+    setSending(true);
+    const { error } = await supabase.from("reviews").insert({
+      product_id: product.id,
+      profile_id: user.id,
+      rating: Number(review.rating),
+      title: review.title || null,
+      body: review.text,
+    });
+    setSending(false);
+    if (error) {
+      toast.error("Could not submit your review. Please try again.");
+      return;
+    }
+    setReview({ rating: "5", title: "", text: "" });
+    toast.success("Review submitted — it appears once approved");
+  };
 
   return (
     <div className="container-page py-8">
@@ -98,7 +153,7 @@ function ProductPage() {
           <h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">{product.name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             <span>SKU: {product.sku || "—"}</span>
-            <ProductRating productId={product.id} />
+            <ProductRating {...(avg ? { rating: avg, count: reviews.length } : {})} />
           </div>
 
           <div className="mt-5 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -111,20 +166,25 @@ function ProductPage() {
             ) : (
               <p className="font-medium">Contact us for price and availability.</p>
             )}
-            {product.stock !== undefined && (
-              <p className={`mt-2 text-sm font-medium ${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
-                {product.stock > 0 ? `In stock (${product.stock} available)` : "Out of stock"}
-              </p>
-            )}
+            <p className={`mt-2 text-sm font-medium ${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
+              {product.stock > 0 ? `In stock (${product.stock} available)` : "Out of stock"}
+            </p>
 
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <Button variant="outline" onClick={() => { addToCart(product.id); toast.success("Added to cart"); }}>Add to Cart</Button>
-              <Button asChild><Link to="/checkout" onClick={() => addToCart(product.id)}>Buy Now</Link></Button>
+              <Button variant="outline" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
+              <Button
+                disabled={product.stock <= 0}
+                onClick={() => {
+                  if (add()) void navigate({ to: "/checkout" });
+                }}
+              >
+                Buy Now
+              </Button>
               <Button variant="secondary" className="sm:col-span-2" asChild>
                 <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> Ask on WhatsApp</a>
               </Button>
               <Button variant="ghost" className="sm:col-span-2" onClick={() => toggleWishlist(product.id)}>
-                {state.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+                {lists.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
               </Button>
             </div>
           </div>
@@ -134,14 +194,7 @@ function ProductPage() {
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label className="text-xs">Vehicle brand</Label>
-                {state.vehicles.length > 0 ? (
-                  <Select value={fit.brand} onValueChange={(v) => setFit({ ...fit, brand: v, model: "" })}>
-                    <SelectTrigger><SelectValue placeholder="Brand" /></SelectTrigger>
-                    <SelectContent>{state.vehicles.map((v) => <SelectItem key={v.brand} value={v.brand}>{v.brand}</SelectItem>)}</SelectContent>
-                  </Select>
-                ) : (
-                  <Input value={fit.brand} onChange={(e) => setFit({ ...fit, brand: e.target.value })} placeholder="Brand" />
-                )}
+                <Input value={fit.brand} onChange={(e) => setFit({ ...fit, brand: e.target.value })} placeholder="Brand" />
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs">Model</Label>
@@ -235,42 +288,26 @@ function ProductPage() {
               <div key={r.id} className="rounded-2xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2">
                   <span className="flex text-primary">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="size-3.5 fill-current" />)}</span>
-                  <span className="text-sm font-semibold">{r.name}</span>
+                  <span className="text-sm font-semibold">{r.title ?? r.name}</span>
                   {r.verified && <span className="rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">Verified purchase</span>}
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{r.text}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{r.body}</p>
               </div>
             ))}
           </div>
-          <form
-            className="rounded-2xl border border-border bg-surface p-5"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const bought = state.orders.some((o) => o.items.some((i) => i.productId === product.id));
-              addReview({
-                id: crypto.randomUUID(),
-                productId: product.id,
-                name: review.name,
-                rating: Number(review.rating),
-                text: review.text,
-                verified: bought,
-                approved: false,
-                createdAt: Date.now(),
-              });
-              setReview({ name: "", rating: "5", text: "" });
-              toast.success("Review submitted for moderation");
-            }}
-          >
+          <form className="rounded-2xl border border-border bg-surface p-5" onSubmit={submitReview}>
             <h3 className="font-display text-base font-bold">Write a review</h3>
             <div className="mt-3 grid gap-3">
-              <Input required placeholder="Your name" value={review.name} onChange={(e) => setReview({ ...review, name: e.target.value })} />
               <Select value={review.rating} onValueChange={(v) => setReview({ ...review, rating: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{[5, 4, 3, 2, 1].map((r) => <SelectItem key={r} value={String(r)}>{r} star{r > 1 ? "s" : ""}</SelectItem>)}</SelectContent>
               </Select>
+              <Input placeholder="Headline (optional)" value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} />
               <Textarea required rows={4} placeholder="Share your experience with this part" value={review.text} onChange={(e) => setReview({ ...review, text: e.target.value })} />
-              <Button type="submit">Submit review</Button>
-              <p className="text-xs text-muted-foreground">Reviews appear after Shaw Traders approves them in the admin panel.</p>
+              <Button type="submit" disabled={sending}>{sending ? "Submitting…" : "Submit review"}</Button>
+              <p className="text-xs text-muted-foreground">
+                {user ? "Reviews appear after Shaw Traders approves them." : "Sign in to your account to post a review."}
+              </p>
             </div>
           </form>
         </div>

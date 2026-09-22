@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
 import { useStore } from "@/hooks/useStore";
-import { BUSINESS, CATEGORIES, NAV_CATEGORIES, categoryBySlug, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
+import { categoriesQuery } from "@/lib/queries";
 
 function Logo() {
   return (
@@ -21,8 +23,12 @@ function Logo() {
 }
 
 export function Header() {
-  const { state } = useStore();
-  const cartCount = state.cart.reduce((n, c) => n + c.qty, 0);
+  const { lists } = useStore();
+  const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
+  const { data: categories } = useQuery(categoriesQuery());
+  const navCategories = NAV_CATEGORIES.map((slug) => (categories ?? []).find((c) => c.slug === slug)).filter(
+    (c): c is NonNullable<typeof c> => Boolean(c),
+  );
   const [mobileSearch, setMobileSearch] = useState(false);
   const [menu, setMenu] = useState(false);
 
@@ -47,7 +53,6 @@ export function Header() {
                 { to: "/account", label: "My Account" },
                 { to: "/about", label: "About" },
                 { to: "/contact", label: "Contact" },
-                { to: "/admin", label: "Admin Panel" },
               ].map((l) => (
                 <Link key={l.to} to={l.to} onClick={() => setMenu(false)} className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted">
                   {l.label}
@@ -56,7 +61,7 @@ export function Header() {
             </nav>
             <p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</p>
             <nav className="grid gap-0.5 text-sm">
-              {CATEGORIES.map((c) => (
+              {(categories ?? []).map((c) => (
                 <Link
                   key={c.slug}
                   to="/category/$slug"
@@ -119,15 +124,15 @@ export function Header() {
 
       <nav className="border-t border-border bg-surface">
         <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-2">
-          {NAV_CATEGORIES.map((slug) => (
+          {navCategories.map((c) => (
             <Link
-              key={slug}
+              key={c.slug}
               to="/category/$slug"
-              params={{ slug }}
+              params={{ slug: c.slug }}
               className="shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
               activeProps={{ className: "shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium bg-background text-foreground shadow-[var(--shadow-card)]" }}
             >
-              {categoryBySlug(slug)?.name}
+              {c.name}
             </Link>
           ))}
         </div>
