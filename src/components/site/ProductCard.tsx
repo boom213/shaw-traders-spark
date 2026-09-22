@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EnquiryDialog } from "@/components/site/EnquiryDialog";
 import { useStore } from "@/hooks/useStore";
 import { useT } from "@/lib/i18n";
-import { useOrderingModeSafe } from "@/hooks/useOrderingModeSafe";
+import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { imageFor } from "@/lib/placeholders";
