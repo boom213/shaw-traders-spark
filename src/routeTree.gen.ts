@@ -29,6 +29,7 @@ import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
+import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
@@ -134,6 +135,11 @@ const ManageOrdersRoute = ManageOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageSettingsRoute = ManageSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageStaffRoute = ManageStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/manage/customers'
     | '/manage/domain'
     | '/manage/orders'
+    | '/manage/settings'
     | '/manage/staff'
     | '/order/$id'
     | '/product/$slug'
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/manage/customers'
     | '/manage/domain'
     | '/manage/orders'
+    | '/manage/settings'
     | '/manage/staff'
     | '/order/$id'
     | '/product/$slug'
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/manage/customers'
     | '/manage/domain'
     | '/manage/orders'
+    | '/manage/settings'
     | '/manage/staff'
     | '/order/$id'
     | '/product/$slug'
@@ -477,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageOrdersRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/settings': {
+      id: '/manage/settings'
+      path: '/settings'
+      fullPath: '/manage/settings'
+      preLoaderRoute: typeof ManageSettingsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/staff': {
       id: '/manage/staff'
       path: '/staff'
@@ -513,6 +532,7 @@ interface ManageRouteChildren {
   ManageCustomersRoute: typeof ManageCustomersRoute
   ManageDomainRoute: typeof ManageDomainRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
+  ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
@@ -522,6 +542,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageCustomersRoute: ManageCustomersRoute,
   ManageDomainRoute: ManageDomainRoute,
   ManageOrdersRoute: ManageOrdersRoute,
+  ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
