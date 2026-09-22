@@ -43,7 +43,7 @@ afterAll(async () => {
 
 async function priceFor(tier: string, qty: number) {
   const { data, error } = await admin.rpc("tier_price", {
-    p_product_id: productId,
+    p_product: productId,
     p_tier: tier,
     p_qty: qty,
   } as never);
@@ -81,7 +81,7 @@ describe("tier price slabs", () => {
 
 describe("who gets which rate card", () => {
   it("gives a guest the retail rate", async () => {
-    const { data, error } = await admin.rpc("customer_tier", { p_profile_id: null } as never);
+    const { data, error } = await admin.rpc("customer_tier", { _user_id: null } as never);
     if (error) throw new Error(error.message);
     expect(data).toBe("retail");
   });
@@ -95,7 +95,7 @@ describe("who gets which rate card", () => {
       .limit(1)
       .maybeSingle();
     if (!data) return; // nothing unapproved on this database right now
-    const { data: tier } = await admin.rpc("customer_tier", { p_profile_id: data.id } as never);
+    const { data: tier } = await admin.rpc("customer_tier", { _user_id: data.id } as never);
     expect(tier).toBe("retail");
   });
 });
