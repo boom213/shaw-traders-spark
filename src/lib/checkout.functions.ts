@@ -75,7 +75,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       p_address: data.address as never,
       p_payment_method: data.paymentMethod,
       p_shipping_code: data.shippingCode,
-      p_coupon_code: data.coupon,
+      p_coupon_code: data.coupon ?? undefined,
     });
     if (error) return { error: friendly(error.message) };
 

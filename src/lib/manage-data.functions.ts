@@ -296,7 +296,7 @@ export const setOrderGst = createServerFn({ method: "POST" })
     const { error } = await sb.rpc("set_order_gst", {
       p_order_id: data.orderId,
       p_enabled: data.enabled,
-      p_rate: data.rate,
+      p_rate: data.rate ?? undefined,
     });
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb, actor, "order.gst_changed", "orders", data.orderId, data as never);
