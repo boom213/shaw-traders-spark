@@ -28,9 +28,13 @@ function EnquiriesPage() {
     queryFn: () => listEnquiries({ data: { status: tab } }),
   });
 
-  const move = async (id: string, status: string) => {
+  const move = async (id: string, status: string): Promise<void> => {
     const res = await setEnquiryStatus({ data: { id, status } });
-    if (!res.ok) return toast.error(res.error ?? "Could not update");
+    if (!res.ok) {
+      toast.error(res.error ?? "Could not update");
+      return;
+    }
+
     toast.success("Updated");
     void queryClient.invalidateQueries({ queryKey: ["manage-enquiries"] });
   };
