@@ -54,7 +54,7 @@ export const paymentsAvailable = createServerFn({ method: "GET" }).handler(async
  * recomputed in the database; nothing the browser sends about money is trusted.
  */
 export const startCheckout = createServerFn({ method: "POST" })
-  .inputValidator((data: { items: CartItemInput[]; address: Address; shippingCode: string; paymentMethod: string; coupon?: string; transportName?: string; lrNumber?: string }) => ({
+  .inputValidator((data: { items: CartItemInput[]; address: Address; shippingCode: string; paymentMethod: string; coupon?: string; transportName?: string; lrNumber?: string; quoteToken?: string }) => ({
     items: cleanItems(data?.items),
     address: cleanAddress(data?.address),
     shippingCode: ["standard", "express", "pickup", "freight"].includes(String(data?.shippingCode)) ? String(data?.shippingCode) : "standard",
@@ -64,7 +64,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     coupon: String(data?.coupon ?? "").trim().slice(0, 40) || null,
     transportName: String(data?.transportName ?? "").trim().slice(0, 120),
     lrNumber: String(data?.lrNumber ?? "").trim().slice(0, 60),
+    quoteToken: /^[0-9a-f-]{36}$/i.test(String(data?.quoteToken ?? "")) ? String(data?.quoteToken) : null,
   }))
+
   .handler(async ({ data }): Promise<StartCheckoutResult> => {
     if (data.items.length === 0) return { error: "Your cart is empty." };
     if (data.address.phone.length !== 10 || data.address.pincode.length !== 6 || !data.address.name || !data.address.line1) {
