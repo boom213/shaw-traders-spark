@@ -36,6 +36,13 @@
       "when": 1790106227836,
       "tag": "0004_order_notifications_tracking_refunds",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790106812546,
+      "tag": "0005_counter_shop_manage_tools",
+      "breakpoints": true
     }
   ]
 }

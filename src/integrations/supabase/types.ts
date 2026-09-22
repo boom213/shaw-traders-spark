@@ -618,6 +618,7 @@ export type Database = {
           mrp: number | null
           name: string
           price: number | null
+          reorder_threshold: number | null
           shipping_info: string | null
           sku: string
           slug: string
@@ -644,6 +645,7 @@ export type Database = {
           mrp?: number | null
           name: string
           price?: number | null
+          reorder_threshold?: number | null
           shipping_info?: string | null
           sku: string
           slug: string
@@ -670,6 +672,7 @@ export type Database = {
           mrp?: number | null
           name?: string
           price?: number | null
+          reorder_threshold?: number | null
           shipping_info?: string | null
           sku?: string
           slug?: string
@@ -813,6 +816,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      search_misses: {
+        Row: {
+          hits: number
+          last_at: string
+          term: string
+        }
+        Insert: {
+          hits?: number
+          last_at?: string
+          term: string
+        }
+        Update: {
+          hits?: number
+          last_at?: string
+          term?: string
+        }
+        Relationships: []
       }
       shop_settings: {
         Row: {
@@ -1014,6 +1035,7 @@ export type Database = {
         }[]
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      log_search_miss: { Args: { p_term: string }; Returns: undefined }
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: boolean
