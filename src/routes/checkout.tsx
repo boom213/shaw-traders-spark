@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Check, CreditCard, MapPin, Truck, Wallet } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, Building2, Check, CreditCard, Landmark, MapPin, Truck, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,12 +13,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { COUPON_KEY, readCoupon, useCartTotals } from "@/routes/cart";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
+import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
+import { payWithRazorpay } from "@/lib/razorpay-client";
+import { abandonPayment, paymentsAvailable, retryPayment, startCheckout, verifyPayment } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Shaw Traders EV" },
-      { name: "description", content: "Enter your delivery address, choose a delivery speed and payment method to complete your EV parts order with Shaw Traders EV." },
+      { name: "description", content: "Enter your delivery address, choose a delivery speed and pay securely by UPI, card, netbanking, wallet or cash on delivery." },
       { property: "og:title", content: "Checkout — Shaw Traders EV" },
       { property: "og:description", content: "Secure checkout for EV spare parts and accessories." },
       { property: "og:type", content: "website" },
@@ -29,24 +34,38 @@ export const Route = createFileRoute("/checkout")({
 });
 
 const DELIVERY = [
-  { id: "Standard Delivery", note: "3–6 working days", fee: 0 },
-  { id: "Express Delivery", note: "1–3 working days", fee: 120 },
-  { id: "Pickup at Bud Bud counter", note: "Ready in 2 hours", fee: 0 },
-];
+  { code: "standard", id: "Standard Delivery", note: "3–6 working days", fee: 0 },
+  { code: "express", id: "Express Delivery", note: "1–3 working days", fee: 120 },
+  { code: "pickup", id: "Pickup at Bud Bud counter", note: "Ready in 2 hours", fee: 0 },
+] as const;
 
 const PAYMENT = [
-  { id: "UPI", note: "Google Pay, PhonePe, Paytm", icon: Wallet },
-  { id: "Card", note: "Debit or credit card", icon: CreditCard },
-  { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck },
-];
+  { id: "UPI", note: "Google Pay, PhonePe, Paytm", icon: Wallet, online: true },
+  { id: "Card", note: "Debit or credit card", icon: CreditCard, online: true },
+  { id: "Netbanking", note: "All major Indian banks", icon: Landmark, online: true },
+  { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck, online: false },
+] as const;
+
+type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
 
 function CheckoutPage() {
   const navigate = useNavigate();
   const { clearCart, user } = useStore();
   const coupon = readCoupon();
-  const { lines, loading, subtotal, discount, shipping, total } = useCartTotals(coupon);
+  const { lines, loading, subtotal, discount } = useCartTotals(coupon);
+  const { data: settings } = useQuery(shopSettingsQuery());
+  const online = useServerFn(paymentsAvailable);
+  const { data: availability } = useQuery({ queryKey: ["payments-available"], queryFn: () => online() });
+
+  const start = useServerFn(startCheckout);
+  const verify = useServerFn(verifyPayment);
+  const retry = useServerFn(retryPayment);
+  const abandon = useServerFn(abandonPayment);
+
   const [step, setStep] = useState(1);
   const [placing, setPlacing] = useState(false);
+  const [pending, setPending] = useState<PendingOrder | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
   const [addr, setAddr] = useState({
     name: "",
     phone: "",
@@ -56,16 +75,20 @@ function CheckoutPage() {
     state: "West Bengal",
     pincode: "",
   });
-  const [delivery, setDelivery] = useState(DELIVERY[0]!);
-  const [payment, setPayment] = useState(PAYMENT[0]!.id);
+  const [delivery, setDelivery] = useState<(typeof DELIVERY)[number]>(DELIVERY[0]);
+  const [payment, setPayment] = useState<string>(PAYMENT[0].id);
 
-  const grand = total + delivery.fee;
+  const base = Math.max(0, subtotal - discount + delivery.fee);
+  const taxed = settings ? withTax(base, settings) : { total: base, tax: 0 };
+  const grand = taxed.total;
+  const onlineReady = availability?.online === true;
+  const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
 
   if (loading) {
     return <div className="container-page py-16 text-center text-sm text-muted-foreground">Loading your cart…</div>;
   }
 
-  if (lines.length === 0) {
+  if (!pending && lines.length === 0) {
     return (
       <div className="container-page py-16 text-center">
         <SectionHeading title="Checkout" />
@@ -74,6 +97,55 @@ function CheckoutPage() {
       </div>
     );
   }
+
+  const finish = async (order: PendingOrder, message: string) => {
+    if (user) {
+      await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone });
+    }
+    clearCart();
+    window.localStorage.removeItem(COUPON_KEY);
+    toast.success(message);
+    void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
+  };
+
+  /** Open Razorpay for an order that is waiting for payment. */
+  const runPayment = async (
+    order: PendingOrder,
+    rzp: { keyId: string; orderId: string; amountPaise: number },
+  ) => {
+    setFailure(null);
+    const result = await payWithRazorpay({
+      keyId: rzp.keyId,
+      orderId: rzp.orderId,
+      amountPaise: rzp.amountPaise,
+      name: "Shaw Traders EV",
+      description: `Order ${order.humanId}`,
+      prefill: { name: addr.name, contact: addr.phone, ...(user?.email ? { email: user.email } : {}) },
+    });
+
+    if (result.status === "success") {
+      const check = await verify({
+        data: {
+          orderId: order.orderId,
+          razorpayOrderId: result.payload.razorpay_order_id,
+          paymentId: result.payload.razorpay_payment_id,
+          signature: result.payload.razorpay_signature,
+        },
+      });
+      if (check.paid) {
+        await finish(order, `Payment received · order ${order.humanId}`);
+        return;
+      }
+      setFailure(check.error ?? "We could not confirm this payment yet.");
+      return;
+    }
+
+    setFailure(
+      result.status === "dismissed"
+        ? "You closed the payment window before it finished. Your cart is safe — you can pay again."
+        : result.message,
+    );
+  };
 
   const placeOrder = async () => {
     const short = lines.find((l) => l.product.stock < l.qty);
@@ -85,38 +157,76 @@ function CheckoutPage() {
       );
       return;
     }
+    if (payment === "Cash on Delivery" && !cod.allowed) return toast.error(cod.reason);
+    if (payment !== "Cash on Delivery" && !onlineReady) {
+      return toast.error("Online payment is not switched on yet. Please choose cash on delivery.");
+    }
 
     setPlacing(true);
-    const { data, error } = await supabase.rpc("place_order", {
-      p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })) as never,
-      p_address: addr as never,
-      p_payment_method: payment,
-      p_shipping_method: `${delivery.id} (${delivery.note})`,
-      p_shipping_fee: shipping + delivery.fee,
-      ...(coupon ? { p_coupon_code: coupon.code } : {}),
+    const res = await start({
+      data: {
+        items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+        address: addr,
+        shippingCode: delivery.code,
+        paymentMethod: payment,
+        ...(coupon ? { coupon: coupon.code } : {}),
+      },
     });
     setPlacing(false);
 
-    if (error || !data) {
-      toast.error(error?.message?.replace(/^.*?:\s*/, "") ?? "Could not place the order. Please try again.");
-      return;
-    }
-    const row = (Array.isArray(data) ? data[0] : data) as
-      | { order_id: string; human_id: string; public_token: string }
-      | undefined;
-    if (!row) {
-      toast.error("Could not place the order. Please try again.");
+    if ("error" in res) return toast.error(res.error);
+
+    const order: PendingOrder = { orderId: res.orderId, humanId: res.humanId, token: res.token, total: res.total };
+
+    if (!res.razorpay) {
+      await finish(order, `Order ${res.humanId} placed — pay cash on delivery`);
       return;
     }
 
-    if (user) {
-      await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone, email: user.email ?? null });
-    }
-    clearCart();
-    window.localStorage.removeItem(COUPON_KEY);
-    toast.success(`Order ${row.human_id} placed`);
-    void navigate({ to: "/order/$id", params: { id: row.order_id }, search: { t: row.public_token } });
+    setPending(order);
+    await runPayment(order, res.razorpay);
   };
+
+  const tryAgain = async () => {
+    if (!pending) return;
+    setPlacing(true);
+    const res = await retry({ data: { orderId: pending.orderId } });
+    setPlacing(false);
+    if ("error" in res) return toast.error(res.error);
+    await runPayment(pending, { keyId: res.keyId, orderId: res.razorpayOrderId, amountPaise: res.amountPaise });
+  };
+
+  const cancelOrder = async () => {
+    if (!pending) return;
+    await abandon({ data: { orderId: pending.orderId } });
+    setPending(null);
+    setFailure(null);
+    toast.message("Payment cancelled. Your cart is still here.");
+  };
+
+  // Retry screen — shown after a failed, cancelled or timed-out payment.
+  if (pending && failure) {
+    return (
+      <div className="container-page grid place-items-center py-16">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">
+          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-surface text-primary">
+            <AlertTriangle className="size-6" />
+          </span>
+          <h1 className="mt-4 font-display text-2xl font-bold">Payment not completed</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{failure}</p>
+          <p className="mt-3 rounded-xl border border-border bg-surface p-3 text-sm">
+            Order <strong>{pending.humanId}</strong> · {formatINR(pending.total)} is held for you. Nothing has been charged.
+          </p>
+          <div className="mt-5 grid gap-2">
+            <Button size="lg" disabled={placing} onClick={() => void tryAgain()}>
+              {placing ? "Opening payment…" : `Pay ${formatINR(pending.total)} again`}
+            </Button>
+            <Button variant="outline" onClick={() => void cancelOrder()}>Cancel this order</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const steps = [
     { n: 1, label: "Address", icon: MapPin },
@@ -178,9 +288,9 @@ function CheckoutPage() {
               <div className="grid gap-2">
                 {DELIVERY.map((d) => (
                   <button
-                    key={d.id}
+                    key={d.code}
                     onClick={() => setDelivery(d)}
-                    className={cn("flex items-center justify-between rounded-xl border px-4 py-3 text-left", delivery.id === d.id ? "border-primary bg-accent" : "border-border")}
+                    className={cn("flex items-center justify-between rounded-xl border px-4 py-3 text-left", delivery.code === d.code ? "border-primary bg-accent" : "border-border")}
                   >
                     <span>
                       <span className="block text-sm font-semibold">{d.id}</span>
@@ -201,27 +311,41 @@ function CheckoutPage() {
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Payment method</h3>
               <div className="grid gap-2">
-                {PAYMENT.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setPayment(p.id)}
-                    className={cn("flex items-center gap-3 rounded-xl border px-4 py-3 text-left", payment === p.id ? "border-primary bg-accent" : "border-border")}
-                  >
-                    <p.icon className="size-5 text-primary" />
-                    <span>
-                      <span className="block text-sm font-semibold">{p.id}</span>
-                      <span className="block text-xs text-muted-foreground">{p.note}</span>
-                    </span>
-                  </button>
-                ))}
+                {PAYMENT.map((p) => {
+                  const disabled = p.online ? !onlineReady : !cod.allowed;
+                  return (
+                    <button
+                      key={p.id}
+                      disabled={disabled}
+                      onClick={() => setPayment(p.id)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl border px-4 py-3 text-left",
+                        payment === p.id ? "border-primary bg-accent" : "border-border",
+                        disabled && "cursor-not-allowed opacity-50",
+                      )}
+                    >
+                      <p.icon className="size-5 text-primary" />
+                      <span>
+                        <span className="block text-sm font-semibold">{p.id}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {p.online ? (onlineReady ? p.note : "Not available yet") : cod.allowed ? p.note : cod.reason}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-xs text-muted-foreground">
-                Online payments are confirmed by our team on WhatsApp before dispatch. Items marked "price on request" are billed separately.
+                Online payments are handled securely by Razorpay — UPI, cards, netbanking and wallets. Your cart stays untouched until the payment succeeds.
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
                 <Button size="lg" disabled={placing} onClick={() => void placeOrder()}>
-                  {placing ? "Placing order…" : `Place order · ${formatINR(grand)}`}
+                  {placing
+                    ? "Please wait…"
+                    : payment === "Cash on Delivery"
+                      ? `Place order · ${formatINR(grand)}`
+                      : `Pay ${formatINR(grand)}`}
                 </Button>
               </div>
             </div>
@@ -243,10 +367,22 @@ function CheckoutPage() {
             {discount > 0 && (
               <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd className="text-primary">−{formatINR(discount)}</dd></div>
             )}
-            <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{shipping === 0 ? "Free" : formatINR(shipping)}</dd></div>
             <div className="flex justify-between"><dt className="text-muted-foreground">{delivery.id}</dt><dd>{delivery.fee === 0 ? "Free" : formatINR(delivery.fee)}</dd></div>
+            {settings?.gstEnabled && taxed.tax > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">
+                  GST {settings.gstRate}% {settings.pricesIncludeGst ? "(included)" : ""}
+                </dt>
+                <dd>{formatINR(taxed.tax)}</dd>
+              </div>
+            )}
             <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(grand)}</dd></div>
           </dl>
+          {settings?.gstin && (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Building2 className="size-3.5" /> GSTIN {settings.gstin}
+            </p>
+          )}
         </aside>
       </div>
     </div>
