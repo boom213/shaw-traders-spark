@@ -211,7 +211,7 @@ function OrderActions({ order, token, proof }: { order: OrderView; token: string
     setBusy(true);
     const res = await requestOrderChange({ data: { token, ...(proof ? { phoneLast4: proof } : {}), kind, reason, details } });
     setBusy(false);
-    if (!res.ok) return toast.error(res.error ?? "Could not send the request");
+    if ("error" in res) return toast.error(res.error);
     setSent(true);
     setKind(null);
     toast.success("Request sent. We will get back to you shortly.");
