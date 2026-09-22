@@ -43,6 +43,7 @@ import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
+import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
@@ -224,6 +225,11 @@ const ManageSummaryRoute = ManageSummaryRouteImport.update({
   path: '/summary',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageTradeRoute = ManageTradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => ManageRoute,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/trade/pad': typeof TradePadRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/trade/pad': typeof TradePadRoute
@@ -405,6 +413,7 @@ export interface FileRoutesById {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/trade/pad': typeof TradePadRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
     | '/trade/pad'
@@ -498,6 +508,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
     | '/trade/pad'
@@ -544,6 +555,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
     | '/trade/pad'
@@ -831,6 +843,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageSummaryRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/trade': {
+      id: '/manage/trade'
+      path: '/trade'
+      fullPath: '/manage/trade'
+      preLoaderRoute: typeof ManageTradeRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -916,6 +935,7 @@ interface ManageRouteChildren {
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
+  ManageTradeRoute: typeof ManageTradeRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
 
@@ -931,6 +951,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
+  ManageTradeRoute: ManageTradeRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
 
