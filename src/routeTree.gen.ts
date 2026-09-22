@@ -46,6 +46,7 @@ import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
 import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
+import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -240,6 +241,11 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
   path: '/product/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuoteTokenRoute = QuoteTokenRouteImport.update({
+  id: '/quote/$token',
+  path: '/quote/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradePadRoute = TradePadRouteImport.update({
   id: '/pad',
   path: '/pad',
@@ -322,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -368,6 +375,7 @@ export interface FileRoutesByTo {
   '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -416,6 +424,7 @@ export interface FileRoutesById {
   '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
@@ -465,6 +474,7 @@ export interface FileRouteTypes {
     | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/quote/$token'
     | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
@@ -511,6 +521,7 @@ export interface FileRouteTypes {
     | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/quote/$token'
     | '/trade/pad'
     | '/manage'
     | '/api/public/client-error'
@@ -558,6 +569,7 @@ export interface FileRouteTypes {
     | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/quote/$token'
     | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
+  QuoteTokenRoute: typeof QuoteTokenRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
@@ -864,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quote/$token': {
+      id: '/quote/$token'
+      path: '/quote/$token'
+      fullPath: '/quote/$token'
+      preLoaderRoute: typeof QuoteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trade/pad': {
       id: '/trade/pad'
       path: '/pad'
@@ -993,6 +1013,7 @@ const rootRouteChildren: RootRouteChildren = {
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
+  QuoteTokenRoute: QuoteTokenRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
