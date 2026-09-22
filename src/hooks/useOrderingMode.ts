@@ -14,7 +14,10 @@ export function useSiteOrdering(): { mode: OrderingMode; banner: string | null; 
 }
 
 /** How this particular part may be bought: product beats category beats site. */
-export function useProductOrdering(product: Pick<Product, "orderingMode" | "categoryOrderingMode">): OrderingMode {
+export function useProductOrdering(product: {
+  orderingMode?: OrderingMode | null;
+  categoryOrderingMode?: OrderingMode | null;
+}): OrderingMode {
   const { mode } = useSiteOrdering();
   return effectiveMode({
     site: mode,
