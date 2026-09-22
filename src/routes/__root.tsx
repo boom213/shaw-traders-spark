@@ -95,6 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "EV spare parts, batteries, chargers, motors and controllers from Shaw Traders EV, Defence Colony, Bud Bud, Bardhaman.",
       },
       { name: "author", content: "Shaw Traders EV" },
+      { name: "google-site-verification", content: "trvCjda-37PeHboaItlX_sikYg_NNxdrA_2eoj8-Zng" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
