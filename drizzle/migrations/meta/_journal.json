@@ -141,6 +141,13 @@
       "when": 1790114182370,
       "tag": "0019_drop_old_create_order_overload",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790114789051,
+      "tag": "0020_scooters_vehicles",
+      "breakpoints": true
     }
   ]
 }

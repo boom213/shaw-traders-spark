@@ -118,6 +118,41 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_events: {
+        Row: {
+          booking_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           blurb: string | null
@@ -252,6 +287,121 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: []
+      }
+      exchange_valuations: {
+        Row: {
+          condition: string | null
+          created_at: string
+          current_brand: string | null
+          current_model: string | null
+          handled_by: string | null
+          id: string
+          km_run: number | null
+          name: string
+          note: string | null
+          phone: string
+          photo_url: string | null
+          product_id: string | null
+          quoted_value: number | null
+          status: string
+          year: number | null
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string
+          current_brand?: string | null
+          current_model?: string | null
+          handled_by?: string | null
+          id?: string
+          km_run?: number | null
+          name: string
+          note?: string | null
+          phone: string
+          photo_url?: string | null
+          product_id?: string | null
+          quoted_value?: number | null
+          status?: string
+          year?: number | null
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string
+          current_brand?: string | null
+          current_model?: string | null
+          handled_by?: string | null
+          id?: string
+          km_run?: number | null
+          name?: string
+          note?: string | null
+          phone?: string
+          photo_url?: string | null
+          product_id?: string | null
+          quoted_value?: number | null
+          status?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_valuations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_enquiries: {
+        Row: {
+          created_at: string
+          down_payment: number | null
+          employment: string | null
+          handled_by: string | null
+          id: string
+          monthly_income: number | null
+          name: string
+          note: string | null
+          phone: string
+          product_id: string | null
+          status: string
+          tenure_months: number | null
+        }
+        Insert: {
+          created_at?: string
+          down_payment?: number | null
+          employment?: string | null
+          handled_by?: string | null
+          id?: string
+          monthly_income?: number | null
+          name: string
+          note?: string | null
+          phone: string
+          product_id?: string | null
+          status?: string
+          tenure_months?: number | null
+        }
+        Update: {
+          created_at?: string
+          down_payment?: number | null
+          employment?: string | null
+          handled_by?: string | null
+          id?: string
+          monthly_income?: number | null
+          name?: string
+          note?: string | null
+          phone?: string
+          product_id?: string | null
+          status?: string
+          tenure_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_enquiries_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       health_alerts: {
         Row: {
@@ -855,6 +1005,7 @@ export type Database = {
           order_multiple: number
           ordering_mode: Database["public"]["Enums"]["ordering_mode"] | null
           price: number | null
+          product_kind: Database["public"]["Enums"]["product_kind"]
           rack_location: string | null
           reorder_threshold: number | null
           shipping_info: string | null
@@ -889,6 +1040,7 @@ export type Database = {
           order_multiple?: number
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
+          product_kind?: Database["public"]["Enums"]["product_kind"]
           rack_location?: string | null
           reorder_threshold?: number | null
           shipping_info?: string | null
@@ -923,6 +1075,7 @@ export type Database = {
           order_multiple?: number
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
+          product_kind?: Database["public"]["Enums"]["product_kind"]
           rack_location?: string | null
           reorder_threshold?: number | null
           shipping_info?: string | null
@@ -1113,6 +1266,157 @@ export type Database = {
         }
         Relationships: []
       }
+      service_bookings: {
+        Row: {
+          created_at: string
+          handled_by: string | null
+          id: string
+          issue: string | null
+          name: string
+          note: string | null
+          phone: string
+          preferred_date: string | null
+          product_id: string | null
+          registration_id: string | null
+          slot: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          issue?: string | null
+          name: string
+          note?: string | null
+          phone: string
+          preferred_date?: string | null
+          product_id?: string | null
+          registration_id?: string | null
+          slot?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          issue?: string | null
+          name?: string
+          note?: string | null
+          phone?: string
+          preferred_date?: string | null
+          product_id?: string | null
+          registration_id?: string | null
+          slot?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_bookings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_bookings_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_records: {
+        Row: {
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          next_due_on: string | null
+          odometer: number | null
+          performed_on: string
+          registration_id: string
+          work_done: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_due_on?: string | null
+          odometer?: number | null
+          performed_on?: string
+          registration_id: string
+          work_done: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_due_on?: string | null
+          odometer?: number | null
+          performed_on?: string
+          registration_id?: string
+          work_done?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_records_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_schedule: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          due_km: number | null
+          due_on: string
+          id: string
+          label: string
+          note: string | null
+          registration_id: string
+          reminded_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          due_km?: number | null
+          due_on: string
+          id?: string
+          label: string
+          note?: string | null
+          registration_id: string
+          reminded_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          due_km?: number | null
+          due_on?: string
+          id?: string
+          label?: string
+          note?: string | null
+          registration_id?: string
+          reminded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_schedule_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_settings: {
         Row: {
           billing_address: string | null
@@ -1261,6 +1565,53 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_ride_requests: {
+        Row: {
+          created_at: string
+          handled_by: string | null
+          id: string
+          name: string
+          note: string | null
+          phone: string
+          preferred_date: string | null
+          product_id: string | null
+          slot: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          name: string
+          note?: string | null
+          phone: string
+          preferred_date?: string | null
+          product_id?: string | null
+          slot?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          handled_by?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          phone?: string
+          preferred_date?: string | null
+          product_id?: string | null
+          slot?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_ride_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -1434,6 +1785,284 @@ export type Database = {
           },
         ]
       }
+      vehicle_bookings: {
+        Row: {
+          address: string | null
+          balance_due: number
+          colour: string | null
+          created_at: string
+          customer_name: string
+          email: string | null
+          expected_delivery: string | null
+          human_id: string
+          id: string
+          note: string | null
+          on_road_total: number
+          payment_provider: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          phone: string
+          price_breakdown: Json
+          product_id: string
+          profile_id: string | null
+          provider_order_id: string | null
+          provider_payment_id: string | null
+          public_token: string
+          status: Database["public"]["Enums"]["booking_status"]
+          token_amount: number
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          address?: string | null
+          balance_due?: number
+          colour?: string | null
+          created_at?: string
+          customer_name: string
+          email?: string | null
+          expected_delivery?: string | null
+          human_id: string
+          id?: string
+          note?: string | null
+          on_road_total?: number
+          payment_provider?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          phone: string
+          price_breakdown?: Json
+          product_id: string
+          profile_id?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          public_token?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          token_amount?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          address?: string | null
+          balance_due?: number
+          colour?: string | null
+          created_at?: string
+          customer_name?: string
+          email?: string | null
+          expected_delivery?: string | null
+          human_id?: string
+          id?: string
+          note?: string | null
+          on_road_total?: number
+          payment_provider?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          phone?: string
+          price_breakdown?: Json
+          product_id?: string
+          profile_id?: string | null
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          public_token?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          token_amount?: number
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_bookings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_bookings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_pricing: {
+        Row: {
+          accessories: number
+          ex_showroom: number
+          insurance: number
+          on_road: number | null
+          product_id: string
+          rto: number
+          subsidy: number
+          token_amount: number
+          updated_at: string
+        }
+        Insert: {
+          accessories?: number
+          ex_showroom?: number
+          insurance?: number
+          on_road?: number | null
+          product_id: string
+          rto?: number
+          subsidy?: number
+          token_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          accessories?: number
+          ex_showroom?: number
+          insurance?: number
+          on_road?: number | null
+          product_id?: string
+          rto?: number
+          subsidy?: number
+          token_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_pricing_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_registrations: {
+        Row: {
+          booking_id: string | null
+          chassis_number: string | null
+          created_at: string
+          delivered_on: string | null
+          id: string
+          motor_number: string | null
+          note: string | null
+          owner_name: string
+          phone: string
+          product_id: string | null
+          profile_id: string | null
+          registration_number: string | null
+          updated_at: string
+          warranty_start: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          chassis_number?: string | null
+          created_at?: string
+          delivered_on?: string | null
+          id?: string
+          motor_number?: string | null
+          note?: string | null
+          owner_name: string
+          phone: string
+          product_id?: string | null
+          profile_id?: string | null
+          registration_number?: string | null
+          updated_at?: string
+          warranty_start?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          chassis_number?: string | null
+          created_at?: string
+          delivered_on?: string | null
+          id?: string
+          motor_number?: string | null
+          note?: string | null
+          owner_name?: string
+          phone?: string
+          product_id?: string | null
+          profile_id?: string | null
+          registration_number?: string | null
+          updated_at?: string
+          warranty_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_registrations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "vehicle_bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_registrations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_registrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_specs: {
+        Row: {
+          battery_capacity: string | null
+          battery_type: string | null
+          certified_range: string | null
+          charging_time: string | null
+          colours: string[]
+          kerb_weight: string | null
+          motor_power: string | null
+          product_id: string
+          registration_required: boolean
+          service_interval_km: number
+          service_interval_months: number
+          top_speed: string | null
+          updated_at: string
+          variant: string | null
+          warranty_km: number | null
+          warranty_years: number | null
+        }
+        Insert: {
+          battery_capacity?: string | null
+          battery_type?: string | null
+          certified_range?: string | null
+          charging_time?: string | null
+          colours?: string[]
+          kerb_weight?: string | null
+          motor_power?: string | null
+          product_id: string
+          registration_required?: boolean
+          service_interval_km?: number
+          service_interval_months?: number
+          top_speed?: string | null
+          updated_at?: string
+          variant?: string | null
+          warranty_km?: number | null
+          warranty_years?: number | null
+        }
+        Update: {
+          battery_capacity?: string | null
+          battery_type?: string | null
+          certified_range?: string | null
+          charging_time?: string | null
+          colours?: string[]
+          kerb_weight?: string | null
+          motor_power?: string | null
+          product_id?: string
+          registration_required?: boolean
+          service_interval_km?: number
+          service_interval_months?: number
+          top_speed?: string | null
+          updated_at?: string
+          variant?: string | null
+          warranty_km?: number | null
+          warranty_years?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_specs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: true
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_pending_statuses: {
         Row: {
           created_at: string
@@ -1502,6 +2131,29 @@ export type Database = {
           product_id: string
           sold: number
         }[]
+      }
+      booking_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          balance_due: number
+          colour: string
+          created_at: string
+          events: Json
+          expected_delivery: string
+          human_id: string
+          model_name: string
+          model_slug: string
+          on_road_total: number
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          price_breakdown: Json
+          status: Database["public"]["Enums"]["booking_status"]
+          token_amount: number
+          variant: string
+        }[]
+      }
+      build_service_schedule: {
+        Args: { p_registration: string }
+        Returns: number
       }
       create_order: {
         Args: {
@@ -1605,6 +2257,13 @@ export type Database = {
       trade_overdue: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
+      booking_status:
+        | "booked"
+        | "allotted"
+        | "rto_in_progress"
+        | "ready_for_delivery"
+        | "delivered"
+        | "cancelled"
       coupon_type: "percent" | "fixed"
       customer_type: "retail" | "trade"
       ledger_kind: "invoice" | "payment" | "adjustment"
@@ -1620,6 +2279,7 @@ export type Database = {
       ordering_mode: "full" | "enquiry" | "browse"
       payment_status: "pending" | "paid" | "failed" | "refunded" | "cod_pending"
       price_tier: "retail" | "trade" | "distributor"
+      product_kind: "part" | "vehicle"
       product_status: "draft" | "visible" | "hidden"
       review_status: "pending" | "approved" | "rejected"
       staff_role: "super_admin" | "owner" | "manager" | "staff"
@@ -1755,6 +2415,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      booking_status: [
+        "booked",
+        "allotted",
+        "rto_in_progress",
+        "ready_for_delivery",
+        "delivered",
+        "cancelled",
+      ],
       coupon_type: ["percent", "fixed"],
       customer_type: ["retail", "trade"],
       ledger_kind: ["invoice", "payment", "adjustment"],
@@ -1771,6 +2439,7 @@ export const Constants = {
       ordering_mode: ["full", "enquiry", "browse"],
       payment_status: ["pending", "paid", "failed", "refunded", "cod_pending"],
       price_tier: ["retail", "trade", "distributor"],
+      product_kind: ["part", "vehicle"],
       product_status: ["draft", "visible", "hidden"],
       review_status: ["pending", "approved", "rejected"],
       staff_role: ["super_admin", "owner", "manager", "staff"],
