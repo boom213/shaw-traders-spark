@@ -116,7 +116,13 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {product.price === undefined ? (
+        {mode === "browse" ? null : mode === "enquiry" ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" onClick={() => setEnquiry(true)}>
+              Check availability
+            </Button>
+          </div>
+        ) : product.price === undefined ? (
           <div className="mt-auto grid pt-3">
             <Button size="sm" asChild>
               <a
@@ -145,6 +151,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         )}
       </div>
+      <EnquiryDialog product={product} open={enquiry} onOpenChange={setEnquiry} />
     </article>
   );
 }
