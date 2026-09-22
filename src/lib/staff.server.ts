@@ -41,7 +41,7 @@ export async function staffContext(): Promise<StaffContext | null> {
     userId: user.id,
     email: profile?.email ?? user.email ?? "",
     name: profile?.full_name ?? user.email ?? "Staff",
-    role: role.role as StaffRole,
+    role: role as StaffRole,
   };
 }
 
