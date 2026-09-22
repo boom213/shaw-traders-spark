@@ -1,27 +1,24 @@
-# Shaw Traders EV — final pass
+# Shaw Traders EV — roadmap
 
-## Tests (first)
-- [ ] Vitest setup
-- [ ] Payment signature verification tests (checkout + webhook HMAC)
-- [ ] GST / COD / delivery pure-logic tests
-- [ ] Integration tests against create_order / mark_order_paid / release_order (stock, coupons, COD limit, oversell race)
+## Done (final pass)
+- Automated tests: payment signature checks, GST/COD/delivery rules, and live
+  database tests for pricing, stock, the last-item race, coupons, paid/refund
+  and release paths (39 tests, `bun run test`).
+- SEO: sitemap.xml built from the catalogue (887 URLs) + robots.txt reference,
+  Product / BreadcrumbList / LocalBusiness structured data, per-product
+  database-driven titles, descriptions, canonical and share images.
+- Performance: lazy below-the-fold images with fixed dimensions, hero preloaded,
+  manager panel split out of the customer bundle, query caching tuned.
+- Accessibility: skip link, single main landmark, visible focus rings,
+  labelled controls, alt text on product images.
+- Bengali and Hindi alongside English for the site's own wording.
+- Installable app with offline browsing of pages and photos already viewed.
+- Error reporting from customers' phones + /api/public/health uptime probe,
+  surfaced in the manager overview.
 
-## SEO
-- [ ] /sitemap.xml from the database (products, categories, static pages) + robots.txt reference
-- [ ] JSON-LD: Product on product pages, BreadcrumbList on category pages, LocalBusiness on home
-- [ ] Canonical + DB-driven unique title/description per product and category
-- [ ] og:image / twitter:image per product from the product photo (absolute URL)
-
-## Performance
-- [ ] Lazy-load below-the-fold images, explicit width/height, WebP
-- [ ] Preload the home hero (LCP)
-- [ ] Manager panel out of the customer bundle
-- [ ] Query cache tuning for product/category
-
-## Accessibility
-- [ ] Keyboard nav, visible focus rings, labelled fields, alt text, AA contrast
-
-## Also
-- [ ] Bengali + Hindi alongside English
-- [ ] PWA install + offline browsing of viewed products
-- [ ] Error monitoring + uptime alerts
+## Waiting on the owner
+- Prices and stock for the catalogue (Stock & Photos / Price List).
+- Razorpay keys for online payment.
+- WhatsApp Business connection so order messages actually deliver.
+- Registered business name, GSTIN and grievance officer details in Settings.
+- An external uptime monitor pointed at /api/public/health.
