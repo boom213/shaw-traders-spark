@@ -4,6 +4,8 @@ import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "luc
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
+import { VehiclePicker } from "@/components/site/VehiclePicker";
+
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
