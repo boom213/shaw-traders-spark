@@ -15,6 +15,13 @@
       "when": 1790102729800,
       "tag": "0001_store_runtime",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790104522331,
+      "tag": "0002_staff_auth_and_rate_limits",
+      "breakpoints": true
     }
   ]
 }
