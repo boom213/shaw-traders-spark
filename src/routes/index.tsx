@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
-import heroImg from "@/assets/hero-ev.jpg";
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
