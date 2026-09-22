@@ -150,9 +150,9 @@ describe("create_order", () => {
     expect(res.error).toMatch(/contact us for the price/i);
   });
 
-  it("refuses an inactive product", async () => {
+  it("refuses a withdrawn product", async () => {
     const id = await makeProduct(500, 5);
-    await sb.from("products").update({ is_active: false }).eq("id", id);
+    await sb.from("products").update({ status: "hidden" }).eq("id", id);
     const res = await placeOrder([{ product_id: id, qty: 1 }], "Cash on Delivery");
     expect(res.error).toMatch(/no longer available/i);
   });
