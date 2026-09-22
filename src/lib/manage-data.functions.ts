@@ -226,3 +226,79 @@ export const saveProducts = createServerFn({ method: "POST" })
     });
     return { saved: data.updates.length };
   });
+
+export type ShopSettingsRow = {
+  gstEnabled: boolean;
+  gstRate: number;
+  pricesIncludeGst: boolean;
+  gstin: string;
+  legalName: string;
+  billingAddress: string;
+  codEnabled: boolean;
+  codLimit: number;
+  codPincodes: string;
+  onlinePayments: boolean;
+};
+
+/** Shop-wide payment, GST and cash-on-delivery settings. */
+export const getShopSettings = createServerFn({ method: "POST" }).handler(async (): Promise<ShopSettingsRow> => {
+  const sb = await admin();
+  const { data } = await sb.from("shop_settings").select("*").maybeSingle();
+  const { razorpayKeys } = await import("@/lib/razorpay.server");
+  return {
+    gstEnabled: Boolean(data?.gst_enabled ?? true),
+    gstRate: Number(data?.gst_rate ?? 18),
+    pricesIncludeGst: Boolean(data?.prices_include_gst ?? true),
+    gstin: String(data?.gstin ?? ""),
+    legalName: String(data?.legal_name ?? ""),
+    billingAddress: String(data?.billing_address ?? ""),
+    codEnabled: Boolean(data?.cod_enabled ?? true),
+    codLimit: Number(data?.cod_limit ?? 2000),
+    codPincodes: ((data?.cod_pincodes ?? []) as string[]).join(", "),
+    onlinePayments: razorpayKeys().configured,
+  };
+});
+
+export const saveShopSettings = createServerFn({ method: "POST" })
+  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments">) => data)
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    const pincodes = String(data.codPincodes ?? "")
+      .split(/[^0-9]+/)
+      .filter((p) => /^\d{6}$/.test(p));
+    const patch = {
+      id: true,
+      gst_enabled: Boolean(data.gstEnabled),
+      gst_rate: Math.max(0, Math.min(50, Number(data.gstRate) || 0)),
+      prices_include_gst: Boolean(data.pricesIncludeGst),
+      gstin: String(data.gstin ?? "").trim().toUpperCase() || null,
+      legal_name: String(data.legalName ?? "").trim() || null,
+      billing_address: String(data.billingAddress ?? "").trim() || null,
+      cod_enabled: Boolean(data.codEnabled),
+      cod_limit: Math.max(0, Number(data.codLimit) || 0),
+      cod_pincodes: pincodes,
+    };
+    const { error } = await sb.from("shop_settings").upsert(patch);
+    if (error) return { ok: false as const, error: error.message };
+    await logAudit(sb, actor, "settings.updated", "shop_settings", "1", patch as never);
+    return { ok: true as const };
+  });
+
+/** Turn GST on or off for one order (and set its rate), recomputing the tax. */
+export const setOrderGst = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string; enabled: boolean; rate?: number }) => ({
+    orderId: String(data?.orderId ?? ""),
+    enabled: Boolean(data?.enabled),
+    rate: data?.rate === undefined ? null : Math.max(0, Math.min(50, Number(data.rate) || 0)),
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    const { error } = await sb.rpc("set_order_gst", {
+      p_order_id: data.orderId,
+      p_enabled: data.enabled,
+      p_rate: data.rate,
+    });
+    if (error) return { ok: false as const, error: error.message };
+    await logAudit(sb, actor, "order.gst_changed", "orders", data.orderId, data as never);
+    return { ok: true as const };
+  });
