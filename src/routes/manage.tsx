@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Boxes, LayoutDashboard, LogOut, Receipt, Users } from "lucide-react";
+import { Boxes, Globe, LayoutDashboard, LogOut, Receipt, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isManagerUnlocked, lockManager } from "@/lib/manage.functions";
 
@@ -28,6 +28,7 @@ const NAV = [
   { to: "/manage/catalogue", label: "Stock & Photos", icon: Boxes, exact: false },
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false },
+  { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false },
 ] as const;
 
 function ManageLayout() {
