@@ -290,11 +290,13 @@ function ProductPage() {
             ) : (
               <>
                 <p className="font-medium">Price on request — ask us and we will quote you today.</p>
-                <Button className="mt-3 w-full" asChild>
-                  <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer">
-                    <MessageCircle className="size-4" /> Ask about this part on WhatsApp
-                  </a>
-                </Button>
+                {mode !== "browse" && (
+                  <Button className="mt-3 w-full" asChild>
+                    <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer">
+                      <MessageCircle className="size-4" /> Ask about this part on WhatsApp
+                    </a>
+                  </Button>
+                )}
               </>
             )}
             <p className={`mt-2 text-sm font-medium ${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
