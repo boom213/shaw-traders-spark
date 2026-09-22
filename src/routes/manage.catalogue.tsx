@@ -1,208 +1,258 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { Camera, GripVertical, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { manageProducts, saveProducts } from "@/lib/manage-data.functions";
+import { catalogueList, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
+import { uploadProductPhoto } from "@/lib/photo-upload";
 import { categoriesQuery } from "@/lib/queries";
-import type { Product } from "@/lib/catalog";
-import { imageFor, isPlaceholder } from "@/lib/placeholders";
+import { placeholderFor } from "@/lib/placeholders";
 
 export const Route = createFileRoute("/manage/catalogue")({
-  component: BulkCatalogue,
+  component: CataloguePage,
 });
 
-const PAGE = 40;
+const FILTERS = [
+  { value: "all", label: "Everything" },
+  { value: "no-price", label: "Needs price" },
+  { value: "no-photo", label: "Needs photo" },
+  { value: "low-stock", label: "Low stock" },
+  { value: "no-stock", label: "Out of stock" },
+] as const;
 
-type Draft = { price: string; mrp: string; stock: string; image: string; brand: string };
-
-const draftOf = (p: Product): Draft => ({
-  price: p.price === undefined ? "" : String(p.price),
-  mrp: p.mrp === undefined ? "" : String(p.mrp),
-  stock: p.stock === undefined ? "" : String(p.stock),
-  image: p.images[0] ?? "",
-  brand: p.brand ?? "",
-});
-
-function BulkCatalogue() {
+function CataloguePage() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [cat, setCat] = useState("");
-  const [only, setOnly] = useState<"all" | "no-stock" | "no-price" | "no-photo">("all");
+  const [filter, setFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
-  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
-  const [defaultStock, setDefaultStock] = useState("10");
-  const queryClient = useQueryClient();
 
   const { data: categories } = useQuery(categoriesQuery());
   const { data, isPending } = useQuery({
-    queryKey: ["manage-products", term, cat, only, page],
-    queryFn: () => manageProducts({ data: { q: term, category: cat, only, page } }),
+    queryKey: ["catalogue-admin", term, cat, filter, page],
+    queryFn: () => catalogueList({ data: { q: term, category: cat, filter, page } }),
   });
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
-  const pages = Math.max(1, Math.ceil(total / PAGE));
+  const pages = Math.max(1, Math.ceil(total / 30));
 
-  const save = useMutation({
-    mutationFn: (updates: { id: string; price?: number | null; mrp?: number | null; stock?: number; brand?: string | null; image?: string }[]) =>
-      saveProducts({ data: { updates } }),
-    onSuccess: (res) => {
-      setDrafts({});
-      void queryClient.invalidateQueries({ queryKey: ["manage-products"] });
-      void queryClient.invalidateQueries({ queryKey: ["manage-stats"] });
-      toast.success(`Saved ${res.saved} product${res.saved === 1 ? "" : "s"}`);
-    },
-    onError: () => toast.error("Could not save your changes"),
-  });
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setTerm(q.trim());
+            setPage(0);
+          }}
+        >
+          <Input placeholder="Search name, code or brand" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Button type="submit" variant="outline">Find</Button>
+        </form>
 
-  const setDraft = (id: string, patch: Partial<Draft>, product: Product) =>
-    setDrafts((d) => ({ ...d, [id]: { ...(d[id] ?? draftOf(product)), ...patch } }));
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {FILTERS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setFilter(f.value); setPage(0); }}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
+                filter === f.value ? "border-primary bg-primary text-primary-foreground" : "border-border"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        <select
+          value={cat}
+          onChange={(e) => { setCat(e.target.value); setPage(0); }}
+          className="mt-3 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">All categories</option>
+          {(categories ?? []).map((c) => (
+            <option key={c.slug} value={c.slug}>{c.name}</option>
+          ))}
+        </select>
+
+        <p className="mt-3 text-xs text-muted-foreground">{total} products match. Changes save as soon as you tap Save on a card.</p>
+      </div>
+
+      {isPending && [0, 1, 2].map((i) => <div key={i} className="h-56 animate-pulse rounded-2xl bg-muted" />)}
+
+      {!isPending && items.length === 0 && (
+        <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+          Nothing matches these filters.
+        </p>
+      )}
+
+      {items.map((p) => <ProductCard key={p.id} product={p} />)}
+
+      <div className="sticky bottom-3 flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+        <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((n) => n - 1)}>Back</Button>
+        <span className="text-sm text-muted-foreground">Page {page + 1} of {pages}</span>
+        <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((n) => n + 1)}>Next</Button>
+      </div>
+    </div>
+  );
+}
+
+function ProductCard({ product }: { product: CatalogueRow }) {
+  const queryClient = useQueryClient();
+  const [price, setPrice] = useState(product.price === null ? "" : String(product.price));
+  const [mrp, setMrp] = useState(product.mrp === null ? "" : String(product.mrp));
+  const [stock, setStock] = useState(String(product.stock));
+  const [threshold, setThreshold] = useState(product.reorderThreshold === null ? "" : String(product.reorderThreshold));
+  const [saving, setSaving] = useState(false);
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
+  const low = product.stock <= (product.reorderThreshold ?? 3);
 
-  const saveAll = () => {
-    const entries = Object.entries(drafts);
-    if (entries.length === 0) return toast.info("Nothing changed yet");
-    save.mutate(
-      entries.map(([id, d]) => ({
-        id,
-        price: num(d.price),
-        mrp: num(d.mrp),
-        stock: Number(d.stock.trim() === "" ? 0 : d.stock),
-        brand: d.brand.trim() || null,
-        image: d.image.trim(),
-      })),
-    );
-  };
-
-  const fillStock = () => {
-    const n = Number(defaultStock);
-    if (!Number.isFinite(n) || n < 0) return toast.error("Enter a valid stock number");
-    const targets = items.filter((p) => !p.stock);
-    if (targets.length === 0) return toast.info("Every shown product already has stock");
-    setDrafts((d) => {
-      const next = { ...d };
-      for (const p of targets) next[p.id] = { ...(next[p.id] ?? draftOf(p)), stock: String(n) };
-      return next;
+  const save = async () => {
+    setSaving(true);
+    const res = await quickSaveProduct({
+      data: {
+        id: product.id,
+        price: num(price),
+        mrp: num(mrp),
+        stock: Number(stock || 0),
+        reorderThreshold: num(threshold),
+      },
     });
-    toast.success(`Stock ${n} filled in on ${targets.length} products — press Save changes`);
+    setSaving(false);
+    if (!res.ok) return toast.error(res.error ?? "Could not save");
+    toast.success("Saved");
+    void queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] });
+    void queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] });
   };
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="q">Search</Label>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setTerm(q.trim());
-                setPage(0);
-              }}
-            >
-              <Input id="q" placeholder="Name, code, model" value={q} onChange={(e) => setQ(e.target.value)} />
-            </form>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cat">Category</Label>
-            <select
-              id="cat"
-              value={cat}
-              onChange={(e) => { setCat(e.target.value); setPage(0); }}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">All categories</option>
-              {(categories ?? []).map((c) => (
-                <option key={c.slug} value={c.slug}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="only">Show</Label>
-            <select
-              id="only"
-              value={only}
-              onChange={(e) => { setOnly(e.target.value as typeof only); setPage(0); }}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="all">All products</option>
-              <option value="no-stock">Missing stock</option>
-              <option value="no-price">Missing price</option>
-              <option value="no-photo">Missing photo</option>
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ds">Fill missing stock with</Label>
-            <div className="flex gap-2">
-              <Input id="ds" value={defaultStock} onChange={(e) => setDefaultStock(e.target.value)} className="w-24" />
-              <Button variant="outline" onClick={fillStock}>Apply to shown</Button>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold leading-snug">{product.name}</p>
+          <p className="text-xs text-muted-foreground">
+            {product.sku} · {product.categoryName}
+            {product.price === null && " · no price yet"}
+            {low && ` · only ${product.stock} left`}
+          </p>
+        </div>
+      </div>
+
+      <Photos product={product} />
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Cell label="Price ₹"><Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} /></Cell>
+        <Cell label="MRP ₹"><Input inputMode="decimal" value={mrp} onChange={(e) => setMrp(e.target.value)} /></Cell>
+        <Cell label="Stock"><Input inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} /></Cell>
+        <Cell label="Warn at"><Input inputMode="numeric" placeholder="3" value={threshold} onChange={(e) => setThreshold(e.target.value)} /></Cell>
+      </div>
+
+      <Button className="mt-3 w-full sm:w-auto" disabled={saving} onClick={() => void save()}>
+        {saving ? "Saving…" : "Save"}
+      </Button>
+    </div>
+  );
+}
+
+function Cell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1">
+      <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function Photos({ product }: { product: CatalogueRow }) {
+  const queryClient = useQueryClient();
+  const [urls, setUrls] = useState<string[]>(product.images);
+  const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState<number | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+
+  const persist = async (next: string[]) => {
+    setUrls(next);
+    const res = await setProductImages({ data: { id: product.id, urls: next } });
+    if (!res.ok) return toast.error(res.error ?? "Could not save the photos");
+    void queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] });
+    void queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] });
+  };
+
+  const addFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    const added: string[] = [];
+    for (const file of Array.from(files).slice(0, 6)) {
+      try {
+        added.push(await uploadProductPhoto(product.id, file));
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "One photo could not be uploaded");
+      }
+    }
+    if (added.length > 0) {
+      await persist([...urls, ...added].slice(0, 8));
+      toast.success(`${added.length} photo${added.length === 1 ? "" : "s"} added`);
+    }
+    setBusy(false);
+  };
+
+  const move = (from: number, to: number) => {
+    if (from === to) return;
+    const next = [...urls];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item!);
+    void persist(next);
+  };
+
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-2">
+        {urls.length === 0 && (
+          <img src={placeholderFor(product.category)} alt="" className="size-20 rounded-xl object-cover opacity-60" />
+        )}
+        {urls.map((u, i) => (
+          <div
+            key={u}
+            draggable
+            onDragStart={() => setDragging(i)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => { if (dragging !== null) move(dragging, i); setDragging(null); }}
+            className="relative size-20 overflow-hidden rounded-xl border border-border"
+          >
+            <img src={u} alt="" className="size-full object-cover" />
+            {i === 0 && <span className="absolute left-1 top-1 rounded bg-primary px-1 text-[10px] font-semibold text-primary-foreground">Main</span>}
+            <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/45 px-1 py-0.5">
+              <button aria-label="Move left" disabled={i === 0} onClick={() => move(i, i - 1)} className="text-white disabled:opacity-30">
+                <GripVertical className="size-3.5 rotate-90" />
+              </button>
+              <button aria-label="Remove photo" onClick={() => void persist(urls.filter((_, n) => n !== i))} className="text-white">
+                <Trash2 className="size-3.5" />
+              </button>
             </div>
           </div>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {total} products match. Products without their own photo use a general category photo on the shop — paste a photo link to replace it.
-        </p>
+        ))}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-        <table className="w-full min-w-[900px] text-sm">
-          <thead className="bg-surface text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <tr>
-              <th className="p-3">Product</th>
-              <th className="p-3 w-28">Brand</th>
-              <th className="p-3 w-24">Price ₹</th>
-              <th className="p-3 w-24">MRP ₹</th>
-              <th className="p-3 w-20">Stock</th>
-              <th className="p-3 w-64">Photo link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isPending && (
-              <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading products…</td></tr>
-            )}
-            {!isPending && items.map((p) => {
-              const d = drafts[p.id] ?? draftOf(p);
-              return (
-                <tr key={p.id} className="border-t border-border align-middle">
-                  <td className="p-3">
-                    <div className="flex items-center gap-3">
-                      <img src={imageFor(p)} alt={p.name} loading="lazy" width={44} height={44} className="size-11 shrink-0 rounded-lg object-cover" />
-                      <div className="min-w-0">
-                        <p className="line-clamp-2 font-medium">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {p.sku} · {p.category}
-                          {isPlaceholder(p) && " · general photo"}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-3"><Input value={d.brand} onChange={(e) => setDraft(p.id, { brand: e.target.value }, p)} /></td>
-                  <td className="p-3"><Input inputMode="numeric" value={d.price} onChange={(e) => setDraft(p.id, { price: e.target.value }, p)} /></td>
-                  <td className="p-3"><Input inputMode="numeric" value={d.mrp} onChange={(e) => setDraft(p.id, { mrp: e.target.value }, p)} /></td>
-                  <td className="p-3"><Input inputMode="numeric" value={d.stock} onChange={(e) => setDraft(p.id, { stock: e.target.value }, p)} /></td>
-                  <td className="p-3"><Input placeholder="https://…" value={d.image} onChange={(e) => setDraft(p.id, { image: e.target.value }, p)} /></td>
-                </tr>
-              );
-            })}
-            {!isPending && items.length === 0 && (
-              <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No products match these filters.</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => void addFiles(e.target.files)} />
+        <input ref={galleryRef} type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles(e.target.files)} />
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => cameraRef.current?.click()}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />} Take photo
+        </Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => galleryRef.current?.click()}>
+          Choose from gallery
+        </Button>
       </div>
-
-      <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((n) => n - 1)}>Previous</Button>
-          <span className="text-sm text-muted-foreground">Page {page + 1} of {pages}</span>
-          <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((n) => n + 1)}>Next</Button>
-        </div>
-        <Button disabled={save.isPending} onClick={saveAll}>Save changes ({Object.keys(drafts).length})</Button>
-      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Photos are shrunk automatically. Drag a photo, or use the arrow, to change which one shows first.
+      </p>
     </div>
   );
 }

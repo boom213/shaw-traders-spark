@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -156,6 +157,13 @@ function Shop() {
   const results = data?.items ?? [];
   const total = data?.total ?? 0;
   const pages = Math.ceil(total / PAGE_SIZE);
+
+  // Record searches that came back empty so the owner can see what customers want.
+  const term = search.q?.trim() ?? "";
+  useEffect(() => {
+    if (!term || isPending || total > 0) return;
+    void supabase.rpc("log_search_miss", { p_term: term });
+  }, [term, isPending, total]);
 
   return (
     <div className="container-page py-8">
