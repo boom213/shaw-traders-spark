@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SectionHeading, EmptyCatalogue } from "@/components/site/Empty";
+import { useQuery } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
+import { SectionHeading, EmptyCatalogue, ProductGridSkeleton } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
-import { useStore } from "@/hooks/useStore";
-import { CATEGORIES, discountPct, type Product } from "@/lib/catalog";
+import { offersFeed } from "@/lib/catalog.functions";
+import { canonical, type Product } from "@/lib/catalog";
+
+const offersQuery = () => queryOptions({ queryKey: ["offers"], queryFn: () => offersFeed(), staleTime: 60_000 });
 
 export const Route = createFileRoute("/offers")({
   head: () => ({
@@ -14,6 +18,7 @@ export const Route = createFileRoute("/offers")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: canonical("/offers") }],
   }),
   component: OffersPage,
 });
@@ -33,23 +38,9 @@ function Row({ title, subtitle, items }: { title: string; subtitle?: string; ite
 }
 
 function OffersPage() {
-  const { state } = useStore();
-  const products = state.products;
-
-  const discounted = [...products]
-    .filter((p) => discountPct(p.price, p.mrp) > 0)
-    .sort((a, b) => discountPct(b.price, b.mrp) - discountPct(a.price, a.mrp));
-
-  const orderCount = new Map<string, number>();
-  for (const o of state.orders) for (const i of o.items) orderCount.set(i.productId, (orderCount.get(i.productId) ?? 0) + i.qty);
-  const bestSellers = [...products]
-    .filter((p) => (orderCount.get(p.id) ?? 0) > 0)
-    .sort((a, b) => (orderCount.get(b.id) ?? 0) - (orderCount.get(a.id) ?? 0))
-    .slice(0, 8);
-
-  const newArrivals = [...products].sort((a, b) => b.createdAt - a.createdAt).slice(0, 8);
-
-  const nothing = discounted.length === 0 && bestSellers.length === 0 && newArrivals.length === 0;
+  const { data, isPending } = useQuery(offersQuery());
+  const discounted = data?.discounted ?? [];
+  const nothing = !isPending && discounted.length === 0 && (data?.bestSellers.length ?? 0) === 0 && (data?.newArrivals.length ?? 0) === 0;
 
   return (
     <div className="container mx-auto space-y-10 px-4 py-6">
@@ -58,15 +49,13 @@ function OffersPage() {
         <p className="text-sm text-muted-foreground">Live discounts on EV parts in stock at our Bud Bud counter.</p>
       </header>
 
+      {isPending && <ProductGridSkeleton count={8} />}
       {nothing && <EmptyCatalogue title="No offers running right now" note="Call or WhatsApp us for the latest prices on any part you need." />}
 
       <Row title="Today's Deals" subtitle="Biggest savings right now" items={discounted.slice(0, 8)} />
-      <Row title="Best Sellers" subtitle="Most ordered by our customers" items={bestSellers} />
-      <Row title="New Arrivals" subtitle="Latest additions to the shelf" items={newArrivals} />
-
-      {CATEGORIES.map((c) => (
-        <Row key={c.slug} title={`${c.name} Deals`} items={discounted.filter((p) => p.category === c.slug).slice(0, 4)} />
-      ))}
+      <Row title="Best Sellers" subtitle="Most ordered by our customers" items={data?.bestSellers ?? []} />
+      <Row title="New Arrivals" subtitle="Latest additions to the shelf" items={data?.newArrivals ?? []} />
+      <Row title="More Deals" items={discounted.slice(8, 24)} />
     </div>
   );
 }

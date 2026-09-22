@@ -190,7 +190,7 @@ export const saveProducts = createServerFn({ method: "POST" })
       if (u.mrp !== undefined) patch['mrp'] = u.mrp;
       if (u.stock !== undefined) patch['stock'] = u.stock;
       if (u.brand !== undefined) patch['brand'] = u.brand;
-      if (Object.keys(patch).length > 0) await sb.from("products").update(patch).eq("id", u.id);
+      if (Object.keys(patch).length > 0) await sb.from("products").update(patch as never).eq("id", u.id);
       if (u.image !== undefined) {
         await sb.from("product_images").delete().eq("product_id", u.id).eq("sort_order", 0);
         if (u.image.trim()) {

@@ -84,18 +84,33 @@ export const findOrder = createServerFn({ method: "POST" })
     humanId: String(data?.humanId ?? "").trim().toUpperCase(),
     phoneLast4: last4(data?.phoneLast4),
   }))
-  .handler(async ({ data }): Promise<{ token: string } | { error: string }> => {
+  .handler(async ({ data }): Promise<{ id: string; token: string } | { error: string }> => {
     if (!data.humanId || data.phoneLast4.length !== 4) {
       return { error: "Enter your order number and the last 4 digits of your phone number." };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("public_token, contact_phone, address")
+      .select("id, public_token, contact_phone, address")
       .eq("human_id", data.humanId)
       .maybeSingle();
     if (!row) return { error: "No order found with that number." };
     const digits = String(row.contact_phone ?? (row.address as Record<string, string>)?.['phone'] ?? "").replace(/\D/g, "");
     if (digits.slice(-4) !== data.phoneLast4) return { error: "That phone number does not match this order." };
-    return { token: String(row.public_token) };
+    return { id: String(row.id), token: String(row.public_token) };
   });
+
+/** Orders belonging to the signed-in customer, newest first. */
+export const myOrders = createServerFn({ method: "GET" }).handler(async (): Promise<OrderView[]> => {
+  const { currentUserId } = await import("@/lib/auth.server");
+  const userId = await currentUserId();
+  if (!userId) return [];
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: rows } = await supabaseAdmin
+    .from("orders")
+    .select(ORDER_SELECT)
+    .eq("profile_id", userId)
+    .order("placed_at", { ascending: false })
+    .limit(50);
+  return (rows ?? []).map(mapOrder);
+});
