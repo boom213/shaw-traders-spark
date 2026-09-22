@@ -1,15 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { manageOrders, setOrderStatus } from "@/lib/manage-data.functions";
+import {
+  decideOrderRequest,
+  manageOrders,
+  recordRefund,
+  setOrderStatus,
+  setTracking,
+  staffInvoice,
+  type ManageOrder,
+} from "@/lib/manage-data.functions";
 import { ALL_STATUSES, formatINR, statusLabel, type OrderStatus } from "@/lib/catalog";
 
 export const Route = createFileRoute("/manage/orders")({
   component: ManageOrders,
 });
+
+function downloadPdf(base64: string, fileName: string) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function ManageOrders() {
   const [q, setQ] = useState("");
@@ -21,12 +40,16 @@ function ManageOrders() {
     queryFn: () => manageOrders({ data: { q: term } }),
   });
 
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["manage-orders"] });
+    void queryClient.invalidateQueries({ queryKey: ["manage-stats"] });
+  };
+
   const mutation = useMutation({
     mutationFn: (vars: { id: string; status: OrderStatus }) => setOrderStatus({ data: vars }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["manage-orders"] });
-      void queryClient.invalidateQueries({ queryKey: ["manage-stats"] });
-      toast.success("Order status updated");
+      refresh();
+      toast.success("Order status updated and the customer has been told");
     },
     onError: () => toast.error("Could not update this order"),
   });
@@ -70,6 +93,7 @@ function ManageOrders() {
                 {o.paymentMethod} · {o.paymentStatus} · {o.shippingMethod}
               </p>
               <p className="text-xs text-primary">{statusLabel(o.status)}</p>
+              {o.refunded > 0 && <p className="text-xs text-muted-foreground">Refunded {formatINR(o.refunded)}</p>}
             </div>
           </div>
 
@@ -84,6 +108,8 @@ function ManageOrders() {
             ))}
           </ul>
 
+          <Requests order={o} onDone={refresh} />
+
           <div className="mt-4 flex flex-wrap gap-2">
             {ALL_STATUSES.map((s) => (
               <button
@@ -97,12 +123,159 @@ function ManageOrders() {
                 {s.label}
               </button>
             ))}
+            <InvoiceButton orderId={o.id} />
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/order/$id" params={{ id: o.id }} search={{ t: o.token }}>Open invoice</Link>
+              <Link to="/order/$id" params={{ id: o.id }} search={{ t: o.token }}>Open order page</Link>
+            </Button>
+          </div>
+
+          <div className="mt-4 grid gap-4 border-t border-border pt-4 md:grid-cols-2">
+            <TrackingForm order={o} onDone={refresh} />
+            <RefundForm order={o} onDone={refresh} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InvoiceButton({ orderId }: { orderId: string }) {
+  const get = useServerFn(staffInvoice);
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        const res = await get({ data: { orderId } });
+        setBusy(false);
+        if ("error" in res) return toast.error(res.error);
+        downloadPdf(res.base64, res.fileName);
+      }}
+    >
+      {busy ? "Preparing…" : "Download invoice"}
+    </Button>
+  );
+}
+
+function Requests({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
+  const decide = useServerFn(decideOrderRequest);
+  const [note, setNote] = useState("");
+  const pending = order.requests.filter((r) => r.status === "pending");
+  const past = order.requests.filter((r) => r.status !== "pending");
+  if (order.requests.length === 0) return null;
+
+  return (
+    <div className="mt-4 grid gap-2">
+      {pending.map((r) => (
+        <div key={r.id} className="rounded-xl border border-primary/40 bg-accent p-4">
+          <p className="text-sm font-semibold">
+            {r.kind === "return" ? "Return requested" : "Cancellation requested"} — {r.reason}
+          </p>
+          {r.details && <p className="mt-1 text-sm text-muted-foreground">{r.details}</p>}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Input className="max-w-xs" placeholder="Note for the customer (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+            <Button
+              size="sm"
+              onClick={async () => {
+                const res = await decide({ data: { requestId: r.id, approve: true, note } });
+                res.ok ? toast.success("Approved and the customer has been told") : toast.error(res.error ?? "Could not do that");
+                onDone();
+              }}
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const res = await decide({ data: { requestId: r.id, approve: false, note } });
+                res.ok ? toast.success("Declined and the customer has been told") : toast.error(res.error ?? "Could not do that");
+                onDone();
+              }}
+            >
+              Decline
             </Button>
           </div>
         </div>
       ))}
+      {past.map((r) => (
+        <p key={r.id} className="text-xs text-muted-foreground">
+          {r.kind === "return" ? "Return" : "Cancellation"} request ({r.reason}) — {r.status}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function TrackingForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
+  const save = useServerFn(setTracking);
+  const [courier, setCourier] = useState(order.courierName ?? "");
+  const [number, setNumber] = useState(order.trackingNumber ?? "");
+  const [url, setUrl] = useState(order.trackingUrl ?? "");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="grid gap-2">
+      <p className="text-sm font-semibold">Courier &amp; tracking</p>
+      <Input placeholder="Courier name (e.g. Delhivery)" value={courier} onChange={(e) => setCourier(e.target.value)} />
+      <Input placeholder="Tracking number" value={number} onChange={(e) => setNumber(e.target.value)} />
+      <Input placeholder="Tracking link (optional)" value={url} onChange={(e) => setUrl(e.target.value)} />
+      <Button
+        size="sm"
+        className="w-fit"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          const res = await save({ data: { id: order.id, courier, trackingNumber: number, trackingUrl: url, markShipped: true } });
+          setBusy(false);
+          if (!res.ok) return toast.error(res.error ?? "Could not save");
+          toast.success("Tracking saved, order marked shipped and the customer told");
+          onDone();
+        }}
+      >
+        {busy ? "Saving…" : "Save & mark shipped"}
+      </Button>
+    </div>
+  );
+}
+
+function RefundForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
+  const refund = useServerFn(recordRefund);
+  const left = Math.max(0, order.total - order.refunded);
+  const [amount, setAmount] = useState(String(left));
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="grid gap-2">
+      <p className="text-sm font-semibold">Refund</p>
+      <p className="text-xs text-muted-foreground">
+        {order.paymentStatus === "paid"
+          ? "Paid online — the refund goes back to the customer's card or UPI automatically."
+          : "Not paid online — this records the refund you handed back yourself."}
+        {" "}Left to refund: {formatINR(left)}
+      </p>
+      <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+      <Input placeholder="Reason / note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-fit"
+        disabled={busy || left <= 0}
+        onClick={async () => {
+          setBusy(true);
+          const res = await refund({ data: { orderId: order.id, amount: Number(amount), note } });
+          setBusy(false);
+          if (!res.ok) return toast.error(res.error ?? "Could not record the refund");
+          toast.success("Refund recorded and the customer told");
+          onDone();
+        }}
+      >
+        {busy ? "Working…" : "Record refund"}
+      </Button>
     </div>
   );
 }

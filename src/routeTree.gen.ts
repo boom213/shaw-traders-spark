@@ -31,6 +31,7 @@ import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
+import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
@@ -147,6 +148,11 @@ const ManageStaffRoute = ManageStaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageSummaryRoute = ManageSummaryRouteImport.update({
+  id: '/summary',
+  path: '/summary',
+  getParentRoute: () => ManageRoute,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
+  '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
+  '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/manage': typeof ManageIndexRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
+  '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
@@ -287,6 +296,7 @@ export interface FileRouteTypes {
     | '/manage/orders'
     | '/manage/settings'
     | '/manage/staff'
+    | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
     | '/manage/'
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/manage/orders'
     | '/manage/settings'
     | '/manage/staff'
+    | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
     | '/manage'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/manage/orders'
     | '/manage/settings'
     | '/manage/staff'
+    | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
     | '/manage/'
@@ -531,6 +543,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageStaffRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/summary': {
+      id: '/manage/summary'
+      path: '/summary'
+      fullPath: '/manage/summary'
+      preLoaderRoute: typeof ManageSummaryRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -576,6 +595,7 @@ interface ManageRouteChildren {
   ManageOrdersRoute: typeof ManageOrdersRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
+  ManageSummaryRoute: typeof ManageSummaryRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
 
@@ -586,6 +606,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageOrdersRoute: ManageOrdersRoute,
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
+  ManageSummaryRoute: ManageSummaryRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
 
