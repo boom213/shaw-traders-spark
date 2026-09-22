@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
 import { getOrder } from "@/lib/orders.functions";
+import { getInvoice, requestOrderChange } from "@/lib/order-actions.functions";
+import { CANCELLABLE_STATUSES, CANCEL_REASONS, RETURNABLE_STATUSES, RETURN_REASONS } from "@/lib/order-reasons";
+import type { OrderView } from "@/lib/catalog";
+import { toast } from "sonner";
 import { BUSINESS, ORDER_FLOW, formatINR, statusLabel, whatsappLink } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
@@ -138,9 +142,23 @@ function OrderPage() {
               </div>
             ))}
           </div>
+
+          <OrderActions order={order} token={t} proof={proof} />
         </div>
 
         <aside className="grid h-fit gap-4">
+          {order.trackingNumber && (
+            <div className="rounded-2xl border border-primary/30 bg-accent p-5 text-sm">
+              <h3 className="font-display text-base font-bold">Shipment</h3>
+              <p className="mt-2">{order.courierName}</p>
+              <p className="text-muted-foreground">Tracking number: {order.trackingNumber}</p>
+              {order.trackingUrl && (
+                <a href={order.trackingUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block underline">
+                  Track this parcel
+                </a>
+              )}
+            </div>
+          )}
           <div className="rounded-2xl border border-border bg-card p-5">
             <h3 className="font-display text-base font-bold">Delivery address</h3>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -172,6 +190,89 @@ function OrderPage() {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function OrderActions({ order, token, proof }: { order: OrderView; token: string; proof: string }) {
+  const [kind, setKind] = useState<"cancellation" | "return" | null>(null);
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const pending = (order.requests ?? []).find((r) => r.status === "pending");
+  const canCancel = CANCELLABLE_STATUSES.includes(order.status);
+  const canReturn = RETURNABLE_STATUSES.includes(order.status);
+  const reasons = kind === "return" ? RETURN_REASONS : CANCEL_REASONS;
+
+  const submit = async () => {
+    if (!kind || !reason) return;
+    setBusy(true);
+    const res = await requestOrderChange({ data: { token, ...(proof ? { phoneLast4: proof } : {}), kind, reason, details } });
+    setBusy(false);
+    if ("error" in res) return toast.error(res.error);
+    setSent(true);
+    setKind(null);
+    toast.success("Request sent. We will get back to you shortly.");
+  };
+
+  return (
+    <div className="mt-6 grid gap-3 rounded-2xl border border-border bg-card p-5">
+      <h3 className="font-display text-base font-bold">Bill & help</h3>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const res = await getInvoice({ data: { token, ...(proof ? { phoneLast4: proof } : {}) } });
+            setBusy(false);
+            if ("error" in res) return toast.error(res.error);
+            const bytes = Uint8Array.from(atob(res.base64), (c) => c.charCodeAt(0));
+            const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = res.fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          Download invoice
+        </Button>
+        {!pending && !sent && canCancel && (
+          <Button variant="outline" size="sm" onClick={() => { setKind("cancellation"); setReason(""); }}>Cancel this order</Button>
+        )}
+        {!pending && !sent && canReturn && (
+          <Button variant="outline" size="sm" onClick={() => { setKind("return"); setReason(""); }}>Return an item</Button>
+        )}
+      </div>
+
+      {(pending || sent) && (
+        <p className="text-sm text-muted-foreground">
+          Your {pending?.kind === "return" ? "return" : "cancellation"} request has been received. We will update you on WhatsApp.
+        </p>
+      )}
+
+      {kind && (
+        <div className="grid gap-2 rounded-xl border border-border bg-surface p-4">
+          <p className="text-sm font-semibold">{kind === "return" ? "Why are you returning it?" : "Why are you cancelling?"}</p>
+          <div className="grid gap-1.5">
+            {reasons.map((r) => (
+              <label key={r} className="flex items-center gap-2 text-sm">
+                <input type="radio" name="reason" checked={reason === r} onChange={() => setReason(r)} />
+                {r}
+              </label>
+            ))}
+          </div>
+          <Input placeholder="Anything else we should know? (optional)" value={details} onChange={(e) => setDetails(e.target.value)} />
+          <div className="flex gap-2">
+            <Button size="sm" disabled={!reason || busy} onClick={() => void submit()}>{busy ? "Sending…" : "Send request"}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setKind(null)}>Never mind</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

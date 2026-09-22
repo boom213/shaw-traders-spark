@@ -63,3 +63,28 @@ export function verifyWebhookSignature(rawBody: string, signature: string): bool
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
   return safeEqual(signature, expected);
 }
+
+/** Refund a captured payment. Amount in rupees. */
+export async function refundRazorpayPayment(
+  paymentId: string,
+  amountRupees: number,
+): Promise<{ refund: { id: string; status: string } } | { error: string }> {
+  const keys = razorpayKeys();
+  if (!keys.configured) return { error: "Online payments are not connected, so this refund must be recorded manually." };
+  try {
+    const res = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}/refund`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${btoa(`${keys.keyId}:${keys.keySecret}`)}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ amount: Math.round(amountRupees * 100), speed: "normal" }),
+    });
+    const body = await res.text();
+    if (!res.ok) return { error: `Refund failed [${res.status}]: ${body.slice(0, 300)}` };
+    const json = JSON.parse(body);
+    return { refund: { id: String(json.id), status: String(json.status ?? "processed") } };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Refund request failed" };
+  }
+}

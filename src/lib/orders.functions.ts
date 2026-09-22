@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { OrderStatus, OrderView } from "@/lib/catalog";
 
 const ORDER_SELECT =
-  "id, human_id, public_token, status, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, placed_at, updated_at, profile_id, contact_phone, order_items(id, product_id, name_snapshot, price_snapshot, qty, image_snapshot), order_events(status, note, created_at)";
+  "id, human_id, public_token, status, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, placed_at, updated_at, profile_id, contact_phone, courier_name, tracking_number, tracking_url, order_items(id, product_id, name_snapshot, price_snapshot, qty, image_snapshot), order_events(status, note, created_at), order_requests(id, kind, reason, details, status, decision_note, created_at), refunds(id, amount, method, created_at)";
 
 type Row = Record<string, any>;
 
@@ -24,6 +24,24 @@ function mapOrder(row: Row): OrderView {
     paymentStatus: String(row['payment_status']),
     shippingMethod: row['shipping_method'] ?? null,
     address: (row['address'] ?? {}) as Record<string, string>,
+    courierName: row['courier_name'] ?? null,
+    trackingNumber: row['tracking_number'] ?? null,
+    trackingUrl: row['tracking_url'] ?? null,
+    requests: ((row['order_requests'] ?? []) as Row[]).map((r) => ({
+      id: String(r['id']),
+      kind: String(r['kind']) as 'cancellation' | 'return',
+      reason: String(r['reason']),
+      details: r['details'] ?? null,
+      status: String(r['status']) as 'pending' | 'approved' | 'rejected',
+      decisionNote: r['decision_note'] ?? null,
+      createdAt: String(r['created_at']),
+    })),
+    refunds: ((row['refunds'] ?? []) as Row[]).map((r) => ({
+      id: String(r['id']),
+      amount: Number(r['amount']),
+      method: String(r['method']),
+      createdAt: String(r['created_at']),
+    })),
     placedAt: String(row['placed_at']),
     updatedAt: String(row['updated_at']),
     items: ((row['order_items'] ?? []) as Row[]).map((i) => ({

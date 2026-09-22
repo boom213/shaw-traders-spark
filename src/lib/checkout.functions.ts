@@ -93,6 +93,8 @@ export const startCheckout = createServerFn({ method: "POST" })
 
     const cod = data.paymentMethod === "Cash on Delivery";
     if (cod) {
+      const { notifyOrderPlaced } = await import("@/lib/notify.server");
+      await notifyOrderPlaced(row.order_id);
       return {
         orderId: row.order_id,
         humanId: row.human_id,
@@ -156,6 +158,8 @@ export const verifyPayment = createServerFn({ method: "POST" })
     }
 
     await supabaseAdmin.rpc("mark_order_paid", { p_order_id: data.orderId, p_payment_id: data.paymentId });
+    const { notifyOrderPlaced } = await import("@/lib/notify.server");
+    await notifyOrderPlaced(data.orderId);
     return { paid: true };
   });
 

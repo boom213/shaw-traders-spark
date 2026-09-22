@@ -193,6 +193,83 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_summaries: {
+        Row: {
+          body: string | null
+          day: string
+          low_stock: number
+          orders: number
+          revenue: number
+          sent_at: string
+        }
+        Insert: {
+          body?: string | null
+          day: string
+          low_stock?: number
+          orders?: number
+          revenue?: number
+          sent_at?: string
+        }
+        Update: {
+          body?: string | null
+          day?: string
+          low_stock?: number
+          orders?: number
+          revenue?: number
+          sent_at?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          channel: string
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          order_id: string | null
+          provider_message_id: string | null
+          recipient: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          channel: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          order_id?: string | null
+          provider_message_id?: string | null
+          recipient: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          channel?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          order_id?: string | null
+          provider_message_id?: string | null
+          recipient?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_events: {
         Row: {
           created_at: string
@@ -273,10 +350,59 @@ export type Database = {
           },
         ]
       }
+      order_requests: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          details: string | null
+          id: string
+          kind: string
+          order_id: string
+          reason: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          details?: string | null
+          id?: string
+          kind: string
+          order_id: string
+          reason: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          details?: string | null
+          id?: string
+          kind?: string
+          order_id?: string
+          reason?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: Json
+          cancel_reason: string | null
           contact_phone: string | null
+          courier_name: string | null
           discount: number
           gst_included: boolean
           gst_rate: number
@@ -291,6 +417,9 @@ export type Database = {
           provider_order_id: string | null
           provider_payment_id: string | null
           public_token: string
+          refunded_total: number
+          return_reason: string | null
+          shipped_at: string | null
           shipping_fee: number
           shipping_method: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -298,11 +427,15 @@ export type Database = {
           subtotal: number
           tax_amount: number
           total: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string
         }
         Insert: {
           address?: Json
+          cancel_reason?: string | null
           contact_phone?: string | null
+          courier_name?: string | null
           discount?: number
           gst_included?: boolean
           gst_rate?: number
@@ -317,6 +450,9 @@ export type Database = {
           provider_order_id?: string | null
           provider_payment_id?: string | null
           public_token?: string
+          refunded_total?: number
+          return_reason?: string | null
+          shipped_at?: string | null
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -324,11 +460,15 @@ export type Database = {
           subtotal?: number
           tax_amount?: number
           total?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Update: {
           address?: Json
+          cancel_reason?: string | null
           contact_phone?: string | null
+          courier_name?: string | null
           discount?: number
           gst_included?: boolean
           gst_rate?: number
@@ -343,6 +483,9 @@ export type Database = {
           provider_order_id?: string | null
           provider_payment_id?: string | null
           public_token?: string
+          refunded_total?: number
+          return_reason?: string | null
+          shipped_at?: string | null
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -350,6 +493,8 @@ export type Database = {
           subtotal?: number
           tax_amount?: number
           total?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -466,6 +611,7 @@ export type Database = {
           created_at: string
           description: string | null
           dimensions: string | null
+          hsn_code: string | null
           id: string
           is_active: boolean
           model: string | null
@@ -491,6 +637,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           dimensions?: string | null
+          hsn_code?: string | null
           id?: string
           is_active?: boolean
           model?: string | null
@@ -516,6 +663,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           dimensions?: string | null
+          hsn_code?: string | null
           id?: string
           is_active?: boolean
           model?: string | null
@@ -567,6 +715,53 @@ export type Database = {
           phone?: string | null
         }
         Relationships: []
+      }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          method: string
+          note: string | null
+          order_id: string
+          provider_payment_id: string | null
+          provider_refund_id: string | null
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          order_id: string
+          provider_payment_id?: string | null
+          provider_refund_id?: string | null
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          order_id?: string
+          provider_payment_id?: string | null
+          provider_refund_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -625,11 +820,16 @@ export type Database = {
           cod_enabled: boolean
           cod_limit: number
           cod_pincodes: string[]
+          default_hsn: string
           gst_enabled: boolean
           gst_rate: number
           gstin: string | null
           id: boolean
           legal_name: string | null
+          low_stock_threshold: number
+          notify_enabled: boolean
+          owner_email: string | null
+          owner_whatsapp: string
           prices_include_gst: boolean
           updated_at: string
         }
@@ -638,11 +838,16 @@ export type Database = {
           cod_enabled?: boolean
           cod_limit?: number
           cod_pincodes?: string[]
+          default_hsn?: string
           gst_enabled?: boolean
           gst_rate?: number
           gstin?: string | null
           id?: boolean
           legal_name?: string | null
+          low_stock_threshold?: number
+          notify_enabled?: boolean
+          owner_email?: string | null
+          owner_whatsapp?: string
           prices_include_gst?: boolean
           updated_at?: string
         }
@@ -651,11 +856,16 @@ export type Database = {
           cod_enabled?: boolean
           cod_limit?: number
           cod_pincodes?: string[]
+          default_hsn?: string
           gst_enabled?: boolean
           gst_rate?: number
           gstin?: string | null
           id?: boolean
           legal_name?: string | null
+          low_stock_threshold?: number
+          notify_enabled?: boolean
+          owner_email?: string | null
+          owner_whatsapp?: string
           prices_include_gst?: boolean
           updated_at?: string
         }
@@ -724,6 +934,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_pending_statuses: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          message_id: string
+          status: string
+          status_at: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message_id: string
+          status: string
+          status_at?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          message_id?: string
+          status?: string
+          status_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_webhook_events: {
+        Row: {
+          delivery_id: string
+          event: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          processing_error: string | null
+          received_at: string
+        }
+        Insert: {
+          delivery_id: string
+          event: string
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Update: {
+          delivery_id?: string
+          event?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          processing_error?: string | null
+          received_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

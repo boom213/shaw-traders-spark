@@ -15,6 +15,11 @@ export type ManageOrder = {
   address: Record<string, string>;
   placedAt: string;
   items: { name: string; qty: number; price: number | null }[];
+  courierName: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  refunded: number;
+  requests: { id: string; kind: string; reason: string; details: string | null; status: string; createdAt: string }[];
 };
 
 const mapManageOrder = (row: Row): ManageOrder => ({
@@ -32,6 +37,18 @@ const mapManageOrder = (row: Row): ManageOrder => ({
     name: String(i['name_snapshot']),
     qty: Number(i['qty']),
     price: i['price_snapshot'] === null || i['price_snapshot'] === undefined ? null : Number(i['price_snapshot']),
+  })),
+  courierName: row['courier_name'] ?? null,
+  trackingNumber: row['tracking_number'] ?? null,
+  trackingUrl: row['tracking_url'] ?? null,
+  refunded: Number(row['refunded_total'] ?? 0),
+  requests: ((row['order_requests'] ?? []) as Row[]).map((r) => ({
+    id: String(r['id']),
+    kind: String(r['kind']),
+    reason: String(r['reason']),
+    details: r['details'] ?? null,
+    status: String(r['status']),
+    createdAt: String(r['created_at']),
   })),
 });
 
@@ -57,7 +74,7 @@ export const manageOrders = createServerFn({ method: "POST" })
     let query = sb
       .from("orders")
       .select(
-        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, order_items(name_snapshot, price_snapshot, qty)",
+        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty), order_requests(id, kind, reason, details, status, created_at)",
       )
       .order("placed_at", { ascending: false })
       .limit(300);
@@ -86,6 +103,8 @@ export const setOrderStatus = createServerFn({ method: "POST" })
       from: before?.status ?? null,
       to: data.status,
     });
+    const { notifyOrderStatus } = await import("@/lib/notify.server");
+    await notifyOrderStatus(data.id, data.status);
     return { ok: true as const };
   });
 
@@ -237,7 +256,13 @@ export type ShopSettingsRow = {
   codEnabled: boolean;
   codLimit: number;
   codPincodes: string;
+  ownerWhatsapp: string;
+  ownerEmail: string;
+  notifyEnabled: boolean;
+  defaultHsn: string;
+  lowStockThreshold: number;
   onlinePayments: boolean;
+  whatsappReady: boolean;
 };
 
 /** Shop-wide payment, GST and cash-on-delivery settings. */
@@ -255,12 +280,18 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
     codEnabled: Boolean(data?.cod_enabled ?? true),
     codLimit: Number(data?.cod_limit ?? 2000),
     codPincodes: ((data?.cod_pincodes ?? []) as string[]).join(", "),
+    ownerWhatsapp: String(data?.owner_whatsapp ?? "7501849610"),
+    ownerEmail: String(data?.owner_email ?? ""),
+    notifyEnabled: Boolean(data?.notify_enabled ?? true),
+    defaultHsn: String(data?.default_hsn ?? "8507"),
+    lowStockThreshold: Number(data?.low_stock_threshold ?? 3),
     onlinePayments: razorpayKeys().configured,
+    whatsappReady: (await import("@/lib/whatsapp.server")).whatsappConfigured(),
   };
 });
 
 export const saveShopSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments">) => data)
+  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments" | "whatsappReady">) => data)
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
     const pincodes = String(data.codPincodes ?? "")
@@ -277,6 +308,11 @@ export const saveShopSettings = createServerFn({ method: "POST" })
       cod_enabled: Boolean(data.codEnabled),
       cod_limit: Math.max(0, Number(data.codLimit) || 0),
       cod_pincodes: pincodes,
+      owner_whatsapp: String(data.ownerWhatsapp ?? "").replace(/\D/g, "").slice(-12) || "7501849610",
+      owner_email: String(data.ownerEmail ?? "").trim() || null,
+      notify_enabled: Boolean(data.notifyEnabled),
+      default_hsn: String(data.defaultHsn ?? "").trim() || "8507",
+      low_stock_threshold: Math.max(0, Math.min(99, Number(data.lowStockThreshold) || 3)),
     };
     const { error } = await sb.from("shop_settings").upsert(patch);
     if (error) return { ok: false as const, error: error.message };
@@ -302,3 +338,201 @@ export const setOrderGst = createServerFn({ method: "POST" })
     await logAudit(sb, actor, "order.gst_changed", "orders", data.orderId, data as never);
     return { ok: true as const };
   });
+
+/** Courier name and tracking number for a dispatched order. */
+export const setTracking = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; courier: string; trackingNumber: string; trackingUrl?: string; markShipped?: boolean }) => ({
+    id: String(data?.id ?? ""),
+    courier: String(data?.courier ?? "").trim().slice(0, 80),
+    trackingNumber: String(data?.trackingNumber ?? "").trim().slice(0, 80),
+    trackingUrl: String(data?.trackingUrl ?? "").trim().slice(0, 300),
+    markShipped: data?.markShipped !== false,
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (!data.courier || !data.trackingNumber) return { ok: false as const, error: "Add both the courier and the tracking number." };
+
+    const patch: Record<string, unknown> = {
+      courier_name: data.courier,
+      tracking_number: data.trackingNumber,
+      tracking_url: data.trackingUrl || null,
+      shipped_at: new Date().toISOString(),
+    };
+    if (data.markShipped) patch['status'] = "shipped";
+    const { error } = await sb.from("orders").update(patch as never).eq("id", data.id);
+    if (error) return { ok: false as const, error: error.message };
+
+    await sb.from("order_events").insert({
+      order_id: data.id,
+      status: (data.markShipped ? "shipped" : "packed") as never,
+      note: `${data.courier} · ${data.trackingNumber}`,
+      created_by: actor.name,
+    } as never);
+    await logAudit(sb as never, actor, "order.tracking_added", "orders", data.id, patch);
+
+    const { notifyOrderStatus } = await import("@/lib/notify.server");
+    await notifyOrderStatus(data.id, data.markShipped ? "shipped" : "packed");
+    return { ok: true as const };
+  });
+
+/** Approve or decline a cancellation / return request. */
+export const decideOrderRequest = createServerFn({ method: "POST" })
+  .inputValidator((data: { requestId: string; approve: boolean; note?: string }) => ({
+    requestId: String(data?.requestId ?? ""),
+    approve: Boolean(data?.approve),
+    note: String(data?.note ?? "").trim().slice(0, 300),
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    const { data: req } = await sb
+      .from("order_requests")
+      .select("id, order_id, kind, status")
+      .eq("id", data.requestId)
+      .maybeSingle();
+    if (!req) return { ok: false as const, error: "Request not found." };
+    if (req.status !== "pending") return { ok: false as const, error: "This request was already answered." };
+
+    await sb
+      .from("order_requests")
+      .update({
+        status: data.approve ? "approved" : "rejected",
+        decided_by: actor.name,
+        decided_at: new Date().toISOString(),
+        decision_note: data.note || null,
+      } as never)
+      .eq("id", req.id);
+
+    if (data.approve) {
+      const next = req.kind === "return" ? "returned" : "cancelled";
+      await sb
+        .from("orders")
+        .update({
+          status: next as never,
+          ...(req.kind === "return" ? { return_reason: data.note || null } : { cancel_reason: data.note || null }),
+        } as never)
+        .eq("id", req.order_id);
+      await sb.from("order_events").insert({
+        order_id: req.order_id,
+        status: next as never,
+        note: `${req.kind === "return" ? "Return" : "Cancellation"} approved${data.note ? ` — ${data.note}` : ""}`,
+        created_by: actor.name,
+      } as never);
+      if (req.kind === "cancellation") {
+        await sb.rpc("release_order", { p_order_id: req.order_id, p_reason: "Cancelled at the customer's request" });
+      }
+    }
+
+    await logAudit(sb as never, actor, `order.${req.kind}_${data.approve ? "approved" : "rejected"}`, "orders", req.order_id, {
+      note: data.note,
+    });
+    const { notifyRequestDecision } = await import("@/lib/notify.server");
+    await notifyRequestDecision(String(req.order_id), String(req.kind), data.approve, data.note);
+    return { ok: true as const };
+  });
+
+/** Record a refund against the payment (through Razorpay when it was paid online). */
+export const recordRefund = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string; amount: number; note?: string; viaRazorpay?: boolean }) => ({
+    orderId: String(data?.orderId ?? ""),
+    amount: Math.max(0, Number(data?.amount) || 0),
+    note: String(data?.note ?? "").trim().slice(0, 300),
+    viaRazorpay: data?.viaRazorpay !== false,
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (data.amount <= 0) return { ok: false as const, error: "Enter the refund amount." };
+
+    const { data: order } = await sb
+      .from("orders")
+      .select("id, human_id, total, refunded_total, payment_status, provider_payment_id")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order) return { ok: false as const, error: "Order not found." };
+    const already = Number(order.refunded_total ?? 0);
+    if (already + data.amount > Number(order.total) + 0.01) {
+      return { ok: false as const, error: `Only ${Number(order.total) - already} is left to refund on this order.` };
+    }
+
+    let method = "manual";
+    let providerRefundId: string | null = null;
+    if (data.viaRazorpay && order.payment_status === "paid" && order.provider_payment_id) {
+      const { refundRazorpayPayment } = await import("@/lib/razorpay.server");
+      const res = await refundRazorpayPayment(String(order.provider_payment_id), data.amount);
+      if ("error" in res) return { ok: false as const, error: res.error };
+      method = "razorpay";
+      providerRefundId = res.refund.id;
+    }
+
+    await sb.from("refunds").insert({
+      order_id: order.id,
+      amount: data.amount,
+      method,
+      provider_refund_id: providerRefundId,
+      provider_payment_id: order.provider_payment_id ?? null,
+      status: "recorded",
+      note: data.note || null,
+      created_by: actor.name,
+    } as never);
+
+    const total = already + data.amount;
+    await sb
+      .from("orders")
+      .update({
+        refunded_total: total,
+        ...(total >= Number(order.total) - 0.01 ? { payment_status: "refunded" as never } : {}),
+      } as never)
+      .eq("id", order.id);
+
+    await sb.from("order_events").insert({
+      order_id: order.id,
+      status: "cancelled" as never,
+      note: `Refund of ${data.amount} recorded (${method})${data.note ? ` — ${data.note}` : ""}`,
+      created_by: actor.name,
+    } as never);
+    await logAudit(sb as never, actor, "order.refunded", "orders", order.id, { amount: data.amount, method, providerRefundId });
+
+    const { notifyRefund } = await import("@/lib/notify.server");
+    await notifyRefund(order.id, data.amount, method === "razorpay" ? "back to your original payment method" : "manually");
+    return { ok: true as const };
+  });
+
+/** Invoice PDF for staff, by order id. */
+export const staffInvoice = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .handler(async ({ data }) => {
+    await admin();
+    const { invoicePdfBase64 } = await import("@/lib/invoice.server");
+    return invoicePdfBase64(data.orderId);
+  });
+
+/** Today's summary plus the last few messages the shop sent. */
+export const dailySummaryPreview = createServerFn({ method: "POST" }).handler(async () => {
+  const sb = await admin();
+  const { buildDailySummary } = await import("@/lib/notify.server");
+  const summary = await buildDailySummary(new Date());
+  const { data: recent } = await sb
+    .from("notifications")
+    .select("kind, recipient, status, error, created_at")
+    .order("created_at", { ascending: false })
+    .limit(12);
+  const { whatsappConfigured } = await import("@/lib/whatsapp.server");
+  return {
+    ...summary,
+    whatsappReady: whatsappConfigured(),
+    recent: (recent ?? []).map((n) => ({
+      kind: String(n.kind),
+      recipient: String(n.recipient),
+      status: String(n.status),
+      error: n.error ?? null,
+      createdAt: String(n.created_at),
+    })),
+  };
+});
+
+/** Send today's summary to the owner right now. */
+export const sendSummaryNow = createServerFn({ method: "POST" }).handler(async () => {
+  const { actor } = await adminAs();
+  const { sendDailySummary } = await import("@/lib/notify.server");
+  const res = await sendDailySummary(new Date(), true);
+  return { ok: true as const, day: res.day, by: actor.name };
+});

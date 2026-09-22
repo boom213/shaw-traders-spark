@@ -32,7 +32,7 @@ function SettingsPage() {
 
   const submit = async () => {
     setSaving(true);
-    const { onlinePayments: _ignored, ...rest } = form;
+    const { onlinePayments: _ignored, whatsappReady: _ready, ...rest } = form;
     const res = await save({ data: rest });
     setSaving(false);
     if (!res.ok) return toast.error(res.error ?? "Could not save.");
@@ -49,6 +49,27 @@ function SettingsPage() {
             ? "Card, UPI, netbanking and wallet payments are switched on."
             : "Online payment is switched off because the payment keys have not been saved yet. Customers can only pay cash on delivery."}
         </p>
+      </section>
+
+      <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-base font-bold">Order messages</h2>
+        <p className="text-sm text-muted-foreground">
+          {form.whatsappReady
+            ? "WhatsApp is connected. New orders, status updates and the daily summary go out automatically."
+            : "WhatsApp is not connected yet, so messages are only recorded, not delivered. Ask to connect WhatsApp Business and everything starts sending."}
+        </p>
+        <Row label="Send order messages">
+          <Switch checked={form.notifyEnabled} onCheckedChange={(v) => set("notifyEnabled", v)} />
+        </Row>
+        <Field label="Your WhatsApp number (for new orders and the daily summary)">
+          <Input value={form.ownerWhatsapp} onChange={(e) => set("ownerWhatsapp", e.target.value)} placeholder="7501849610" />
+        </Field>
+        <Field label="Your email for the daily summary">
+          <Input value={form.ownerEmail} onChange={(e) => set("ownerEmail", e.target.value)} placeholder="shawtradersev@gmail.com" />
+        </Field>
+        <Field label="Warn me when stock falls to or below">
+          <Input type="number" value={String(form.lowStockThreshold)} onChange={(e) => set("lowStockThreshold", Number(e.target.value))} />
+        </Field>
       </section>
 
       <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
@@ -71,6 +92,9 @@ function SettingsPage() {
         </Field>
         <Field label="Business name on the bill">
           <Input value={form.legalName} onChange={(e) => set("legalName", e.target.value)} />
+        </Field>
+        <Field label="Default HSN code on invoices">
+          <Input value={form.defaultHsn} onChange={(e) => set("defaultHsn", e.target.value)} placeholder="8507" />
         </Field>
         <Field label="Billing address on the bill">
           <Textarea rows={3} value={form.billingAddress} onChange={(e) => set("billingAddress", e.target.value)} />
