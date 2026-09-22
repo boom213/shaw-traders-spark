@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
-import { BUSINESS, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
+import { useQuery } from "@tanstack/react-query";
+import { shopSettingsQuery } from "@/lib/shop-settings";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -18,7 +20,9 @@ export const Route = createFileRoute("/contact")({
       { property: "og:description", content: "Phone 7501849610 — EV spare parts counter in Bud Bud, Bardhaman." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: canonical("/contact") },
     ],
+    links: [{ rel: "canonical", href: canonical("/contact") }],
   }),
   component: ContactPage,
 });
@@ -26,6 +30,7 @@ export const Route = createFileRoute("/contact")({
 const MAPS_QUERY = encodeURIComponent(BUSINESS.address);
 
 function ContactPage() {
+  const { data: settings } = useQuery(shopSettingsQuery());
   const [f, setF] = useState({ name: "", phone: "", email: "", product: "", message: "" });
 
   const send = () => {
@@ -58,6 +63,52 @@ function ContactPage() {
                   <Navigation className="size-4" /> Get directions
                 </a>
               </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <h3 className="font-display text-base font-bold">Business & grievance details</h3>
+            <dl className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
+              <div>
+                <dt className="inline font-medium text-foreground">Registered business name: </dt>
+                <dd className="inline">{settings?.legalName || BUSINESS.name}</dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-foreground">Registered address: </dt>
+                <dd className="inline">{settings?.billingAddress || BUSINESS.address}</dd>
+              </div>
+              <div>
+                <dt className="inline font-medium text-foreground">Phone: </dt>
+                <dd className="inline">{BUSINESS.phone}</dd>
+              </div>
+              {settings?.supportEmail && (
+                <div>
+                  <dt className="inline font-medium text-foreground">Email: </dt>
+                  <dd className="inline">{settings.supportEmail}</dd>
+                </div>
+              )}
+              {settings?.gstin && (
+                <div>
+                  <dt className="inline font-medium text-foreground">GSTIN: </dt>
+                  <dd className="inline">{settings.gstin}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="mt-4 border-t border-border pt-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Grievance officer</p>
+              {settings?.grievanceName ? (
+                <p className="mt-1">
+                  {settings.grievanceName}
+                  {settings.grievanceEmail ? ` · ${settings.grievanceEmail}` : ""}
+                  {settings.grievancePhone ? ` · ${settings.grievancePhone}` : ""}
+                </p>
+              ) : (
+                <p className="mt-1">Call or WhatsApp {BUSINESS.phone} and ask for the grievance officer.</p>
+              )}
+              <p className="mt-2 text-xs">
+                Every complaint is acknowledged within 48 hours and settled within 30 days, as required by the
+                Consumer Protection (E-Commerce) Rules, 2020.
+              </p>
             </div>
           </div>
 
