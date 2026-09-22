@@ -70,7 +70,32 @@ export const startCheckout = createServerFn({ method: "POST" })
     }
 
     const { publicClient } = await import("@/lib/supabase-public.server");
-    const { data: rows, error } = await publicClient().rpc("create_order", {
+
+    // The shop may have switched off online ordering — never trust the browser for this.
+    const { effectiveMode, isOrderingMode } = await import("@/lib/ordering");
+    const client = publicClient();
+    const [{ data: settingsRow }, { data: productRows }] = await Promise.all([
+      client.from("shop_settings").select("ordering_mode").maybeSingle(),
+      client
+        .from("products")
+        .select("id, ordering_mode, status, categories(ordering_mode)")
+        .in("id", data.items.map((i) => i.product_id)),
+    ]);
+    const siteMode = isOrderingMode(settingsRow?.ordering_mode) ? settingsRow.ordering_mode : "full";
+    for (const item of data.items) {
+      const row = (productRows ?? []).find((p) => p.id === item.product_id) as
+        | { status?: string | null; ordering_mode?: string | null; categories?: { ordering_mode?: string | null } | null }
+        | undefined;
+      if (!row || row.status !== "visible") return { error: "One of the parts in your cart is no longer available." };
+      const mode = effectiveMode({
+        site: siteMode,
+        category: row.categories?.ordering_mode ?? null,
+        product: row.ordering_mode ?? null,
+      });
+      if (mode !== "full") return { error: "Online ordering is paused for one of the parts in your cart." };
+    }
+
+    const { data: rows, error } = await client.rpc("create_order", {
       p_items: data.items as never,
       p_address: data.address as never,
       p_payment_method: data.paymentMethod,
