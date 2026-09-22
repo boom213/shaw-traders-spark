@@ -140,8 +140,16 @@ function ProductPage() {
   const [sending, setSending] = useState(false);
   const [alertContact, setAlertContact] = useState("");
   const [alertDone, setAlertDone] = useState(false);
+  const [enquiry, setEnquiry] = useState(false);
 
   const product = data?.product;
+  const mode = useProductOrdering(product ?? {});
+  const { data: staffMeta } = useQuery({
+    queryKey: ["staff-product-meta", product?.id],
+    queryFn: () => staffProductMeta({ data: { productId: String(product?.id) } }),
+    enabled: Boolean(product?.id),
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (product) markViewed(product.id);
