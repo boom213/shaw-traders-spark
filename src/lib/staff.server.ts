@@ -26,12 +26,9 @@ export async function staffContext(): Promise<StaffContext | null> {
   const user = auth.user;
   if (!user) return null;
 
-  const { data: role } = await supabaseAdmin
-    .from("staff_roles")
-    .select("role")
-    .eq("profile_id", user.id)
-    .order("role")
-    .maybeSingle();
+  // One person may hold more than one role; this function returns the
+  // highest-privilege one, so two rows never lock a staff member out.
+  const { data: role } = await supabaseAdmin.rpc("staff_role", { _user_id: user.id });
   if (!role) return null;
 
   const { data: profile } = await supabaseAdmin
