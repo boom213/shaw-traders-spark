@@ -689,17 +689,26 @@ export type Database = {
         Row: {
           id: string
           product_id: string
+          variant: string | null
           vehicle_model: string
+          year_from: number | null
+          year_to: number | null
         }
         Insert: {
           id?: string
           product_id: string
+          variant?: string | null
           vehicle_model: string
+          year_from?: number | null
+          year_to?: number | null
         }
         Update: {
           id?: string
           product_id?: string
+          variant?: string | null
           vehicle_model?: string
+          year_from?: number | null
+          year_to?: number | null
         }
         Relationships: [
           {
@@ -713,42 +722,79 @@ export type Database = {
       }
       product_enquiries: {
         Row: {
+          alternative_product_id: string | null
           created_at: string
+          expected_date: string | null
           handled_by: string | null
           id: string
           name: string
           note: string | null
           phone: string
+          photo_url: string | null
           product_id: string | null
-          product_name: string
+          product_name: string | null
           qty: number
+          quote_expires_at: string | null
+          quote_token: string | null
+          quoted_price: number | null
+          replied_at: string | null
+          reply: string | null
+          source: string
           status: string
+          vehicle: string | null
         }
         Insert: {
+          alternative_product_id?: string | null
           created_at?: string
+          expected_date?: string | null
           handled_by?: string | null
           id?: string
           name: string
           note?: string | null
           phone: string
+          photo_url?: string | null
           product_id?: string | null
-          product_name: string
+          product_name?: string | null
           qty?: number
+          quote_expires_at?: string | null
+          quote_token?: string | null
+          quoted_price?: number | null
+          replied_at?: string | null
+          reply?: string | null
+          source?: string
           status?: string
+          vehicle?: string | null
         }
         Update: {
+          alternative_product_id?: string | null
           created_at?: string
+          expected_date?: string | null
           handled_by?: string | null
           id?: string
           name?: string
           note?: string | null
           phone?: string
+          photo_url?: string | null
           product_id?: string | null
-          product_name?: string
+          product_name?: string | null
           qty?: number
+          quote_expires_at?: string | null
+          quote_token?: string | null
+          quoted_price?: number | null
+          replied_at?: string | null
+          reply?: string | null
+          source?: string
           status?: string
+          vehicle?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "product_enquiries_alternative_product_id_fkey"
+            columns: ["alternative_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "product_enquiries_product_id_fkey"
             columns: ["product_id"]
@@ -1457,25 +1503,46 @@ export type Database = {
           sold: number
         }[]
       }
-      create_order: {
-        Args: {
-          p_address: Json
-          p_coupon_code?: string
-          p_items: Json
-          p_lr_number?: string
-          p_payment_method: string
-          p_profile_id?: string
-          p_shipping_code: string
-          p_transport_name?: string
-        }
-        Returns: {
-          human_id: string
-          order_id: string
-          payment_status: string
-          public_token: string
-          total: number
-        }[]
-      }
+      create_order:
+        | {
+            Args: {
+              p_address: Json
+              p_coupon_code?: string
+              p_items: Json
+              p_lr_number?: string
+              p_payment_method: string
+              p_profile_id?: string
+              p_shipping_code: string
+              p_transport_name?: string
+            }
+            Returns: {
+              human_id: string
+              order_id: string
+              payment_status: string
+              public_token: string
+              total: number
+            }[]
+          }
+        | {
+            Args: {
+              p_address: Json
+              p_coupon_code?: string
+              p_items: Json
+              p_lr_number?: string
+              p_payment_method: string
+              p_profile_id?: string
+              p_quote_token?: string
+              p_shipping_code: string
+              p_transport_name?: string
+            }
+            Returns: {
+              human_id: string
+              order_id: string
+              payment_status: string
+              public_token: string
+              total: number
+            }[]
+          }
       customer_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["price_tier"]
@@ -1508,6 +1575,20 @@ export type Database = {
           discount: number
           message: string
           valid: boolean
+        }[]
+      }
+      quote_by_token: {
+        Args: { p_token: string }
+        Returns: {
+          enquiry_id: string
+          expires_at: string
+          image_url: string
+          product_id: string
+          product_name: string
+          product_slug: string
+          qty: number
+          spent: boolean
+          unit_price: number
         }[]
       }
       release_order: {
