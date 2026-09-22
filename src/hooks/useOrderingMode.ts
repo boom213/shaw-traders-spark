@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 import { effectiveMode, type OrderingMode } from "@/lib/ordering";
-import type { Product } from "@/lib/catalog";
+
 
 /** The shop-wide switch, refreshed automatically so changes land without a deploy. */
 export function useSiteOrdering(): { mode: OrderingMode; banner: string | null; ready: boolean } {
