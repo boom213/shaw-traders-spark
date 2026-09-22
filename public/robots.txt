@@ -12,3 +12,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /manage
+Disallow: /manage-login
+Disallow: /checkout
+Disallow: /cart
+Disallow: /order/
+Disallow: /api/
+
+Sitemap: https://shawtradersev.com/sitemap.xml

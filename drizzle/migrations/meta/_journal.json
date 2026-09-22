@@ -71,6 +71,13 @@
       "when": 1790108278441,
       "tag": "0009_policy_contact_details",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790109154438,
+      "tag": "0010_error_log_and_health",
+      "breakpoints": true
     }
   ]
 }

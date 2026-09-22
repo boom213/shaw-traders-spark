@@ -17,6 +17,16 @@ export const Route = createFileRoute("/category/$slug")({
     if (!loaderData) return { meta: [{ title: "Category not found — Shaw Traders EV" }, { name: "robots", content: "noindex" }] };
     const title = `${loaderData.category.name} — Buy Online | Shaw Traders EV`;
     const description = `${loaderData.category.name} for electric scooters, e-bikes and e-rickshaws. ${loaderData.category.blurb}. Available at Shaw Traders EV, Bud Bud, Bardhaman.`;
+    const url = canonical(`/category/${params.slug}`);
+    const breadcrumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+        { "@type": "ListItem", position: 2, name: "Categories", item: canonical("/categories") },
+        { "@type": "ListItem", position: 3, name: loaderData.category.name, item: url },
+      ],
+    };
     return {
       meta: [
         { title },
@@ -24,11 +34,14 @@ export const Route = createFileRoute("/category/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
       ],
-      links: [{ rel: "canonical", href: canonical(`/category/${params.slug}`) }],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(breadcrumbs) }],
     };
   },
+
   component: CategoryPage,
   errorComponent: ({ error }) => (
     <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error.message}</div>

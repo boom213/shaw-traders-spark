@@ -3,6 +3,7 @@ import { CheckCircle2, Heart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/hooks/useStore";
+import { useT } from "@/lib/i18n";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { imageFor } from "@/lib/placeholders";
@@ -18,6 +19,7 @@ export function ProductRating({ rating, count }: { rating?: number; count?: numb
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const t = useT();
   const { lists, addToCart, toggleWishlist } = useStore();
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
@@ -61,8 +63,12 @@ export function ProductCard({ product }: { product: Product }) {
           src={imageFor(product)}
           alt={product.name}
           loading="lazy"
+          decoding="async"
+          width={480}
+          height={480}
           className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+
       </Link>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
@@ -94,14 +100,14 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           ) : (
             <p className="text-sm font-semibold text-foreground">
-              Price on request <span className="font-normal text-muted-foreground">— ask on WhatsApp</span>
+              {t("product.priceOnRequest")}
             </p>
           )}
         </div>
 
         <div className="flex items-center justify-end gap-2">
           <span className={cn("text-xs font-medium", inStock ? "text-primary" : "text-destructive")}>
-            {inStock ? (product.stock <= 3 ? `Only ${product.stock} left` : "In stock") : "Out of stock"}
+            {inStock ? (product.stock <= 3 ? `Only ${product.stock} left` : t("product.inStock")) : t("product.outOfStock")}
           </span>
         </div>
 
@@ -113,14 +119,14 @@ export function ProductCard({ product }: { product: Product }) {
                 target="_blank"
                 rel="noreferrer"
               >
-                Ask price on WhatsApp
+                {t("product.askPrice")}
               </a>
             </Button>
           </div>
         ) : (
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
           <Button variant="outline" size="sm" disabled={!inStock} onClick={add}>
-            Add to Cart
+            {t("product.addToCart")}
           </Button>
           <Button
             size="sm"
@@ -129,7 +135,7 @@ export function ProductCard({ product }: { product: Product }) {
               if (add()) void navigate({ to: "/checkout" });
             }}
           >
-            Buy Now
+            {t("product.buyNow")}
           </Button>
         </div>
         )}

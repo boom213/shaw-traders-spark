@@ -1,12 +1,27 @@
-# Shaw Traders EV — move off localStorage
+# Shaw Traders EV — final pass
 
-- [ ] Migration: order public_token + contact_phone, user_lists mirror, place_order RPC with stock enforcement
-- [ ] Regenerate database types
-- [ ] Enable email/password + Google sign-in
-- [ ] Public read layer (catalog server fns, publishable client)
-- [ ] Manager read/write layer (manage session gated, admin client)
-- [ ] Order lookup server fns (token + phone last-4 or signed-in profile or manager)
-- [ ] useStore: cart/wishlist/saved/recent only, mirrored to DB when signed in
-- [ ] Rewrite routes: index, shop, category, product, offers, find-parts, cart, checkout, track, order, account, manage.*
-- [ ] Skeletons + empty states, SSR meta/canonical from DB
-- [ ] Stock checks at add-to-cart and checkout
+## Tests (first)
+- [ ] Vitest setup
+- [ ] Payment signature verification tests (checkout + webhook HMAC)
+- [ ] GST / COD / delivery pure-logic tests
+- [ ] Integration tests against create_order / mark_order_paid / release_order (stock, coupons, COD limit, oversell race)
+
+## SEO
+- [ ] /sitemap.xml from the database (products, categories, static pages) + robots.txt reference
+- [ ] JSON-LD: Product on product pages, BreadcrumbList on category pages, LocalBusiness on home
+- [ ] Canonical + DB-driven unique title/description per product and category
+- [ ] og:image / twitter:image per product from the product photo (absolute URL)
+
+## Performance
+- [ ] Lazy-load below-the-fold images, explicit width/height, WebP
+- [ ] Preload the home hero (LCP)
+- [ ] Manager panel out of the customer bundle
+- [ ] Query cache tuning for product/category
+
+## Accessibility
+- [ ] Keyboard nav, visible focus rings, labelled fields, alt text, AA contrast
+
+## Also
+- [ ] Bengali + Hindi alongside English
+- [ ] PWA install + offline browsing of viewed products
+- [ ] Error monitoring + uptime alerts
