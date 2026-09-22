@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Phone, Zap } from "lucide-react";
-import { BUSINESS, CATEGORIES } from "@/lib/catalog";
+import { BUSINESS } from "@/lib/catalog";
+import { categoriesQuery } from "@/lib/queries";
 
 export function Footer() {
+  const { data: categories } = useQuery(categoriesQuery());
   return (
     <footer className="mt-20 border-t border-border bg-surface pb-24 lg:pb-0">
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
@@ -26,7 +29,7 @@ export function Footer() {
         <div>
           <h4 className="text-sm font-semibold">Shop</h4>
           <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            {CATEGORIES.slice(0, 7).map((c) => (
+            {(categories ?? []).slice(0, 7).map((c) => (
               <li key={c.slug}>
                 <Link to="/category/$slug" params={{ slug: c.slug }} className="hover:text-foreground">
                   {c.name}
@@ -53,7 +56,6 @@ export function Footer() {
             <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
             <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
             <li><Link to="/bulk" className="hover:text-foreground">Dealer & Bulk Orders</Link></li>
-            <li><Link to="/admin" className="hover:text-foreground">Admin Panel</Link></li>
           </ul>
         </div>
       </div>
