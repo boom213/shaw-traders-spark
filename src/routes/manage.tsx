@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { BellRing, Boxes, Globe, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
+import { BellRing, Boxes, FileSpreadsheet, Globe, LayoutDashboard, LogOut, Receipt, Settings, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
