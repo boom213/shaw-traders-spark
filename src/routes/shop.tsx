@@ -1,17 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
+import { EmptyCatalogue, ProductGridSkeleton, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SearchBox } from "@/components/site/SearchBox";
-import { useStore } from "@/hooks/useStore";
-import { CATEGORIES, type Product } from "@/lib/catalog";
+import { canonical } from "@/lib/catalog";
+import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
 
 type ShopSearch = {
   q?: string;
@@ -21,23 +22,25 @@ type ShopSearch = {
   max?: number;
   sort?: string;
   inStock?: boolean;
-  rating?: number;
   voltage?: string;
   model?: string;
+  page?: number;
 };
+
+const PAGE_SIZE = 24;
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => ({
-    q: typeof search.q === "string" ? search.q : undefined,
-    category: typeof search.category === "string" ? search.category : undefined,
-    brand: typeof search.brand === "string" ? search.brand : undefined,
-    min: search.min ? Number(search.min) : undefined,
-    max: search.max ? Number(search.max) : undefined,
-    sort: typeof search.sort === "string" ? search.sort : undefined,
-    inStock: search.inStock === true || search.inStock === "true",
-    rating: search.rating ? Number(search.rating) : undefined,
-    voltage: typeof search.voltage === "string" ? search.voltage : undefined,
-    model: typeof search.model === "string" ? search.model : undefined,
+    q: typeof search['q'] === "string" ? search['q'] : undefined,
+    category: typeof search['category'] === "string" ? search['category'] : undefined,
+    brand: typeof search['brand'] === "string" ? search['brand'] : undefined,
+    min: search['min'] ? Number(search['min']) : undefined,
+    max: search['max'] ? Number(search['max']) : undefined,
+    sort: typeof search['sort'] === "string" ? search['sort'] : undefined,
+    inStock: search['inStock'] === true || search['inStock'] === "true" ? true : undefined,
+    voltage: typeof search['voltage'] === "string" ? search['voltage'] : undefined,
+    model: typeof search['model'] === "string" ? search['model'] : undefined,
+    page: search['page'] ? Number(search['page']) : undefined,
   }),
   head: () => ({
     meta: [
@@ -45,27 +48,19 @@ export const Route = createFileRoute("/shop")({
       { name: "description", content: "Search and filter EV batteries, chargers, motors, controllers, body parts and accessories by brand, voltage, capacity and price." },
       { property: "og:title", content: "Shop EV Parts & Accessories — Shaw Traders EV" },
       { property: "og:description", content: "Filter EV parts by category, brand, voltage, battery capacity, motor wattage and price." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: canonical("/shop") }],
   }),
   component: Shop,
 });
 
-export function matchesSearch(p: Product, term: string) {
-  const hay = [p.name, p.brand, p.model, p.sku, p.category, p.subcategory, p.voltage, p.ah, p.wattage, p.description, ...(p.compatibility ?? []), ...Object.values(p.specs ?? {})]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return term
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((t) => hay.includes(t));
-}
-
 function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<ShopSearch>) => void }) {
-  const { state } = useStore();
-  const brands = Array.from(new Set([...state.brands, ...state.products.map((p) => p.brand).filter(Boolean) as string[]]));
-  const voltages = Array.from(new Set(state.products.map((p) => p.voltage).filter(Boolean) as string[]));
+  const { data: categories } = useQuery(categoriesQuery());
+  const { data: facets } = useQuery(facetsQuery());
+  const brands = facets?.brands ?? [];
+  const voltages = facets?.voltages ?? [];
 
   return (
     <div className="grid gap-6 text-sm">
@@ -75,7 +70,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
-            {CATEGORIES.map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
+            {(categories ?? []).map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -87,7 +82,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
         ) : (
           <Select value={search.brand ?? "all"} onValueChange={(v) => apply({ brand: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-72">
               <SelectItem value="all">All brands</SelectItem>
               {brands.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
             </SelectContent>
@@ -116,7 +111,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
         ) : (
           <Select value={search.voltage ?? "all"} onValueChange={(v) => apply({ voltage: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-72">
               <SelectItem value="all">Any voltage</SelectItem>
               {voltages.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
             </SelectContent>
@@ -128,16 +123,6 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
         <Checkbox checked={!!search.inStock} onCheckedChange={(c) => apply({ inStock: c === true ? true : undefined })} />
         In stock only
       </label>
-
-      <div className="grid gap-2">
-        <Label className="font-semibold">Minimum rating</Label>
-        <Select value={String(search.rating ?? 0)} onValueChange={(v) => apply({ rating: Number(v) || undefined })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {[0, 3, 4].map((r) => <SelectItem key={r} value={String(r)}>{r === 0 ? "Any rating" : `${r}★ & above`}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   );
 }
@@ -145,39 +130,38 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
 function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop" });
-  const { state } = useStore();
   const [sheet, setSheet] = useState(false);
 
-  const apply = (patch: Partial<ShopSearch>) => navigate({ search: (prev) => ({ ...prev, ...patch }) });
+  const apply = (patch: Partial<ShopSearch>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch, page: undefined }) });
 
-  const results = useMemo(() => {
-    let list = state.products.slice();
-    if (search.q) list = list.filter((p) => matchesSearch(p, search.q!));
-    if (search.category) list = list.filter((p) => p.category === search.category);
-    if (search.brand) list = list.filter((p) => p.brand === search.brand);
-    if (search.model) list = list.filter((p) => matchesSearch(p, search.model!));
-    if (search.voltage) list = list.filter((p) => (p.voltage ?? "").toLowerCase().includes(search.voltage!.toLowerCase()));
-    if (search.min !== undefined) list = list.filter((p) => (p.price ?? Infinity) >= search.min!);
-    if (search.max !== undefined) list = list.filter((p) => (p.price ?? 0) <= search.max!);
-    if (search.inStock) list = list.filter((p) => (p.stock ?? 0) > 0);
-    if (search.rating) {
-      list = list.filter((p) => {
-        const rs = state.reviews.filter((r) => r.productId === p.id && r.approved);
-        if (rs.length === 0) return false;
-        return rs.reduce((n, r) => n + r.rating, 0) / rs.length >= search.rating!;
-      });
-    }
-    if (search.sort === "price-asc") list.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
-    if (search.sort === "price-desc") list.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-    if (search.sort === "newest") list.sort((a, b) => b.createdAt - a.createdAt);
-    return list;
-  }, [state.products, state.reviews, search]);
+  const page = Math.max(0, (search.page ?? 1) - 1);
+  const { data, isPending } = useQuery({
+    ...productsQuery({
+      ...(search.q ? { q: search.q } : {}),
+      ...(search.category ? { category: search.category } : {}),
+      ...(search.brand ? { brand: search.brand } : {}),
+      ...(search.voltage ? { voltage: search.voltage } : {}),
+      ...(search.model ? { model: search.model } : {}),
+      ...(search.min !== undefined ? { min: search.min } : {}),
+      ...(search.max !== undefined ? { max: search.max } : {}),
+      ...(search.inStock ? { inStock: true } : {}),
+      ...(search.sort ? { sort: search.sort } : {}),
+      page,
+      pageSize: PAGE_SIZE,
+    }),
+    placeholderData: keepPreviousData,
+  });
+
+  const results = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="container-page py-8">
       <SectionHeading
         title={search.q ? `Results for “${search.q}”` : "Shop All Products"}
-        subtitle={`${results.length} product${results.length === 1 ? "" : "s"}`}
+        subtitle={isPending ? "Loading products…" : `${total} product${total === 1 ? "" : "s"}`}
       />
 
       <div className="mb-6 lg:hidden">
@@ -205,19 +189,40 @@ function Shop() {
             </Select>
           </div>
 
-          {results.length === 0 ? (
+          {isPending ? (
+            <ProductGridSkeleton count={12} />
+          ) : results.length === 0 ? (
             <EmptyCatalogue
-              title={state.products.length === 0 ? "Catalogue coming online" : "No matching products"}
-              note={
-                state.products.length === 0
-                  ? undefined
-                  : "Try a different search or clear some filters. You can also send us the part details on WhatsApp and we'll check stock for you."
-              }
+              title="No matching products"
+              note="Try a different search or clear some filters. You can also send us the part details on WhatsApp and we'll check stock for you."
             />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-              {results.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {results.map((p) => <ProductCard key={p.id} product={p} />)}
+              </div>
+              {pages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    disabled={page === 0}
+                    onClick={() => navigate({ search: (prev) => ({ ...prev, page: page }) })}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page + 1} of {pages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={page + 1 >= pages}
+                    onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 2 }) })}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -243,7 +248,7 @@ function Shop() {
             </Select>
           </div>
           <Filters search={search} apply={apply} />
-          <Button className="mt-6 w-full" onClick={() => setSheet(false)}>Show {results.length} results</Button>
+          <Button className="mt-6 w-full" onClick={() => setSheet(false)}>Show {total} results</Button>
         </SheetContent>
       </Sheet>
     </div>
