@@ -91,7 +91,9 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <VehiclePicker className="hidden sm:flex" />
           <LanguageSwitch className="hidden lg:block" />
+
           <button
             onClick={() => setMobileSearch((v) => !v)}
             className="grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
