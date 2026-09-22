@@ -95,6 +95,15 @@ function CartPage() {
     window.localStorage.removeItem(COUPON_KEY);
   };
 
+  if (siteMode !== "full") {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title="Online ordering is paused" subtitle="You can still browse the catalogue and ask us about any part." />
+        <Button className="mt-4" asChild><Link to="/shop">Browse parts</Link></Button>
+      </div>
+    );
+  }
+
   return (
     <div className="container-page py-10">
       <SectionHeading title="Your Cart" subtitle={loading ? "Loading your cart…" : `${lines.length} item(s)`} />
