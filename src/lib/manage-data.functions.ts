@@ -14,7 +14,7 @@ export type ManageOrder = {
   shippingMethod: string | null;
   address: Record<string, string>;
   placedAt: string;
-  items: { name: string; qty: number; price: number | null; rackLocation: string | null }[];
+  items: { name: string; qty: number; price: number | null; rackLocation: string | null; image: string | null }[];
   courierName: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
@@ -38,6 +38,7 @@ const mapManageOrder = (row: Row): ManageOrder => ({
     qty: Number(i['qty']),
     price: i['price_snapshot'] === null || i['price_snapshot'] === undefined ? null : Number(i['price_snapshot']),
     rackLocation: (i['products'] as Row | null)?.['rack_location'] ?? null,
+    image: i['image_snapshot'] ? String(i['image_snapshot']) : null,
   })),
   courierName: row['courier_name'] ?? null,
   trackingNumber: row['tracking_number'] ?? null,
@@ -75,7 +76,7 @@ export const manageOrders = createServerFn({ method: "POST" })
     let query = sb
       .from("orders")
       .select(
-        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)",
+        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)",
       )
       .order("placed_at", { ascending: false })
       .limit(300);

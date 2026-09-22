@@ -14,6 +14,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SearchBox } from "@/components/site/SearchBox";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
+import { useVehicle } from "@/hooks/useVehicle";
 
 type ShopSearch = {
   q?: string;
@@ -26,6 +27,7 @@ type ShopSearch = {
   voltage?: string;
   ah?: string;
   model?: string;
+  all?: boolean;
   page?: number;
 };
 
@@ -43,6 +45,7 @@ export const Route = createFileRoute("/shop")({
     voltage: typeof search['voltage'] === "string" ? search['voltage'] : undefined,
     ah: typeof search['ah'] === "string" ? search['ah'] : undefined,
     model: typeof search['model'] === "string" ? search['model'] : undefined,
+    all: search['all'] === true || search['all'] === "true" ? true : undefined,
     page: search['page'] ? Number(search['page']) : undefined,
   }),
   head: () => ({
@@ -161,6 +164,13 @@ function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop" });
   const [sheet, setSheet] = useState(false);
+  const { vehicle } = useVehicle();
+
+  // A saved scooter filters the list to parts that fit, until "All parts" is chosen.
+  useEffect(() => {
+    if (!vehicle || search.model || search.all) return;
+    void navigate({ search: (prev) => ({ ...prev, model: vehicle.model, page: undefined }) });
+  }, [vehicle, search.model, search.all, navigate]);
 
   const apply = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch, page: undefined }) });
@@ -201,6 +211,25 @@ function Shop() {
         title={search.q ? `Results for “${search.q}”` : "Shop All Products"}
         subtitle={isPending ? "Loading products…" : `${total} product${total === 1 ? "" : "s"}`}
       />
+
+      {vehicle && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm">
+          <span>
+            {search.model
+              ? `Showing parts that fit your ${search.model}`
+              : `Showing all parts — your scooter is a ${vehicle.model}`}
+          </span>
+          {search.model ? (
+            <Button size="sm" variant="outline" onClick={() => navigate({ search: (prev) => ({ ...prev, model: undefined, all: true, page: undefined }) })}>
+              All parts
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => navigate({ search: (prev) => ({ ...prev, model: vehicle.model, all: undefined, page: undefined }) })}>
+              Only parts that fit
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="mb-6 lg:hidden">
         <SearchBox />

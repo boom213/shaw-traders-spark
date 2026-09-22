@@ -122,9 +122,12 @@ export function ProductCard({ product }: { product: Product }) {
               Check availability
             </Button>
           </div>
-        ) : product.price === undefined ? (
-          <div className="mt-auto grid pt-3">
-            <Button size="sm" asChild>
+        ) : product.price === undefined || !inStock ? (
+          <div className="mt-auto grid gap-2 pt-3">
+            <Button size="sm" onClick={() => setEnquiry(true)}>
+              Check availability
+            </Button>
+            <Button size="sm" variant="outline" asChild>
               <a
                 href={whatsappLink(`Hello, please share the price and availability of ${product.name} (${product.sku}).`)}
                 target="_blank"

@@ -215,6 +215,9 @@ export async function buildDailySummary(day: Date): Promise<{ day: string; order
   const revenue = live.reduce((n, o) => n + Number(o['total'] ?? 0), 0);
   const lowList = (low ?? []) as Row[];
 
+  const { needsAttentionData } = await import("@/lib/attention.functions");
+  const attention = await needsAttentionData();
+
   const body = [
     `📊 ${BUSINESS.name} — ${new Date(`${dayStr}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`,
     "",
@@ -223,9 +226,13 @@ export async function buildDailySummary(day: Date): Promise<{ day: string; order
     rows.length ? "" : "No orders today.",
     ...live.slice(0, 10).map((o) => `• ${o['human_id']} — ${rs(o['total'])} (${(o['address'] ?? {})['name'] ?? "Customer"})`),
     "",
+    attention.items.length ? "Needs attention:" : "Nothing is waiting on you.",
+    ...attention.items.map((i) => `• ${i.label}: ${i.count}`),
+    "",
     lowList.length ? `Low on stock (${lowList.length}):` : "Nothing is low on stock.",
     ...lowList.map((p) => `• ${p['name']} — ${p['stock']} left`),
   ]
+
     .filter((l) => l !== undefined)
     .join("\n");
 

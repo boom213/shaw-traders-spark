@@ -74,8 +74,14 @@ function safeJson(text: string): Row {
 }
 
 async function processDelivery(event: string, payload: Row): Promise<void> {
+  if (event === "whatsapp.message" || event === "whatsapp.inbound") {
+    const { handleInboundMessages } = await import("@/lib/whatsapp-inbound.server");
+    await handleInboundMessages(payload);
+    return;
+  }
   if (event !== "whatsapp.status") return;
   const { applyMessageStatus } = await import("@/lib/whatsapp.server");
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const statuses = (payload?.['entry']?.[0]?.['changes']?.[0]?.['value']?.['statuses'] ?? []) as Row[];
   for (const s of statuses) {

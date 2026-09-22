@@ -4,6 +4,8 @@ import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "luc
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
+import { VehiclePicker } from "@/components/site/VehiclePicker";
+
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
@@ -48,6 +50,8 @@ export function Header() {
             <div className="mb-6">
               <Logo />
             </div>
+            <VehiclePicker className="mb-4 w-full justify-start" />
+
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
@@ -89,7 +93,9 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <VehiclePicker className="hidden sm:flex" />
           <LanguageSwitch className="hidden lg:block" />
+
           <button
             onClick={() => setMobileSearch((v) => !v)}
             className="grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
