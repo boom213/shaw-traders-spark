@@ -14,7 +14,69 @@ import {
   staffInvoice,
   type ManageOrder,
 } from "@/lib/manage-data.functions";
-import { ALL_STATUSES, formatINR, statusLabel, type OrderStatus } from "@/lib/catalog";
+import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, whatsappLink, type OrderStatus } from "@/lib/catalog";
+
+/** The next step in the normal order journey, so the owner can advance with one tap. */
+function nextStatus(current: OrderStatus): OrderStatus | null {
+  const i = ORDER_FLOW.findIndex((s) => s === current);
+  if (i === -1 || i + 1 >= ORDER_FLOW.length) return null;
+  return ORDER_FLOW[i + 1] as OrderStatus;
+}
+
+function customerMessage(o: ManageOrder) {
+  return `Hello ${String(o.address['name'] ?? "")}, this is ${BUSINESS.name} about your order ${o.humanId}.`;
+}
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
+}
+
+/** Opens a clean one-page slip the owner can print or save for the parcel. */
+function printPackingSlip(o: ManageOrder) {
+  const a = o.address as Record<string, unknown>;
+  const rows = o.items
+    .map(
+      (it) =>
+        `<tr><td>${escapeHtml(it.name)}</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${
+          it.price === null ? "-" : formatINR(it.price * it.qty)
+        }</td></tr>`,
+    )
+    .join("");
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${o.humanId}</title><style>
+    body{font-family:system-ui,sans-serif;margin:24px;color:#111}
+    h1{font-size:20px;margin:0}
+    table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+    th,td{border-bottom:1px solid #ddd;padding:8px 6px;text-align:left}
+    .muted{color:#555;font-size:13px}
+    .box{border:1px solid #ddd;border-radius:8px;padding:12px;margin-top:16px}
+    @media print{button{display:none}}
+  </style></head><body>
+    <h1>${escapeHtml(BUSINESS.name)}</h1>
+    <p class="muted">${escapeHtml(BUSINESS.address)}<br/>${escapeHtml(BUSINESS.phone)}</p>
+    <h2 style="font-size:16px">Packing slip · ${escapeHtml(o.humanId)}</h2>
+    <p class="muted">${new Date(o.placedAt).toLocaleString("en-IN")} · ${escapeHtml(o.paymentMethod ?? "")} · ${escapeHtml(o.paymentStatus)}</p>
+    <div class="box">
+      <strong>Deliver to</strong><br/>
+      ${escapeHtml(String(a['name'] ?? ""))}<br/>
+      ${escapeHtml(String(a['line1'] ?? ""))}${a['landmark'] ? `, ${escapeHtml(String(a['landmark']))}` : ""}<br/>
+      ${escapeHtml(String(a['city'] ?? ""))}, ${escapeHtml(String(a['state'] ?? ""))} – ${escapeHtml(String(a['pincode'] ?? ""))}<br/>
+      ${escapeHtml(String(a['phone'] ?? ""))}
+    </div>
+    <table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <p style="text-align:right;font-weight:700;margin-top:12px">Total ${formatINR(o.total)}</p>
+    <p class="muted">${escapeHtml(o.shippingMethod ?? "")}</p>
+    <button onclick="window.print()">Print</button>
+  </body></html>`;
+
+  const w = window.open("", "_blank", "width=800,height=900");
+  if (!w) return toast.error("Allow pop-ups to print the packing slip");
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
+}
 
 export const Route = createFileRoute("/manage/orders")({
   component: ManageOrders,
