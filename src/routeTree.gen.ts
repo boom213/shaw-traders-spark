@@ -34,6 +34,8 @@ import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
+import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
+import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -161,6 +163,18 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronDailySummaryRoute =
+  ApiPublicCronDailySummaryRouteImport.update({
+    id: '/api/public/cron/daily-summary',
+    path: '/api/public/cron/daily-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWhatsappWebhookRoute =
+  ApiPublicWhatsappWebhookRouteImport.update({
+    id: '/api/public/whatsapp/webhook',
+    path: '/api/public/whatsapp/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -188,6 +202,8 @@ export interface FileRoutesByFullPath {
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,6 +230,8 @@ export interface FileRoutesByTo {
   '/product/$slug': typeof ProductSlugRoute
   '/manage': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -242,6 +260,8 @@ export interface FileRoutesById {
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +291,8 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage/'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/daily-summary'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -297,6 +319,8 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/daily-summary'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
@@ -324,6 +348,8 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage/'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/daily-summary'
+    | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -345,6 +371,8 @@ export interface RootRouteChildren {
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
+  ApiPublicCronDailySummaryRoute: typeof ApiPublicCronDailySummaryRoute
+  ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -524,6 +552,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/daily-summary': {
+      id: '/api/public/cron/daily-summary'
+      path: '/api/public/cron/daily-summary'
+      fullPath: '/api/public/cron/daily-summary'
+      preLoaderRoute: typeof ApiPublicCronDailySummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/whatsapp/webhook': {
+      id: '/api/public/whatsapp/webhook'
+      path: '/api/public/whatsapp/webhook'
+      fullPath: '/api/public/whatsapp/webhook'
+      preLoaderRoute: typeof ApiPublicWhatsappWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -569,6 +611,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
+  ApiPublicCronDailySummaryRoute: ApiPublicCronDailySummaryRoute,
+  ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

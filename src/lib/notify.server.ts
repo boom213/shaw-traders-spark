@@ -49,6 +49,14 @@ const customerPhone = (o: Row) => String(o['contact_phone'] ?? (o['address'] ?? 
 
 /** New order: full details to the owner, a confirmation to the customer. */
 export async function notifyOrderPlaced(orderId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: already } = await supabaseAdmin
+    .from("notifications")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("kind", "order.placed.owner")
+    .maybeSingle();
+  if (already) return;
   const o = await loadOrderForNotice(orderId);
   if (!o) return;
   const s = await notifySettings();
