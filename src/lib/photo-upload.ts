@@ -47,3 +47,16 @@ export async function uploadReviewPhoto(productId: string, file: File): Promise<
   if (error) throw new Error(error.message);
   return `/api/public/photo/review-photos/${name}`;
 }
+
+/** Upload a home-page banner photo and return the link to store against the slide. */
+export async function uploadHeroPhoto(file: File): Promise<string> {
+  const blob = await toWebp(file);
+  const name = `hero/${crypto.randomUUID()}.webp`;
+  const { error } = await supabase.storage.from("product-photos").upload(name, blob, {
+    contentType: "image/webp",
+    cacheControl: "31536000",
+    upsert: false,
+  });
+  if (error) throw new Error(error.message);
+  return `/api/public/photo/${name}`;
+}

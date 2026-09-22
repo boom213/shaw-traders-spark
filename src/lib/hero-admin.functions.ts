@@ -136,6 +136,6 @@ export const deleteSlide = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("hero_slides").delete().eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
-    await logAudit(supabaseAdmin as never, actor, "hero.deleted", "hero_slides", data.id, null);
+    await logAudit(supabaseAdmin as never, actor, "hero.deleted", "hero_slides", data.id, {});
     return { ok: true as const };
   });
