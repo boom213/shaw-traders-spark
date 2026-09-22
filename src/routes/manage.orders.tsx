@@ -15,17 +15,20 @@ import {
   staffInvoice,
   type ManageOrder,
 } from "@/lib/manage-data.functions";
-import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, whatsappLink, type OrderStatus } from "@/lib/catalog";
+import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, type OrderStatus } from "@/lib/catalog";
 
 /** The next step in the normal order journey, so the owner can advance with one tap. */
 function nextStatus(current: OrderStatus): OrderStatus | null {
-  const i = ORDER_FLOW.findIndex((s) => s === current);
+  const i = ORDER_FLOW.findIndex((s) => s.value === current);
   if (i === -1 || i + 1 >= ORDER_FLOW.length) return null;
-  return ORDER_FLOW[i + 1] as OrderStatus;
+  return ORDER_FLOW[i + 1]!.value;
 }
 
-function customerMessage(o: ManageOrder) {
-  return `Hello ${String(o.address['name'] ?? "")}, this is ${BUSINESS.name} about your order ${o.humanId}.`;
+/** Opens WhatsApp with the customer's number and the order already mentioned. */
+function customerWhatsApp(o: ManageOrder) {
+  const digits = String(o.address['phone'] ?? "").replace(/\D/g, "").slice(-10);
+  const text = `Hello ${String(o.address['name'] ?? "")}, this is ${BUSINESS.name} about your order ${o.humanId}.`;
+  return `https://wa.me/91${digits}?text=${encodeURIComponent(text)}`;
 }
 
 function escapeHtml(s: string) {
