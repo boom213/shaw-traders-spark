@@ -16,6 +16,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { AnalyticsGate, CookieConsent } from "@/components/site/CookieConsent";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
+import { OrderingBanner } from "@/components/site/OrderingBanner";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
@@ -150,6 +151,7 @@ function RootComponent() {
           >
             Skip to main content
           </a>
+          <OrderingBanner />
           <Header />
           <main id="main" className="flex-1 pb-16 lg:pb-0">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
