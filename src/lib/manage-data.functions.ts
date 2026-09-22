@@ -339,12 +339,6 @@ export const saveShopSettings = createServerFn({ method: "POST" })
     const patch = {
       id: true,
       ...sensitive,
-      gst_enabled_unused: undefined as never,
-      gst_enabled_placeholder: undefined as never,
-      gst_enabled_old: Boolean(data.gstEnabled),
-      gst_rate: Math.max(0, Math.min(50, Number(data.gstRate) || 0)),
-      prices_include_gst: Boolean(data.pricesIncludeGst),
-      gstin: String(data.gstin ?? "").trim().toUpperCase() || null,
       legal_name: String(data.legalName ?? "").trim() || null,
       billing_address: String(data.billingAddress ?? "").trim() || null,
       cod_enabled: Boolean(data.codEnabled),
@@ -363,6 +357,12 @@ export const saveShopSettings = createServerFn({ method: "POST" })
     const { error } = await sb.from("shop_settings").upsert(patch);
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb, actor, "settings.updated", "shop_settings", "1", patch as never);
+    if (superAdmin && String(current?.['ordering_mode'] ?? "full") !== sensitive.ordering_mode) {
+      await logAudit(sb, actor, "settings.ordering_mode", "shop_settings", "1", {
+        from: current?.['ordering_mode'] ?? "full",
+        to: sensitive.ordering_mode,
+      } as never);
+    }
     return { ok: true as const };
   });
 
