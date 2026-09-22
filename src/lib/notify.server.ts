@@ -203,7 +203,7 @@ export async function buildDailySummary(day: Date): Promise<{ day: string; order
     supabaseAdmin
       .from("products")
       .select("name, stock")
-      .eq("is_active", true)
+      .eq("status", "visible")
       .gt("stock", 0)
       .lte("stock", s.lowStock)
       .order("stock")

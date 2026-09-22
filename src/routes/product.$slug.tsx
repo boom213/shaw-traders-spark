@@ -10,8 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionHeading } from "@/components/site/Empty";
+import { EnquiryDialog } from "@/components/site/EnquiryDialog";
 import { ProductCard, ProductRating } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
+import { useProductOrdering } from "@/hooks/useOrderingMode";
+import { staffProductMeta } from "@/lib/enquiries.functions";
+import { useQuery } from "@tanstack/react-query";
 import { useVehicle } from "@/hooks/useVehicle";
 import { BUSINESS, canonical, discountPct, formatINR, whatsappLink } from "@/lib/catalog";
 import { deliveryFor } from "@/lib/delivery";
@@ -136,8 +140,16 @@ function ProductPage() {
   const [sending, setSending] = useState(false);
   const [alertContact, setAlertContact] = useState("");
   const [alertDone, setAlertDone] = useState(false);
+  const [enquiry, setEnquiry] = useState(false);
 
   const product = data?.product;
+  const mode = useProductOrdering({ orderingMode: product?.orderingMode ?? null, categoryOrderingMode: product?.categoryOrderingMode ?? null });
+  const { data: staffMeta } = useQuery({
+    queryKey: ["staff-product-meta", product?.id],
+    queryFn: () => staffProductMeta({ data: { productId: String(product?.id) } }),
+    enabled: Boolean(product?.id),
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (product) markViewed(product.id);
@@ -278,11 +290,13 @@ function ProductPage() {
             ) : (
               <>
                 <p className="font-medium">Price on request — ask us and we will quote you today.</p>
-                <Button className="mt-3 w-full" asChild>
-                  <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer">
-                    <MessageCircle className="size-4" /> Ask about this part on WhatsApp
-                  </a>
-                </Button>
+                {mode !== "browse" && (
+                  <Button className="mt-3 w-full" asChild>
+                    <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer">
+                      <MessageCircle className="size-4" /> Ask about this part on WhatsApp
+                    </a>
+                  </Button>
+                )}
               </>
             )}
             <p className={`mt-2 text-sm font-medium ${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
@@ -293,7 +307,16 @@ function ProductPage() {
                 : "Out of stock"}
             </p>
 
-            {product.price !== undefined && (
+            {mode === "enquiry" && (
+              <div className="mt-5 grid gap-2">
+                <Button onClick={() => setEnquiry(true)}>Check availability</Button>
+                <Button variant="secondary" asChild>
+                  <a href={whatsappLink(waMsg)} target="_blank" rel="noreferrer"><MessageCircle className="size-4" /> Ask on WhatsApp</a>
+                </Button>
+              </div>
+            )}
+
+            {mode === "full" && product.price !== undefined && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Button variant="outline" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
                 <Button
@@ -309,6 +332,16 @@ function ProductPage() {
                 </Button>
               </div>
             )}
+
+            {staffMeta?.staff && (
+              <p className="mt-4 rounded-xl border border-dashed border-border bg-surface p-3 text-sm">
+                <span className="font-semibold">Shelf location (staff only):</span>{" "}
+                {staffMeta.rackLocation || "not recorded yet"}
+              </p>
+            )}
+
+            <EnquiryDialog product={product} open={enquiry} onOpenChange={setEnquiry} />
+
             <Button variant="ghost" className="mt-2 w-full" onClick={() => toggleWishlist(product.id)}>
               {lists.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
             </Button>

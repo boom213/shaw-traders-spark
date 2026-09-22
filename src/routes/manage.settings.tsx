@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { getShopSettings, saveShopSettings, type ShopSettingsRow } from "@/lib/manage-data.functions";
+import { ORDERING_MODES } from "@/lib/ordering";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/manage/settings")({
   head: () => ({ meta: [{ title: "Payments & GST — Manager Panel" }, { name: "robots", content: "noindex" }] }),
@@ -32,7 +34,7 @@ function SettingsPage() {
 
   const submit = async () => {
     setSaving(true);
-    const { onlinePayments: _ignored, whatsappReady: _ready, ...rest } = form;
+    const { onlinePayments: _ignored, whatsappReady: _ready, isSuperAdmin: _sa, ...rest } = form;
     const res = await save({ data: rest });
     setSaving(false);
     if (!res.ok) return toast.error(res.error ?? "Could not save.");
@@ -40,8 +42,46 @@ function SettingsPage() {
     void refetch();
   };
 
+  const locked = !form.isSuperAdmin;
+
   return (
     <div className="grid max-w-2xl gap-6 py-6">
+      <section className="grid gap-3 rounded-2xl border-2 border-primary/40 bg-card p-5">
+        <h2 className="font-display text-base font-bold">What customers can do right now</h2>
+        {locked && (
+          <p className="text-xs text-muted-foreground">Only the shop owner account can change this.</p>
+        )}
+        <div className="grid gap-2">
+          {ORDERING_MODES.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              disabled={locked}
+              onClick={() => set("orderingMode", m.value)}
+              className={cn(
+                "rounded-xl border p-3 text-left transition-colors disabled:opacity-60",
+                form.orderingMode === m.value ? "border-primary bg-primary/10" : "border-border hover:bg-muted",
+              )}
+            >
+              <span className="block text-sm font-semibold">{m.label}</span>
+              <span className="block text-xs text-muted-foreground">{m.help}</span>
+            </button>
+          ))}
+        </div>
+        {form.orderingMode !== "full" && (
+          <Field label="Message shown at the top of the website">
+            <Textarea
+              rows={2}
+              disabled={locked}
+              value={form.browseBanner}
+              onChange={(e) => set("browseBanner", e.target.value)}
+              placeholder="Please call the shop to confirm stock before visiting."
+            />
+          </Field>
+        )}
+        <p className="text-xs text-muted-foreground">Saving this takes effect for customers straight away.</p>
+      </section>
+
       <section className="rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display text-base font-bold">Online payments</h2>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -75,20 +115,21 @@ function SettingsPage() {
       <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
         <h2 className="font-display text-base font-bold">GST</h2>
         <Row label="Charge GST on orders">
-          <Switch checked={form.gstEnabled} onCheckedChange={(v) => set("gstEnabled", v)} />
+          <Switch disabled={locked} checked={form.gstEnabled} onCheckedChange={(v) => set("gstEnabled", v)} />
         </Row>
         <Row label="Prices already include GST">
-          <Switch checked={form.pricesIncludeGst} onCheckedChange={(v) => set("pricesIncludeGst", v)} />
+          <Switch disabled={locked} checked={form.pricesIncludeGst} onCheckedChange={(v) => set("pricesIncludeGst", v)} />
         </Row>
         <Field label="GST rate (%)">
           <Input
             type="number"
+            disabled={locked}
             value={String(form.gstRate)}
             onChange={(e) => set("gstRate", Number(e.target.value))}
           />
         </Field>
         <Field label="GSTIN (leave blank if you do not have one yet)">
-          <Input value={form.gstin} onChange={(e) => set("gstin", e.target.value)} placeholder="19ABCDE1234F1Z5" />
+          <Input disabled={locked} value={form.gstin} onChange={(e) => set("gstin", e.target.value)} placeholder="19ABCDE1234F1Z5" />
         </Field>
         <Field label="Business name on the bill">
           <Input value={form.legalName} onChange={(e) => set("legalName", e.target.value)} />

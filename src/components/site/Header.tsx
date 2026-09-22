@@ -7,6 +7,7 @@ import { SearchBox } from "@/components/site/SearchBox";
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
+import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 
@@ -28,6 +29,7 @@ export function Header() {
   const t = useT();
   const { lists } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
+  const { mode: siteMode } = useSiteOrdering();
   const { data: categories } = useQuery(categoriesQuery());
   const navCategories = NAV_CATEGORIES.map((slug) => (categories ?? []).find((c) => c.slug === slug)).filter(
     (c): c is NonNullable<typeof c> => Boolean(c),
@@ -110,14 +112,16 @@ export function Header() {
           >
             <MessageCircle className="size-5" />
           </a>
-          <Link to="/cart" className="relative grid size-9 place-items-center rounded-lg hover:bg-muted" aria-label={t("nav.cart")}>
-            <ShoppingCart className="size-5" />
-            {cartCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          {siteMode === "full" && (
+            <Link to="/cart" className="relative grid size-9 place-items-center rounded-lg hover:bg-muted" aria-label={t("nav.cart")}>
+              <ShoppingCart className="size-5" />
+              {cartCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
 

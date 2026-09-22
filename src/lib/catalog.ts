@@ -6,6 +6,8 @@
  * kept in local state (and mirrored to the database when signed in).
  */
 
+import type { OrderingMode } from "@/lib/ordering";
+
 export type Product = {
   id: string;
   sku: string;
@@ -13,6 +15,9 @@ export type Product = {
   slug: string;
   category: string; // category slug
   categoryName?: string;
+  /** How this part may be bought, when it overrides the category and the site. */
+  orderingMode?: OrderingMode;
+  categoryOrderingMode?: OrderingMode;
   subcategory?: string;
   brand?: string;
   model?: string;

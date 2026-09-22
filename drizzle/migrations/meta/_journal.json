@@ -85,6 +85,20 @@
       "when": 1790110999297,
       "tag": "0011_fix_create_order_duplicate_lines",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1790111324315,
+      "tag": "0012_super_admin_role_value",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790111359396,
+      "tag": "0013_ordering_mode_status_rack",
+      "breakpoints": true
     }
   ]
 }

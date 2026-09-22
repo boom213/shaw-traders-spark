@@ -1,9 +1,12 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Heart, Star } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { EnquiryDialog } from "@/components/site/EnquiryDialog";
 import { useStore } from "@/hooks/useStore";
 import { useT } from "@/lib/i18n";
+import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { imageFor } from "@/lib/placeholders";
@@ -23,6 +26,8 @@ export function ProductCard({ product }: { product: Product }) {
   const { lists, addToCart, toggleWishlist } = useStore();
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
+  const mode = useProductOrdering(product);
+  const [enquiry, setEnquiry] = useState(false);
   const off = discountPct(product.price, product.mrp);
   const wished = lists.wishlist.includes(product.id);
   const inStock = product.stock > 0;
@@ -111,7 +116,13 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {product.price === undefined ? (
+        {mode === "browse" ? null : mode === "enquiry" ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" onClick={() => setEnquiry(true)}>
+              Check availability
+            </Button>
+          </div>
+        ) : product.price === undefined ? (
           <div className="mt-auto grid pt-3">
             <Button size="sm" asChild>
               <a
@@ -140,6 +151,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         )}
       </div>
+      <EnquiryDialog product={product} open={enquiry} onOpenChange={setEnquiry} />
     </article>
   );
 }

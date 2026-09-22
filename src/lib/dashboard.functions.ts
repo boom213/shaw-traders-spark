@@ -42,7 +42,7 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
       .select("id, total, status, placed_at, order_items(name_snapshot, qty, price_snapshot)")
       .gte("placed_at", monthStart)
       .limit(2000),
-    sb.from("products").select("id, name, price, stock, reorder_threshold, product_images(url)").eq("is_active", true).limit(3000),
+    sb.from("products").select("id, name, price, stock, reorder_threshold, product_images(url)").eq("status", "visible").limit(3000),
     sb.from("search_misses").select("term, hits").order("hits", { ascending: false }).limit(12),
     sb
       .from("error_log")

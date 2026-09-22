@@ -63,7 +63,7 @@ export const Route = createFileRoute("/sitemap.xml")({
             const { data: products, error } = await sb
               .from("products")
               .select("slug, updated_at")
-              .eq("is_active", true)
+              .eq("status", "visible")
               .order("slug")
               .range(page * pageSize, page * pageSize + pageSize - 1);
             if (error) throw new Error(error.message);

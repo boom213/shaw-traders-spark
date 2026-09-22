@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
+import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
@@ -68,6 +69,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 }
 
 function CartPage() {
+  const { mode: siteMode } = useSiteOrdering();
   const { lists, setQty, removeFromCart, saveForLater, moveToCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
@@ -93,6 +95,15 @@ function CartPage() {
     setApplied(undefined);
     window.localStorage.removeItem(COUPON_KEY);
   };
+
+  if (siteMode !== "full") {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title="Online ordering is paused" subtitle="You can still browse the catalogue and ask us about any part." />
+        <Button className="mt-4" asChild><Link to="/shop">Browse parts</Link></Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container-page py-10">
