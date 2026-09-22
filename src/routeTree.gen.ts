@@ -28,6 +28,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
@@ -145,6 +146,11 @@ const TermsRoute = TermsRouteImport.update({
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradeRoute = TradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WarrantyRoute = WarrantyRouteImport.update({
@@ -287,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRoute
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -330,6 +337,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRoute
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRoute
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -553,6 +565,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
+  TradeRoute: typeof TradeRoute
   WarrantyRoute: typeof WarrantyRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
@@ -699,6 +712,13 @@ declare module '@tanstack/react-router' {
       path: '/track'
       fullPath: '/track'
       preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trade': {
+      id: '/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof TradeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/warranty': {
@@ -918,6 +938,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
+  TradeRoute: TradeRoute,
   WarrantyRoute: WarrantyRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
