@@ -261,6 +261,10 @@ export type ShopSettingsRow = {
   notifyEnabled: boolean;
   defaultHsn: string;
   lowStockThreshold: number;
+  supportEmail: string;
+  grievanceName: string;
+  grievanceEmail: string;
+  grievancePhone: string;
   onlinePayments: boolean;
   whatsappReady: boolean;
 };
@@ -285,6 +289,10 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
     notifyEnabled: Boolean(data?.notify_enabled ?? true),
     defaultHsn: String(data?.default_hsn ?? "8507"),
     lowStockThreshold: Number(data?.low_stock_threshold ?? 3),
+    supportEmail: String(data?.support_email ?? ""),
+    grievanceName: String(data?.grievance_officer_name ?? ""),
+    grievanceEmail: String(data?.grievance_officer_email ?? ""),
+    grievancePhone: String(data?.grievance_officer_phone ?? ""),
     onlinePayments: razorpayKeys().configured,
     whatsappReady: (await import("@/lib/whatsapp.server")).whatsappConfigured(),
   };
@@ -313,6 +321,10 @@ export const saveShopSettings = createServerFn({ method: "POST" })
       notify_enabled: Boolean(data.notifyEnabled),
       default_hsn: String(data.defaultHsn ?? "").trim() || "8507",
       low_stock_threshold: Math.max(0, Math.min(99, Number(data.lowStockThreshold) || 3)),
+      support_email: String(data.supportEmail ?? "").trim() || null,
+      grievance_officer_name: String(data.grievanceName ?? "").trim() || null,
+      grievance_officer_email: String(data.grievanceEmail ?? "").trim() || null,
+      grievance_officer_phone: String(data.grievancePhone ?? "").replace(/[^\d+]/g, "") || null,
     };
     const { error } = await sb.from("shop_settings").upsert(patch);
     if (error) return { ok: false as const, error: error.message };
