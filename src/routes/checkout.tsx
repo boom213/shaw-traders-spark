@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
+import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { supabase } from "@/integrations/supabase/client";
 import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/cart";
 import { previewCoupon } from "@/lib/shop-extras.functions";
@@ -51,6 +52,7 @@ type PendingOrder = { orderId: string; humanId: string; token: string; total: nu
 
 function CheckoutPage() {
   const navigate = useNavigate();
+  const { mode: siteMode } = useSiteOrdering();
   const { clearCart, user } = useStore();
   const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const [couponCode, setCouponCode] = useState("");
