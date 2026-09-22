@@ -3,16 +3,21 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
 import heroImg from "@/assets/hero-ev.jpg";
 import { Button } from "@/components/ui/button";
-import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
+import { HeroCarousel, heroImageFor } from "@/components/home/HeroCarousel";
+import { CategoryCarousel } from "@/components/home/CategoryCarousel";
+import { ProductCarousel } from "@/components/home/ProductCarousel";
+import { OffersStrip } from "@/components/home/OffersStrip";
+import { ScooterStrip } from "@/components/home/ScooterStrip";
+import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { facetsQuery, homeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: "Shaw Traders EV — EV Parts, Batteries & Accessories | Bud Bud" },
       {
@@ -31,7 +36,7 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: canonical("/") },
-      { rel: "preload", as: "image", href: heroImg, fetchPriority: "high" },
+      { rel: "preload", as: "image", href: heroImageFor(loaderData?.heroSlides?.[0]), fetchPriority: "high" },
     ],
 
     scripts: [
