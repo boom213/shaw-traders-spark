@@ -320,10 +320,38 @@ export const productsByIds = createServerFn({ method: "POST" })
     return (rows ?? []).map(mapProduct);
   });
 
+export type HeroSlide = {
+  id: string;
+  imageUrl: string | null;
+  heading: string;
+  subline: string | null;
+  buttonLabel: string | null;
+  buttonHref: string | null;
+};
+
+export type OfferCoupon = {
+  code: string;
+  type: string;
+  value: number;
+  minOrder: number;
+  maxDiscount: number | null;
+  expiresAt: string | null;
+};
+
+/** Best sellers by quantity sold over a recent window, newest orders only. */
+async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, limit = 12): Promise<Product[]> {
+  const { data: top } = await sb.rpc("best_sellers", { p_days: days, p_limit: limit });
+  const ids = ((top ?? []) as { product_id: string }[]).map((r) => r.product_id);
+  if (ids.length === 0) return [];
+  const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").in("id", ids);
+  const byId = new Map((rows ?? []).map((r) => [String((r as Record<string, unknown>)['id']), mapProduct(r)]));
+  return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
+}
+
 export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
-  const [{ data: latest }, { data: deals }, cats] = await Promise.all([
-    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").order("created_at", { ascending: false }).limit(8),
+  const [{ data: latest }, { data: deals }, cats, { data: slides }, bestSellers, { data: coupons }] = await Promise.all([
+    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").order("created_at", { ascending: false }).limit(12),
     sb
       .from("products")
       .select(PRODUCT_SELECT)
@@ -333,13 +361,52 @@ export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
       .order("created_at", { ascending: false })
       .limit(24),
     loadCategories(),
+    sb
+      .from("hero_slides")
+      .select("id, image_url, heading, subline, button_label, button_href")
+      .eq("is_active", true)
+      .order("sort_order")
+      .limit(5),
+    loadBestSellers(sb),
+    sb
+      .from("coupons")
+      .select("code, type, value, min_order, max_discount, expires_at")
+      .order("created_at", { ascending: false })
+      .limit(8),
   ]);
   const discounted = (deals ?? [])
     .map(mapProduct)
     .filter((p) => p.mrp && p.price && p.mrp > p.price)
     .slice(0, 8);
-  return { latest: (latest ?? []).map(mapProduct), discounted, categories: cats };
+
+  const heroSlides: HeroSlide[] = (slides ?? []).map((s) => ({
+    id: String(s.id),
+    imageUrl: s.image_url ?? null,
+    heading: String(s.heading),
+    subline: s.subline ?? null,
+    buttonLabel: s.button_label ?? null,
+    buttonHref: s.button_href ?? null,
+  }));
+
+  const offers: OfferCoupon[] = (coupons ?? []).map((c) => ({
+    code: String(c.code),
+    type: String(c.type),
+    value: Number(c.value ?? 0),
+    minOrder: Number(c.min_order ?? 0),
+    maxDiscount: c.max_discount === null || c.max_discount === undefined ? null : Number(c.max_discount),
+    expiresAt: c.expires_at ?? null,
+  }));
+
+  return {
+    latest: (latest ?? []).map(mapProduct),
+    discounted,
+    categories: cats,
+    heroSlides,
+    bestSellers,
+    offers,
+  };
 });
+
 
 /** Offers page: discounted parts sorted by saving, best sellers and new arrivals. */
 export const offersFeed = createServerFn({ method: "GET" }).handler(async () => {
