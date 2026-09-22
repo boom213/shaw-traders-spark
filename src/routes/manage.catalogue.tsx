@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useStore } from "@/hooks/useStore";
-import { CATEGORIES, categoryBySlug, type Product } from "@/lib/catalog";
+import { manageProducts, saveProducts } from "@/lib/manage-data.functions";
+import { categoriesQuery } from "@/lib/queries";
+import type { Product } from "@/lib/catalog";
 import { imageFor, isPlaceholder } from "@/lib/placeholders";
 
 export const Route = createFileRoute("/manage/catalogue")({
@@ -25,63 +27,68 @@ const draftOf = (p: Product): Draft => ({
 });
 
 function BulkCatalogue() {
-  const { state, update } = useStore();
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
   const [cat, setCat] = useState("");
   const [only, setOnly] = useState<"all" | "no-stock" | "no-price" | "no-photo">("all");
   const [page, setPage] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [defaultStock, setDefaultStock] = useState("10");
+  const queryClient = useQueryClient();
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return state.products.filter((p) => {
-      if (cat && p.category !== cat) return false;
-      if (only === "no-stock" && p.stock !== undefined) return false;
-      if (only === "no-price" && p.price !== undefined) return false;
-      if (only === "no-photo" && p.images[0]) return false;
-      if (!term) return true;
-      return `${p.name} ${p.sku} ${p.brand ?? ""} ${p.model ?? ""}`.toLowerCase().includes(term);
-    });
-  }, [state.products, q, cat, only]);
+  const { data: categories } = useQuery(categoriesQuery());
+  const { data, isPending } = useQuery({
+    queryKey: ["manage-products", term, cat, only, page],
+    queryFn: () => manageProducts({ data: { q: term, category: cat, only, page } }),
+  });
 
-  const pageItems = filtered.slice(page * PAGE, page * PAGE + PAGE);
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE));
+
+  const save = useMutation({
+    mutationFn: (updates: { id: string; price?: number | null; mrp?: number | null; stock?: number; brand?: string | null; image?: string }[]) =>
+      saveProducts({ data: { updates } }),
+    onSuccess: (res) => {
+      setDrafts({});
+      void queryClient.invalidateQueries({ queryKey: ["manage-products"] });
+      void queryClient.invalidateQueries({ queryKey: ["manage-stats"] });
+      toast.success(`Saved ${res.saved} product${res.saved === 1 ? "" : "s"}`);
+    },
+    onError: () => toast.error("Could not save your changes"),
+  });
 
   const setDraft = (id: string, patch: Partial<Draft>, product: Product) =>
     setDrafts((d) => ({ ...d, [id]: { ...(d[id] ?? draftOf(product)), ...patch } }));
 
-  const num = (v: string) => (v.trim() === "" ? undefined : Number(v));
+  const num = (v: string) => (v.trim() === "" ? null : Number(v));
 
   const saveAll = () => {
     const entries = Object.entries(drafts);
     if (entries.length === 0) return toast.info("Nothing changed yet");
-    update((s) => ({
-      ...s,
-      products: s.products.map((p) => {
-        const d = drafts[p.id];
-        if (!d) return p;
-        return {
-          ...p,
-          price: num(d.price),
-          mrp: num(d.mrp),
-          stock: num(d.stock),
-          brand: d.brand.trim() || undefined,
-          images: d.image.trim() ? [d.image.trim(), ...p.images.slice(1)] : p.images.slice(1),
-        };
-      }),
-    }));
-    setDrafts({});
-    toast.success(`Saved ${entries.length} product${entries.length > 1 ? "s" : ""}`);
+    save.mutate(
+      entries.map(([id, d]) => ({
+        id,
+        price: num(d.price),
+        mrp: num(d.mrp),
+        stock: Number(d.stock.trim() === "" ? 0 : d.stock),
+        brand: d.brand.trim() || null,
+        image: d.image.trim(),
+      })),
+    );
   };
 
   const fillStock = () => {
     const n = Number(defaultStock);
     if (!Number.isFinite(n) || n < 0) return toast.error("Enter a valid stock number");
-    const ids = new Set(filtered.filter((p) => p.stock === undefined).map((p) => p.id));
-    if (ids.size === 0) return toast.info("Every shown product already has stock");
-    update((s) => ({ ...s, products: s.products.map((p) => (ids.has(p.id) ? { ...p, stock: n } : p)) }));
-    toast.success(`Set stock ${n} on ${ids.size} products — correct any of them below`);
+    const targets = items.filter((p) => !p.stock);
+    if (targets.length === 0) return toast.info("Every shown product already has stock");
+    setDrafts((d) => {
+      const next = { ...d };
+      for (const p of targets) next[p.id] = { ...(next[p.id] ?? draftOf(p)), stock: String(n) };
+      return next;
+    });
+    toast.success(`Stock ${n} filled in on ${targets.length} products — press Save changes`);
   };
 
   return (
@@ -90,7 +97,15 @@ function BulkCatalogue() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="q">Search</Label>
-            <Input id="q" placeholder="Name, code, model" value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setTerm(q.trim());
+                setPage(0);
+              }}
+            >
+              <Input id="q" placeholder="Name, code, model" value={q} onChange={(e) => setQ(e.target.value)} />
+            </form>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cat">Category</Label>
@@ -101,7 +116,7 @@ function BulkCatalogue() {
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">All categories</option>
-              {CATEGORIES.map((c) => (
+              {(categories ?? []).map((c) => (
                 <option key={c.slug} value={c.slug}>{c.name}</option>
               ))}
             </select>
@@ -129,7 +144,7 @@ function BulkCatalogue() {
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {filtered.length} products shown. Products without their own photo use a general category photo on the shop — paste a photo link to replace it.
+          {total} products match. Products without their own photo use a general category photo on the shop — paste a photo link to replace it.
         </p>
       </div>
 
@@ -146,7 +161,10 @@ function BulkCatalogue() {
             </tr>
           </thead>
           <tbody>
-            {pageItems.map((p) => {
+            {isPending && (
+              <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading products…</td></tr>
+            )}
+            {!isPending && items.map((p) => {
               const d = drafts[p.id] ?? draftOf(p);
               return (
                 <tr key={p.id} className="border-t border-border align-middle">
@@ -156,7 +174,7 @@ function BulkCatalogue() {
                       <div className="min-w-0">
                         <p className="line-clamp-2 font-medium">{p.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {p.sku} · {categoryBySlug(p.category)?.name ?? p.category}
+                          {p.sku} · {p.category}
                           {isPlaceholder(p) && " · general photo"}
                         </p>
                       </div>
@@ -170,7 +188,7 @@ function BulkCatalogue() {
                 </tr>
               );
             })}
-            {pageItems.length === 0 && (
+            {!isPending && items.length === 0 && (
               <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No products match these filters.</td></tr>
             )}
           </tbody>
@@ -183,7 +201,7 @@ function BulkCatalogue() {
           <span className="text-sm text-muted-foreground">Page {page + 1} of {pages}</span>
           <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((n) => n + 1)}>Next</Button>
         </div>
-        <Button onClick={saveAll}>Save changes ({Object.keys(drafts).length})</Button>
+        <Button disabled={save.isPending} onClick={saveAll}>Save changes ({Object.keys(drafts).length})</Button>
       </div>
     </div>
   );

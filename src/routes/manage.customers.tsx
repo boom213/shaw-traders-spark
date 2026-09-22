@@ -1,7 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useStore } from "@/hooks/useStore";
+import { manageCustomers } from "@/lib/manage-data.functions";
 import { BUSINESS, formatINR, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/manage/customers")({
@@ -9,43 +11,30 @@ export const Route = createFileRoute("/manage/customers")({
 });
 
 function ManageCustomers() {
-  const { state } = useStore();
   const [q, setQ] = useState("");
+  const [term, setTerm] = useState("");
 
-  const customers = useMemo(() => {
-    const map = new Map<
-      string,
-      { phone: string; name: string; email?: string; city?: string; orders: string[]; spend: number; last: number }
-    >();
-    for (const o of state.orders) {
-      const phone = String(o.address['phone'] ?? "unknown");
-      const existing = map.get(phone);
-      if (existing) {
-        existing.orders.push(o.id);
-        existing.spend += o.total;
-        existing.last = Math.max(existing.last, o.createdAt);
-      } else {
-        map.set(phone, {
-          phone,
-          name: String(o.address['name'] ?? "Customer"),
-          email: o.address['email'],
-          city: o.address['city'],
-          orders: [o.id],
-          spend: o.total,
-          last: o.createdAt,
-        });
-      }
-    }
-    const list = [...map.values()].sort((a, b) => b.last - a.last);
-    const term = q.trim().toLowerCase();
-    return term ? list.filter((c) => `${c.name} ${c.phone} ${c.city ?? ""}`.toLowerCase().includes(term)) : list;
-  }, [state.orders, q]);
+  const { data: customers, isPending } = useQuery({
+    queryKey: ["manage-customers", term],
+    queryFn: () => manageCustomers({ data: { q: term } }),
+  });
 
   return (
     <div className="space-y-4">
-      <Input placeholder="Search customers by name, phone or city" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-md" />
+      <form
+        className="flex max-w-md gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setTerm(q.trim());
+        }}
+      >
+        <Input placeholder="Search customers by name, phone or city" value={q} onChange={(e) => setQ(e.target.value)} />
+        <Button type="submit" variant="outline">Search</Button>
+      </form>
 
-      {customers.length === 0 ? (
+      {isPending ? (
+        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+      ) : (customers ?? []).length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           No customers yet. Everyone who places an order on the website will be listed here with their phone number and order history.
         </p>
@@ -64,7 +53,7 @@ function ManageCustomers() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((c) => (
+              {(customers ?? []).map((c) => (
                 <tr key={c.phone} className="border-t border-border">
                   <td className="p-3 font-medium">
                     {c.name}
@@ -74,10 +63,8 @@ function ManageCustomers() {
                   <td className="p-3">{c.city ?? "—"}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1.5">
-                      {c.orders.map((id) => (
-                        <Link key={id} to="/order/$id" params={{ id }} className="rounded-md bg-surface px-2 py-0.5 text-xs hover:text-primary">
-                          {id}
-                        </Link>
+                      {c.orders.map((o) => (
+                        <span key={o.humanId} className="rounded-md bg-surface px-2 py-0.5 text-xs">{o.humanId}</span>
                       ))}
                     </div>
                   </td>

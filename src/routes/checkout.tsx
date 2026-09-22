@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
-import { useCartTotals } from "@/routes/cart";
-import { formatINR, type Order } from "@/lib/catalog";
+import { supabase } from "@/integrations/supabase/client";
+import { COUPON_KEY, readCoupon, useCartTotals } from "@/routes/cart";
+import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checkout")({
@@ -20,7 +21,9 @@ export const Route = createFileRoute("/checkout")({
       { property: "og:description", content: "Secure checkout for EV spare parts and accessories." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
     ],
+    links: [{ rel: "canonical", href: canonical("/checkout") }],
   }),
   component: CheckoutPage,
 });
@@ -37,20 +40,16 @@ const PAYMENT = [
   { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck },
 ];
 
-function newOrderId() {
-  const d = new Date();
-  const ymd = `${d.getFullYear().toString().slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
-  return `STE-${ymd}-${Math.floor(1000 + Math.random() * 9000)}`;
-}
-
 function CheckoutPage() {
   const navigate = useNavigate();
-  const { state, addOrder, clearCart, update } = useStore();
-  const { lines, subtotal, shipping, total } = useCartTotals();
+  const { clearCart, user } = useStore();
+  const coupon = readCoupon();
+  const { lines, loading, subtotal, discount, shipping, total } = useCartTotals(coupon);
   const [step, setStep] = useState(1);
+  const [placing, setPlacing] = useState(false);
   const [addr, setAddr] = useState({
-    name: state.profile?.name ?? "",
-    phone: state.profile?.phone ?? "",
+    name: "",
+    phone: "",
     line1: "",
     landmark: "",
     city: "",
@@ -62,6 +61,10 @@ function CheckoutPage() {
 
   const grand = total + delivery.fee;
 
+  if (loading) {
+    return <div className="container-page py-16 text-center text-sm text-muted-foreground">Loading your cart…</div>;
+  }
+
   if (lines.length === 0) {
     return (
       <div className="container-page py-16 text-center">
@@ -72,32 +75,47 @@ function CheckoutPage() {
     );
   }
 
-  const placeOrder = () => {
-    const order: Order = {
-      id: newOrderId(),
-      createdAt: Date.now(),
-      status: "Order Confirmed",
-      items: lines.map((l) => ({
-        productId: l.productId,
-        name: l.product!.name,
-        ...(l.product!.price !== undefined ? { price: l.product!.price } : {}),
-        qty: l.qty,
-        ...(l.product!.images[0] ? { image: l.product!.images[0]! } : {}),
-      })),
-      address: addr,
-      shippingMethod: `${delivery.id} (${delivery.note})`,
-      paymentMethod: payment,
-      total: grand,
-    };
-    addOrder(order);
-    update((s) => ({
-      ...s,
-      addresses: [addr, ...s.addresses.filter((a) => a.phone !== addr.phone)],
-      profile: { ...(s.profile ?? {}), name: addr.name, phone: addr.phone },
-    }));
+  const placeOrder = async () => {
+    const short = lines.find((l) => l.product.stock < l.qty);
+    if (short) {
+      toast.error(
+        short.product.stock <= 0
+          ? `${short.product.name} is out of stock. Please remove it from your cart.`
+          : `Only ${short.product.stock} left of ${short.product.name}.`,
+      );
+      return;
+    }
+
+    setPlacing(true);
+    const { data, error } = await supabase.rpc("place_order", {
+      p_items: lines.map((l) => ({ product_id: l.productId, qty: l.qty })) as never,
+      p_address: addr as never,
+      p_payment_method: payment,
+      p_shipping_method: `${delivery.id} (${delivery.note})`,
+      p_shipping_fee: shipping + delivery.fee,
+      ...(coupon ? { p_coupon_code: coupon.code } : {}),
+    });
+    setPlacing(false);
+
+    if (error || !data) {
+      toast.error(error?.message?.replace(/^.*?:\s*/, "") ?? "Could not place the order. Please try again.");
+      return;
+    }
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | { order_id: string; human_id: string; public_token: string }
+      | undefined;
+    if (!row) {
+      toast.error("Could not place the order. Please try again.");
+      return;
+    }
+
+    if (user) {
+      await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone, email: user.email ?? null });
+    }
     clearCart();
-    toast.success(`Order ${order.id} placed`);
-    navigate({ to: "/order/$id", params: { id: order.id } });
+    window.localStorage.removeItem(COUPON_KEY);
+    toast.success(`Order ${row.human_id} placed`);
+    void navigate({ to: "/order/$id", params: { id: row.order_id }, search: { t: row.public_token } });
   };
 
   const steps = [
@@ -202,7 +220,9 @@ function CheckoutPage() {
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-                <Button size="lg" onClick={placeOrder}>Place order · {formatINR(grand)}</Button>
+                <Button size="lg" disabled={placing} onClick={() => void placeOrder()}>
+                  {placing ? "Placing order…" : `Place order · ${formatINR(grand)}`}
+                </Button>
               </div>
             </div>
           )}
@@ -213,13 +233,16 @@ function CheckoutPage() {
           <ul className="mt-4 grid gap-2 text-sm">
             {lines.map((l) => (
               <li key={l.productId} className="flex justify-between gap-3">
-                <span className="line-clamp-1 text-muted-foreground">{l.qty} × {l.product!.name}</span>
-                <span>{l.product!.price !== undefined ? formatINR(l.product!.price * l.qty) : "On request"}</span>
+                <span className="line-clamp-1 text-muted-foreground">{l.qty} × {l.product.name}</span>
+                <span>{l.product.price !== undefined ? formatINR(l.product.price * l.qty) : "On request"}</span>
               </li>
             ))}
           </ul>
           <dl className="mt-4 grid gap-2 border-t border-border pt-4 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{formatINR(subtotal)}</dd></div>
+            {discount > 0 && (
+              <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd className="text-primary">−{formatINR(discount)}</dd></div>
+            )}
             <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{shipping === 0 ? "Free" : formatINR(shipping)}</dd></div>
             <div className="flex justify-between"><dt className="text-muted-foreground">{delivery.id}</dt><dd>{delivery.fee === 0 ? "Free" : formatINR(delivery.fee)}</dd></div>
             <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(grand)}</dd></div>

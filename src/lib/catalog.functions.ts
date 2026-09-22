@@ -215,3 +215,37 @@ export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
     .slice(0, 8);
   return { latest: (latest ?? []).map(mapProduct), discounted, categories: cats };
 });
+
+/** Offers page: discounted parts sorted by saving, best sellers and new arrivals. */
+export const offersFeed = createServerFn({ method: "GET" }).handler(async () => {
+  const sb = publicClient();
+  const [{ data: deals }, { data: latest }, { data: soldRows }] = await Promise.all([
+    sb
+      .from("products")
+      .select(PRODUCT_SELECT)
+      .eq("is_active", true)
+      .not("mrp", "is", null)
+      .not("price", "is", null)
+      .limit(300),
+    sb.from("products").select(PRODUCT_SELECT).eq("is_active", true).order("created_at", { ascending: false }).limit(8),
+    sb.from("order_items").select("product_id, qty").limit(2000),
+  ]);
+
+  const pct = (p: Product) => (p.mrp && p.price && p.mrp > p.price ? (p.mrp - p.price) / p.mrp : 0);
+  const discounted = (deals ?? []).map(mapProduct).filter((p) => pct(p) > 0).sort((a, b) => pct(b) - pct(a));
+
+  const sold = new Map<string, number>();
+  for (const r of soldRows ?? []) {
+    if (!r.product_id) continue;
+    sold.set(r.product_id, (sold.get(r.product_id) ?? 0) + Number(r.qty ?? 0));
+  }
+  const topIds = [...sold.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([id]) => id);
+  let bestSellers: Product[] = [];
+  if (topIds.length > 0) {
+    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", topIds).eq("is_active", true);
+    const byId = new Map((rows ?? []).map((r) => [String((r as Record<string, unknown>)['id']), mapProduct(r)]));
+    bestSellers = topIds.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
+  }
+
+  return { discounted: discounted.slice(0, 40), bestSellers, newArrivals: (latest ?? []).map(mapProduct) };
+});
