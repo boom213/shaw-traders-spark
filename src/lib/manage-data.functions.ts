@@ -15,6 +15,11 @@ export type ManageOrder = {
   address: Record<string, string>;
   placedAt: string;
   items: { name: string; qty: number; price: number | null }[];
+  courierName: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  refunded: number;
+  requests: { id: string; kind: string; reason: string; details: string | null; status: string; createdAt: string }[];
 };
 
 const mapManageOrder = (row: Row): ManageOrder => ({
@@ -32,6 +37,18 @@ const mapManageOrder = (row: Row): ManageOrder => ({
     name: String(i['name_snapshot']),
     qty: Number(i['qty']),
     price: i['price_snapshot'] === null || i['price_snapshot'] === undefined ? null : Number(i['price_snapshot']),
+  })),
+  courierName: row['courier_name'] ?? null,
+  trackingNumber: row['tracking_number'] ?? null,
+  trackingUrl: row['tracking_url'] ?? null,
+  refunded: Number(row['refunded_total'] ?? 0),
+  requests: ((row['order_requests'] ?? []) as Row[]).map((r) => ({
+    id: String(r['id']),
+    kind: String(r['kind']),
+    reason: String(r['reason']),
+    details: r['details'] ?? null,
+    status: String(r['status']),
+    createdAt: String(r['created_at']),
   })),
 });
 
@@ -57,7 +74,7 @@ export const manageOrders = createServerFn({ method: "POST" })
     let query = sb
       .from("orders")
       .select(
-        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, order_items(name_snapshot, price_snapshot, qty)",
+        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty), order_requests(id, kind, reason, details, status, created_at)",
       )
       .order("placed_at", { ascending: false })
       .limit(300);
@@ -86,6 +103,8 @@ export const setOrderStatus = createServerFn({ method: "POST" })
       from: before?.status ?? null,
       to: data.status,
     });
+    const { notifyOrderStatus } = await import("@/lib/notify.server");
+    await notifyOrderStatus(data.id, data.status);
     return { ok: true as const };
   });
 
