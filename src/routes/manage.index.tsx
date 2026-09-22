@@ -21,6 +21,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 
 function ManageOverview() {
   const { data, isPending } = useQuery({ queryKey: ["manage-dashboard"], queryFn: () => dashboard() });
+  const { data: attention } = useQuery({ queryKey: ["manage-attention"], queryFn: () => needsAttention() });
 
   if (isPending || !data) {
     return (
@@ -32,7 +33,24 @@ function ManageOverview() {
 
   return (
     <div className="space-y-6">
+      {attention && attention.items.length > 0 && (
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+          <h2 className="font-display text-lg font-bold">Needs your attention today</h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {attention.items.map((i) => (
+              <li key={i.key}>
+                <Link to={i.to} className="flex items-center justify-between gap-3 rounded-xl bg-surface px-3 py-2.5 text-sm hover:bg-muted">
+                  <span>{i.label}</span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{i.count}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+
         <Stat label="Orders today" value={String(data.todayOrders)} note={formatINR(data.todayRevenue)} />
         <Stat label="This week" value={formatINR(data.weekRevenue)} note="Sales value" />
         <Stat label="Last 30 days" value={formatINR(data.monthRevenue)} note="Sales value" />
