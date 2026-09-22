@@ -3,13 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Phone, Zap } from "lucide-react";
 import { BUSINESS } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
+import { shopSettingsQuery } from "@/lib/shop-settings";
+import { reopenConsent } from "@/components/site/CookieConsent";
 
 export function Footer() {
   const { data: categories } = useQuery(categoriesQuery());
+  const { data: settings } = useQuery(shopSettingsQuery());
+  const legalName = settings?.legalName || BUSINESS.name;
+
   return (
     <footer className="mt-20 border-t border-border bg-surface pb-24 lg:pb-0">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-4">
-        <div>
+      <div className="container-page grid gap-10 py-14 md:grid-cols-5">
+        <div className="md:col-span-2">
           <div className="flex items-center gap-2.5">
             <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <Zap className="size-5" />
@@ -24,6 +29,11 @@ export function Footer() {
           <a href={`tel:${BUSINESS.phone}`} className="mt-2 flex items-center gap-2 text-sm font-medium hover:text-primary">
             <Phone className="size-4" /> {BUSINESS.phone}
           </a>
+          {settings?.supportEmail && (
+            <a href={`mailto:${settings.supportEmail}`} className="mt-2 block text-sm text-muted-foreground hover:text-foreground">
+              {settings.supportEmail}
+            </a>
+          )}
         </div>
 
         <div>
@@ -47,20 +57,35 @@ export function Footer() {
             <li><Link to="/cart" className="hover:text-foreground">Cart</Link></li>
             <li><Link to="/offers" className="hover:text-foreground">Offers</Link></li>
             <li><Link to="/find-parts" className="hover:text-foreground">Find Parts for Your EV</Link></li>
+            <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
+            <li><Link to="/bulk" className="hover:text-foreground">Dealer & Bulk Orders</Link></li>
           </ul>
         </div>
 
         <div>
-          <h4 className="text-sm font-semibold">Company</h4>
+          <h4 className="text-sm font-semibold">Policies</h4>
           <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
-            <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
-            <li><Link to="/bulk" className="hover:text-foreground">Dealer & Bulk Orders</Link></li>
+            <li><Link to="/returns" className="hover:text-foreground">Returns, Replacement & Refund</Link></li>
+            <li><Link to="/shipping" className="hover:text-foreground">Shipping Policy</Link></li>
+            <li><Link to="/warranty" className="hover:text-foreground">Warranty Policy</Link></li>
+            <li><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link></li>
+            <li><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></li>
+            <li><Link to="/contact" className="hover:text-foreground">Contact & Grievance Officer</Link></li>
+            <li>
+              <button type="button" onClick={reopenConsent} className="hover:text-foreground">
+                Cookie settings
+              </button>
+            </li>
           </ul>
         </div>
       </div>
       <div className="border-t border-border py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Shaw Traders EV, Bud Bud, Bardhaman. All rights reserved.
+        <p>
+          {legalName}
+          {settings?.gstin ? ` · GSTIN ${settings.gstin}` : ""}
+          {settings?.gstEnabled ? ` · All prices ${settings.pricesIncludeGst ? "include" : "exclude"} GST at ${settings.gstRate}%` : ""}
+        </p>
+        <p className="mt-1">© {new Date().getFullYear()} Shaw Traders EV, Bud Bud, Bardhaman. All rights reserved.</p>
       </div>
     </footer>
   );
