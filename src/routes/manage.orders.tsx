@@ -111,6 +111,26 @@ function ManageOrders() {
           <Requests order={o} onDone={refresh} />
 
           <div className="mt-4 flex flex-wrap gap-2">
+            {nextStatus(o.status) && (
+              <Button
+                size="sm"
+                disabled={mutation.isPending}
+                onClick={() => mutation.mutate({ id: o.id, status: nextStatus(o.status)! })}
+              >
+                <Check className="size-4" /> Mark {statusLabel(nextStatus(o.status)!).toLowerCase()}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => printPackingSlip(o)}>
+              <Printer className="size-4" /> Packing slip
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <a href={whatsappLink(String(o.address['phone'] ?? ""), customerMessage(o))} target="_blank" rel="noreferrer">
+                <MessageCircle className="size-4" /> WhatsApp customer
+              </a>
+            </Button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
             {ALL_STATUSES.map((s) => (
               <button
                 key={s.value}
