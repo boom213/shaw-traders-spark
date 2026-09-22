@@ -1,8 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
-
-type GateSession = { unlocked?: boolean };
-
 const EXPECTED_A = "185.158.133.1";
 const ROOT = "shawtradersev.com";
 const WWW = `www.${ROOT}`;
@@ -84,13 +80,8 @@ async function checkHost(host: string): Promise<HostReachability> {
 
 export const getDomainHealth = createServerFn({ method: "GET" }).handler(
   async (): Promise<DomainHealth> => {
-    const session = await useSession<GateSession>({
-      password: process.env['SESSION_SECRET']!,
-      name: "shaw-manage",
-      maxAge: 60 * 60 * 12,
-      cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
-    });
-    if (session.data.unlocked !== true) throw new Error("Unauthorized");
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff();
 
     const [rootA, wwwA, verifyTxt, hostRoot, hostWww, ns] = await Promise.all([
       checkRecord(ROOT, "A", EXPECTED_A),
