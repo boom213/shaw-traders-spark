@@ -181,7 +181,7 @@ export const deleteTradeDocument = createServerFn({ method: "POST" })
       .maybeSingle();
     const path = (app as Record<string, string | null> | null)?.[data.field] ?? null;
     if (path) await supabaseAdmin.storage.from("trade-docs").remove([path]);
-    if (app) await supabaseAdmin.from("trade_applications").update({ [data.field]: null } as never).eq("id", (app as { id: string }).id);
+    if (app) await supabaseAdmin.from("trade_applications").update({ [data.field]: null } as never).eq("id", (app as unknown as { id: string }).id);
     return { ok: true as const };
   });
 

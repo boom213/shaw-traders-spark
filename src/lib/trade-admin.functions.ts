@@ -39,7 +39,7 @@ export const listTradeApplications = createServerFn({ method: "POST" })
       .select("*, profiles(price_tier, credit_limit, payment_terms_days)")
       .order("created_at", { ascending: false })
       .limit(100);
-    if (data.status !== "all") query = query.eq("status", data.status);
+    if (data.status !== "all") query = query.eq("status", data.status as never);
     const { data: rows } = await query;
 
     return Promise.all(
@@ -49,7 +49,7 @@ export const listTradeApplications = createServerFn({ method: "POST" })
         const documents = await Promise.all(
           DOC_FIELDS.map(async (d) => ({
             label: d.label,
-            url: await signedDocUrl((r as Record<string, string | null>)[d.field] ?? null),
+            url: await signedDocUrl((r as unknown as Record<string, string | null>)[d.field] ?? null),
           })),
         );
         return {
@@ -331,7 +331,7 @@ export const setProductTier = createServerFn({ method: "POST" })
     const actor = await requireStaff({ superAdmin: true });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    await supabaseAdmin.from("price_tiers").delete().eq("product_id", data.productId).eq("tier", data.tier);
+    await supabaseAdmin.from("price_tiers").delete().eq("product_id", data.productId).eq("tier", data.tier as never);
     if (data.slabs.length > 0) {
       await supabaseAdmin.from("price_tiers").insert(
         data.slabs.map((s) => ({ product_id: data.productId, tier: data.tier, min_qty: s.minQty, price: s.price })) as never,
