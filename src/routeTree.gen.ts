@@ -34,6 +34,7 @@ import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
+import { Route as ManageEnquiriesRouteImport } from './routes/manage.enquiries'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
@@ -175,6 +176,11 @@ const ManageDomainRoute = ManageDomainRouteImport.update({
   path: '/domain',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageEnquiriesRoute = ManageEnquiriesRouteImport.update({
+  id: '/enquiries',
+  path: '/enquiries',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageImportRoute = ManageImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
+  '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
@@ -321,6 +328,7 @@ export interface FileRoutesByTo {
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
+  '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
+  '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
@@ -408,6 +417,7 @@ export interface FileRouteTypes {
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
+    | '/manage/enquiries'
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
@@ -449,6 +459,7 @@ export interface FileRouteTypes {
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
+    | '/manage/enquiries'
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
@@ -491,6 +502,7 @@ export interface FileRouteTypes {
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
+    | '/manage/enquiries'
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
@@ -719,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageDomainRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/enquiries': {
+      id: '/manage/enquiries'
+      path: '/enquiries'
+      fullPath: '/manage/enquiries'
+      preLoaderRoute: typeof ManageEnquiriesRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/import': {
       id: '/manage/import'
       path: '/import'
@@ -831,6 +850,7 @@ interface ManageRouteChildren {
   ManageCatalogueRoute: typeof ManageCatalogueRoute
   ManageCustomersRoute: typeof ManageCustomersRoute
   ManageDomainRoute: typeof ManageDomainRoute
+  ManageEnquiriesRoute: typeof ManageEnquiriesRoute
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
@@ -844,6 +864,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageCatalogueRoute: ManageCatalogueRoute,
   ManageCustomersRoute: ManageCustomersRoute,
   ManageDomainRoute: ManageDomainRoute,
+  ManageEnquiriesRoute: ManageEnquiriesRoute,
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRoute,
   ManageReviewsRoute: ManageReviewsRoute,
