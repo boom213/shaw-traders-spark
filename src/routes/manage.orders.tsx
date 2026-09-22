@@ -41,7 +41,9 @@ function printPackingSlip(o: ManageOrder) {
   const rows = o.items
     .map(
       (it) =>
-        `<tr><td>${escapeHtml(it.name)}</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${
+        `<tr><td>${escapeHtml(it.name)}${
+          it.rackLocation ? `<br/><span class="muted">Shelf: ${escapeHtml(it.rackLocation)}</span>` : ""
+        }</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${
           it.price === null ? "-" : formatINR(it.price * it.qty)
         }</td></tr>`,
     )
