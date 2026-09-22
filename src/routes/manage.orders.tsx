@@ -190,7 +190,7 @@ function ManageOrders() {
               <Printer className="size-4" /> Packing slip
             </Button>
             <Button size="sm" variant="outline" asChild>
-              <a href={whatsappLink(String(o.address['phone'] ?? ""), customerMessage(o))} target="_blank" rel="noreferrer">
+              <a href={customerWhatsApp(o)} target="_blank" rel="noreferrer">
                 <MessageCircle className="size-4" /> WhatsApp customer
               </a>
             </Button>
