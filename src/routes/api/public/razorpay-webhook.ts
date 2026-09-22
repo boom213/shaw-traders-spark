@@ -64,6 +64,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
 
         if ((body.event === "payment.captured" || body.event === "order.paid") && orderId && paymentId) {
           await supabaseAdmin.rpc("mark_order_paid", { p_order_id: orderId, p_payment_id: paymentId });
+          const { notifyOrderPlaced } = await import("@/lib/notify.server");
+          await notifyOrderPlaced(orderId);
         }
 
         return new Response("ok", { status: 200 });
