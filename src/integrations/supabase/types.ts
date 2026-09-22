@@ -496,16 +496,19 @@ export type Database = {
           cancel_reason: string | null
           contact_phone: string | null
           courier_name: string | null
+          credit_due_date: string | null
           discount: number
           gst_included: boolean
           gst_rate: number
           gstin: string | null
           human_id: string
           id: string
+          lr_number: string | null
           payment_method: string | null
           payment_provider: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           placed_at: string
+          price_tier: Database["public"]["Enums"]["price_tier"]
           profile_id: string | null
           provider_order_id: string | null
           provider_payment_id: string | null
@@ -522,6 +525,7 @@ export type Database = {
           total: number
           tracking_number: string | null
           tracking_url: string | null
+          transport_name: string | null
           updated_at: string
         }
         Insert: {
@@ -529,16 +533,19 @@ export type Database = {
           cancel_reason?: string | null
           contact_phone?: string | null
           courier_name?: string | null
+          credit_due_date?: string | null
           discount?: number
           gst_included?: boolean
           gst_rate?: number
           gstin?: string | null
           human_id: string
           id?: string
+          lr_number?: string | null
           payment_method?: string | null
           payment_provider?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
+          price_tier?: Database["public"]["Enums"]["price_tier"]
           profile_id?: string | null
           provider_order_id?: string | null
           provider_payment_id?: string | null
@@ -555,6 +562,7 @@ export type Database = {
           total?: number
           tracking_number?: string | null
           tracking_url?: string | null
+          transport_name?: string | null
           updated_at?: string
         }
         Update: {
@@ -562,16 +570,19 @@ export type Database = {
           cancel_reason?: string | null
           contact_phone?: string | null
           courier_name?: string | null
+          credit_due_date?: string | null
           discount?: number
           gst_included?: boolean
           gst_rate?: number
           gstin?: string | null
           human_id?: string
           id?: string
+          lr_number?: string | null
           payment_method?: string | null
           payment_provider?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
+          price_tier?: Database["public"]["Enums"]["price_tier"]
           profile_id?: string | null
           provider_order_id?: string | null
           provider_payment_id?: string | null
@@ -588,6 +599,7 @@ export type Database = {
           total?: number
           tracking_number?: string | null
           tracking_url?: string | null
+          transport_name?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -634,6 +646,41 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          min_qty: number
+          price: number
+          product_id: string
+          tier: Database["public"]["Enums"]["price_tier"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          min_qty?: number
+          price: number
+          product_id: string
+          tier: Database["public"]["Enums"]["price_tier"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          min_qty?: number
+          price?: number
+          product_id?: string
+          tier?: Database["public"]["Enums"]["price_tier"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_tiers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -755,9 +802,11 @@ export type Database = {
           hsn_code: string | null
           id: string
           is_active: boolean
+          min_order_qty: number
           model: string | null
           mrp: number | null
           name: string
+          order_multiple: number
           ordering_mode: Database["public"]["Enums"]["ordering_mode"] | null
           price: number | null
           rack_location: string | null
@@ -769,6 +818,7 @@ export type Database = {
           status: Database["public"]["Enums"]["product_status"]
           stock: number
           subcategory: string | null
+          trade_only: boolean
           updated_at: string
           voltage: string | null
           warranty: string | null
@@ -786,9 +836,11 @@ export type Database = {
           hsn_code?: string | null
           id?: string
           is_active?: boolean
+          min_order_qty?: number
           model?: string | null
           mrp?: number | null
           name: string
+          order_multiple?: number
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
           rack_location?: string | null
@@ -800,6 +852,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           subcategory?: string | null
+          trade_only?: boolean
           updated_at?: string
           voltage?: string | null
           warranty?: string | null
@@ -817,9 +870,11 @@ export type Database = {
           hsn_code?: string | null
           id?: string
           is_active?: boolean
+          min_order_qty?: number
           model?: string | null
           mrp?: number | null
           name?: string
+          order_multiple?: number
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           price?: number | null
           rack_location?: string | null
@@ -831,6 +886,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["product_status"]
           stock?: number
           subcategory?: string | null
+          trade_only?: boolean
           updated_at?: string
           voltage?: string | null
           warranty?: string | null
@@ -850,24 +906,39 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          credit_limit: number
+          customer_type: Database["public"]["Enums"]["customer_type"]
           email: string | null
           full_name: string | null
           id: string
+          payment_terms_days: number
           phone: string | null
+          price_tier: Database["public"]["Enums"]["price_tier"]
+          trade_approved_at: string | null
         }
         Insert: {
           created_at?: string
+          credit_limit?: number
+          customer_type?: Database["public"]["Enums"]["customer_type"]
           email?: string | null
           full_name?: string | null
           id: string
+          payment_terms_days?: number
           phone?: string | null
+          price_tier?: Database["public"]["Enums"]["price_tier"]
+          trade_approved_at?: string | null
         }
         Update: {
           created_at?: string
+          credit_limit?: number
+          customer_type?: Database["public"]["Enums"]["customer_type"]
           email?: string | null
           full_name?: string | null
           id?: string
+          payment_terms_days?: number
           phone?: string | null
+          price_tier?: Database["public"]["Enums"]["price_tier"]
+          trade_approved_at?: string | null
         }
         Relationships: []
       }
@@ -1148,6 +1219,137 @@ export type Database = {
           },
         ]
       }
+      trade_applications: {
+        Row: {
+          address_proof_path: string | null
+          business_name: string
+          contact_person: string
+          created_at: string
+          decided_at: string | null
+          decision_note: string | null
+          gst_certificate_path: string | null
+          gstin: string | null
+          id: string
+          pan: string | null
+          pan_card_path: string | null
+          phone: string
+          profile_id: string
+          requested_tier: Database["public"]["Enums"]["price_tier"]
+          reviewer: string | null
+          shop_address: string
+          shop_photo_path: string | null
+          status: Database["public"]["Enums"]["trade_application_status"]
+          trade_licence_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_proof_path?: string | null
+          business_name: string
+          contact_person: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          gst_certificate_path?: string | null
+          gstin?: string | null
+          id?: string
+          pan?: string | null
+          pan_card_path?: string | null
+          phone: string
+          profile_id: string
+          requested_tier?: Database["public"]["Enums"]["price_tier"]
+          reviewer?: string | null
+          shop_address: string
+          shop_photo_path?: string | null
+          status?: Database["public"]["Enums"]["trade_application_status"]
+          trade_licence_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_proof_path?: string | null
+          business_name?: string
+          contact_person?: string
+          created_at?: string
+          decided_at?: string | null
+          decision_note?: string | null
+          gst_certificate_path?: string | null
+          gstin?: string | null
+          id?: string
+          pan?: string | null
+          pan_card_path?: string | null
+          phone?: string
+          profile_id?: string
+          requested_tier?: Database["public"]["Enums"]["price_tier"]
+          reviewer?: string | null
+          shop_address?: string
+          shop_photo_path?: string | null
+          status?: Database["public"]["Enums"]["trade_application_status"]
+          trade_licence_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_applications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trade_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          kind: Database["public"]["Enums"]["ledger_kind"]
+          note: string | null
+          order_id: string | null
+          profile_id: string
+          settled: boolean
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["ledger_kind"]
+          note?: string | null
+          order_id?: string | null
+          profile_id: string
+          settled?: boolean
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["ledger_kind"]
+          note?: string | null
+          order_id?: string | null
+          profile_id?: string
+          settled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_ledger_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_lists: {
         Row: {
           cart: Json
@@ -1260,8 +1462,11 @@ export type Database = {
           p_address: Json
           p_coupon_code?: string
           p_items: Json
+          p_lr_number?: string
           p_payment_method: string
+          p_profile_id?: string
           p_shipping_code: string
+          p_transport_name?: string
         }
         Returns: {
           human_id: string
@@ -1271,7 +1476,12 @@ export type Database = {
           total: number
         }[]
       }
+      customer_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["price_tier"]
+      }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_trade: { Args: { _user_id: string }; Returns: boolean }
       log_search_miss: { Args: { p_term: string }; Returns: undefined }
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
@@ -1322,9 +1532,21 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      tier_price: {
+        Args: {
+          p_product: string
+          p_qty: number
+          p_tier: Database["public"]["Enums"]["price_tier"]
+        }
+        Returns: number
+      }
+      trade_balance: { Args: { _profile_id: string }; Returns: number }
+      trade_overdue: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
       coupon_type: "percent" | "fixed"
+      customer_type: "retail" | "trade"
+      ledger_kind: "invoice" | "payment" | "adjustment"
       order_status:
         | "order_confirmed"
         | "processing"
@@ -1336,9 +1558,15 @@ export type Database = {
         | "returned"
       ordering_mode: "full" | "enquiry" | "browse"
       payment_status: "pending" | "paid" | "failed" | "refunded" | "cod_pending"
+      price_tier: "retail" | "trade" | "distributor"
       product_status: "draft" | "visible" | "hidden"
       review_status: "pending" | "approved" | "rejected"
       staff_role: "super_admin" | "owner" | "manager" | "staff"
+      trade_application_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "more_info_needed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1467,6 +1695,8 @@ export const Constants = {
   public: {
     Enums: {
       coupon_type: ["percent", "fixed"],
+      customer_type: ["retail", "trade"],
+      ledger_kind: ["invoice", "payment", "adjustment"],
       order_status: [
         "order_confirmed",
         "processing",
@@ -1479,9 +1709,16 @@ export const Constants = {
       ],
       ordering_mode: ["full", "enquiry", "browse"],
       payment_status: ["pending", "paid", "failed", "refunded", "cod_pending"],
+      price_tier: ["retail", "trade", "distributor"],
       product_status: ["draft", "visible", "hidden"],
       review_status: ["pending", "approved", "rejected"],
       staff_role: ["super_admin", "owner", "manager", "staff"],
+      trade_application_status: [
+        "pending",
+        "approved",
+        "rejected",
+        "more_info_needed",
+      ],
     },
   },
 } as const
