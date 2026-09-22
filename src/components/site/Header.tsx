@@ -50,6 +50,8 @@ export function Header() {
             <div className="mb-6">
               <Logo />
             </div>
+            <VehiclePicker className="mb-4 w-full justify-start" />
+
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
