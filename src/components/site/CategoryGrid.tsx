@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BatteryCharging,
@@ -16,9 +17,9 @@ import {
   Waves,
   Zap,
 } from "lucide-react";
-import { CATEGORIES } from "@/lib/catalog";
+import { categoriesQuery } from "@/lib/queries";
 
-const ICONS: Record<string, typeof Zap> = {
+export const CATEGORY_ICONS: Record<string, typeof Zap> = {
   "ev-batteries": BatteryCharging,
   chargers: PlugZap,
   motors: Cog,
@@ -36,11 +37,31 @@ const ICONS: Record<string, typeof Zap> = {
 };
 
 export function CategoryGrid({ limit }: { limit?: number }) {
-  const list = limit ? CATEGORIES.slice(0, limit) : CATEGORIES;
+  const { data, isPending } = useQuery(categoriesQuery());
+  const list = (data ?? []).slice(0, limit ?? undefined);
+
+  if (isPending) {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {Array.from({ length: limit ?? 10 }).map((_, i) => (
+          <div key={i} className="h-40 animate-pulse rounded-2xl bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  if (list.length === 0) {
+    return (
+      <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+        Categories are being set up. Please check back shortly.
+      </p>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {list.map((c) => {
-        const Icon = ICONS[c.slug] ?? Package;
+        const Icon = CATEGORY_ICONS[c.slug] ?? Package;
         return (
           <Link
             key={c.slug}
@@ -56,7 +77,8 @@ export function CategoryGrid({ limit }: { limit?: number }) {
               <span className="block text-xs text-muted-foreground">{c.blurb}</span>
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-              Shop Now <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              {c.productCount ? `${c.productCount} parts` : "Shop Now"}{" "}
+              <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
             </span>
           </Link>
         );
