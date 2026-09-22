@@ -6,12 +6,10 @@ import { LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { myOrders } from "@/lib/orders.functions";
 import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
@@ -37,40 +35,43 @@ function AccountPage() {
   return user ? <Dashboard /> : <AuthPanel />;
 }
 
+const toE164 = (raw: string) => {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  return digits ? `+${digits}` : "";
+};
+
 function AuthPanel() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [code, setCode] = useState("");
+  const [stage, setStage] = useState<"mobile" | "code">("mobile");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
 
-  const signIn = async () => {
+  const phone = toE164(mobile);
+
+  const sendCode = async () => {
+    if (phone.length < 12) return toast.error("Enter your 10-digit mobile number");
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { error } = await supabase.auth.signInWithOtp({ phone });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Welcome back");
+    setStage("code");
+    toast.success(`Code sent to ${phone}`);
   };
 
-  const signUp = async () => {
-    if (name.trim().length < 2) return toast.error("Please enter your full name");
+  const verify = async () => {
+    const token = code.replace(/\D/g, "");
+    if (token.length !== 6) return toast.error("Enter the 6-digit code");
     setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: { emailRedirectTo: window.location.origin, data: { full_name: name.trim() } },
-    });
+    const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
     setBusy(false);
     if (error) return toast.error(error.message);
-    if (!data.session) {
-      setSent(true);
-      toast.success("Check your email to confirm your account");
+    const user = data.user;
+    if (user) {
+      await supabase.from("profiles").upsert({ id: user.id, phone }, { onConflict: "id" });
     }
-  };
-
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) toast.error("Google sign-in failed. Please try again.");
+    toast.success("You're signed in");
   };
 
   return (
@@ -81,56 +82,69 @@ function AuthPanel() {
         </span>
         <h1 className="mt-4 font-display text-2xl font-bold">Your account</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Sign in to see your orders, saved parts and details. Need help? Call {BUSINESS.phone}.
+          Sign in with your mobile number to see your orders and saved parts. Need help? Call {BUSINESS.phone}.
         </p>
 
-        <Button variant="outline" className="mt-5 w-full" onClick={() => void google()}>
-          Continue with Google
-        </Button>
-
-        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" /> or use your email <span className="h-px flex-1 bg-border" />
-        </div>
-
-        {sent ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm">
-            We sent a confirmation link to <strong>{email}</strong>. Open it to finish creating your account.
-          </p>
+        {stage === "mobile" ? (
+          <form
+            className="mt-6 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void sendCode();
+            }}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="mobile">Mobile number</Label>
+              <div className="flex items-center gap-2">
+                <span className="grid h-10 shrink-0 place-items-center rounded-xl border border-border bg-surface px-3 text-sm">+91</span>
+                <Input
+                  id="mobile"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="98765 43210"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value)}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Sending…" : "Send code"}
+            </Button>
+          </form>
         ) : (
-          <Tabs defaultValue="in">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="in">Log in</TabsTrigger>
-              <TabsTrigger value="up">Sign up</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="in" className="space-y-3 pt-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="in-email">Email</Label>
-                <Input id="in-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="in-pass">Password</Label>
-                <Input id="in-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              <Button className="w-full" disabled={busy} onClick={() => void signIn()}>Log in</Button>
-            </TabsContent>
-
-            <TabsContent value="up" className="space-y-3 pt-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="su-name">Full name</Label>
-                <Input id="su-name" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="su-email">Email</Label>
-                <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="su-pass">Password</Label>
-                <Input id="su-pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              <Button className="w-full" disabled={busy} onClick={() => void signUp()}>Create account</Button>
-            </TabsContent>
-          </Tabs>
+          <form
+            className="mt-6 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void verify();
+            }}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="otp">6-digit code sent to {phone}</Label>
+              <Input
+                id="otp"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={busy}>
+              {busy ? "Checking…" : "Verify and continue"}
+            </Button>
+            <button
+              type="button"
+              className="w-full text-sm text-muted-foreground underline"
+              onClick={() => {
+                setStage("mobile");
+                setCode("");
+              }}
+            >
+              Change number
+            </button>
+          </form>
         )}
       </div>
     </div>
@@ -140,8 +154,9 @@ function AuthPanel() {
 function Dashboard() {
   const { lists, user } = useStore();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const mobile = user?.phone ? `+${String(user.phone).replace(/\D/g, "")}` : "";
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -155,9 +170,11 @@ function Dashboard() {
   useEffect(() => {
     if (profile) {
       setName(profile.full_name ?? "");
-      setPhone(profile.phone ?? "");
+      setEmail(profile.email ?? "");
+    } else if (profile === null && user) {
+      void supabase.from("profiles").upsert({ id: user.id, phone: mobile }, { onConflict: "id" });
     }
-  }, [profile]);
+  }, [profile, user, mobile]);
 
   const { data: orders, isPending: ordersPending } = useQuery({
     queryKey: ["my-orders", user?.id],
@@ -175,7 +192,7 @@ function Dashboard() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .upsert({ id: user!.id, full_name: name, phone, email: user!.email ?? null });
+      .upsert({ id: user!.id, full_name: name, phone: mobile, email: email.trim() || null });
     setSaving(false);
     if (error) return toast.error("Could not save your details");
     toast.success("Details saved");
@@ -185,7 +202,7 @@ function Dashboard() {
     <div className="container mx-auto space-y-10 px-4 py-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold md:text-3xl">Hello, {name || user?.email}</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Hello, {name || mobile}</h1>
           <p className="text-sm text-muted-foreground">
             Your orders and saved parts follow you on any device. Call {BUSINESS.phone} for any help.
           </p>
@@ -205,8 +222,8 @@ function Dashboard() {
         <h2 className="text-lg font-semibold">Your details</h2>
         <div className="grid gap-3 md:grid-cols-3">
           <Input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <Input value={user?.email ?? ""} readOnly />
+          <Input value={mobile} readOnly aria-label="Mobile number" />
+          <Input placeholder="Email (optional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <Button disabled={saving} onClick={() => void saveProfile()}>Save details</Button>
       </section>

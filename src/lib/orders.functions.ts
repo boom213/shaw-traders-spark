@@ -63,8 +63,8 @@ export const getOrder = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!row) return { state: "notfound" };
 
-    const { managerUnlocked } = await import("@/lib/manage-session.server");
-    if (await managerUnlocked()) return { state: "ok", order: mapOrder(row) };
+    const { staffContext } = await import("@/lib/staff.server");
+    if (await staffContext()) return { state: "ok", order: mapOrder(row) };
 
     const { currentUserId } = await import("@/lib/auth.server");
     const userId = await currentUserId();

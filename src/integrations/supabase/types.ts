@@ -94,6 +94,30 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          identifier: string
+          kind: string
+          ok: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier: string
+          kind?: string
+          ok?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier?: string
+          kind?: string
+          ok?: boolean
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           blurb: string | null
@@ -617,6 +641,11 @@ export type Database = {
           order_id: string
           public_token: string
         }[]
+      }
+      staff_bootstrap_needed: { Args: never; Returns: boolean }
+      staff_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["staff_role"]
       }
     }
     Enums: {

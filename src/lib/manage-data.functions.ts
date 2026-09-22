@@ -36,10 +36,18 @@ const mapManageOrder = (row: Row): ManageOrder => ({
 });
 
 async function admin() {
-  const { requireManager } = await import("@/lib/manage-session.server");
-  await requireManager();
+  const { requireStaff } = await import("@/lib/staff.server");
+  await requireStaff();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+/** Admin client plus the signed-in staff member, for changes that must be audited. */
+async function adminAs() {
+  const { requireStaff, logAudit } = await import("@/lib/staff.server");
+  const actor = await requireStaff();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return { sb: supabaseAdmin, actor, logAudit };
 }
 
 export const manageOrders = createServerFn({ method: "POST" })
@@ -68,10 +76,16 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     status: String(data?.status ?? "") as OrderStatus,
   }))
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { sb, actor, logAudit } = await adminAs();
+    const { data: before } = await sb.from("orders").select("status, human_id").eq("id", data.id).maybeSingle();
     const { error } = await sb.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
-    await sb.from("order_events").insert({ order_id: data.id, status: data.status, created_by: "manager" });
+    await sb.from("order_events").insert({ order_id: data.id, status: data.status, created_by: actor.name });
+    await logAudit(sb as never, actor, "order.status_changed", "orders", data.id, {
+      order: before?.human_id ?? data.id,
+      from: before?.status ?? null,
+      to: data.status,
+    });
     return { ok: true as const };
   });
 
@@ -183,14 +197,22 @@ export const saveProducts = createServerFn({ method: "POST" })
     }) => ({ updates: Array.isArray(data?.updates) ? data.updates.slice(0, 200) : [] }),
   )
   .handler(async ({ data }) => {
-    const sb = await admin();
+    const { sb, actor, logAudit } = await adminAs();
+    const ids = data.updates.map((u) => u.id);
+    const { data: before } = await sb.from("products").select("id, name, price, mrp, stock, brand").in("id", ids);
+    const beforeById = new Map((before ?? []).map((b) => [String(b.id), b]));
+    const changes: Record<string, unknown>[] = [];
     for (const u of data.updates) {
       const patch: Record<string, unknown> = {};
       if (u.price !== undefined) patch['price'] = u.price;
       if (u.mrp !== undefined) patch['mrp'] = u.mrp;
       if (u.stock !== undefined) patch['stock'] = u.stock;
       if (u.brand !== undefined) patch['brand'] = u.brand;
-      if (Object.keys(patch).length > 0) await sb.from("products").update(patch as never).eq("id", u.id);
+      const prev = beforeById.get(u.id);
+      if (Object.keys(patch).length > 0) {
+        await sb.from("products").update(patch as never).eq("id", u.id);
+        changes.push({ product: prev?.name ?? u.id, id: u.id, from: prev ?? null, to: patch });
+      }
       if (u.image !== undefined) {
         await sb.from("product_images").delete().eq("product_id", u.id).eq("sort_order", 0);
         if (u.image.trim()) {
@@ -198,11 +220,9 @@ export const saveProducts = createServerFn({ method: "POST" })
         }
       }
     }
-    await sb.from("audit_log").insert({
-      actor: "manager",
-      action: "products.bulk_update",
-      entity: "products",
-      diff: { count: data.updates.length } as never,
+    await logAudit(sb as never, actor, "products.updated", "products", null, {
+      count: data.updates.length,
+      changes: changes.slice(0, 50),
     });
     return { saved: data.updates.length };
   });

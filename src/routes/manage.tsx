@@ -1,13 +1,15 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { Boxes, Globe, LayoutDashboard, LogOut, Receipt, Users } from "lucide-react";
+import { Boxes, Globe, LayoutDashboard, LogOut, Receipt, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { isManagerUnlocked, lockManager } from "@/lib/manage.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { staffSession } from "@/lib/staff.functions";
 
 export const Route = createFileRoute("/manage")({
+  ssr: false,
   beforeLoad: async () => {
-    const { unlocked } = await isManagerUnlocked();
-    if (!unlocked) throw redirect({ to: "/manage-login" });
+    const session = await staffSession();
+    if (!session.signedIn) throw redirect({ to: "/manage-login" });
+    return { staff: session };
   },
   head: () => ({
     meta: [
@@ -29,25 +31,28 @@ const NAV = [
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false },
   { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false },
+  { to: "/manage/staff", label: "Staff", icon: ShieldCheck, exact: false },
 ] as const;
 
 function ManageLayout() {
   const router = useRouter();
-  const lock = useServerFn(lockManager);
+  const { staff } = Route.useRouteContext();
 
   return (
     <div className="container-page py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Manager panel</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Shaw Traders EV · staff only</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Shaw Traders EV · signed in as {staff.signedIn ? `${staff.name} (${staff.role})` : "staff"}
+          </p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={async () => {
-            await lock();
-            await router.navigate({ to: "/manage-login" });
+            await supabase.auth.signOut();
+            await router.navigate({ to: "/manage-login", replace: true });
           }}
         >
           <LogOut className="size-4" /> Sign out
