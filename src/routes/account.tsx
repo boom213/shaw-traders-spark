@@ -6,12 +6,10 @@ import { LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { myOrders } from "@/lib/orders.functions";
 import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
@@ -156,8 +154,9 @@ function AuthPanel() {
 function Dashboard() {
   const { lists, user } = useStore();
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const mobile = user?.phone ? `+${String(user.phone).replace(/\D/g, "")}` : "";
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -171,9 +170,11 @@ function Dashboard() {
   useEffect(() => {
     if (profile) {
       setName(profile.full_name ?? "");
-      setPhone(profile.phone ?? "");
+      setEmail(profile.email ?? "");
+    } else if (profile === null && user) {
+      void supabase.from("profiles").upsert({ id: user.id, phone: mobile }, { onConflict: "id" });
     }
-  }, [profile]);
+  }, [profile, user, mobile]);
 
   const { data: orders, isPending: ordersPending } = useQuery({
     queryKey: ["my-orders", user?.id],
@@ -191,7 +192,7 @@ function Dashboard() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .upsert({ id: user!.id, full_name: name, phone, email: user!.email ?? null });
+      .upsert({ id: user!.id, full_name: name, phone: mobile, email: email.trim() || null });
     setSaving(false);
     if (error) return toast.error("Could not save your details");
     toast.success("Details saved");
@@ -201,7 +202,7 @@ function Dashboard() {
     <div className="container mx-auto space-y-10 px-4 py-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold md:text-3xl">Hello, {name || user?.email}</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Hello, {name || mobile}</h1>
           <p className="text-sm text-muted-foreground">
             Your orders and saved parts follow you on any device. Call {BUSINESS.phone} for any help.
           </p>
@@ -221,8 +222,8 @@ function Dashboard() {
         <h2 className="text-lg font-semibold">Your details</h2>
         <div className="grid gap-3 md:grid-cols-3">
           <Input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <Input value={user?.email ?? ""} readOnly />
+          <Input value={mobile} readOnly aria-label="Mobile number" />
+          <Input placeholder="Email (optional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <Button disabled={saving} onClick={() => void saveProfile()}>Save details</Button>
       </section>
