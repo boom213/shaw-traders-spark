@@ -30,6 +30,7 @@ import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
+import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
@@ -146,6 +147,11 @@ const ManageOrdersRoute = ManageOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageReviewsRoute = ManageReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageSettingsRoute = ManageSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/manage/domain': typeof ManageDomainRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/reviews': typeof ManageReviewsRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/manage/domain': typeof ManageDomainRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/reviews': typeof ManageReviewsRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/manage/domain': typeof ManageDomainRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/reviews': typeof ManageReviewsRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/manage/domain'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/reviews'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/manage/domain'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/reviews'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/manage/domain'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/reviews'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -575,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageOrdersRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/reviews': {
+      id: '/manage/reviews'
+      path: '/reviews'
+      fullPath: '/manage/reviews'
+      preLoaderRoute: typeof ManageReviewsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/settings': {
       id: '/manage/settings'
       path: '/settings'
@@ -654,6 +673,7 @@ interface ManageRouteChildren {
   ManageDomainRoute: typeof ManageDomainRoute
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
+  ManageReviewsRoute: typeof ManageReviewsRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
@@ -666,6 +686,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageDomainRoute: ManageDomainRoute,
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRoute,
+  ManageReviewsRoute: ManageReviewsRoute,
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
