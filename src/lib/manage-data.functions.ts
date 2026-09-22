@@ -247,6 +247,8 @@ export const saveProducts = createServerFn({ method: "POST" })
   });
 
 export type ShopSettingsRow = {
+  orderingMode: string;
+  browseBanner: string;
   gstEnabled: boolean;
   gstRate: number;
   pricesIncludeGst: boolean;
@@ -267,6 +269,8 @@ export type ShopSettingsRow = {
   grievancePhone: string;
   onlinePayments: boolean;
   whatsappReady: boolean;
+  /** Only a super admin may change ordering mode, GST and payment settings. */
+  isSuperAdmin: boolean;
 };
 
 /** Shop-wide payment, GST and cash-on-delivery settings. */
@@ -274,7 +278,11 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
   const sb = await admin();
   const { data } = await sb.from("shop_settings").select("*").maybeSingle();
   const { razorpayKeys } = await import("@/lib/razorpay.server");
+  const { staffContext } = await import("@/lib/staff.server");
+  const ctx = await staffContext();
   return {
+    orderingMode: String(data?.ordering_mode ?? "full"),
+    browseBanner: String(data?.browse_banner ?? ""),
     gstEnabled: Boolean(data?.gst_enabled ?? true),
     gstRate: Number(data?.gst_rate ?? 18),
     pricesIncludeGst: Boolean(data?.prices_include_gst ?? true),
@@ -295,19 +303,45 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
     grievancePhone: String(data?.grievance_officer_phone ?? ""),
     onlinePayments: razorpayKeys().configured,
     whatsappReady: (await import("@/lib/whatsapp.server")).whatsappConfigured(),
+    isSuperAdmin: ctx?.role === "super_admin",
   };
 });
 
 export const saveShopSettings = createServerFn({ method: "POST" })
-  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments" | "whatsappReady">) => data)
+  .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments" | "whatsappReady" | "isSuperAdmin">) => data)
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
     const pincodes = String(data.codPincodes ?? "")
       .split(/[^0-9]+/)
       .filter((p) => /^\d{6}$/.test(p));
+    const superAdmin = actor.role === "super_admin";
+    const current = (await sb.from("shop_settings").select("*").maybeSingle()).data as Row | null;
+
+    // Ordering mode and GST are super-admin only; everyone else keeps the saved values.
+    const sensitive = superAdmin
+      ? {
+          ordering_mode: ["full", "enquiry", "browse"].includes(String(data.orderingMode)) ? String(data.orderingMode) : "full",
+          browse_banner: String(data.browseBanner ?? "").trim().slice(0, 300) || null,
+          gst_enabled: Boolean(data.gstEnabled),
+          gst_rate: Math.max(0, Math.min(50, Number(data.gstRate) || 0)),
+          prices_include_gst: Boolean(data.pricesIncludeGst),
+          gstin: String(data.gstin ?? "").trim().toUpperCase() || null,
+        }
+      : {
+          ordering_mode: current?.['ordering_mode'] ?? "full",
+          browse_banner: current?.['browse_banner'] ?? null,
+          gst_enabled: current?.['gst_enabled'] ?? true,
+          gst_rate: current?.['gst_rate'] ?? 18,
+          prices_include_gst: current?.['prices_include_gst'] ?? true,
+          gstin: current?.['gstin'] ?? null,
+        };
+
     const patch = {
       id: true,
-      gst_enabled: Boolean(data.gstEnabled),
+      ...sensitive,
+      gst_enabled_unused: undefined as never,
+      gst_enabled_placeholder: undefined as never,
+      gst_enabled_old: Boolean(data.gstEnabled),
       gst_rate: Math.max(0, Math.min(50, Number(data.gstRate) || 0)),
       prices_include_gst: Boolean(data.pricesIncludeGst),
       gstin: String(data.gstin ?? "").trim().toUpperCase() || null,
