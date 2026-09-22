@@ -102,6 +102,35 @@ describe("create_order", () => {
     expect(await stockOf(id)).toBe(2);
   });
 
+  it("refuses a cart holding the same product on two lines above stock", async () => {
+    const id = await makeProduct(500, 3);
+    const res = await placeOrder(
+      [
+        { product_id: id, qty: 2 },
+        { product_id: id, qty: 2 },
+      ],
+      "Cash on Delivery",
+    );
+    expect(res.error).toMatch(/Only 3 left/i);
+    expect(await stockOf(id)).toBe(3);
+  });
+
+  it("merges duplicate lines of the same product into one when stock allows", async () => {
+    const id = await makeProduct(500, 5);
+    const { row } = await placeOrder(
+      [
+        { product_id: id, qty: 2 },
+        { product_id: id, qty: 1 },
+      ],
+      "Cash on Delivery",
+    );
+    expect(row.total).toBe(1500);
+    const { data: items } = await sb.from("order_items").select("qty").eq("order_id", row.order_id);
+    expect(items).toHaveLength(1);
+    expect(items![0].qty).toBe(3);
+    expect(await stockOf(id)).toBe(2);
+  });
+
   it("lets only one of two customers take the last item", async () => {
     const id = await makeProduct(500, 1);
     const [a, b] = await Promise.all([
