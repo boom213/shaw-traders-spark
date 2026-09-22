@@ -34,7 +34,7 @@ const cleanFilters = (input: ProductFilters | undefined): ProductFilters => ({
   pageSize: Math.min(60, Math.max(1, Number(input?.pageSize ?? 24))),
 });
 
-export const listCategories = createServerFn({ method: "GET" }).handler(async (): Promise<Category[]> => {
+async function loadCategories(): Promise<Category[]> {
   const sb = publicClient();
   const [{ data: cats }, { data: prods }] = await Promise.all([
     sb.from("categories").select("slug, name, blurb, image_url, sort_order").order("sort_order"),
@@ -52,7 +52,9 @@ export const listCategories = createServerFn({ method: "GET" }).handler(async ()
     ...(c.image_url ? { imageUrl: c.image_url } : {}),
     productCount: counts.get(c.slug) ?? 0,
   }));
-});
+}
+
+export const listCategories = createServerFn({ method: "GET" }).handler(async () => loadCategories());
 
 export const getCategory = createServerFn({ method: "GET" })
   .inputValidator((data: { slug: string }) => ({ slug: String(data?.slug ?? "") }))
@@ -205,7 +207,7 @@ export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
       .not("price", "is", null)
       .order("created_at", { ascending: false })
       .limit(24),
-    listCategories(),
+    loadCategories(),
   ]);
   const discounted = (deals ?? [])
     .map(mapProduct)
