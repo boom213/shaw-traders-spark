@@ -26,6 +26,8 @@ export function ProductCard({ product }: { product: Product }) {
   const { lists, addToCart, toggleWishlist } = useStore();
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
+  const mode = useProductOrdering(product);
+  const [enquiry, setEnquiry] = useState(false);
   const off = discountPct(product.price, product.mrp);
   const wished = lists.wishlist.includes(product.id);
   const inStock = product.stock > 0;
