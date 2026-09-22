@@ -116,6 +116,8 @@ export const startCheckout = createServerFn({ method: "POST" })
       p_profile_id: userId ?? undefined,
       p_transport_name: data.transportName || undefined,
       p_lr_number: data.lrNumber || undefined,
+      p_quote_token: data.quoteToken ?? undefined,
+
     });
     if (error) return { error: friendly(error.message) };
 
