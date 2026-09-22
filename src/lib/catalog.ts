@@ -8,7 +8,12 @@
  * moved to a real database later without changing the UI.
  */
 
-import { CATALOGUE_SEED } from "@/lib/catalogue-seed";
+/**
+ * The printed catalogue now lives in the database (categories / products /
+ * product_compatibility tables), so no product data ships in the client bundle.
+ */
+type SeedProduct = { sku?: string; name: string; category: string; model?: string };
+const CATALOGUE_SEED: SeedProduct[] = [];
 
 export type Product = {
   id: string;
