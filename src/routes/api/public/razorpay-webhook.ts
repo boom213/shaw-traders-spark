@@ -57,10 +57,16 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           .maybeSingle();
 
         if (insertError) {
-          // Duplicate event: already handled.
-          return new Response("ok", { status: 200 });
+          const { isDuplicateEventError } = await import("@/lib/webhook-errors");
+          if (isDuplicateEventError(insertError)) {
+            // Already handled: tell Razorpay to stop retrying.
+            return new Response("ok", { status: 200 });
+          }
+          // A real failure. Razorpay must retry, or a paid order stays unmarked.
+          console.error("razorpay webhook: could not record event", insertError);
+          return new Response("Could not record event", { status: 500 });
         }
-        if (!inserted) return new Response("ok", { status: 200 });
+        if (!inserted) return new Response("Could not record event", { status: 500 });
 
         if ((body.event === "payment.captured" || body.event === "order.paid") && orderId && paymentId) {
           await supabaseAdmin.rpc("mark_order_paid", { p_order_id: orderId, p_payment_id: paymentId });
