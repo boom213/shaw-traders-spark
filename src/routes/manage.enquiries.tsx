@@ -4,7 +4,9 @@ import { useState } from "react";
 import { Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { listEnquiries, setEnquiryStatus } from "@/lib/enquiries.functions";
+import { Input } from "@/components/ui/input";
+import { listEnquiries, replyToEnquiry, setEnquiryStatus } from "@/lib/enquiries.functions";
+
 
 export const Route = createFileRoute("/manage/enquiries")({
   component: EnquiriesPage,
