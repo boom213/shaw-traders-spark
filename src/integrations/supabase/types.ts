@@ -252,6 +252,7 @@ export type Database = {
       orders: {
         Row: {
           address: Json
+          contact_phone: string | null
           discount: number
           human_id: string
           id: string
@@ -259,6 +260,7 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["payment_status"]
           placed_at: string
           profile_id: string | null
+          public_token: string
           shipping_fee: number
           shipping_method: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -268,6 +270,7 @@ export type Database = {
         }
         Insert: {
           address?: Json
+          contact_phone?: string | null
           discount?: number
           human_id: string
           id?: string
@@ -275,6 +278,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           profile_id?: string | null
+          public_token?: string
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -284,6 +288,7 @@ export type Database = {
         }
         Update: {
           address?: Json
+          contact_phone?: string | null
           discount?: number
           human_id?: string
           id?: string
@@ -291,6 +296,7 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           profile_id?: string | null
+          public_token?: string
           shipping_fee?: number
           shipping_method?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -556,12 +562,62 @@ export type Database = {
           },
         ]
       }
+      user_lists: {
+        Row: {
+          cart: Json
+          profile_id: string
+          recently_viewed: Json
+          saved: Json
+          updated_at: string
+          wishlist: Json
+        }
+        Insert: {
+          cart?: Json
+          profile_id: string
+          recently_viewed?: Json
+          saved?: Json
+          updated_at?: string
+          wishlist?: Json
+        }
+        Update: {
+          cart?: Json
+          profile_id?: string
+          recently_viewed?: Json
+          saved?: Json
+          updated_at?: string
+          wishlist?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_lists_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      place_order: {
+        Args: {
+          p_address: Json
+          p_coupon_code?: string
+          p_items: Json
+          p_payment_method: string
+          p_shipping_fee?: number
+          p_shipping_method: string
+        }
+        Returns: {
+          human_id: string
+          order_id: string
+          public_token: string
+        }[]
+      }
     }
     Enums: {
       coupon_type: "percent" | "fixed"
