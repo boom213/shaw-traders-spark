@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
-import { supabase } from "@/integrations/supabase/client";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
+import { previewCoupon } from "@/lib/shop-extras.functions";
 
 export const COUPON_KEY = "shaw-ev-coupon";
 
-export type AppliedCoupon = { code: string; type: "percent" | "fixed"; value: number; minOrder: number; maxDiscount?: number };
+export type AppliedCoupon = { code: string; discount: number };
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -43,11 +43,8 @@ export function useCartTotals(coupon?: AppliedCoupon) {
     .filter((l): l is { productId: string; qty: number; product: Product } => Boolean(l.product));
 
   const subtotal = lines.reduce((n, l) => n + (l.product.price ?? 0) * l.qty, 0);
-  let discount = 0;
-  if (coupon && subtotal >= coupon.minOrder) {
-    discount = coupon.type === "percent" ? Math.round((subtotal * coupon.value) / 100) : coupon.value;
-    if (coupon.maxDiscount) discount = Math.min(discount, coupon.maxDiscount);
-  }
+  // The final discount is always recalculated on the server when the order is placed.
+  const discount = coupon ? Math.min(coupon.discount, subtotal) : 0;
   const shipping = subtotal === 0 || subtotal >= 999 ? 0 : 60;
   return {
     lines,
@@ -81,29 +78,20 @@ function CartPage() {
   const applyCoupon = async () => {
     const entered = code.trim();
     if (!entered) return;
-    const { data } = await supabase
-      .from("coupons")
-      .select("code, type, value, min_order, max_discount")
-      .ilike("code", entered)
-      .maybeSingle();
-    if (!data) {
-      toast.error("Coupon not found or no longer valid");
+    const res = await previewCoupon({ data: { code: entered, subtotal } });
+    if (!res.valid) {
+      toast.error(res.message);
       return;
     }
-    if (subtotal < Number(data.min_order)) {
-      toast.error(`Minimum order ${formatINR(Number(data.min_order))}`);
-      return;
-    }
-    const next: AppliedCoupon = {
-      code: data.code,
-      type: data.type as "percent" | "fixed",
-      value: Number(data.value),
-      minOrder: Number(data.min_order),
-      ...(data.max_discount ? { maxDiscount: Number(data.max_discount) } : {}),
-    };
+    const next: AppliedCoupon = { code: entered.toUpperCase(), discount: res.discount };
     setApplied(next);
     window.localStorage.setItem(COUPON_KEY, JSON.stringify(next));
-    toast.success("Coupon applied");
+    toast.success(`Code applied — you save ${formatINR(res.discount)}`);
+  };
+
+  const removeCoupon = () => {
+    setApplied(undefined);
+    window.localStorage.removeItem(COUPON_KEY);
   };
 
   return (
@@ -188,7 +176,14 @@ function CartPage() {
               <Input placeholder="Coupon code" value={code} onChange={(e) => setCode(e.target.value)} />
               <Button variant="outline" onClick={() => void applyCoupon()}>Apply</Button>
             </div>
-            {applied && <p className="mt-2 text-xs text-primary">Coupon {applied.code} applied</p>}
+            {applied && (
+              <p className="mt-2 flex items-center gap-2 text-xs text-primary">
+                Code {applied.code} applied
+                <button type="button" onClick={removeCoupon} className="text-muted-foreground underline">
+                  remove
+                </button>
+              </p>
+            )}
             <dl className="mt-5 grid gap-2 text-sm">
               <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{formatINR(subtotal)}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Discount</dt><dd className="text-primary">−{formatINR(discount)}</dd></div>

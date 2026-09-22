@@ -7,6 +7,8 @@ import {
   listFacets,
   listProducts,
   productsByIds,
+  searchSuggest,
+  vehicleTree,
   type ProductFilters,
 } from "@/lib/catalog.functions";
 
@@ -25,6 +27,17 @@ export const productsQuery = (filters: ProductFilters) =>
 
 export const productQuery = (slug: string) =>
   queryOptions({ queryKey: ["product", slug], queryFn: () => getProduct({ data: { slug } }), staleTime: 60_000 });
+
+export const suggestQuery = (q: string) =>
+  queryOptions({
+    queryKey: ["suggest", q],
+    queryFn: () => searchSuggest({ data: { q } }),
+    enabled: q.trim().length >= 2,
+    staleTime: 60_000,
+  });
+
+export const vehicleTreeQuery = () =>
+  queryOptions({ queryKey: ["vehicle-tree"], queryFn: () => vehicleTree(), staleTime: 10 * 60_000 });
 
 export const facetsQuery = () =>
   queryOptions({ queryKey: ["facets"], queryFn: () => listFacets(), staleTime: 10 * 60_000 });

@@ -606,6 +606,7 @@ export type Database = {
       products: {
         Row: {
           ah: string | null
+          box_contents: string | null
           brand: string | null
           category_id: string | null
           created_at: string
@@ -633,6 +634,7 @@ export type Database = {
         }
         Insert: {
           ah?: string | null
+          box_contents?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -660,6 +662,7 @@ export type Database = {
         }
         Update: {
           ah?: string | null
+          box_contents?: string | null
           brand?: string | null
           category_id?: string | null
           created_at?: string
@@ -772,9 +775,12 @@ export type Database = {
           created_at: string
           id: string
           is_verified_purchase: boolean
+          photos: string[]
           product_id: string
           profile_id: string | null
           rating: number
+          staff_replied_at: string | null
+          staff_reply: string | null
           status: Database["public"]["Enums"]["review_status"]
           title: string | null
         }
@@ -783,9 +789,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_verified_purchase?: boolean
+          photos?: string[]
           product_id: string
           profile_id?: string | null
           rating: number
+          staff_replied_at?: string | null
+          staff_reply?: string | null
           status?: Database["public"]["Enums"]["review_status"]
           title?: string | null
         }
@@ -794,9 +803,12 @@ export type Database = {
           created_at?: string
           id?: string
           is_verified_purchase?: boolean
+          photos?: string[]
           product_id?: string
           profile_id?: string | null
           rating?: number
+          staff_replied_at?: string | null
+          staff_reply?: string | null
           status?: Database["public"]["Enums"]["review_status"]
           title?: string | null
         }
@@ -921,11 +933,57 @@ export type Database = {
           },
         ]
       }
+      stock_alerts: {
+        Row: {
+          channel: string
+          contact: string
+          created_at: string
+          id: string
+          notified_at: string | null
+          product_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          channel?: string
+          contact: string
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          channel?: string
+          contact?: string
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_alerts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_lists: {
         Row: {
           cart: Json
           profile_id: string
           recently_viewed: Json
+          reminded_at: string | null
           saved: Json
           updated_at: string
           wishlist: Json
@@ -934,6 +992,7 @@ export type Database = {
           cart?: Json
           profile_id: string
           recently_viewed?: Json
+          reminded_at?: string | null
           saved?: Json
           updated_at?: string
           wishlist?: Json
@@ -942,6 +1001,7 @@ export type Database = {
           cart?: Json
           profile_id?: string
           recently_viewed?: Json
+          reminded_at?: string | null
           saved?: Json
           updated_at?: string
           wishlist?: Json
@@ -1055,14 +1115,31 @@ export type Database = {
           public_token: string
         }[]
       }
+      preview_coupon: {
+        Args: { p_code: string; p_subtotal: number }
+        Returns: {
+          discount: number
+          message: string
+          valid: boolean
+        }[]
+      }
       release_order: {
         Args: { p_order_id: string; p_reason?: string }
         Returns: boolean
+      }
+      search_product_ids: {
+        Args: { p_limit?: number; p_term: string }
+        Returns: {
+          id: string
+          score: number
+        }[]
       }
       set_order_gst: {
         Args: { p_enabled: boolean; p_order_id: string; p_rate: number }
         Returns: boolean
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       staff_bootstrap_needed: { Args: never; Returns: boolean }
       staff_role: {
         Args: { _user_id: string }

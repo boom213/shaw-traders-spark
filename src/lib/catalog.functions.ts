@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { publicClient } from "@/lib/supabase-public.server";
 import { PRODUCT_SELECT, mapProduct } from "@/lib/product-map";
+import { normaliseSearch } from "@/lib/search-terms";
 import type { Category, Product, Review } from "@/lib/catalog";
 
 export type ProductFilters = {
@@ -8,6 +9,7 @@ export type ProductFilters = {
   category?: string;
   brand?: string;
   voltage?: string;
+  ah?: string;
   model?: string;
   min?: number;
   max?: number;
@@ -25,6 +27,7 @@ const cleanFilters = (input: ProductFilters | undefined): ProductFilters => ({
   ...(str(input?.category) ? { category: str(input?.category)! } : {}),
   ...(str(input?.brand) ? { brand: str(input?.brand)! } : {}),
   ...(str(input?.voltage) ? { voltage: str(input?.voltage)! } : {}),
+  ...(str(input?.ah) ? { ah: str(input?.ah)! } : {}),
   ...(str(input?.model) ? { model: str(input?.model)! } : {}),
   ...(num(input?.min) !== undefined ? { min: num(input?.min)! } : {}),
   ...(num(input?.max) !== undefined ? { max: num(input?.max)! } : {}),
@@ -82,32 +85,54 @@ export const listProducts = createServerFn({ method: "GET" })
     const size = data.pageSize ?? 24;
 
     let ids: string[] | null = null;
+    let ranked: string[] | null = null;
+
+    // Typo-tolerant, Hinglish-aware search over name, code, brand and vehicle model.
+    if (data.q) {
+      const term = normaliseSearch(data.q);
+      const { data: hits } = await sb.rpc("search_product_ids", { p_term: term, p_limit: 400 });
+      const good = ((hits ?? []) as { id: string; score: number }[]).filter((h) => h.score >= 0.28);
+      if (good.length === 0) return { items: [], total: 0 };
+      ranked = good.map((h) => h.id);
+      ids = ranked;
+    }
+
     if (data.model) {
       const { data: compat } = await sb
         .from("product_compatibility")
         .select("product_id")
         .ilike("vehicle_model", `%${data.model}%`)
-        .limit(2000);
-      ids = Array.from(new Set((compat ?? []).map((c) => c.product_id)));
+        .limit(3000);
+      const fits = new Set((compat ?? []).map((c) => c.product_id));
+      ids = ids ? ids.filter((id) => fits.has(id)) : [...fits];
       if (ids.length === 0) return { items: [], total: 0 };
     }
 
-    let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" }).eq("is_active", true);
+    const base = () => {
+      let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" }).eq("is_active", true);
+      if (data.category) query = query.eq("categories.slug", data.category);
+      if (data.brand) query = query.eq("brand", data.brand);
+      if (data.voltage) query = query.ilike("voltage", `%${data.voltage}%`);
+      if (data.ah) query = query.ilike("ah", `%${data.ah}%`);
+      if (data.min !== undefined) query = query.gte("price", data.min);
+      if (data.max !== undefined) query = query.lte("price", data.max);
+      if (data.inStock) query = query.gt("stock", 0);
+      if (ids) query = query.in("id", ids);
+      return query;
+    };
 
-    if (data.q) {
-      const t = data.q.replace(/[%,()]/g, " ").trim();
-      query = query.or(
-        `name.ilike.%${t}%,sku.ilike.%${t}%,brand.ilike.%${t}%,model.ilike.%${t}%,description.ilike.%${t}%,subcategory.ilike.%${t}%`,
-      );
+    // Search results come back best-match first, which PostgREST cannot sort for us.
+    if (ranked && !data.sort) {
+      const { data: rows, error } = await base().limit(400);
+      if (error) throw new Error(error.message);
+      const order = new Map(ranked.map((id, i) => [id, i]));
+      const all = (rows ?? [])
+        .map(mapProduct)
+        .sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+      return { items: all.slice(page * size, page * size + size), total: all.length };
     }
-    if (data.category) query = query.eq("categories.slug", data.category);
-    if (data.brand) query = query.eq("brand", data.brand);
-    if (data.voltage) query = query.ilike("voltage", `%${data.voltage}%`);
-    if (data.min !== undefined) query = query.gte("price", data.min);
-    if (data.max !== undefined) query = query.lte("price", data.max);
-    if (data.inStock) query = query.gt("stock", 0);
-    if (ids) query = query.in("id", ids);
 
+    let query = base();
     if (data.sort === "price-asc") query = query.order("price", { ascending: true, nullsFirst: false });
     else if (data.sort === "price-desc") query = query.order("price", { ascending: false, nullsFirst: false });
     else if (data.sort === "newest") query = query.order("created_at", { ascending: false });
@@ -118,24 +143,73 @@ export const listProducts = createServerFn({ method: "GET" })
     return { items: (rows ?? []).map(mapProduct), total: count ?? 0 };
   });
 
+/** Instant suggestions for the search box. */
+export const searchSuggest = createServerFn({ method: "GET" })
+  .inputValidator((data: { q: string }) => ({ q: String(data?.q ?? "").slice(0, 60) }))
+  .handler(async ({ data }): Promise<{ products: Product[]; models: string[] }> => {
+    const term = normaliseSearch(data.q);
+    if (term.length < 2) return { products: [], models: [] };
+    const sb = publicClient();
+
+    const { data: hits } = await sb.rpc("search_product_ids", { p_term: term, p_limit: 40 });
+    const good = ((hits ?? []) as { id: string; score: number }[]).filter((h) => h.score >= 0.3).slice(0, 6);
+
+    const [{ data: rows }, { data: compat }] = await Promise.all([
+      good.length > 0
+        ? sb.from("products").select(PRODUCT_SELECT).in("id", good.map((h) => h.id))
+        : Promise.resolve({ data: [] as unknown[] }),
+      sb.from("product_compatibility").select("vehicle_model").ilike("vehicle_model", `%${term}%`).limit(40),
+    ]);
+
+    const order = new Map(good.map((h, i) => [h.id, i]));
+    const products = (rows ?? []).map((r) => mapProduct(r as Record<string, unknown>)).sort(
+      (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99),
+    );
+    const models = [...new Set(((compat ?? []) as { vehicle_model: string }[]).map((c) => c.vehicle_model))].slice(0, 5);
+    return { products, models };
+  });
+
+/** Vehicle brands and the models under them, for the parts finder. */
+export const vehicleTree = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ brand: string; models: string[] }[]> => {
+    const sb = publicClient();
+    const { data } = await sb.from("product_compatibility").select("vehicle_model").limit(5000);
+    const tree = new Map<string, Set<string>>();
+    for (const row of (data ?? []) as { vehicle_model: string }[]) {
+      const model = String(row.vehicle_model ?? "").trim();
+      if (!model) continue;
+      const brand = model.split(/\s+/)[0] ?? model;
+      if (!tree.has(brand)) tree.set(brand, new Set());
+      tree.get(brand)!.add(model);
+    }
+    return [...tree.entries()]
+      .map(([brand, models]) => ({ brand, models: [...models].sort() }))
+      .filter((b) => b.brand.length > 1)
+      .sort((a, b) => a.brand.localeCompare(b.brand));
+  },
+);
+
 export const listFacets = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ brands: string[]; voltages: string[]; models: string[] }> => {
+  async (): Promise<{ brands: string[]; voltages: string[]; ahs: string[]; models: string[] }> => {
     const sb = publicClient();
     const [{ data: prods }, { data: compat }] = await Promise.all([
-      sb.from("products").select("brand, voltage").eq("is_active", true).limit(2000),
+      sb.from("products").select("brand, voltage, ah").eq("is_active", true).limit(3000),
       sb.from("product_compatibility").select("vehicle_model").limit(3000),
     ]);
     const brands = new Set<string>();
     const voltages = new Set<string>();
+    const ahs = new Set<string>();
     for (const p of prods ?? []) {
       if (p.brand) brands.add(p.brand);
       if (p.voltage) voltages.add(p.voltage);
+      if (p.ah) ahs.add(p.ah);
     }
     const models = new Set<string>();
     for (const c of compat ?? []) if (c.vehicle_model) models.add(c.vehicle_model);
     return {
       brands: [...brands].sort(),
       voltages: [...voltages].sort(),
+      ahs: [...ahs].sort((a, b) => parseFloat(a) - parseFloat(b) || a.localeCompare(b)),
       models: [...models].sort(),
     };
   },
@@ -143,46 +217,97 @@ export const listFacets = createServerFn({ method: "GET" }).handler(
 
 export const getProduct = createServerFn({ method: "GET" })
   .inputValidator((data: { slug: string }) => ({ slug: String(data?.slug ?? "") }))
-  .handler(async ({ data }): Promise<{ product: Product; reviews: Review[]; related: Product[] } | null> => {
-    const sb = publicClient();
-    const { data: row } = await sb
-      .from("products")
-      .select(PRODUCT_SELECT)
-      .eq("slug", data.slug)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!row) return null;
-    const product = mapProduct(row);
-
-    const [{ data: reviewRows }, { data: relatedRows }] = await Promise.all([
-      sb
-        .from("reviews")
-        .select("id, rating, title, body, is_verified_purchase, created_at")
-        .eq("product_id", product.id)
-        .eq("status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(20),
-      sb
+  .handler(
+    async ({
+      data,
+    }): Promise<{
+      product: Product;
+      reviews: Review[];
+      related: Product[];
+      boughtTogether: Product[];
+      sameVehicle: Product[];
+    } | null> => {
+      const sb = publicClient();
+      const { data: row } = await sb
         .from("products")
         .select(PRODUCT_SELECT)
-        .eq("categories.slug", product.category)
+        .eq("slug", data.slug)
         .eq("is_active", true)
-        .neq("id", product.id)
-        .limit(4),
-    ]);
+        .maybeSingle();
+      if (!row) return null;
+      const product = mapProduct(row);
 
-    const reviews: Review[] = (reviewRows ?? []).map((r) => ({
-      id: r.id,
-      rating: r.rating,
-      ...(r.title ? { title: r.title } : {}),
-      ...(r.body ? { body: r.body } : {}),
-      name: r.title ? "Verified customer" : "Customer",
-      verified: r.is_verified_purchase,
-      createdAt: r.created_at,
-    }));
+      const [{ data: reviewRows }, { data: relatedRows }, { data: myLines }] = await Promise.all([
+        sb
+          .from("reviews")
+          .select("id, rating, title, body, is_verified_purchase, photos, staff_reply, created_at")
+          .eq("product_id", product.id)
+          .eq("status", "approved")
+          .order("created_at", { ascending: false })
+          .limit(20),
+        sb
+          .from("products")
+          .select(PRODUCT_SELECT)
+          .eq("categories.slug", product.category)
+          .eq("is_active", true)
+          .neq("id", product.id)
+          .limit(4),
+        sb.from("order_items").select("order_id").eq("product_id", product.id).limit(300),
+      ]);
 
-    return { product, reviews, related: (relatedRows ?? []).map(mapProduct) };
-  });
+      const reviews: Review[] = (reviewRows ?? []).map((r) => ({
+        id: r.id,
+        rating: r.rating,
+        ...(r.title ? { title: r.title } : {}),
+        ...(r.body ? { body: r.body } : {}),
+        name: r.is_verified_purchase ? "Verified customer" : "Customer",
+        verified: r.is_verified_purchase,
+        photos: (r.photos ?? []) as string[],
+        reply: r.staff_reply ?? null,
+        createdAt: r.created_at,
+      }));
+
+      // Parts other customers bought in the same order as this one.
+      let boughtTogether: Product[] = [];
+      const orderIds = [...new Set((myLines ?? []).map((l) => l.order_id))].slice(0, 200);
+      if (orderIds.length > 0) {
+        const { data: sideLines } = await sb
+          .from("order_items")
+          .select("product_id")
+          .in("order_id", orderIds)
+          .neq("product_id", product.id)
+          .limit(1000);
+        const tally = new Map<string, number>();
+        for (const l of sideLines ?? []) {
+          if (!l.product_id) continue;
+          tally.set(l.product_id, (tally.get(l.product_id) ?? 0) + 1);
+        }
+        const top = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id);
+        if (top.length > 0) {
+          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", top).eq("is_active", true);
+          boughtTogether = (rows ?? []).map(mapProduct);
+        }
+      }
+
+      // Other parts that fit the same vehicles.
+      let sameVehicle: Product[] = [];
+      const models = (product.compatibility ?? []).slice(0, 5);
+      if (models.length > 0) {
+        const { data: compat } = await sb
+          .from("product_compatibility")
+          .select("product_id")
+          .in("vehicle_model", models)
+          .limit(400);
+        const ids = [...new Set((compat ?? []).map((c) => c.product_id))].filter((id) => id !== product.id).slice(0, 8);
+        if (ids.length > 0) {
+          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", ids).eq("is_active", true).limit(4);
+          sameVehicle = (rows ?? []).map(mapProduct);
+        }
+      }
+
+      return { product, reviews, related: (relatedRows ?? []).map(mapProduct), boughtTogether, sameVehicle };
+    },
+  );
 
 export const productsByIds = createServerFn({ method: "POST" })
   .inputValidator((data: { ids: string[] }) => ({

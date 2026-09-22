@@ -1,8 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Heart, Star } from "lucide-react";
+import { CheckCircle2, Heart, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/hooks/useStore";
+import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, type Product } from "@/lib/catalog";
 import { imageFor } from "@/lib/placeholders";
 import { cn } from "@/lib/utils";
@@ -18,10 +19,16 @@ export function ProductRating({ rating, count }: { rating?: number; count?: numb
 
 export function ProductCard({ product }: { product: Product }) {
   const { lists, addToCart, toggleWishlist } = useStore();
+  const { vehicle } = useVehicle();
   const navigate = useNavigate();
   const off = discountPct(product.price, product.mrp);
   const wished = lists.wishlist.includes(product.id);
   const inStock = product.stock > 0;
+  const fits =
+    !!vehicle &&
+    (product.compatibility ?? []).some(
+      (c) => c.toLowerCase() === vehicle.model.toLowerCase() || c.toLowerCase().includes(vehicle.model.toLowerCase()),
+    );
 
   const add = () => {
     if (!inStock) {
@@ -69,7 +76,13 @@ export function ProductCard({ product }: { product: Product }) {
         >
           {product.name}
         </Link>
-        {product.model && <p className="line-clamp-1 text-xs text-muted-foreground">Fits: {product.model}</p>}
+        {fits ? (
+          <span className="inline-flex w-fit items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
+            <CheckCircle2 className="size-3" /> Fits your {vehicle?.model}
+          </span>
+        ) : (
+          product.model && <p className="line-clamp-1 text-xs text-muted-foreground">Fits: {product.model}</p>
+        )}
 
         <div className="mt-1">
           {product.price !== undefined ? (

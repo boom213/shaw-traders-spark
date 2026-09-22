@@ -107,6 +107,14 @@ export const quickSaveProduct = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true as const };
     const { error } = await sb.from("products").update(patch as never).eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
+    if (
+      data.stock !== undefined &&
+      Number(before?.stock ?? 0) <= 0 &&
+      Number(patch['stock'] ?? 0) > 0
+    ) {
+      const { notifyBackInStock } = await import("@/lib/reminders.server");
+      await notifyBackInStock(data.id);
+    }
     await logAudit(sb as never, actor, "products.updated", "products", data.id, {
       product: before?.name ?? data.id,
       from: before ?? null,

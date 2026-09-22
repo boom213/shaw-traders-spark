@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
-import { COUPON_KEY, readCoupon, useCartTotals } from "@/routes/cart";
+import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/cart";
+import { previewCoupon } from "@/lib/shop-extras.functions";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
@@ -51,7 +52,8 @@ type PendingOrder = { orderId: string; humanId: string; token: string; total: nu
 function CheckoutPage() {
   const navigate = useNavigate();
   const { clearCart, user } = useStore();
-  const coupon = readCoupon();
+  const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
+  const [couponCode, setCouponCode] = useState("");
   const { lines, loading, subtotal, discount } = useCartTotals(coupon);
   const { data: settings } = useQuery(shopSettingsQuery());
   const online = useServerFn(paymentsAvailable);
@@ -362,6 +364,51 @@ function CheckoutPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-4 border-t border-border pt-4">
+            <Label className="text-xs">Discount code</Label>
+            <div className="mt-1.5 flex gap-2">
+              <Input
+                placeholder="Enter code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  const entered = couponCode.trim();
+                  if (!entered) return;
+                  const res = await previewCoupon({ data: { code: entered, subtotal } });
+                  if (!res.valid) {
+                    toast.error(res.message);
+                    return;
+                  }
+                  const next = { code: entered.toUpperCase(), discount: res.discount };
+                  setCoupon(next);
+                  window.localStorage.setItem(COUPON_KEY, JSON.stringify(next));
+                  toast.success(`Code applied — you save ${formatINR(res.discount)}`);
+                }}
+              >
+                Apply
+              </Button>
+            </div>
+            {coupon && (
+              <p className="mt-2 flex items-center gap-2 text-xs text-primary">
+                Code {coupon.code} applied
+                <button
+                  type="button"
+                  className="text-muted-foreground underline"
+                  onClick={() => {
+                    setCoupon(undefined);
+                    window.localStorage.removeItem(COUPON_KEY);
+                  }}
+                >
+                  remove
+                </button>
+              </p>
+            )}
+          </div>
+
           <dl className="mt-4 grid gap-2 border-t border-border pt-4 text-sm">
             <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{formatINR(subtotal)}</dd></div>
             {discount > 0 && (
