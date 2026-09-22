@@ -21,10 +21,12 @@ export type CatalogueRow = {
   stock: number;
   reorderThreshold: number | null;
   images: string[];
+  status: string;
+  rackLocation: string | null;
 };
 
 const SELECT =
-  "id, sku, name, brand, price, mrp, stock, reorder_threshold, categories!inner(slug, name), product_images(url, sort_order)";
+  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, categories!inner(slug, name), product_images(url, sort_order)";
 
 const mapRow = (r: Row): CatalogueRow => ({
   id: String(r['id']),
@@ -37,6 +39,8 @@ const mapRow = (r: Row): CatalogueRow => ({
   mrp: r['mrp'] === null || r['mrp'] === undefined ? null : Number(r['mrp']),
   stock: Number(r['stock'] ?? 0),
   reorderThreshold: r['reorder_threshold'] === null || r['reorder_threshold'] === undefined ? null : Number(r['reorder_threshold']),
+  status: String(r['status'] ?? "visible"),
+  rackLocation: r['rack_location'] ?? null,
   images: ((r['product_images'] ?? []) as Row[])
     .slice()
     .sort((a, b) => Number(a['sort_order'] ?? 0) - Number(b['sort_order'] ?? 0))
@@ -61,10 +65,12 @@ export const catalogueList = createServerFn({ method: "POST" })
     let query = sb.from("products").select(SELECT, { count: "exact" });
     if (data.q) {
       const t = data.q.replace(/[%,()]/g, " ");
-      query = query.or(`name.ilike.%${t}%,sku.ilike.%${t}%,brand.ilike.%${t}%,model.ilike.%${t}%`);
+      query = query.or(`name.ilike.%${t}%,sku.ilike.%${t}%,brand.ilike.%${t}%,model.ilike.%${t}%,rack_location.ilike.%${t}%`);
     }
     if (data.category) query = query.eq("categories.slug", data.category);
     if (data.filter === "no-price") query = query.is("price", null);
+    if (data.filter === "draft" || data.filter === "visible" || data.filter === "hidden") query = query.eq("status", data.filter);
+    if (data.filter === "no-rack") query = query.is("rack_location", null);
     if (data.filter === "no-stock") query = query.eq("stock", 0);
 
     if (inMemory) {
@@ -94,16 +100,20 @@ export const quickSaveProduct = createServerFn({ method: "POST" })
     stock?: number;
     brand?: string | null;
     reorderThreshold?: number | null;
+    status?: string;
+    rackLocation?: string | null;
   }) => data)
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
-    const { data: before } = await sb.from("products").select("name, price, mrp, stock, brand, reorder_threshold").eq("id", data.id).maybeSingle();
+    const { data: before } = await sb.from("products").select("name, price, mrp, stock, brand, reorder_threshold, status, rack_location").eq("id", data.id).maybeSingle();
     const patch: Record<string, unknown> = {};
     if (data.price !== undefined) patch['price'] = data.price;
     if (data.mrp !== undefined) patch['mrp'] = data.mrp;
     if (data.stock !== undefined) patch['stock'] = Math.max(0, Number(data.stock) || 0);
     if (data.brand !== undefined) patch['brand'] = data.brand;
     if (data.reorderThreshold !== undefined) patch['reorder_threshold'] = data.reorderThreshold;
+    if (data.status !== undefined && ["draft", "visible", "hidden"].includes(String(data.status))) patch['status'] = data.status;
+    if (data.rackLocation !== undefined) patch['rack_location'] = String(data.rackLocation ?? "").trim().slice(0, 120) || null;
     if (Object.keys(patch).length === 0) return { ok: true as const };
     const { error } = await sb.from("products").update(patch as never).eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
