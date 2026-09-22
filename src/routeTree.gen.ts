@@ -21,6 +21,7 @@ import { Route as FindPartsRouteImport } from './routes/find-parts'
 import { Route as ManageRouteImport } from './routes/manage'
 import { Route as ManageLoginRouteImport } from './routes/manage-login'
 import { Route as OffersRouteImport } from './routes/offers'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
@@ -100,6 +101,11 @@ const ManageLoginRoute = ManageLoginRouteImport.update({
 const OffersRoute = OffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShopRoute = ShopRouteImport.update({
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRoute
   '/track': typeof TrackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/find-parts': typeof FindPartsRoute
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRoute
   '/track': typeof TrackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -288,6 +296,7 @@ export interface FileRoutesById {
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
+  '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRoute
   '/track': typeof TrackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/manage'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
     | '/shop'
     | '/track'
     | '/category/$slug'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/find-parts'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
     | '/shop'
     | '/track'
     | '/category/$slug'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/manage'
     | '/manage-login'
     | '/offers'
+    | '/privacy'
     | '/shop'
     | '/track'
     | '/category/$slug'
@@ -426,6 +438,7 @@ export interface RootRouteChildren {
   ManageRoute: typeof ManageRouteWithChildren
   ManageLoginRoute: typeof ManageLoginRoute
   OffersRoute: typeof OffersRoute
+  PrivacyRoute: typeof PrivacyRoute
   ShopRoute: typeof ShopRoute
   TrackRoute: typeof TrackRoute
   CategorySlugRoute: typeof CategorySlugRoute
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof OffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop': {
@@ -709,6 +729,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManageRoute: ManageRouteWithChildren,
   ManageLoginRoute: ManageLoginRoute,
   OffersRoute: OffersRoute,
+  PrivacyRoute: PrivacyRoute,
   ShopRoute: ShopRoute,
   TrackRoute: TrackRoute,
   CategorySlugRoute: CategorySlugRoute,
