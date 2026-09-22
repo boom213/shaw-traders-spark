@@ -854,6 +854,9 @@ export type Database = {
           cod_limit: number
           cod_pincodes: string[]
           default_hsn: string
+          grievance_officer_email: string | null
+          grievance_officer_name: string | null
+          grievance_officer_phone: string | null
           gst_enabled: boolean
           gst_rate: number
           gstin: string | null
@@ -863,7 +866,9 @@ export type Database = {
           notify_enabled: boolean
           owner_email: string | null
           owner_whatsapp: string
+          policy_updated_at: string | null
           prices_include_gst: boolean
+          support_email: string | null
           updated_at: string
         }
         Insert: {
@@ -872,6 +877,9 @@ export type Database = {
           cod_limit?: number
           cod_pincodes?: string[]
           default_hsn?: string
+          grievance_officer_email?: string | null
+          grievance_officer_name?: string | null
+          grievance_officer_phone?: string | null
           gst_enabled?: boolean
           gst_rate?: number
           gstin?: string | null
@@ -881,7 +889,9 @@ export type Database = {
           notify_enabled?: boolean
           owner_email?: string | null
           owner_whatsapp?: string
+          policy_updated_at?: string | null
           prices_include_gst?: boolean
+          support_email?: string | null
           updated_at?: string
         }
         Update: {
@@ -890,6 +900,9 @@ export type Database = {
           cod_limit?: number
           cod_pincodes?: string[]
           default_hsn?: string
+          grievance_officer_email?: string | null
+          grievance_officer_name?: string | null
+          grievance_officer_phone?: string | null
           gst_enabled?: boolean
           gst_rate?: number
           gstin?: string | null
@@ -899,7 +912,9 @@ export type Database = {
           notify_enabled?: boolean
           owner_email?: string | null
           owner_whatsapp?: string
+          policy_updated_at?: string | null
           prices_include_gst?: boolean
+          support_email?: string | null
           updated_at?: string
         }
         Relationships: []
