@@ -4,6 +4,8 @@ import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "luc
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
+import { LanguageSwitch } from "@/components/site/LanguageSwitch";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
@@ -23,6 +25,7 @@ function Logo() {
 }
 
 export function Header() {
+  const t = useT();
   const { lists } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const { data: categories } = useQuery(categoriesQuery());
@@ -36,7 +39,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="container-page flex h-16 items-center gap-3">
         <Sheet open={menu} onOpenChange={setMenu}>
-          <SheetTrigger className="-ml-1 grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden" aria-label="Open menu">
+          <SheetTrigger className="-ml-1 grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden" aria-label={t("nav.menu")}>
             <Menu className="size-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-[85vw] max-w-sm overflow-y-auto p-6">
@@ -45,21 +48,21 @@ export function Header() {
             </div>
             <nav className="grid gap-1 text-sm">
               {[
-                { to: "/shop", label: "Shop All Products" },
-                { to: "/offers", label: "Offers" },
-                { to: "/find-parts", label: "Find Parts for Your EV" },
-                { to: "/bulk", label: "Dealer & Bulk Orders" },
-                { to: "/track", label: "Track Order" },
-                { to: "/account", label: "My Account" },
-                { to: "/about", label: "About" },
-                { to: "/contact", label: "Contact" },
+                { to: "/shop", label: t("nav.shop") },
+                { to: "/offers", label: t("nav.offers") },
+                { to: "/find-parts", label: t("nav.findParts") },
+                { to: "/bulk", label: t("nav.bulk") },
+                { to: "/track", label: t("nav.track") },
+                { to: "/account", label: t("nav.account") },
+                { to: "/about", label: t("nav.about") },
+                { to: "/contact", label: t("nav.contact") },
               ].map((l) => (
                 <Link key={l.to} to={l.to} onClick={() => setMenu(false)} className="rounded-lg px-3 py-2.5 font-medium hover:bg-muted">
                   {l.label}
                 </Link>
               ))}
             </nav>
-            <p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Categories</p>
+            <p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("nav.categories")}</p>
             <nav className="grid gap-0.5 text-sm">
               {(categories ?? []).map((c) => (
                 <Link
@@ -73,6 +76,7 @@ export function Header() {
                 </Link>
               ))}
             </nav>
+            <LanguageSwitch className="mt-6 px-3" />
           </SheetContent>
         </Sheet>
 
@@ -83,17 +87,18 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <LanguageSwitch className="hidden lg:block" />
           <button
             onClick={() => setMobileSearch((v) => !v)}
             className="grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
-            aria-label="Search"
+            aria-label={t("nav.search")}
           >
             <Search className="size-5" />
           </button>
-          <Link to="/account" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label="Account">
+          <Link to="/account" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label={t("nav.account")}>
             <User className="size-5" />
           </Link>
-          <Link to="/account" hash="wishlist" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label="Wishlist">
+          <Link to="/account" hash="wishlist" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label={t("nav.wishlist")}>
             <Heart className="size-5" />
           </Link>
           <a
@@ -101,11 +106,11 @@ export function Header() {
             target="_blank"
             rel="noreferrer"
             className="hidden size-9 place-items-center rounded-lg text-whatsapp hover:bg-muted sm:grid"
-            aria-label="WhatsApp us"
+            aria-label={t("nav.whatsapp")}
           >
             <MessageCircle className="size-5" />
           </a>
-          <Link to="/cart" className="relative grid size-9 place-items-center rounded-lg hover:bg-muted" aria-label="Cart">
+          <Link to="/cart" className="relative grid size-9 place-items-center rounded-lg hover:bg-muted" aria-label={t("nav.cart")}>
             <ShoppingCart className="size-5" />
             {cartCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">

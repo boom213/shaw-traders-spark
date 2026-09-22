@@ -24,14 +24,68 @@ export const Route = createFileRoute("/product/$slug")({
   loader: async ({ context, params }) => {
     const data = await context.queryClient.ensureQueryData(productQuery(params.slug));
     if (!data) throw notFound();
-    return { name: data.product.name, description: data.product.description ?? "" };
+    const p = data.product;
+    const approved = data.reviews ?? [];
+    const rating = approved.length
+      ? Math.round((approved.reduce((s: number, r: { rating: number }) => s + r.rating, 0) / approved.length) * 10) / 10
+      : 0;
+    const photo = (p.images ?? [])[0] ?? "";
+    return {
+      name: p.name,
+      description: p.description ?? "",
+      sku: p.sku,
+      brand: p.brand ?? "",
+      categoryName: p.categoryName ?? "",
+      price: p.price ?? 0,
+      stock: p.stock,
+      image: photo ? (photo.startsWith("http") ? photo : canonical(photo)) : "",
+      rating,
+      reviewCount: approved.length,
+    };
   },
   head: ({ loaderData, params }) => {
     const name = loaderData?.name ?? params.slug.replace(/-/g, " ");
-    const title = `${name} — Shaw Traders EV`;
+    const brand = loaderData?.brand ? `${loaderData.brand} ` : "";
+    const priceBit = loaderData?.price ? ` at ${formatINR(loaderData.price)}` : "";
+    const title = `${brand}${name} — Shaw Traders EV`;
     const description =
-      (loaderData?.description || "").slice(0, 160) ||
-      `${name} available at Shaw Traders EV, Bud Bud, Bardhaman. Check price, specifications, compatibility and availability.`;
+      (loaderData?.description || "").slice(0, 155) ||
+      `Buy ${brand}${name}${priceBit} at Shaw Traders EV, Bud Bud, Bardhaman. Specifications, vehicle compatibility, warranty and stock availability.`;
+    const url = canonical(`/product/${params.slug}`);
+    const image = loaderData?.image ?? "";
+
+    const jsonLd: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name,
+      description,
+      sku: loaderData?.sku,
+      ...(loaderData?.brand ? { brand: { "@type": "Brand", name: loaderData.brand } } : {}),
+      ...(image ? { image: [image] } : {}),
+      ...(loaderData?.categoryName ? { category: loaderData.categoryName } : {}),
+      ...(loaderData?.price
+        ? {
+            offers: {
+              "@type": "Offer",
+              url,
+              priceCurrency: "INR",
+              price: String(loaderData.price),
+              availability: (loaderData.stock ?? 0) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              seller: { "@type": "Organization", name: BUSINESS.name },
+            },
+          }
+        : {}),
+      ...(loaderData?.reviewCount
+        ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: String(loaderData.rating),
+              reviewCount: String(loaderData.reviewCount),
+            },
+          }
+        : {}),
+    };
+
     return {
       meta: [
         { title },
@@ -39,11 +93,20 @@ export const Route = createFileRoute("/product/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "product" },
+        { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        ...(image
+          ? [
+              { property: "og:image", content: image },
+              { name: "twitter:image", content: image },
+            ]
+          : []),
       ],
-      links: [{ rel: "canonical", href: canonical(`/product/${params.slug}`) }],
+      links: [{ rel: "canonical", href: url }],
+      scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
     };
   },
+
   errorComponent: ({ error }) => (
     <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error.message}</div>
   ),

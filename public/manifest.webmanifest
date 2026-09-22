@@ -1,0 +1,15 @@
+{
+  "name": "Shaw Traders EV — EV Parts & Batteries",
+  "short_name": "Shaw Traders EV",
+  "description": "EV batteries, chargers, motors, controllers and body parts from Shaw Traders EV, Bud Bud, Bardhaman.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f172a",
+  "lang": "en",
+  "icons": [
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

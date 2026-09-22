@@ -1,12 +1,24 @@
-# Shaw Traders EV — move off localStorage
+# Shaw Traders EV — roadmap
 
-- [ ] Migration: order public_token + contact_phone, user_lists mirror, place_order RPC with stock enforcement
-- [ ] Regenerate database types
-- [ ] Enable email/password + Google sign-in
-- [ ] Public read layer (catalog server fns, publishable client)
-- [ ] Manager read/write layer (manage session gated, admin client)
-- [ ] Order lookup server fns (token + phone last-4 or signed-in profile or manager)
-- [ ] useStore: cart/wishlist/saved/recent only, mirrored to DB when signed in
-- [ ] Rewrite routes: index, shop, category, product, offers, find-parts, cart, checkout, track, order, account, manage.*
-- [ ] Skeletons + empty states, SSR meta/canonical from DB
-- [ ] Stock checks at add-to-cart and checkout
+## Done (final pass)
+- Automated tests: payment signature checks, GST/COD/delivery rules, and live
+  database tests for pricing, stock, the last-item race, coupons, paid/refund
+  and release paths (39 tests, `bun run test`).
+- SEO: sitemap.xml built from the catalogue (887 URLs) + robots.txt reference,
+  Product / BreadcrumbList / LocalBusiness structured data, per-product
+  database-driven titles, descriptions, canonical and share images.
+- Performance: lazy below-the-fold images with fixed dimensions, hero preloaded,
+  manager panel split out of the customer bundle, query caching tuned.
+- Accessibility: skip link, single main landmark, visible focus rings,
+  labelled controls, alt text on product images.
+- Bengali and Hindi alongside English for the site's own wording.
+- Installable app with offline browsing of pages and photos already viewed.
+- Error reporting from customers' phones + /api/public/health uptime probe,
+  surfaced in the manager overview.
+
+## Waiting on the owner
+- Prices and stock for the catalogue (Stock & Photos / Price List).
+- Razorpay keys for online payment.
+- WhatsApp Business connection so order messages actually deliver.
+- Registered business name, GSTIN and grievance officer details in Settings.
+- An external uptime monitor pointed at /api/public/health.

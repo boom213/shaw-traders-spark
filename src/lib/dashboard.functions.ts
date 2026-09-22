@@ -28,13 +28,15 @@ export type Dashboard = {
   noPrice: number;
   lowStock: { id: string; name: string; stock: number; threshold: number }[];
   emptySearches: { term: string; hits: number }[];
+  errorsToday: number;
+  recentErrors: { message: string; url: string; at: string }[];
 };
 
 export const dashboard = createServerFn({ method: "POST" }).handler(async (): Promise<Dashboard> => {
   const sb = await admin();
   const monthStart = istMidnight(30);
 
-  const [ordersRes, productsRes, missesRes] = await Promise.all([
+  const [ordersRes, productsRes, missesRes, errorsRes] = await Promise.all([
     sb
       .from("orders")
       .select("id, total, status, placed_at, order_items(name_snapshot, qty, price_snapshot)")
@@ -42,6 +44,12 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
       .limit(2000),
     sb.from("products").select("id, name, price, stock, reorder_threshold, product_images(url)").eq("is_active", true).limit(3000),
     sb.from("search_misses").select("term, hits").order("hits", { ascending: false }).limit(12),
+    sb
+      .from("error_log")
+      .select("message, url, created_at")
+      .gte("created_at", istMidnight(0))
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
 
   const orders = (ordersRes.data ?? []) as Row[];
@@ -91,5 +99,11 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
     noPrice: products.filter((p) => p['price'] === null).length,
     lowStock,
     emptySearches: ((missesRes.data ?? []) as Row[]).map((m) => ({ term: String(m['term']), hits: Number(m['hits']) })),
+    errorsToday: ((errorsRes.data ?? []) as Row[]).length,
+    recentErrors: ((errorsRes.data ?? []) as Row[]).slice(0, 5).map((e) => ({
+      message: String(e['message'] ?? ""),
+      url: String(e['url'] ?? ""),
+      at: String(e['created_at'] ?? ""),
+    })),
   };
 });

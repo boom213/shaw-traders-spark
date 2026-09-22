@@ -18,6 +18,9 @@ import { AnalyticsGate, CookieConsent } from "@/components/site/CookieConsent";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
 import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 import { Toaster } from "@/components/ui/sonner";
+import { LanguageProvider } from "@/lib/i18n";
+import { setupServiceWorker } from "@/lib/pwa";
+import { setupErrorReporting } from "@/lib/error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -102,7 +105,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+
     ],
   }),
   shellComponent: RootShell,
@@ -128,15 +134,28 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    setupErrorReporting();
+    setupServiceWorker();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
       <StoreProvider>
         <div className="flex min-h-screen flex-col">
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+          >
+            Skip to main content
+          </a>
           <Header />
-          <main className="flex-1 pb-16 lg:pb-0">
+          <main id="main" className="flex-1 pb-16 lg:pb-0">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
           </main>
+
           <Footer />
         </div>
         <MobileTabBar />
@@ -145,6 +164,7 @@ function RootComponent() {
         <AnalyticsGate />
         <Toaster position="top-center" />
       </StoreProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

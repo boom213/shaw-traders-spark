@@ -62,6 +62,24 @@ function ManageOverview() {
           <p className="mt-3 text-xs text-muted-foreground">These are parts customers asked for and could not find on your site.</p>
         </Panel>
 
+        <Panel title="Problems reported by customers' phones today">
+          {data.errorsToday === 0 ? (
+            <Empty text="No problems reported today." />
+          ) : (
+            <>
+              <p className="text-sm font-semibold">{data.errorsToday} report{data.errorsToday === 1 ? "" : "s"} today</p>
+              <ul className="mt-2 grid gap-2 text-sm">
+                {data.recentErrors.map((e, i) => (
+                  <li key={`${e.at}-${i}`} className="rounded-lg border border-border p-2">
+                    <span className="line-clamp-2">{e.message}</span>
+                    {e.url && <span className="block text-xs text-muted-foreground">{e.url}</span>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </Panel>
+
         <Panel title="Running low">
           {data.lowStock.length === 0 && <Empty text="Nothing is below its reorder level." />}
           <ul className="grid gap-2 text-sm">

@@ -26,10 +26,49 @@ export const Route = createFileRoute("/")({
         content: "Batteries, chargers, motors, controllers, body parts and EV accessories under one roof.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/") },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: canonical("/") }],
+    links: [
+      { rel: "canonical", href: canonical("/") },
+      { rel: "preload", as: "image", href: heroImg, fetchPriority: "high" },
+    ],
+
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "LocalBusiness",
+          "@id": `${BUSINESS.site}/#business`,
+          name: BUSINESS.name,
+          description: "EV parts, batteries, chargers, motors, controllers and accessories in Bud Bud, Bardhaman.",
+          url: BUSINESS.site,
+          telephone: `+91${BUSINESS.phone}`,
+          priceRange: "₹₹",
+          address: {
+            "@type": "PostalAddress",
+            streetAddress: "Defence Colony, Bud Bud",
+            addressLocality: "Bud Bud",
+            addressRegion: "West Bengal",
+            postalCode: "713403",
+            addressCountry: "IN",
+          },
+          areaServed: "India",
+          openingHoursSpecification: [
+            {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+              opens: "09:00",
+              closes: "20:00",
+            },
+            { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "10:00", closes: "14:00" },
+          ],
+        }),
+      },
+    ],
   }),
+
   errorComponent: ({ error }) => (
     <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">
       {error.message}
@@ -86,7 +125,16 @@ function Home() {
             </ul>
           </div>
           <div className="overflow-hidden rounded-3xl border border-border bg-background shadow-[var(--shadow-lift)]">
-            <img src={heroImg} alt="Electric scooter with EV battery pack, charger, hub motor and controller" width={1600} height={1008} className="w-full" />
+            <img
+              src={heroImg}
+              alt="Electric scooter with EV battery pack, charger, hub motor and controller"
+              width={1600}
+              height={1008}
+              fetchPriority="high"
+              decoding="async"
+              className="w-full"
+            />
+
           </div>
         </div>
       </section>
