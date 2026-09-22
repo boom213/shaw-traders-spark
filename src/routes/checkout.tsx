@@ -17,6 +17,7 @@ import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
+import { useTradeAccount } from "@/hooks/useTrade";
 import { abandonPayment, paymentsAvailable, retryPayment, startCheckout, verifyPayment } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
@@ -39,6 +40,7 @@ const DELIVERY = [
   { code: "standard", id: "Standard Delivery", note: "3–6 working days", fee: 0 },
   { code: "express", id: "Express Delivery", note: "1–3 working days", fee: 120 },
   { code: "pickup", id: "Pickup at Bud Bud counter", note: "Ready in 2 hours", fee: 0 },
+  { code: "freight", id: "Transport / freight", note: "Sent by transport, freight paid to the transporter", fee: 0 },
 ] as const;
 
 const PAYMENT = [
@@ -46,6 +48,7 @@ const PAYMENT = [
   { id: "Card", note: "Debit or credit card", icon: CreditCard, online: true },
   { id: "Netbanking", note: "All major Indian banks", icon: Landmark, online: true },
   { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck, online: false },
+  { id: "Credit (account)", note: "Added to your wholesale account", icon: Truck, online: false },
 ] as const;
 
 type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
@@ -81,6 +84,8 @@ function CheckoutPage() {
   });
   const [delivery, setDelivery] = useState<(typeof DELIVERY)[number]>(DELIVERY[0]);
   const [payment, setPayment] = useState<string>(PAYMENT[0].id);
+  const { account, isTrade } = useTradeAccount();
+  const [freight, setFreight] = useState({ transportName: "", lrNumber: "" });
 
   const base = Math.max(0, subtotal - discount + delivery.fee);
   const taxed = settings ? withTax(base, settings) : { total: base, tax: 0 };
@@ -162,7 +167,8 @@ function CheckoutPage() {
       return;
     }
     if (payment === "Cash on Delivery" && !cod.allowed) return toast.error(cod.reason);
-    if (payment !== "Cash on Delivery" && !onlineReady) {
+    if (payment === "Credit (account)" && !isTrade) return toast.error("Credit is only for approved trade accounts.");
+    if (payment !== "Cash on Delivery" && payment !== "Credit (account)" && !onlineReady) {
       return toast.error("Online payment is not switched on yet. Please choose cash on delivery.");
     }
 
@@ -173,6 +179,7 @@ function CheckoutPage() {
         address: addr,
         shippingCode: delivery.code,
         paymentMethod: payment,
+        ...(delivery.code === "freight" ? { transportName: freight.transportName, lrNumber: freight.lrNumber } : {}),
         ...(coupon ? { coupon: coupon.code } : {}),
       },
     });
@@ -183,7 +190,12 @@ function CheckoutPage() {
     const order: PendingOrder = { orderId: res.orderId, humanId: res.humanId, token: res.token, total: res.total };
 
     if (!res.razorpay) {
-      await finish(order, `Order ${res.humanId} placed — pay cash on delivery`);
+      await finish(
+        order,
+        payment === "Credit (account)"
+          ? `Order ${res.humanId} placed on your account`
+          : `Order ${res.humanId} placed — pay cash on delivery`,
+      );
       return;
     }
 
@@ -299,7 +311,7 @@ function CheckoutPage() {
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Delivery option</h3>
               <div className="grid gap-2">
-                {DELIVERY.map((d) => (
+                {DELIVERY.filter((d) => d.code !== "freight" || isTrade).map((d) => (
                   <button
                     key={d.code}
                     onClick={() => setDelivery(d)}
@@ -313,6 +325,22 @@ function CheckoutPage() {
                   </button>
                 ))}
               </div>
+              {delivery.code === "freight" && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    placeholder="Transport company"
+                    aria-label="Transport company"
+                    value={freight.transportName}
+                    onChange={(e) => setFreight((f) => ({ ...f, transportName: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="LR number (if you have it)"
+                    aria-label="LR number"
+                    value={freight.lrNumber}
+                    onChange={(e) => setFreight((f) => ({ ...f, lrNumber: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button onClick={() => setStep(3)}>Continue to payment</Button>
@@ -324,8 +352,13 @@ function CheckoutPage() {
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Payment method</h3>
               <div className="grid gap-2">
-                {PAYMENT.map((p) => {
-                  const disabled = p.online ? !onlineReady : !cod.allowed;
+                {PAYMENT.filter((p) => p.id !== "Credit (account)" || isTrade).map((p) => {
+                  const disabled =
+                    p.id === "Credit (account)"
+                      ? !isTrade || Boolean(account?.overdue)
+                      : p.online
+                        ? !onlineReady
+                        : !cod.allowed;
                   return (
                     <button
                       key={p.id}
@@ -341,7 +374,17 @@ function CheckoutPage() {
                       <span>
                         <span className="block text-sm font-semibold">{p.id}</span>
                         <span className="block text-xs text-muted-foreground">
-                          {p.online ? (onlineReady ? p.note : "Not available yet") : cod.allowed ? p.note : cod.reason}
+                          {p.id === "Credit (account)"
+                            ? account?.overdue
+                              ? "You have an overdue bill — please clear it first"
+                              : p.note
+                            : p.online
+                              ? onlineReady
+                                ? p.note
+                                : "Not available yet"
+                              : cod.allowed
+                                ? p.note
+                                : cod.reason}
                         </span>
                       </span>
                     </button>
@@ -358,6 +401,8 @@ function CheckoutPage() {
                     ? "Please wait…"
                     : payment === "Cash on Delivery"
                       ? `Place order · ${formatINR(grand)}`
+                      : payment === "Credit (account)"
+                        ? `Place order on account · ${formatINR(grand)}`
                       : `Pay ${formatINR(grand)}`}
                 </Button>
               </div>

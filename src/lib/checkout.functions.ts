@@ -54,14 +54,16 @@ export const paymentsAvailable = createServerFn({ method: "GET" }).handler(async
  * recomputed in the database; nothing the browser sends about money is trusted.
  */
 export const startCheckout = createServerFn({ method: "POST" })
-  .inputValidator((data: { items: CartItemInput[]; address: Address; shippingCode: string; paymentMethod: string; coupon?: string }) => ({
+  .inputValidator((data: { items: CartItemInput[]; address: Address; shippingCode: string; paymentMethod: string; coupon?: string; transportName?: string; lrNumber?: string }) => ({
     items: cleanItems(data?.items),
     address: cleanAddress(data?.address),
-    shippingCode: ["standard", "express", "pickup"].includes(String(data?.shippingCode)) ? String(data?.shippingCode) : "standard",
-    paymentMethod: ["UPI", "Card", "Netbanking", "Wallet", "Cash on Delivery"].includes(String(data?.paymentMethod))
+    shippingCode: ["standard", "express", "pickup", "freight"].includes(String(data?.shippingCode)) ? String(data?.shippingCode) : "standard",
+    paymentMethod: ["UPI", "Card", "Netbanking", "Wallet", "Cash on Delivery", "Credit (account)"].includes(String(data?.paymentMethod))
       ? String(data?.paymentMethod)
       : "UPI",
     coupon: String(data?.coupon ?? "").trim().slice(0, 40) || null,
+    transportName: String(data?.transportName ?? "").trim().slice(0, 120),
+    lrNumber: String(data?.lrNumber ?? "").trim().slice(0, 60),
   }))
   .handler(async ({ data }): Promise<StartCheckoutResult> => {
     if (data.items.length === 0) return { error: "Your cart is empty." };
@@ -96,12 +98,21 @@ export const startCheckout = createServerFn({ method: "POST" })
       if (mode !== "full") return { error: "Online ordering is paused for one of the parts in your cart." };
     }
 
-    const { data: rows, error } = await client.rpc("create_order", {
+    // The signed-in customer is resolved here; their price tier is read from the
+    // database inside create_order, never taken from the browser.
+    const { currentUserId } = await import("@/lib/auth.server");
+    const userId = await currentUserId();
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("create_order", {
       p_items: data.items as never,
       p_address: data.address as never,
       p_payment_method: data.paymentMethod,
       p_shipping_code: data.shippingCode,
       p_coupon_code: data.coupon ?? undefined,
+      p_profile_id: userId ?? undefined,
+      p_transport_name: data.transportName || undefined,
+      p_lr_number: data.lrNumber || undefined,
     });
     if (error) return { error: friendly(error.message) };
 
@@ -110,15 +121,8 @@ export const startCheckout = createServerFn({ method: "POST" })
       | undefined;
     if (!row) return { error: "Could not place the order. Please try again." };
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Attach the order to the signed-in customer, verified server-side.
-    const { currentUserId } = await import("@/lib/auth.server");
-    const userId = await currentUserId();
-    if (userId) await supabaseAdmin.from("orders").update({ profile_id: userId }).eq("id", row.order_id);
-
-    const cod = data.paymentMethod === "Cash on Delivery";
-    if (cod) {
+    const payLater = data.paymentMethod === "Cash on Delivery" || data.paymentMethod === "Credit (account)";
+    if (payLater) {
       const { notifyOrderPlaced } = await import("@/lib/notify.server");
       await notifyOrderPlaced(row.order_id);
       return {

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
 import { myOrders } from "@/lib/orders.functions";
+import { reorderItems } from "@/lib/trade.functions";
 import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
 
@@ -152,7 +153,8 @@ function AuthPanel() {
 }
 
 function Dashboard() {
-  const { lists, user } = useStore();
+  const { lists, user, addToCart } = useStore();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -239,6 +241,7 @@ function Dashboard() {
         ) : (
           <div className="space-y-3">
             {orders.map((o) => (
+              <div key={o.id} className="space-y-2">
               <Link
                 key={o.id}
                 to="/order/$id"
@@ -257,6 +260,20 @@ function Dashboard() {
                   <p className="text-xs text-primary">{statusLabel(o.status)}</p>
                 </div>
               </Link>
+              <button
+                type="button"
+                className="text-xs text-primary underline"
+                onClick={async () => {
+                  const res = await reorderItems({ data: { orderId: o.id } });
+                  if (!res.items.length) return toast.error("Nothing from that order is available right now.");
+                  res.items.forEach((i) => addToCart(i.productId, i.qty));
+                  toast.success(`${res.items.length} item(s) added to your cart`);
+                  void navigate({ to: "/cart" });
+                }}
+              >
+                Order these again
+              </button>
+              </div>
             ))}
           </div>
         )}

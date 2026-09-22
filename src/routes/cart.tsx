@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
+import { useTierPrices } from "@/hooks/useTrade";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
@@ -39,15 +40,23 @@ export function useCartTotals(coupon?: AppliedCoupon) {
   const { data: products, isPending } = useQuery(productsByIdsQuery(ids));
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
 
+  // Trade customers see their own rate card; the server recalculates it anyway.
+  const { tier, priceFor } = useTierPrices(lists.cart.map((c) => ({ productId: c.productId, qty: c.qty })));
+
   const lines = lists.cart
     .map((c) => ({ ...c, product: byId.get(c.productId) }))
-    .filter((l): l is { productId: string; qty: number; product: Product } => Boolean(l.product));
+    .filter((l): l is { productId: string; qty: number; product: Product } => Boolean(l.product))
+    .map((l) => ({
+      ...l,
+      unitPrice: (tier === "retail" ? l.product.price : priceFor(l.productId)?.unitPrice ?? l.product.price) ?? 0,
+    }));
 
-  const subtotal = lines.reduce((n, l) => n + (l.product.price ?? 0) * l.qty, 0);
+  const subtotal = lines.reduce((n, l) => n + l.unitPrice * l.qty, 0);
   // The final discount is always recalculated on the server when the order is placed.
   const discount = coupon ? Math.min(coupon.discount, subtotal) : 0;
   const shipping = subtotal === 0 || subtotal >= 999 ? 0 : 60;
   return {
+    tier,
     lines,
     savedProducts: lists.saved.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p)),
     loading: ids.length > 0 && isPending,

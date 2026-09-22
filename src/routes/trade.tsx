@@ -1,0 +1,219 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { Check, Download, FileText, Loader2, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { SectionHeading } from "@/components/site/Empty";
+import { useStore } from "@/hooks/useStore";
+import { canonical, formatINR } from "@/lib/catalog";
+import { uploadTradeDoc } from "@/lib/trade-upload";
+import {
+  DOC_FIELDS,
+  deleteTradeDocument,
+  myPriceList,
+  myTradeAccount,
+  submitTradeApplication,
+  type TradeDocField,
+} from "@/lib/trade.functions";
+
+export const Route = createFileRoute("/trade")({
+  head: () => ({
+    meta: [
+      { title: "Trade & Wholesale Account — Shaw Traders EV" },
+      { name: "description", content: "Mechanics, garages and retailers: open a wholesale account with Shaw Traders EV for trade prices, bulk ordering and credit terms." },
+      { property: "og:title", content: "Trade & Wholesale Account — Shaw Traders EV" },
+      { property: "og:description", content: "Wholesale prices, bulk order pad and credit terms for EV workshops and retailers." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: canonical("/trade") }],
+  }),
+  component: TradePage,
+});
+
+const STATUS_TEXT: Record<string, string> = {
+  pending: "We have your papers and are checking them.",
+  approved: "Your wholesale account is open.",
+  rejected: "We could not open a wholesale account this time.",
+  more_info_needed: "We need one more document from you.",
+};
+
+function TradePage() {
+  const { user } = useStore();
+  const qc = useQueryClient();
+  const { data: account, isPending } = useQuery({ queryKey: ["trade-account"], queryFn: () => myTradeAccount() });
+
+  const [form, setForm] = useState({ businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "" });
+  const [docs, setDocs] = useState<Partial<Record<TradeDocField, string>>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    const app = account?.application;
+    if (!app) return;
+    setForm({
+      businessName: app.businessName,
+      gstin: app.gstin ?? "",
+      pan: app.pan ?? "",
+      shopAddress: app.shopAddress,
+      contactPerson: app.contactPerson,
+      phone: app.phone,
+    });
+    setDocs(Object.fromEntries(Object.entries(app.documents).filter(([, v]) => v)) as Partial<Record<TradeDocField, string>>);
+  }, [account?.application?.id, account?.application?.status]);
+
+  const pick = async (field: TradeDocField, file: File | undefined) => {
+    if (!file || !user) return;
+    setBusy(field);
+    try {
+      const path = await uploadTradeDoc(user.id, field, file);
+      setDocs((d) => ({ ...d, [field]: path }));
+      toast.success("Document attached");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not upload that file");
+    }
+    setBusy(null);
+  };
+
+  const removeDoc = async (field: TradeDocField) => {
+    setBusy(field);
+    await deleteTradeDocument({ data: { field } });
+    setDocs((d) => ({ ...d, [field]: undefined }));
+    await qc.invalidateQueries({ queryKey: ["trade-account"] });
+    setBusy(null);
+    toast.success("Document removed");
+  };
+
+  const submit = async () => {
+    setSaving(true);
+    const res = await submitTradeApplication({ data: { ...form, documents: docs } });
+    setSaving(false);
+    if (!res.ok) return toast.error(res.message);
+    toast.success(res.message);
+    await qc.invalidateQueries({ queryKey: ["trade-account"] });
+  };
+
+  const downloadList = async () => {
+    const res = await myPriceList();
+    const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `shaw-traders-price-list-${res.tier}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!user) {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title="Trade & wholesale account" subtitle="Sign in with your mobile number first, then send your shop papers." />
+        <Button className="mt-4" asChild><Link to="/account">Sign in</Link></Button>
+      </div>
+    );
+  }
+
+  const approved = account?.approved === true;
+  const status = account?.application?.status;
+
+  return (
+    <div className="container-page space-y-6 py-10">
+      <SectionHeading
+        title="Trade & wholesale account"
+        subtitle="For mechanics, garages, e-rickshaw workshops and retailers. Wholesale rates, bulk ordering and account terms."
+      />
+
+      {isPending ? (
+        <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+      ) : (
+        <>
+          {status && (
+            <div className="rounded-2xl border border-border bg-surface p-5">
+              <p className="font-semibold">{STATUS_TEXT[status] ?? status}</p>
+              {account?.application?.decisionNote && (
+                <p className="mt-1 text-sm text-muted-foreground">{account.application.decisionNote}</p>
+              )}
+              {approved && (
+                <div className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                  <p>Your rate card: <strong>{account?.tier}</strong></p>
+                  <p>Credit limit: <strong>{formatINR(account?.creditLimit ?? 0)}</strong> ({account?.paymentTermsDays ?? 0} days)</p>
+                  <p>
+                    Outstanding: <strong className={account?.overdue ? "text-destructive" : ""}>{formatINR(account?.balance ?? 0)}</strong>
+                    {account?.overdue ? " · overdue" : ""}
+                  </p>
+                </div>
+              )}
+              {approved && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button asChild size="sm"><Link to="/trade/pad">Bulk order pad</Link></Button>
+                  <Button size="sm" variant="outline" onClick={downloadList}>
+                    <Download className="size-4" /> Download my price list
+                  </Button>
+                  <Button asChild size="sm" variant="outline"><Link to="/account">My orders &amp; reorder</Link></Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!approved && (
+            <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+              <h2 className="font-display text-lg font-semibold">Your shop details</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input placeholder="Business / shop name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
+                <Input placeholder="Person we should speak to" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+                <Input placeholder="GSTIN (if you have one)" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
+                <Input placeholder="PAN" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} />
+                <Input placeholder="Mobile number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <Textarea rows={3} placeholder="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} />
+
+              <h2 className="pt-2 font-display text-lg font-semibold">Papers</h2>
+              <p className="-mt-2 text-sm text-muted-foreground">
+                These stay private. Only our staff can open them, and you can delete any of them here at any time.
+              </p>
+              <div className="grid gap-2">
+                {DOC_FIELDS.map((d) => (
+                  <div key={d.field} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+                    <div className="flex min-w-0 items-center gap-2 text-sm">
+                      <FileText className="size-4 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{d.label}</span>
+                      {docs[d.field] && <Check className="size-4 shrink-0 text-primary" aria-label="attached" />}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <input
+                        ref={(el) => { fileRefs.current[d.field] = el; }}
+                        type="file"
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        aria-label={`Upload ${d.label}`}
+                        onChange={(e) => void pick(d.field, e.target.files?.[0])}
+                      />
+                      <Button size="sm" variant="outline" disabled={busy === d.field} onClick={() => fileRefs.current[d.field]?.click()}>
+                        {busy === d.field ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {docs[d.field] ? "Replace" : "Attach"}
+                      </Button>
+                      {docs[d.field] && (
+                        <Button size="icon" variant="ghost" aria-label={`Remove ${d.label}`} onClick={() => void removeDoc(d.field)}>
+                          <Trash2 className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button className="w-full sm:w-auto" disabled={saving} onClick={submit}>
+                {saving ? <Loader2 className="size-4 animate-spin" /> : null}
+                {status ? "Send updated application" : "Send application"}
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

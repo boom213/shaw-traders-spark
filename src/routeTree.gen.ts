@@ -28,6 +28,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
@@ -42,8 +43,10 @@ import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
+import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
+import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
@@ -147,6 +150,11 @@ const TrackRoute = TrackRouteImport.update({
   path: '/track',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradeRoute = TradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WarrantyRoute = WarrantyRouteImport.update({
   id: '/warranty',
   path: '/warranty',
@@ -217,6 +225,11 @@ const ManageSummaryRoute = ManageSummaryRouteImport.update({
   path: '/summary',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageTradeRoute = ManageTradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => ManageRoute,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -226,6 +239,11 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
   id: '/product/$slug',
   path: '/product/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TradePadRoute = TradePadRouteImport.update({
+  id: '/pad',
+  path: '/pad',
+  getParentRoute: () => TradeRoute,
 } as any)
 const ApiPublicClientErrorRoute = ApiPublicClientErrorRouteImport.update({
   id: '/api/public/client-error',
@@ -287,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -300,8 +319,10 @@ export interface FileRoutesByFullPath {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -330,6 +351,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -343,8 +365,10 @@ export interface FileRoutesByTo {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -375,6 +399,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -388,8 +413,10 @@ export interface FileRoutesById {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/trade': typeof ManageTradeRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -421,6 +448,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -434,8 +462,10 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -464,6 +494,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -477,8 +508,10 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -508,6 +541,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/category/$slug'
     | '/manage/catalogue'
@@ -521,8 +555,10 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/trade'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -553,6 +589,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
+  TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
@@ -701,6 +738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trade': {
+      id: '/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof TradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/warranty': {
       id: '/warranty'
       path: '/warranty'
@@ -799,6 +843,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageSummaryRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/trade': {
+      id: '/manage/trade'
+      path: '/trade'
+      fullPath: '/manage/trade'
+      preLoaderRoute: typeof ManageTradeRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -812,6 +863,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/product/$slug'
       preLoaderRoute: typeof ProductSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/trade/pad': {
+      id: '/trade/pad'
+      path: '/pad'
+      fullPath: '/trade/pad'
+      preLoaderRoute: typeof TradePadRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/api/public/client-error': {
       id: '/api/public/client-error'
@@ -877,6 +935,7 @@ interface ManageRouteChildren {
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
+  ManageTradeRoute: typeof ManageTradeRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
 
@@ -892,11 +951,22 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
+  ManageTradeRoute: ManageTradeRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
 
 const ManageRouteWithChildren =
   ManageRoute._addFileChildren(ManageRouteChildren)
+
+interface TradeRouteChildren {
+  TradePadRoute: typeof TradePadRoute
+}
+
+const TradeRouteChildren: TradeRouteChildren = {
+  TradePadRoute: TradePadRoute,
+}
+
+const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -918,6 +988,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
+  TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
