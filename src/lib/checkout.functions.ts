@@ -97,8 +97,9 @@ export const startCheckout = createServerFn({ method: "POST" })
         category: pick(row.categories?.ordering_mode),
         product: pick(row.ordering_mode),
       });
-      if (mode !== "full") return { error: "Online ordering is paused for one of the parts in your cart." };
+      if (mode !== "full" && !data.quoteToken) return { error: "Online ordering is paused for one of the parts in your cart." };
     }
+
 
     // The signed-in customer is resolved here; their price tier is read from the
     // database inside create_order, never taken from the browser.
