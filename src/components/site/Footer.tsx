@@ -59,6 +59,7 @@ export function Footer() {
             <li><Link to="/find-parts" className="hover:text-foreground">Find Parts for Your EV</Link></li>
             <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
             <li><Link to="/bulk" className="hover:text-foreground">Dealer & Bulk Orders</Link></li>
+            <li><Link to="/trade" className="hover:text-foreground">Trade / Wholesale Account</Link></li>
           </ul>
         </div>
 

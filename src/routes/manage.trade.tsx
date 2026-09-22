@@ -243,7 +243,7 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
 
 function CategoryPricing() {
   const { data: categories } = useQuery(categoriesQuery());
-  const [categoryId, setCategoryId] = useState("");
+  const [categorySlug, setCategorySlug] = useState("");
   const [tier, setTier] = useState("trade");
   const [percent, setPercent] = useState("10");
   const [minQty, setMinQty] = useState("1");
@@ -258,10 +258,10 @@ function CategoryPricing() {
       <div className="grid gap-2 sm:grid-cols-4">
         <label className="text-sm">
           Category
-          <select className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+          <select className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2" value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)}>
             <option value="">Choose…</option>
             {(categories ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.slug} value={c.slug}>{c.name}</option>
             ))}
           </select>
         </label>
@@ -282,10 +282,10 @@ function CategoryPricing() {
         </label>
       </div>
       <Button
-        disabled={busy || !categoryId}
+        disabled={busy || !categorySlug}
         onClick={async () => {
           setBusy(true);
-          const res = await applyCategoryDiscount({ data: { categoryId, tier, percent: Number(percent), minQty: Number(minQty) } });
+          const res = await applyCategoryDiscount({ data: { categorySlug, tier, percent: Number(percent), minQty: Number(minQty) } });
           setBusy(false);
           if (!res.ok) return toast.error(res.error ?? "Only a permanent admin can change prices");
           toast.success(`${res.updated} parts priced`);

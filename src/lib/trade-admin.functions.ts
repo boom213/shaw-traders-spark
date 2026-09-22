@@ -256,8 +256,8 @@ export const outstandingReport = createServerFn({ method: "POST" }).handler(asyn
 
 /** Set a tier as a percentage off retail for a whole category, in one go. */
 export const applyCategoryDiscount = createServerFn({ method: "POST" })
-  .inputValidator((data: { categoryId: string; tier: string; percent: number; minQty?: number }) => ({
-    categoryId: text(data?.categoryId, 40),
+  .inputValidator((data: { categorySlug: string; tier: string; percent: number; minQty?: number }) => ({
+    categorySlug: text(data?.categorySlug, 80),
     tier: TIERS.includes(String(data?.tier) as never) ? String(data?.tier) : "trade",
     percent: Math.max(0, Math.min(90, Number(data?.percent) || 0)),
     minQty: Math.max(1, Math.min(9999, Math.round(Number(data?.minQty) || 1))),
@@ -268,10 +268,17 @@ export const applyCategoryDiscount = createServerFn({ method: "POST" })
     if (data.percent <= 0) return { ok: false as const, error: "Enter a discount percentage." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { data: category } = await supabaseAdmin
+      .from("categories")
+      .select("id, name")
+      .eq("slug", data.categorySlug)
+      .maybeSingle();
+    if (!category) return { ok: false as const, error: "Pick a category." };
+
     const { data: products } = await supabaseAdmin
       .from("products")
       .select("id, price")
-      .eq("category_id", data.categoryId)
+      .eq("category_id", category.id)
       .not("price", "is", null)
       .limit(2000);
 
@@ -290,7 +297,7 @@ export const applyCategoryDiscount = createServerFn({ method: "POST" })
       .upsert(rows as never, { onConflict: "product_id,tier,min_qty" });
     if (error) return { ok: false as const, error: error.message };
 
-    await logAudit(supabaseAdmin as never, actor, "trade.tier.category", "categories", data.categoryId, {
+    await logAudit(supabaseAdmin as never, actor, "trade.tier.category", "categories", category.id, {
       tier: data.tier,
       percent: data.percent,
       minQty: data.minQty,
