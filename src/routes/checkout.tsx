@@ -48,6 +48,7 @@ const PAYMENT = [
   { id: "Card", note: "Debit or credit card", icon: CreditCard, online: true },
   { id: "Netbanking", note: "All major Indian banks", icon: Landmark, online: true },
   { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck, online: false },
+  { id: "Credit (account)", note: "Added to your wholesale account", icon: Truck, online: false },
 ] as const;
 
 type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
@@ -310,7 +311,7 @@ function CheckoutPage() {
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Delivery option</h3>
               <div className="grid gap-2">
-                {DELIVERY.map((d) => (
+                {DELIVERY.filter((d) => d.code !== "freight" || isTrade).map((d) => (
                   <button
                     key={d.code}
                     onClick={() => setDelivery(d)}
@@ -324,6 +325,22 @@ function CheckoutPage() {
                   </button>
                 ))}
               </div>
+              {delivery.code === "freight" && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    placeholder="Transport company"
+                    aria-label="Transport company"
+                    value={freight.transportName}
+                    onChange={(e) => setFreight((f) => ({ ...f, transportName: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="LR number (if you have it)"
+                    aria-label="LR number"
+                    value={freight.lrNumber}
+                    onChange={(e) => setFreight((f) => ({ ...f, lrNumber: e.target.value }))}
+                  />
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button onClick={() => setStep(3)}>Continue to payment</Button>
@@ -335,8 +352,13 @@ function CheckoutPage() {
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Payment method</h3>
               <div className="grid gap-2">
-                {PAYMENT.map((p) => {
-                  const disabled = p.online ? !onlineReady : !cod.allowed;
+                {PAYMENT.filter((p) => p.id !== "Credit (account)" || isTrade).map((p) => {
+                  const disabled =
+                    p.id === "Credit (account)"
+                      ? !isTrade || Boolean(account?.overdue)
+                      : p.online
+                        ? !onlineReady
+                        : !cod.allowed;
                   return (
                     <button
                       key={p.id}
@@ -352,7 +374,17 @@ function CheckoutPage() {
                       <span>
                         <span className="block text-sm font-semibold">{p.id}</span>
                         <span className="block text-xs text-muted-foreground">
-                          {p.online ? (onlineReady ? p.note : "Not available yet") : cod.allowed ? p.note : cod.reason}
+                          {p.id === "Credit (account)"
+                            ? account?.overdue
+                              ? "You have an overdue bill — please clear it first"
+                              : p.note
+                            : p.online
+                              ? onlineReady
+                                ? p.note
+                                : "Not available yet"
+                              : cod.allowed
+                                ? p.note
+                                : cod.reason}
                         </span>
                       </span>
                     </button>
@@ -369,6 +401,8 @@ function CheckoutPage() {
                     ? "Please wait…"
                     : payment === "Cash on Delivery"
                       ? `Place order · ${formatINR(grand)}`
+                      : payment === "Credit (account)"
+                        ? `Place order on account · ${formatINR(grand)}`
                       : `Pay ${formatINR(grand)}`}
                 </Button>
               </div>
