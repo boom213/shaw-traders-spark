@@ -390,10 +390,11 @@ function CheckoutPage() {
 }
 
 function F({ label, v, on }: { label: string; v: string; on: (s: string) => void }) {
+  const id = useId();
   return (
     <div className="grid gap-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Input value={v} onChange={(e) => on(e.target.value)} />
+      <Label htmlFor={id} className="text-xs">{label}</Label>
+      <Input id={id} value={v} onChange={(e) => on(e.target.value)} />
     </div>
   );
 }
