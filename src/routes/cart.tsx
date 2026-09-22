@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
+import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
