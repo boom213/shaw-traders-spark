@@ -30,6 +30,8 @@ export type Product = {
   weight?: string;
   dimensions?: string;
   shippingInfo?: string;
+  boxContents?: string;
+  hsnCode?: string;
   createdAt: string;
 };
 
@@ -48,6 +50,8 @@ export type Review = {
   body?: string;
   name: string;
   verified: boolean;
+  photos?: string[];
+  reply?: string | null;
   createdAt: string;
 };
 

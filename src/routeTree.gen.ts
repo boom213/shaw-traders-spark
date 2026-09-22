@@ -36,6 +36,7 @@ import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
+import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
 import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
 import { Route as ApiPublicPhotoSplatRouteImport } from './routes/api/public/photo/$'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
@@ -176,6 +177,12 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronCartRemindersRoute =
+  ApiPublicCronCartRemindersRouteImport.update({
+    id: '/api/public/cron/cart-reminders',
+    path: '/api/public/cron/cart-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronDailySummaryRoute =
   ApiPublicCronDailySummaryRouteImport.update({
     id: '/api/public/cron/daily-summary',
@@ -222,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
   '/product/$slug': typeof ProductSlugRoute
   '/manage': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -286,6 +295,7 @@ export interface FileRoutesById {
   '/product/$slug': typeof ProductSlugRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage/'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -383,6 +395,7 @@ export interface FileRouteTypes {
     | '/product/$slug'
     | '/manage/'
     | '/api/public/razorpay-webhook'
+    | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -407,6 +420,7 @@ export interface RootRouteChildren {
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
+  ApiPublicCronCartRemindersRoute: typeof ApiPublicCronCartRemindersRoute
   ApiPublicCronDailySummaryRoute: typeof ApiPublicCronDailySummaryRoute
   ApiPublicPhotoSplatRoute: typeof ApiPublicPhotoSplatRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -603,6 +617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/cart-reminders': {
+      id: '/api/public/cron/cart-reminders'
+      path: '/api/public/cron/cart-reminders'
+      fullPath: '/api/public/cron/cart-reminders'
+      preLoaderRoute: typeof ApiPublicCronCartRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/daily-summary': {
       id: '/api/public/cron/daily-summary'
       path: '/api/public/cron/daily-summary'
@@ -673,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
+  ApiPublicCronCartRemindersRoute: ApiPublicCronCartRemindersRoute,
   ApiPublicCronDailySummaryRoute: ApiPublicCronDailySummaryRoute,
   ApiPublicPhotoSplatRoute: ApiPublicPhotoSplatRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,

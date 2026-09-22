@@ -1,8 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
-import { categoriesQuery, productsQuery } from "@/lib/queries";
+import { Bike, Search } from "lucide-react";
+import { useRef, useState } from "react";
+import { formatINR } from "@/lib/catalog";
+import { suggestQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export function SearchBox({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
@@ -12,22 +13,20 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const term = q.trim();
-  const { data: categories } = useQuery(categoriesQuery());
-  const { data: matches } = useQuery({
-    ...productsQuery({ q: term, pageSize: 6 }),
-    enabled: term.length >= 2,
-  });
-
-  const suggestions = useMemo(() => {
-    if (term.length < 2) return [];
-    const names = (matches?.items ?? []).map((p) => p.name);
-    const cats = (categories ?? []).filter((c) => c.name.toLowerCase().includes(term.toLowerCase())).map((c) => c.name);
-    return Array.from(new Set([...names, ...cats])).slice(0, 7);
-  }, [matches, categories, term]);
+  const { data } = useQuery(suggestQuery(term));
+  const products = data?.products ?? [];
+  const models = data?.models ?? [];
+  const hasSuggestions = products.length > 0 || models.length > 0;
 
   const go = (value: string) => {
     setOpen(false);
     void navigate({ to: "/shop", search: { q: value || undefined } });
+  };
+
+  const pick = (fn: () => void) => {
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    setOpen(false);
+    fn();
   };
 
   return (
@@ -48,32 +47,44 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
           }}
           onFocus={() => setOpen(true)}
           onBlur={() => {
-            blurTimer.current = setTimeout(() => setOpen(false), 120);
+            blurTimer.current = setTimeout(() => setOpen(false), 140);
           }}
-          placeholder="Search batteries, chargers, controllers, motors..."
+          placeholder="Search battery, charger, motor, bike model…"
           aria-label="Search products"
           className="h-11 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:bg-background"
         />
       </form>
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover shadow-[var(--shadow-lift)]">
-          {suggestions.map((s) => (
-            <li key={s}>
-              <button
-                type="button"
-                onMouseDown={() => {
-                  if (blurTimer.current) clearTimeout(blurTimer.current);
-                  setQ(s);
-                  go(s);
-                }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
-              >
-                <Search className="size-3.5 text-muted-foreground" />
-                {s}
-              </button>
-            </li>
-          ))}
-        </ul>
+
+      {open && hasSuggestions && (
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover shadow-[var(--shadow-lift)]">
+          <ul>
+            {products.map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onMouseDown={() => pick(() => void navigate({ to: "/product/$slug", params: { slug: p.slug } }))}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-muted"
+                >
+                  <Search className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate">{p.name}</span>
+                  {p.price !== undefined && <span className="text-xs text-muted-foreground">{formatINR(p.price)}</span>}
+                </button>
+              </li>
+            ))}
+            {models.map((m) => (
+              <li key={m}>
+                <button
+                  type="button"
+                  onMouseDown={() => pick(() => void navigate({ to: "/shop", search: { model: m } }))}
+                  className="flex w-full items-center gap-3 border-t border-border px-4 py-2.5 text-left text-sm hover:bg-muted"
+                >
+                  <Bike className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate">Parts that fit {m}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

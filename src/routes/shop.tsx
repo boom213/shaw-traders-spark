@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { SlidersHorizontal } from "lucide-react";
+import { MessageCircle, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { EmptyCatalogue, ProductGridSkeleton, SectionHeading } from "@/components/site/Empty";
+import { ProductGridSkeleton, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SearchBox } from "@/components/site/SearchBox";
-import { canonical } from "@/lib/catalog";
+import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
 
 type ShopSearch = {
@@ -24,6 +24,7 @@ type ShopSearch = {
   sort?: string;
   inStock?: boolean;
   voltage?: string;
+  ah?: string;
   model?: string;
   page?: number;
 };
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/shop")({
     sort: typeof search['sort'] === "string" ? search['sort'] : undefined,
     inStock: search['inStock'] === true || search['inStock'] === "true" ? true : undefined,
     voltage: typeof search['voltage'] === "string" ? search['voltage'] : undefined,
+    ah: typeof search['ah'] === "string" ? search['ah'] : undefined,
     model: typeof search['model'] === "string" ? search['model'] : undefined,
     page: search['page'] ? Number(search['page']) : undefined,
   }),
@@ -62,6 +64,8 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
   const { data: facets } = useQuery(facetsQuery());
   const brands = facets?.brands ?? [];
   const voltages = facets?.voltages ?? [];
+  const ahs = facets?.ahs ?? [];
+  const models = facets?.models ?? [];
 
   return (
     <div className="grid gap-6 text-sm">
@@ -102,7 +106,17 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
 
       <div className="grid gap-2">
         <Label className="font-semibold">Vehicle / Model</Label>
-        <Input placeholder="e.g. scooter model" value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
+        {models.length === 0 ? (
+          <Input placeholder="e.g. scooter model" value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
+        ) : (
+          <Select value={search.model ?? "all"} onValueChange={(v) => apply({ model: v === "all" ? undefined : v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">Any vehicle</SelectItem>
+              {models.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div className="grid gap-2">
@@ -115,6 +129,21 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
             <SelectContent className="max-h-72">
               <SelectItem value="all">Any voltage</SelectItem>
               {voltages.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      <div className="grid gap-2">
+        <Label className="font-semibold">Battery capacity (Ah)</Label>
+        {ahs.length === 0 ? (
+          <Input placeholder="e.g. 32Ah" value={search.ah ?? ""} onChange={(e) => apply({ ah: e.target.value || undefined })} />
+        ) : (
+          <Select value={search.ah ?? "all"} onValueChange={(v) => apply({ ah: v === "all" ? undefined : v })}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">Any capacity</SelectItem>
+              {ahs.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
@@ -143,6 +172,7 @@ function Shop() {
       ...(search.category ? { category: search.category } : {}),
       ...(search.brand ? { brand: search.brand } : {}),
       ...(search.voltage ? { voltage: search.voltage } : {}),
+      ...(search.ah ? { ah: search.ah } : {}),
       ...(search.model ? { model: search.model } : {}),
       ...(search.min !== undefined ? { min: search.min } : {}),
       ...(search.max !== undefined ? { max: search.max } : {}),
@@ -200,10 +230,36 @@ function Shop() {
           {isPending ? (
             <ProductGridSkeleton count={12} />
           ) : results.length === 0 ? (
-            <EmptyCatalogue
-              title="No matching products"
-              note="Try a different search or clear some filters. You can also send us the part details on WhatsApp and we'll check stock for you."
-            />
+            <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
+              <h2 className="font-display text-xl font-bold">
+                {term ? `Nothing found for “${term}”` : "No matching products"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                We may still have this part at the counter. Send us the part name or a photo of the old one on WhatsApp and we
+                will check for you.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Button asChild>
+                  <a
+                    href={whatsappLink(
+                      term
+                        ? `Hello ${BUSINESS.name}, I am looking for "${term}". Do you have it?`
+                        : `Hello ${BUSINESS.name}, I am looking for a part. Can you help?`,
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <MessageCircle className="size-4" /> Ask on WhatsApp
+                  </a>
+                </Button>
+                <Button variant="outline" asChild>
+                  <a href={`tel:${BUSINESS.phone}`}>Call {BUSINESS.phone}</a>
+                </Button>
+                <Button variant="ghost" onClick={() => navigate({ search: {} })}>
+                  Clear all filters
+                </Button>
+              </div>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">

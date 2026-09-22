@@ -1,7 +1,7 @@
 import type { Product } from "@/lib/catalog";
 
 export const PRODUCT_SELECT =
-  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, created_at, categories!inner(slug, name), product_images(url, sort_order), product_compatibility(vehicle_model)";
+  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, created_at, categories!inner(slug, name), product_images(url, sort_order), product_compatibility(vehicle_model)";
 
 type Row = Record<string, any>;
 
@@ -42,6 +42,8 @@ export function mapProduct(row: Row): Product {
     ...(row['weight'] ? { weight: String(row['weight']) } : {}),
     ...(row['dimensions'] ? { dimensions: String(row['dimensions']) } : {}),
     ...(row['shipping_info'] ? { shippingInfo: String(row['shipping_info']) } : {}),
+    ...(row['box_contents'] ? { boxContents: String(row['box_contents']) } : {}),
+    ...(row['hsn_code'] ? { hsnCode: String(row['hsn_code']) } : {}),
     createdAt: String(row['created_at']),
   };
 }

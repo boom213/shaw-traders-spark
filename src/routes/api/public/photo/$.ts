@@ -9,11 +9,17 @@ export const Route = createFileRoute("/api/public/photo/$")({
   server: {
     handlers: {
       GET: async ({ params }) => {
-        const path = String((params as Record<string, string>)['_splat'] ?? "").replace(/^\/+/, "");
-        if (!path || path.includes("..")) return new Response("Not found", { status: 404 });
+        const raw = String((params as Record<string, string>)['_splat'] ?? "").replace(/^\/+/, "");
+        if (!raw || raw.includes("..")) return new Response("Not found", { status: 404 });
+
+        // Older product photo links have no bucket prefix, so product photos stay the default.
+        const first = raw.split("/")[0] ?? "";
+        const bucket = first === "review-photos" ? "review-photos" : "product-photos";
+        const path = first === "review-photos" ? raw.slice(first.length + 1) : raw;
+        if (!path) return new Response("Not found", { status: 404 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.storage.from("product-photos").download(path);
+        const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
         if (error || !data) return new Response("Not found", { status: 404 });
 
         return new Response(await data.arrayBuffer(), {
