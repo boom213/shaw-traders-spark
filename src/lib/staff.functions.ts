@@ -227,6 +227,5 @@ export const recentAudit = createServerFn({ method: "POST" }).handler(async () =
     action: String(r.action),
     entity: r.entity ?? "",
     at: String(r.created_at),
-    diff: (r.diff ?? {}) as Record<string, unknown>,
   }));
 });
