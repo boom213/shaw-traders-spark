@@ -105,6 +105,19 @@ export type OrderView = {
   paymentStatus: string;
   shippingMethod: string | null;
   address: Record<string, string>;
+  courierName?: string | null;
+  trackingNumber?: string | null;
+  trackingUrl?: string | null;
+  requests?: {
+    id: string;
+    kind: "cancellation" | "return";
+    reason: string;
+    details: string | null;
+    status: "pending" | "approved" | "rejected";
+    decisionNote: string | null;
+    createdAt: string;
+  }[];
+  refunds?: { id: string; amount: number; method: string; createdAt: string }[];
   placedAt: string;
   updatedAt: string;
   items: OrderItemView[];
