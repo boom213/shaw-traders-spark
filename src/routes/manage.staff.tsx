@@ -16,6 +16,13 @@ export const Route = createFileRoute("/manage/staff")({
 
 const ROLES = ["staff", "manager", "owner"] as const;
 
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: "permanent admin",
+  owner: "owner",
+  manager: "manager",
+  staff: "staff",
+};
+
 function StaffPage() {
   const qc = useQueryClient();
   const session = useServerFn(staffSession);
@@ -33,7 +40,7 @@ function StaffPage() {
   const [role, setRole] = useState<(typeof ROLES)[number]>("staff");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
-  const isOwner = me?.signedIn && me.role === "owner";
+  const canManage = Boolean(me?.signedIn && me.superAdmin);
 
   const inviteMutation = useMutation({
     mutationFn: () => invite({ data: { email, name, role } }),
@@ -58,9 +65,12 @@ function StaffPage() {
 
   return (
     <div className="space-y-8">
-      <SectionHeading title="Staff access" subtitle="Who can open this panel" />
+      <SectionHeading
+        title="Staff access"
+        subtitle={canManage ? "Who can open this panel" : "Only a permanent admin can add or remove people"}
+      />
 
-      {isOwner && (
+      {canManage && (
         <section className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-lg font-semibold">Invite someone</h2>
           <div className="grid gap-3 md:grid-cols-4">
@@ -119,13 +129,18 @@ function StaffPage() {
                   {m.name} {m.isYou && <span className="text-xs text-muted-foreground">(you)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {m.email} · {m.role} · since {new Date(m.since).toLocaleDateString("en-IN")}
+                  {m.email} · {ROLE_LABEL[m.role] ?? m.role} · since {new Date(m.since).toLocaleDateString("en-IN")}
                 </p>
               </div>
-              {isOwner && !m.isYou && (
+              {canManage && !m.isYou && !m.locked && (
                 <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(m.profileId)}>
                   Remove access
                 </Button>
+              )}
+              {m.locked && (
+                <span className="rounded-full bg-surface px-3 py-1 text-xs text-muted-foreground">
+                  Permanent admin — cannot be removed
+                </span>
               )}
             </div>
           ))
