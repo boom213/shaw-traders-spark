@@ -289,14 +289,14 @@ export const setOrderGst = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string; enabled: boolean; rate?: number }) => ({
     orderId: String(data?.orderId ?? ""),
     enabled: Boolean(data?.enabled),
-    rate: data?.rate === undefined ? null : Math.max(0, Math.min(50, Number(data.rate) || 0)),
+    rate: data?.rate === undefined ? 0 : Math.max(0, Math.min(50, Number(data.rate) || 0)),
   }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
     const { error } = await sb.rpc("set_order_gst", {
       p_order_id: data.orderId,
       p_enabled: data.enabled,
-      p_rate: data.rate ?? undefined,
+      p_rate: data.rate ?? 0,
     });
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb, actor, "order.gst_changed", "orders", data.orderId, data as never);
