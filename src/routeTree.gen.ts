@@ -45,6 +45,7 @@ import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
+import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
@@ -233,6 +234,11 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
   path: '/product/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradePadRoute = TradePadRouteImport.update({
+  id: '/pad',
+  path: '/pad',
+  getParentRoute: () => TradeRoute,
+} as any)
 const ApiPublicClientErrorRoute = ApiPublicClientErrorRouteImport.update({
   id: '/api/public/client-error',
   path: '/api/public/client-error',
@@ -293,7 +299,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -337,7 +344,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -353,6 +360,7 @@ export interface FileRoutesByTo {
   '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -383,7 +391,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/manage/summary': typeof ManageSummaryRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
+  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -446,6 +455,7 @@ export interface FileRouteTypes {
     | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -535,6 +546,7 @@ export interface FileRouteTypes {
     | '/manage/summary'
     | '/order/$id'
     | '/product/$slug'
+    | '/trade/pad'
     | '/manage/'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -565,7 +577,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
-  TradeRoute: typeof TradeRoute
+  TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
@@ -833,6 +845,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trade/pad': {
+      id: '/trade/pad'
+      path: '/pad'
+      fullPath: '/trade/pad'
+      preLoaderRoute: typeof TradePadRouteImport
+      parentRoute: typeof TradeRoute
+    }
     '/api/public/client-error': {
       id: '/api/public/client-error'
       path: '/api/public/client-error'
@@ -918,6 +937,16 @@ const ManageRouteChildren: ManageRouteChildren = {
 const ManageRouteWithChildren =
   ManageRoute._addFileChildren(ManageRouteChildren)
 
+interface TradeRouteChildren {
+  TradePadRoute: typeof TradePadRoute
+}
+
+const TradeRouteChildren: TradeRouteChildren = {
+  TradePadRoute: TradePadRoute,
+}
+
+const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -938,7 +967,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
-  TradeRoute: TradeRoute,
+  TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
