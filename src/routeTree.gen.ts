@@ -23,6 +23,7 @@ import { Route as ManageLoginRouteImport } from './routes/manage-login'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReturnsRouteImport } from './routes/returns'
+import { Route as ServiceRouteImport } from './routes/service'
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -30,8 +31,10 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
+import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
+import { Route as ManageBookingsRouteImport } from './routes/manage.bookings'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
@@ -40,6 +43,7 @@ import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
+import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
@@ -47,6 +51,8 @@ import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
+import { Route as ScootersIndexRouteImport } from './routes/scooters.index'
+import { Route as ScootersSlugRouteImport } from './routes/scooters.$slug'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -127,6 +133,11 @@ const ReturnsRoute = ReturnsRouteImport.update({
   path: '/returns',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ServiceRoute = ServiceRouteImport.update({
+  id: '/service',
+  path: '/service',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShippingRoute = ShippingRouteImport.update({
   id: '/shipping',
   path: '/shipping',
@@ -162,6 +173,11 @@ const WarrantyRoute = WarrantyRouteImport.update({
   path: '/warranty',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingTokenRoute = BookingTokenRouteImport.update({
+  id: '/booking/$token',
+  path: '/booking/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -170,6 +186,11 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
 const ManageIndexRoute = ManageIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => ManageRoute,
+} as any)
+const ManageBookingsRoute = ManageBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
   getParentRoute: () => ManageRoute,
 } as any)
 const ManageCatalogueRoute = ManageCatalogueRouteImport.update({
@@ -212,6 +233,11 @@ const ManageReviewsRoute = ManageReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageScootersRoute = ManageScootersRouteImport.update({
+  id: '/scooters',
+  path: '/scooters',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageSettingsRoute = ManageSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -245,6 +271,16 @@ const ProductSlugRoute = ProductSlugRouteImport.update({
 const QuoteTokenRoute = QuoteTokenRouteImport.update({
   id: '/quote/$token',
   path: '/quote/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScootersIndexRoute = ScootersIndexRouteImport.update({
+  id: '/scooters/',
+  path: '/scooters/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScootersSlugRoute = ScootersSlugRouteImport.update({
+  id: '/scooters/$slug',
+  path: '/scooters/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TradePadRoute = TradePadRouteImport.update({
@@ -313,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -320,7 +357,9 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -329,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -336,8 +376,10 @@ export interface FileRoutesByFullPath {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
+  '/scooters/': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -361,6 +403,7 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -368,7 +411,9 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -377,6 +422,7 @@ export interface FileRoutesByTo {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -384,8 +430,10 @@ export interface FileRoutesByTo {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
+  '/scooters': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -411,6 +459,7 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -418,7 +467,9 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -427,6 +478,7 @@ export interface FileRoutesById {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -434,8 +486,10 @@ export interface FileRoutesById {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
+  '/scooters/': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -462,6 +516,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -469,7 +524,9 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -478,6 +535,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -485,8 +543,10 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage/'
+    | '/scooters/'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -510,6 +570,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -517,7 +578,9 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -526,6 +589,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -533,8 +597,10 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage'
+    | '/scooters'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -559,6 +625,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -566,7 +633,9 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -575,6 +644,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -582,8 +652,10 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage/'
+    | '/scooters/'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -609,6 +681,7 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ReturnsRoute: typeof ReturnsRoute
+  ServiceRoute: typeof ServiceRoute
   ShippingRoute: typeof ShippingRoute
   ShopRoute: typeof ShopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -616,10 +689,13 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
+  BookingTokenRoute: typeof BookingTokenRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
+  ScootersSlugRoute: typeof ScootersSlugRoute
+  ScootersIndexRoute: typeof ScootersIndexRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
@@ -730,6 +806,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReturnsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/service': {
+      id: '/service'
+      path: '/service'
+      fullPath: '/service'
+      preLoaderRoute: typeof ServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shipping': {
       id: '/shipping'
       path: '/shipping'
@@ -779,6 +862,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WarrantyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/booking/$token': {
+      id: '/booking/$token'
+      path: '/booking/$token'
+      fullPath: '/booking/$token'
+      preLoaderRoute: typeof BookingTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -791,6 +881,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/manage/'
       preLoaderRoute: typeof ManageIndexRouteImport
+      parentRoute: typeof ManageRoute
+    }
+    '/manage/bookings': {
+      id: '/manage/bookings'
+      path: '/bookings'
+      fullPath: '/manage/bookings'
+      preLoaderRoute: typeof ManageBookingsRouteImport
       parentRoute: typeof ManageRoute
     }
     '/manage/catalogue': {
@@ -849,6 +946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageReviewsRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/scooters': {
+      id: '/manage/scooters'
+      path: '/scooters'
+      fullPath: '/manage/scooters'
+      preLoaderRoute: typeof ManageScootersRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/settings': {
       id: '/manage/settings'
       path: '/settings'
@@ -896,6 +1000,20 @@ declare module '@tanstack/react-router' {
       path: '/quote/$token'
       fullPath: '/quote/$token'
       preLoaderRoute: typeof QuoteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scooters/': {
+      id: '/scooters/'
+      path: '/scooters'
+      fullPath: '/scooters/'
+      preLoaderRoute: typeof ScootersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scooters/$slug': {
+      id: '/scooters/$slug'
+      path: '/scooters/$slug'
+      fullPath: '/scooters/$slug'
+      preLoaderRoute: typeof ScootersSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trade/pad': {
@@ -965,6 +1083,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface ManageRouteChildren {
+  ManageBookingsRoute: typeof ManageBookingsRoute
   ManageCatalogueRoute: typeof ManageCatalogueRoute
   ManageCustomersRoute: typeof ManageCustomersRoute
   ManageDomainRoute: typeof ManageDomainRoute
@@ -973,6 +1092,7 @@ interface ManageRouteChildren {
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
+  ManageScootersRoute: typeof ManageScootersRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
@@ -981,6 +1101,7 @@ interface ManageRouteChildren {
 }
 
 const ManageRouteChildren: ManageRouteChildren = {
+  ManageBookingsRoute: ManageBookingsRoute,
   ManageCatalogueRoute: ManageCatalogueRoute,
   ManageCustomersRoute: ManageCustomersRoute,
   ManageDomainRoute: ManageDomainRoute,
@@ -989,6 +1110,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRoute,
   ManageReviewsRoute: ManageReviewsRoute,
+  ManageScootersRoute: ManageScootersRoute,
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
@@ -1024,6 +1146,7 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ReturnsRoute: ReturnsRoute,
+  ServiceRoute: ServiceRoute,
   ShippingRoute: ShippingRoute,
   ShopRoute: ShopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -1031,10 +1154,13 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
+  BookingTokenRoute: BookingTokenRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   QuoteTokenRoute: QuoteTokenRoute,
+  ScootersSlugRoute: ScootersSlugRoute,
+  ScootersIndexRoute: ScootersIndexRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,

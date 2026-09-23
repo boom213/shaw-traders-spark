@@ -41,7 +41,7 @@ async function loadCategories(): Promise<Category[]> {
   const sb = publicClient();
   const [{ data: cats }, { data: prods }] = await Promise.all([
     sb.from("categories").select("slug, name, blurb, image_url, sort_order").order("sort_order"),
-    sb.from("products").select("category_id, categories!inner(slug)").eq("status", "visible"),
+    sb.from("products").select("category_id, categories!inner(slug)").eq("status", "visible").eq("product_kind", "part"),
   ]);
   const counts = new Map<string, number>();
   for (const p of (prods ?? []) as Record<string, any>[]) {
@@ -109,7 +109,7 @@ export const listProducts = createServerFn({ method: "GET" })
     }
 
     const base = () => {
-      let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" }).eq("status", "visible");
+      let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" }).eq("status", "visible").eq("product_kind", "part");
       if (data.category) query = query.eq("categories.slug", data.category);
       if (data.brand) query = query.eq("brand", data.brand);
       if (data.voltage) query = query.ilike("voltage", `%${data.voltage}%`);
@@ -156,7 +156,7 @@ export const searchSuggest = createServerFn({ method: "GET" })
 
     const [{ data: rows }, { data: compat }] = await Promise.all([
       good.length > 0
-        ? sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").in("id", good.map((h) => h.id))
+        ? sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", good.map((h) => h.id))
         : Promise.resolve({ data: [] as unknown[] }),
       sb.from("product_compatibility").select("vehicle_model").ilike("vehicle_model", `%${term}%`).limit(40),
     ]);
@@ -193,7 +193,7 @@ export const listFacets = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ brands: string[]; voltages: string[]; ahs: string[]; models: string[] }> => {
     const sb = publicClient();
     const [{ data: prods }, { data: compat }] = await Promise.all([
-      sb.from("products").select("brand, voltage, ah").eq("status", "visible").limit(3000),
+      sb.from("products").select("brand, voltage, ah").eq("status", "visible").eq("product_kind", "part").limit(3000),
       sb.from("product_compatibility").select("vehicle_model").limit(3000),
     ]);
     const brands = new Set<string>();
@@ -232,7 +232,7 @@ export const getProduct = createServerFn({ method: "GET" })
         .from("products")
         .select(PRODUCT_SELECT)
         .eq("slug", data.slug)
-        .eq("status", "visible")
+        .eq("status", "visible").eq("product_kind", "part")
         .maybeSingle();
       if (!row) return null;
       const product = mapProduct(row);
@@ -249,7 +249,7 @@ export const getProduct = createServerFn({ method: "GET" })
           .from("products")
           .select(PRODUCT_SELECT)
           .eq("categories.slug", product.category)
-          .eq("status", "visible")
+          .eq("status", "visible").eq("product_kind", "part")
           .neq("id", product.id)
           .limit(4),
         sb.from("order_items").select("order_id").eq("product_id", product.id).limit(300),
@@ -284,7 +284,7 @@ export const getProduct = createServerFn({ method: "GET" })
         }
         const top = [...tally.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id);
         if (top.length > 0) {
-          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", top).eq("status", "visible");
+          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", top).eq("status", "visible").eq("product_kind", "part");
           boughtTogether = (rows ?? []).map(mapProduct);
         }
       }
@@ -300,7 +300,7 @@ export const getProduct = createServerFn({ method: "GET" })
           .limit(400);
         const ids = [...new Set((compat ?? []).map((c) => c.product_id))].filter((id) => id !== product.id).slice(0, 8);
         if (ids.length > 0) {
-          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", ids).eq("status", "visible").limit(4);
+          const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", ids).eq("status", "visible").eq("product_kind", "part").limit(4);
           sameVehicle = (rows ?? []).map(mapProduct);
         }
       }
@@ -316,7 +316,7 @@ export const productsByIds = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Product[]> => {
     if (data.ids.length === 0) return [];
     const sb = publicClient();
-    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").in("id", data.ids);
+    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", data.ids);
     return (rows ?? []).map(mapProduct);
   });
 
@@ -343,7 +343,7 @@ async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, l
   const { data: top } = await sb.rpc("best_sellers", { p_days: days, p_limit: limit });
   const ids = ((top ?? []) as { product_id: string }[]).map((r) => r.product_id);
   if (ids.length === 0) return [];
-  const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").in("id", ids);
+  const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", ids);
   const byId = new Map((rows ?? []).map((r) => [String((r as Record<string, unknown>)['id']), mapProduct(r)]));
   return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
 }
@@ -351,11 +351,11 @@ async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, l
 export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
   const sb = publicClient();
   const [{ data: latest }, { data: deals }, cats, { data: slides }, bestSellers, { data: coupons }] = await Promise.all([
-    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").order("created_at", { ascending: false }).limit(12),
+    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").order("created_at", { ascending: false }).limit(12),
     sb
       .from("products")
       .select(PRODUCT_SELECT)
-      .eq("status", "visible")
+      .eq("status", "visible").eq("product_kind", "part")
       .not("mrp", "is", null)
       .not("price", "is", null)
       .order("created_at", { ascending: false })
@@ -415,11 +415,11 @@ export const offersFeed = createServerFn({ method: "GET" }).handler(async () => 
     sb
       .from("products")
       .select(PRODUCT_SELECT)
-      .eq("status", "visible")
+      .eq("status", "visible").eq("product_kind", "part")
       .not("mrp", "is", null)
       .not("price", "is", null)
       .limit(300),
-    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").order("created_at", { ascending: false }).limit(8),
+    sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").order("created_at", { ascending: false }).limit(8),
     sb.from("order_items").select("product_id, qty").limit(2000),
   ]);
 
@@ -434,7 +434,7 @@ export const offersFeed = createServerFn({ method: "GET" }).handler(async () => 
   const topIds = [...sold.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([id]) => id);
   let bestSellers: Product[] = [];
   if (topIds.length > 0) {
-    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", topIds).eq("status", "visible");
+    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).in("id", topIds).eq("status", "visible").eq("product_kind", "part");
     const byId = new Map((rows ?? []).map((r) => [String((r as Record<string, unknown>)['id']), mapProduct(r)]));
     bestSellers = topIds.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
   }

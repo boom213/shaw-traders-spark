@@ -55,6 +55,8 @@ export function Header() {
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
+                { to: "/scooters", label: "Electric Scooters" },
+                { to: "/service", label: "Scooter Service" },
                 { to: "/offers", label: t("nav.offers") },
                 { to: "/find-parts", label: t("nav.findParts") },
                 { to: "/bulk", label: t("nav.bulk") },
