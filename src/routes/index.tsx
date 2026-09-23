@@ -50,7 +50,12 @@ export const Route = createFileRoute("/")({
           description: "EV parts, batteries, chargers, motors, controllers and accessories in Bud Bud, Bardhaman.",
           url: BUSINESS.site,
           telephone: `+91${BUSINESS.phone}`,
+          image: BUSINESS.banner,
+          logo: BUSINESS.logo,
+          parentOrganization: { "@id": `${BUSINESS.site}/#organization` },
+          ...(BUSINESS.sameAs.length > 0 ? { sameAs: BUSINESS.sameAs } : {}),
           priceRange: "₹₹",
+
           address: {
             "@type": "PostalAddress",
             streetAddress: "Defence Colony, Bud Bud",

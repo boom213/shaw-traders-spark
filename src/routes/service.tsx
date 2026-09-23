@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionHeading } from "@/components/site/Empty";
-import { BUSINESS, canonical, formatINR } from "@/lib/catalog";
+import { BUSINESS, breadcrumbLd, canonical, formatINR } from "@/lib/catalog";
 import { requestService, serviceHistory, type ServiceHistoryView } from "@/lib/vehicles.functions";
 import { TEST_RIDE_SLOTS } from "@/lib/vehicles";
 
@@ -21,7 +21,14 @@ export const Route = createFileRoute("/service")({
       { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: canonical("/service") }],
+    scripts: [
+      breadcrumbLd([
+        { name: "Electric Scooters", path: "/scooters" },
+        { name: "Scooter Service", path: "/service" },
+      ]),
+    ],
   }),
+
   component: ServicePage,
 });
 
