@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { publicAboutPhotos } from "@/lib/about-gallery-admin.functions";
+import { AboutGallery } from "@/components/about/AboutGallery";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -144,30 +145,9 @@ function AboutPage() {
         ))}
       </div>
 
-      {gallery.length > 0 && (
-        <section className="mt-12" aria-label="Photos from our shop">
-          <h2 className="font-display text-xl font-bold">Inside our shop</h2>
-          <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3">
-            {gallery.map((p) => (
-              <figure key={p.id} className="w-[260px] shrink-0 snap-start sm:w-[300px]">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-surface">
-                  <img
-                    src={p.imageUrl ?? ""}
-                    alt={p.caption ?? "Shaw Traders EV shop photo"}
-                    width={300}
-                    height={225}
-                    loading="lazy"
-                    className="absolute inset-0 size-full object-cover"
-                  />
-                </div>
-                {p.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{p.caption}</figcaption>}
-              </figure>
-            ))}
-          </div>
-        </section>
-      )}
+      <AboutGallery photos={gallery} />
 
-      <h2 className="mt-12 font-display text-xl font-bold">Who we supply</h2>
+      <h2 className="mt-16 font-display text-xl font-bold">Who we supply</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {SERVES.map((s) => (
           <div key={s.title} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
