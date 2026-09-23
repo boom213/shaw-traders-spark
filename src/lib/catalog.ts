@@ -154,7 +154,18 @@ export const BUSINESS = {
   phoneIntl: "917501849610",
   address: "Defence Colony, Bud Bud, Bardhaman, West Bengal – 713403, India",
   site: "https://shawtradersev.com",
+  /** Square logo used by search engines and social cards. */
+  logo: "https://shawtradersev.com/app-icon-512.png",
+  /** 1200x630 share banner used as the site-wide default og:image. */
+  banner: "https://shawtradersev.com/og-banner.jpg",
+  /**
+   * TODO: add the real Google Business Profile, Instagram and Facebook URLs
+   * here once confirmed by the owner. Do not add guessed or placeholder URLs —
+   * an unverified sameAs entry weakens the entity signal instead of helping it.
+   */
+  sameAs: [] as string[],
 };
+
 
 export const whatsappLink = (message: string) =>
   `https://wa.me/${BUSINESS.phoneIntl}?text=${encodeURIComponent(message)}`;
