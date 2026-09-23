@@ -69,7 +69,7 @@ function CategoryPage() {
         <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/categories" className="hover:text-foreground">Categories</Link> /{" "}
         <span className="text-foreground">{category.name}</span>
       </nav>
-      <SectionHeading title={category.name} subtitle={category.blurb} />
+      <SectionHeading as="h1" title={category.name} subtitle={category.blurb} />
       {isPending ? (
         <ProductGridSkeleton count={8} />
       ) : products.length === 0 ? (

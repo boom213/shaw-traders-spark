@@ -59,6 +59,7 @@ function PadPage() {
   return (
     <div className="container-page space-y-6 py-10">
       <SectionHeading
+        as="h1"
         title="Bulk order pad"
         subtitle="One part per line: part number, then quantity. For example “STE-CHG-60V, 20”."
       />

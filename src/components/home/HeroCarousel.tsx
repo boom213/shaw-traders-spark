@@ -84,9 +84,9 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-background/10" />
               <div className="relative flex size-full flex-col justify-center gap-3 p-6 sm:p-10 lg:p-14">
-                <h1 className="max-w-xl font-display text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl">
+                <h2 className="max-w-xl font-display text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl">
                   {slide.heading}
-                </h1>
+                </h2>
                 {slide.subline && <p className="max-w-md text-sm text-muted-foreground sm:text-base">{slide.subline}</p>}
                 {slide.buttonLabel && slide.buttonHref && (
                   <div className="mt-2">

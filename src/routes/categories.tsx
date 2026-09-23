@@ -13,7 +13,7 @@ export const Route = createFileRoute("/categories")({
   }),
   component: () => (
     <div className="container-page py-10">
-      <SectionHeading title="All Categories" subtitle="Parts and accessories for electric scooters, e-bikes and e-rickshaws." />
+      <SectionHeading as="h1" title="All Categories" subtitle="Parts and accessories for electric scooters, e-bikes and e-rickshaws." />
       <CategoryGrid />
     </div>
   ),

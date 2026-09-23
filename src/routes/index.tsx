@@ -99,6 +99,9 @@ function Home() {
     <div>
       <section className="border-b border-border bg-surface">
         <div className="container-page py-6 lg:py-10">
+          <h1 className="sr-only">
+            Shaw Traders EV — EV parts, batteries, chargers and electric scooters in Bud Bud, Bardhaman
+          </h1>
           <HeroCarousel slides={home.heroSlides} />
 
           <div className="mt-6 flex flex-wrap items-center gap-3">

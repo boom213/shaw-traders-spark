@@ -208,6 +208,7 @@ function Shop() {
   return (
     <div className="container-page py-8">
       <SectionHeading
+        as="h1"
         title={search.q ? `Results for “${search.q}”` : "Shop All Products"}
         subtitle={isPending ? "Loading products…" : `${total} product${total === 1 ? "" : "s"}`}
       />
