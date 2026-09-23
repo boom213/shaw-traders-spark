@@ -53,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
       <button
         onClick={() => toggleWishlist(product.id)}
         aria-label="Add to wishlist"
-        className="absolute right-2.5 top-2.5 z-10 grid size-8 place-items-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:text-sale"
+        className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:text-sale sm:size-9"
       >
         <Heart className={cn("size-4", wished && "fill-sale text-sale")} />
       </button>
@@ -118,16 +118,16 @@ export function ProductCard({ product }: { product: Product }) {
 
         {mode === "browse" ? null : mode === "enquiry" ? (
           <div className="mt-auto grid pt-3">
-            <Button size="sm" onClick={() => setEnquiry(true)}>
+            <Button size="sm" className="h-10 sm:h-9" onClick={() => setEnquiry(true)}>
               Check availability
             </Button>
           </div>
         ) : product.price === undefined || !inStock ? (
           <div className="mt-auto grid gap-2 pt-3">
-            <Button size="sm" onClick={() => setEnquiry(true)}>
+            <Button size="sm" className="h-10 sm:h-9" onClick={() => setEnquiry(true)}>
               Check availability
             </Button>
-            <Button size="sm" variant="outline" asChild>
+            <Button size="sm" variant="outline" className="h-10 sm:h-9" asChild>
               <a
                 href={whatsappLink(`Hello, please share the price and availability of ${product.name} (${product.sku}).`)}
                 target="_blank"
@@ -139,11 +139,12 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         ) : (
         <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
-          <Button variant="outline" size="sm" disabled={!inStock} onClick={add}>
+          <Button variant="outline" size="sm" className="h-10 sm:h-9" disabled={!inStock} onClick={add}>
             {t("product.addToCart")}
           </Button>
           <Button
             size="sm"
+            className="h-10 sm:h-9"
             disabled={!inStock}
             onClick={() => {
               if (add()) void navigate({ to: "/checkout" });

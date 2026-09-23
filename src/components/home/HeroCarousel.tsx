@@ -111,7 +111,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
         <>
           <CarouselPrevious className="left-3 hidden size-10 md:flex" aria-label="Previous slide" />
           <CarouselNext className="right-3 hidden size-10 md:flex" aria-label="Next slide" />
-          <div className="mt-3 flex justify-center gap-2" role="tablist" aria-label="Choose a slide">
+          <div className="mt-1 flex justify-center gap-1" role="tablist" aria-label="Choose a slide">
             {list.map((slide, i) => (
               <button
                 key={slide.id}
@@ -120,11 +120,15 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 aria-selected={i === current}
                 aria-label={`Show slide ${i + 1}: ${slide.heading}`}
                 onClick={() => api?.scrollTo(i)}
-                className={cn(
-                  "h-2.5 rounded-full border border-border transition-all",
-                  i === current ? "w-7 bg-primary" : "w-2.5 bg-muted hover:bg-accent",
-                )}
-              />
+                className="grid min-h-10 min-w-6 place-items-center px-1"
+              >
+                <span
+                  className={cn(
+                    "block h-2.5 rounded-full border border-border transition-all",
+                    i === current ? "w-7 bg-primary" : "w-2.5 bg-muted",
+                  )}
+                />
+              </button>
             ))}
           </div>
         </>
