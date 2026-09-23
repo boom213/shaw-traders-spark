@@ -45,6 +45,9 @@ export const facetsQuery = () =>
 export const homeQuery = () =>
   queryOptions({ queryKey: ["home"], queryFn: () => homeFeed(), staleTime: 60_000 });
 
+export const vehiclesQuery = () =>
+  queryOptions({ queryKey: ["vehicles"], queryFn: () => listVehicles(), staleTime: 5 * 60_000 });
+
 export const productsByIdsQuery = (ids: string[]) =>
   queryOptions({
     queryKey: ["products-by-ids", [...ids].sort()],
