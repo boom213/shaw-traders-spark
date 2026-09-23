@@ -40,6 +40,7 @@ export const Route = createFileRoute("/product/$slug")({
       sku: p.sku,
       brand: p.brand ?? "",
       categoryName: p.categoryName ?? "",
+      categorySlug: p.category ?? "",
       price: p.price ?? 0,
       stock: p.stock,
       image: photo ? (photo.startsWith("http") ? photo : canonical(photo)) : "",
@@ -107,7 +108,31 @@ export const Route = createFileRoute("/product/$slug")({
           : []),
       ],
       links: [{ rel: "canonical", href: url }],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(jsonLd) },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+              { "@type": "ListItem", position: 2, name: "Shop", item: canonical("/shop") },
+              ...(loaderData?.categorySlug && loaderData?.categoryName
+                ? [
+                    {
+                      "@type": "ListItem",
+                      position: 3,
+                      name: loaderData.categoryName,
+                      item: canonical(`/category/${loaderData.categorySlug}`),
+                    },
+                  ]
+                : []),
+              { "@type": "ListItem", position: loaderData?.categorySlug ? 4 : 3, name, item: url },
+            ],
+          }),
+        },
+      ],
     };
   },
 
