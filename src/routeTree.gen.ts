@@ -23,6 +23,7 @@ import { Route as ManageLoginRouteImport } from './routes/manage-login'
 import { Route as OffersRouteImport } from './routes/offers'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReturnsRouteImport } from './routes/returns'
+import { Route as ServiceRouteImport } from './routes/service'
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -49,6 +50,7 @@ import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as ScootersIndexRouteImport } from './routes/scooters.index'
+import { Route as ScootersSlugRouteImport } from './routes/scooters.$slug'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -127,6 +129,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ReturnsRoute = ReturnsRouteImport.update({
   id: '/returns',
   path: '/returns',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServiceRoute = ServiceRouteImport.update({
+  id: '/service',
+  path: '/service',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShippingRoute = ShippingRouteImport.update({
@@ -259,6 +266,11 @@ const ScootersIndexRoute = ScootersIndexRouteImport.update({
   path: '/scooters/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScootersSlugRoute = ScootersSlugRouteImport.update({
+  id: '/scooters/$slug',
+  path: '/scooters/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradePadRoute = TradePadRouteImport.update({
   id: '/pad',
   path: '/pad',
@@ -325,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -349,6 +362,7 @@ export interface FileRoutesByFullPath {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/scooters/': typeof ScootersIndexRoute
@@ -375,6 +389,7 @@ export interface FileRoutesByTo {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -399,6 +414,7 @@ export interface FileRoutesByTo {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
   '/scooters': typeof ScootersIndexRoute
@@ -427,6 +443,7 @@ export interface FileRoutesById {
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
   '/returns': typeof ReturnsRoute
+  '/service': typeof ServiceRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -451,6 +468,7 @@ export interface FileRoutesById {
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
+  '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/scooters/': typeof ScootersIndexRoute
@@ -480,6 +498,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -504,6 +523,7 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage/'
     | '/scooters/'
@@ -530,6 +550,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -554,6 +575,7 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage'
     | '/scooters'
@@ -581,6 +603,7 @@ export interface FileRouteTypes {
     | '/offers'
     | '/privacy'
     | '/returns'
+    | '/service'
     | '/shipping'
     | '/shop'
     | '/sitemap.xml'
@@ -605,6 +628,7 @@ export interface FileRouteTypes {
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
+    | '/scooters/$slug'
     | '/trade/pad'
     | '/manage/'
     | '/scooters/'
@@ -633,6 +657,7 @@ export interface RootRouteChildren {
   OffersRoute: typeof OffersRoute
   PrivacyRoute: typeof PrivacyRoute
   ReturnsRoute: typeof ReturnsRoute
+  ServiceRoute: typeof ServiceRoute
   ShippingRoute: typeof ShippingRoute
   ShopRoute: typeof ShopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -645,6 +670,7 @@ export interface RootRouteChildren {
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
+  ScootersSlugRoute: typeof ScootersSlugRoute
   ScootersIndexRoute: typeof ScootersIndexRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -754,6 +780,13 @@ declare module '@tanstack/react-router' {
       path: '/returns'
       fullPath: '/returns'
       preLoaderRoute: typeof ReturnsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/service': {
+      id: '/service'
+      path: '/service'
+      fullPath: '/service'
+      preLoaderRoute: typeof ServiceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shipping': {
@@ -938,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScootersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/scooters/$slug': {
+      id: '/scooters/$slug'
+      path: '/scooters/$slug'
+      fullPath: '/scooters/$slug'
+      preLoaderRoute: typeof ScootersSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/trade/pad': {
       id: '/trade/pad'
       path: '/pad'
@@ -1064,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   OffersRoute: OffersRoute,
   PrivacyRoute: PrivacyRoute,
   ReturnsRoute: ReturnsRoute,
+  ServiceRoute: ServiceRoute,
   ShippingRoute: ShippingRoute,
   ShopRoute: ShopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -1076,6 +1117,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   QuoteTokenRoute: QuoteTokenRoute,
+  ScootersSlugRoute: ScootersSlugRoute,
   ScootersIndexRoute: ScootersIndexRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
