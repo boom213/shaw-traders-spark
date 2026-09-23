@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MapPin, Phone, Users, Wrench } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BadgeCheck, Handshake, Layers, MapPin, Phone, ShieldCheck, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
+import { publicAboutPhotos } from "@/lib/about-gallery-admin.functions";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -22,6 +24,29 @@ export const Route = createFileRoute("/about")({
   component: AboutPage,
 });
 
+const VALUES = [
+  {
+    icon: BadgeCheck,
+    title: "Genuine parts",
+    text: "Sourced directly from manufacturers and trusted brands — never local duplicates.",
+  },
+  {
+    icon: Handshake,
+    title: "Customer-first service",
+    text: "Counter staff who actually know EV parts, plus quick help on WhatsApp.",
+  },
+  {
+    icon: Layers,
+    title: "One-stop range",
+    text: "Our own-brand line alongside every major brand, so you are never sent elsewhere.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Reliability",
+    text: "Tested stock, clear warranty terms and dealer-grade support for workshops.",
+  },
+];
+
 const SERVES = [
   { icon: Users, title: "EV owners", text: "Replacement parts for everyday electric scooter repairs." },
   { icon: Wrench, title: "Mechanics & workshops", text: "Regular supply of fast-moving plastic, metal and electrical parts." },
@@ -30,6 +55,9 @@ const SERVES = [
 ];
 
 function AboutPage() {
+  const { data: photos } = useQuery({ queryKey: ["about-gallery"], queryFn: () => publicAboutPhotos() });
+  const gallery = photos ?? [];
+
   return (
     <div className="container-page py-10">
       <SectionHeading
@@ -40,20 +68,46 @@ function AboutPage() {
 
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="grid gap-4 text-sm leading-relaxed text-muted-foreground">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Established excellence</p>
+            <h2 className="mt-1 font-display text-2xl font-bold text-foreground">
+              A multi-brand EV parts counter, under one roof
+            </h2>
+          </div>
+
           <p>
             Shaw Traders EV supplies spare parts and accessories for electric scooters and e-rickshaws. Our range covers
             plastic body parts, lights and indicators, metal parts, brake parts, shockers, electrical parts, hub motors,
             controllers, chargers, hardware and everyday accessories.
           </p>
           <p>
+            We import genuine parts directly from manufacturers. Part of that range is made to our own specification and
+            quality standards, and sold under the Shaw Traders name; alongside it we stock genuine parts from other
+            established EV brands. That means quality-controlled own-brand options and broad brand choice in the same
+            shop, instead of a trip to three different counters.
+          </p>
+          <p>
             Parts are listed by scooter model group, so you can find the panel, light or fitting that matches the vehicle
             you are repairing. Where a price or stock figure is not shown on the website yet, contact us and we will
             confirm the current price and availability.
           </p>
-          <p>
-            We serve walk-in customers at our counter as well as mechanics, workshops, dealers and bulk buyers who order
-            over phone and WhatsApp.
-          </p>
+
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+              <h3 className="font-display text-sm font-bold text-foreground">Our mission</h3>
+              <p className="mt-1 text-xs">Empowering riders, connecting communities.</p>
+              <p className="mt-1 text-xs">
+                Bringing reliable, genuine EV parts within easy reach of every rider and workshop in Bardhaman.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+              <h3 className="font-display text-sm font-bold text-foreground">Our vision</h3>
+              <p className="mt-1 text-xs">Clean, accessible mobility for all.</p>
+              <p className="mt-1 text-xs">
+                Supporting the shift to electric by keeping every EV on the road running well.
+              </p>
+            </div>
+          </div>
         </div>
 
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -78,6 +132,40 @@ function AboutPage() {
           </div>
         </aside>
       </div>
+
+      <h2 className="mt-12 font-display text-xl font-bold">Why Shaw Traders EV</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {VALUES.map((v) => (
+          <div key={v.title} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <v.icon className="size-5 text-primary" />
+            <h3 className="mt-3 font-display text-sm font-bold">{v.title}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{v.text}</p>
+          </div>
+        ))}
+      </div>
+
+      {gallery.length > 0 && (
+        <section className="mt-12" aria-label="Photos from our shop">
+          <h2 className="font-display text-xl font-bold">Inside our shop</h2>
+          <div className="mt-4 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3">
+            {gallery.map((p) => (
+              <figure key={p.id} className="w-[260px] shrink-0 snap-start sm:w-[300px]">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border bg-surface">
+                  <img
+                    src={p.imageUrl ?? ""}
+                    alt={p.caption ?? "Shaw Traders EV shop photo"}
+                    width={300}
+                    height={225}
+                    loading="lazy"
+                    className="absolute inset-0 size-full object-cover"
+                  />
+                </div>
+                {p.caption && <figcaption className="mt-2 text-xs text-muted-foreground">{p.caption}</figcaption>}
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
 
       <h2 className="mt-12 font-display text-xl font-bold">Who we supply</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
