@@ -31,7 +31,7 @@ export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("products")
-    .select("id, slug, name, brand, status, stock, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)")
+    .select("id, slug, name, brand, description, status, stock, specs, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)")
     .eq("product_kind", "vehicle")
     .order("name")
     .limit(200);
