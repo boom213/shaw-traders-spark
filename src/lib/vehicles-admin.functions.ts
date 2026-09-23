@@ -212,7 +212,7 @@ export const setVehicleDemo = createServerFn({ method: "POST" })
     if (!data.id) return { ok: false, error: "Model not found." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("products").select("specs").eq("id", data.id).maybeSingle();
-    const specs = { ...(((row?.specs ?? {}) as Record<string, unknown>) ?? {}) };
+    const specs = { ...((row?.specs ?? {}) as Record<string, unknown>) };
     if (data.isDemo) specs["demo"] = "true";
     else delete specs["demo"];
     const { error } = await supabaseAdmin
