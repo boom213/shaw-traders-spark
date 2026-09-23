@@ -161,6 +161,23 @@ function Home() {
         <ScooterStrip />
       </section>
 
+      {(scooters?.length ?? 0) > 0 && (
+        <section className="container-page py-8 lg:py-12">
+          <SectionHeading
+            title="Electric Scooters"
+            subtitle="Full specifications, itemised on-road price and booking with a small token amount."
+            action={
+              <Button variant="ghost" asChild>
+                <Link to="/scooters">View all scooters</Link>
+              </Button>
+            }
+          />
+          <ScooterShowcase models={scooters ?? []} />
+        </section>
+      )}
+
+
+
       <section className="container-page py-8 lg:py-12">
         <SectionHeading
           title="Shop by Category"
