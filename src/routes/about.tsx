@@ -29,6 +29,7 @@ function AboutPage() {
   return (
     <div className="container-page py-10">
       <SectionHeading
+        as="h1"
         title="About Shaw Traders EV"
         subtitle="Electric scooter spare parts, batteries, chargers and accessories from Bud Bud, Bardhaman."
       />

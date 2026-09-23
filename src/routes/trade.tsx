@@ -111,7 +111,7 @@ function TradePage() {
   if (!user) {
     return (
       <div className="container-page py-16 text-center">
-        <SectionHeading title="Trade & wholesale account" subtitle="Sign in with your mobile number first, then send your shop papers." />
+        <SectionHeading as="h1" title="Trade & wholesale account" subtitle="Sign in with your mobile number first, then send your shop papers." />
         <Button className="mt-4" asChild><Link to="/account">Sign in</Link></Button>
       </div>
     );
@@ -123,6 +123,7 @@ function TradePage() {
   return (
     <div className="container-page space-y-6 py-10">
       <SectionHeading
+        as="h1"
         title="Trade & wholesale account"
         subtitle="For mechanics, garages, e-rickshaw workshops and retailers. Wholesale rates, bulk ordering and account terms."
       />

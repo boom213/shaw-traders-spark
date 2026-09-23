@@ -41,7 +41,7 @@ function ContactPage() {
 
   return (
     <div className="container-page py-10">
-      <SectionHeading title="Contact us" subtitle="Call, message on WhatsApp or visit our counter in Bud Bud." />
+      <SectionHeading as="h1" title="Contact us" subtitle="Call, message on WhatsApp or visit our counter in Bud Bud." />
 
       <div className="grid gap-8 lg:grid-cols-[1fr_1fr]">
         <div>

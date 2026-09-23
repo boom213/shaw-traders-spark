@@ -52,6 +52,7 @@ function TrackPage() {
   return (
     <div className="container-page py-10">
       <SectionHeading
+        as="h1"
         title="Track your order"
         subtitle="Enter the order number from your confirmation (e.g. STE-260908-1234) and the last 4 digits of your phone number."
       />
