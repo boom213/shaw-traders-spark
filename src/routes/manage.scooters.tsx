@@ -8,7 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatINR } from "@/lib/catalog";
 import { uploadProductPhoto } from "@/lib/photo-upload";
-import { addVehiclePhoto, listVehiclesAdmin, saveVehicle, type AdminVehicleRow, type SaveVehicleInput } from "@/lib/vehicles-admin.functions";
+import {
+  addVehiclePhoto,
+  deleteVehicle,
+  listVehiclesAdmin,
+  removeVehiclePhoto,
+  saveVehicle,
+  setVehicleDemo,
+  setVehicleStatus,
+  type AdminVehicleRow,
+  type SaveVehicleInput,
+} from "@/lib/vehicles-admin.functions";
 import { EMPTY_PRICE, EMPTY_SPECS } from "@/lib/vehicles";
 
 export const Route = createFileRoute("/manage/scooters")({ component: ManageScooters });
@@ -24,11 +34,16 @@ const blank = (): SaveVehicleInput & { coloursText: string } => ({
   coloursText: "",
 });
 
+const STATUS_LABEL: Record<string, string> = { visible: "Live for customers", draft: "Draft", hidden: "Hidden" };
+
 function ManageScooters() {
   const qc = useQueryClient();
   const { data: models } = useQuery({ queryKey: ["admin-vehicles"], queryFn: () => listVehiclesAdmin() });
   const [form, setForm] = useState<SaveVehicleInput & { coloursText: string }>(blank());
   const [msg, setMsg] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
 
   const save = useMutation({
     mutationFn: async () =>
@@ -40,16 +55,24 @@ function ManageScooters() {
       }),
     onSuccess: (r) => {
       setMsg(r.ok ? "Saved." : (r.error ?? "Could not save."));
-      if (r.ok) void qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
+      if (r.ok) void refresh();
     },
   });
+
+  const act = async (id: string, run: () => Promise<{ ok: boolean; error?: string }>) => {
+    setBusyId(id);
+    const r = await run();
+    setBusyId(null);
+    setMsg(r.ok ? "Updated." : (r.error ?? "Could not update."));
+    if (r.ok) void refresh();
+  };
 
   const edit = (v: AdminVehicleRow) =>
     setForm({
       id: v.id,
       name: v.name,
       brand: v.brand ?? "",
-      description: "",
+      description: v.description ?? "",
       status: v.status,
       stock: v.stock,
       specs: v.specs,
@@ -73,36 +96,101 @@ function ManageScooters() {
         <h2 className="mb-4 font-display text-lg font-bold">Scooter models</h2>
         <div className="grid gap-3">
           {(models ?? []).map((v) => (
-            <div key={v.id} className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
-              <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-surface">
-                {v.images[0] && <img src={v.images[0]} alt="" width={64} height={64} className="size-full object-cover" />}
+            <div key={v.id} className="rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-surface">
+                  {v.images[0] && <img src={v.images[0]} alt="" width={64} height={64} className="size-full object-cover" />}
+                </div>
+                <div className="min-w-40 flex-1">
+                  <p className="font-semibold">
+                    {v.name}
+                    {v.isDemo && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">Sample data</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {STATUS_LABEL[v.status] ?? v.status} · {v.stock} in stock ·{" "}
+                    {v.price.onRoad > 0 ? `${formatINR(v.price.onRoad)} on-road` : "no price yet"}
+                  </p>
+                </div>
+                <label className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-primary">
+                  Add photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await uploadProductPhoto(v.id, file);
+                      await addVehiclePhoto({ data: { productId: v.id, url } });
+                      void refresh();
+                    }}
+                  />
+                </label>
+                <Button size="sm" variant="outline" onClick={() => edit(v)}>Edit</Button>
               </div>
-              <div className="min-w-40 flex-1">
-                <p className="font-semibold">{v.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {v.status} · {v.stock} in stock · {v.price.onRoad > 0 ? `${formatINR(v.price.onRoad)} on-road` : "no price yet"}
-                </p>
-              </div>
-              <label className="cursor-pointer rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:border-primary">
-                Add photo
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const url = await uploadProductPhoto(v.id, file);
-                    await addVehiclePhoto({ data: { productId: v.id, url } });
-                    void qc.invalidateQueries({ queryKey: ["admin-vehicles"] });
+
+              {v.images.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {v.images.map((url) => (
+                    <div key={url} className="relative size-14 overflow-hidden rounded-lg border border-border">
+                      <img src={url} alt="" width={56} height={56} className="size-full object-cover" />
+                      <button
+                        type="button"
+                        aria-label="Remove photo"
+                        className="absolute inset-x-0 bottom-0 bg-black/55 py-0.5 text-[10px] font-semibold text-white"
+                        onClick={() => void act(v.id, () => removeVehiclePhoto({ data: { productId: v.id, url } }))}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {(["visible", "draft", "hidden"] as const).map((s) => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    variant={v.status === s ? "default" : "outline"}
+                    disabled={busyId === v.id || v.status === s}
+                    onClick={() => void act(v.id, () => setVehicleStatus({ data: { id: v.id, status: s } }))}
+                  >
+                    {s === "visible" ? "Publish" : s === "draft" ? "Unpublish" : "Hide"}
+                  </Button>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busyId === v.id}
+                  onClick={() => void act(v.id, () => setVehicleDemo({ data: { id: v.id, isDemo: !v.isDemo } }))}
+                >
+                  {v.isDemo ? "Remove sample badge" : "Mark as sample"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive"
+                  disabled={busyId === v.id}
+                  onClick={() => {
+                    if (!window.confirm(`Delete ${v.name}? This cannot be undone.`)) return;
+                    void act(v.id, async () => {
+                      const r = await deleteVehicle({ data: { id: v.id } });
+                      if (r.ok && form.id === v.id) setForm(blank());
+                      return r;
+                    });
                   }}
-                />
-              </label>
-              <Button size="sm" variant="outline" onClick={() => edit(v)}>Edit</Button>
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           ))}
           {(models ?? []).length === 0 && <p className="text-sm text-muted-foreground">No scooter models yet. Add the first one on the right.</p>}
         </div>
+        {msg && <p className="mt-3 text-sm font-medium text-primary">{msg}</p>}
       </section>
 
       <aside className="grid gap-3 self-start rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
