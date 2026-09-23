@@ -50,14 +50,28 @@ export const Route = createFileRoute("/shop")({
   }),
   head: () => ({
     meta: [
-      { title: "Shop EV Parts & Accessories — Shaw Traders EV" },
+      { title: "Shop EV Spare Parts" },
       { name: "description", content: "Search and filter EV batteries, chargers, motors, controllers, body parts and accessories by brand, voltage, capacity and price." },
-      { property: "og:title", content: "Shop EV Parts & Accessories — Shaw Traders EV" },
+      { property: "og:title", content: "Shop EV Spare Parts" },
       { property: "og:description", content: "Filter EV parts by category, brand, voltage, battery capacity, motor wattage and price." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/shop") },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: canonical("/shop") }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+            { "@type": "ListItem", position: 2, name: "Shop", item: canonical("/shop") },
+          ],
+        }),
+      },
+    ],
   }),
   component: Shop,
 });
