@@ -40,6 +40,7 @@ export const Route = createFileRoute("/product/$slug")({
       sku: p.sku,
       brand: p.brand ?? "",
       categoryName: p.categoryName ?? "",
+      categorySlug: p.category ?? "",
       price: p.price ?? 0,
       stock: p.stock,
       image: photo ? (photo.startsWith("http") ? photo : canonical(photo)) : "",
@@ -107,7 +108,31 @@ export const Route = createFileRoute("/product/$slug")({
           : []),
       ],
       links: [{ rel: "canonical", href: url }],
-      scripts: [{ type: "application/ld+json", children: JSON.stringify(jsonLd) }],
+      scripts: [
+        { type: "application/ld+json", children: JSON.stringify(jsonLd) },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: canonical("/") },
+              { "@type": "ListItem", position: 2, name: "Shop", item: canonical("/shop") },
+              ...(loaderData?.categorySlug && loaderData?.categoryName
+                ? [
+                    {
+                      "@type": "ListItem",
+                      position: 3,
+                      name: loaderData.categoryName,
+                      item: canonical(`/category/${loaderData.categorySlug}`),
+                    },
+                  ]
+                : []),
+              { "@type": "ListItem", position: loaderData?.categorySlug ? 4 : 3, name, item: url },
+            ],
+          }),
+        },
+      ],
     };
   },
 
@@ -229,8 +254,16 @@ function ProductPage() {
 
   return (
     <div className="container-page py-8">
-      <nav className="mb-5 text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/shop" className="hover:text-foreground">Shop</Link> /{" "}
+      <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/shop" className="hover:text-foreground">Shop EV Spare Parts</Link> /{" "}
+        {product.category && product.categoryName ? (
+          <>
+            <Link to="/category/$slug" params={{ slug: product.category }} className="hover:text-foreground">
+              {product.categoryName}
+            </Link>{" "}
+            /{" "}
+          </>
+        ) : null}
         <span className="text-foreground">{product.name}</span>
       </nav>
 
@@ -545,6 +578,24 @@ function ProductPage() {
           </div>
         </section>
       )}
+
+      <nav aria-label="Keep browsing" className="mt-14 flex flex-wrap gap-3 border-t border-border pt-6 text-sm">
+        {product.category && product.categoryName && (
+          <Link
+            to="/category/$slug"
+            params={{ slug: product.category }}
+            className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary"
+          >
+            More {product.categoryName}
+          </Link>
+        )}
+        <Link to="/shop" className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary">
+          Shop EV Spare Parts
+        </Link>
+        <Link to="/categories" className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary">
+          Part Categories
+        </Link>
+      </nav>
 
       <Dialog open={zoom} onOpenChange={setZoom}>
         <DialogContent className="max-w-3xl p-2">
