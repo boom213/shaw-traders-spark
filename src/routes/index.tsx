@@ -93,6 +93,7 @@ const TRUST = [
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
   const { data: facets } = useQuery(facetsQuery());
+  const { data: scooters } = useQuery(vehiclesQuery());
   const brands = facets?.brands ?? [];
   const highlights = home.categories.slice(0, 6);
 
