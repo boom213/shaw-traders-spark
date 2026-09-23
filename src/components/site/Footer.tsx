@@ -16,9 +16,7 @@ export function Footer() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-5">
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5">
-            <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <Zap className="size-5" />
-            </span>
+            <img src="/logo.png" alt="Shaw Traders EV" width={36} height={36} className="size-9 rounded-xl object-contain" />
             <span className="font-display text-base font-bold">Shaw Traders EV</span>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">{BUSINESS.tagline} for EV owners, mechanics, workshops and dealers.</p>
