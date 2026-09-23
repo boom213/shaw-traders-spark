@@ -124,6 +124,30 @@ function Home() {
         </div>
       </section>
 
+      <nav aria-label="Main sections" className="container-page py-8">
+        <h2 className="font-display text-lg font-bold">Explore Shaw Traders EV</h2>
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
+            { to: "/shop", label: "Shop EV Spare Parts", blurb: "Batteries, chargers, motors, controllers and body parts." },
+            { to: "/categories", label: "Part Categories", blurb: "Browse all 14 categories of EV spares." },
+            { to: "/find-parts", label: "Find Parts for Your EV", blurb: "Match parts to your scooter brand and model." },
+            { to: "/bulk", label: "Dealer & Bulk Orders", blurb: "Wholesale supply for garages, dealers and fleets." },
+            { to: "/about", label: "About Shaw Traders EV", blurb: "Our EV parts counter in Bud Bud, Bardhaman." },
+            { to: "/contact", label: "Contact Shaw Traders EV", blurb: "Phone, WhatsApp, address and shop timings." },
+          ].map((l) => (
+            <li key={l.to}>
+              <Link
+                to={l.to}
+                className="card-lift block rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+              >
+                <span className="font-semibold">{l.label}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">{l.blurb}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
       {home.offers.length > 0 && (
         <section className="container-page py-6">
           <OffersStrip offers={home.offers} />
