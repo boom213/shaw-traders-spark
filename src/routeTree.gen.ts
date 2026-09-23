@@ -34,6 +34,7 @@ import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
+import { Route as ManageBookingsRouteImport } from './routes/manage.bookings'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
@@ -42,6 +43,7 @@ import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
+import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
@@ -186,6 +188,11 @@ const ManageIndexRoute = ManageIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageBookingsRoute = ManageBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageCatalogueRoute = ManageCatalogueRouteImport.update({
   id: '/catalogue',
   path: '/catalogue',
@@ -224,6 +231,11 @@ const ManageOrdersRoute = ManageOrdersRouteImport.update({
 const ManageReviewsRoute = ManageReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
+  getParentRoute: () => ManageRoute,
+} as any)
+const ManageScootersRoute = ManageScootersRouteImport.update({
+  id: '/scooters',
+  path: '/scooters',
   getParentRoute: () => ManageRoute,
 } as any)
 const ManageSettingsRoute = ManageSettingsRouteImport.update({
@@ -347,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -355,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -399,6 +413,7 @@ export interface FileRoutesByTo {
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -407,6 +422,7 @@ export interface FileRoutesByTo {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -453,6 +469,7 @@ export interface FileRoutesById {
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
+  '/manage/bookings': typeof ManageBookingsRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
   '/manage/domain': typeof ManageDomainRoute
@@ -461,6 +478,7 @@ export interface FileRoutesById {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
   '/manage/reviews': typeof ManageReviewsRoute
+  '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
@@ -508,6 +526,7 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -516,6 +535,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -560,6 +580,7 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -568,6 +589,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -613,6 +635,7 @@ export interface FileRouteTypes {
     | '/warranty'
     | '/booking/$token'
     | '/category/$slug'
+    | '/manage/bookings'
     | '/manage/catalogue'
     | '/manage/customers'
     | '/manage/domain'
@@ -621,6 +644,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/reviews'
+    | '/manage/scooters'
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
@@ -859,6 +883,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageIndexRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/bookings': {
+      id: '/manage/bookings'
+      path: '/bookings'
+      fullPath: '/manage/bookings'
+      preLoaderRoute: typeof ManageBookingsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/catalogue': {
       id: '/manage/catalogue'
       path: '/catalogue'
@@ -913,6 +944,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews'
       fullPath: '/manage/reviews'
       preLoaderRoute: typeof ManageReviewsRouteImport
+      parentRoute: typeof ManageRoute
+    }
+    '/manage/scooters': {
+      id: '/manage/scooters'
+      path: '/scooters'
+      fullPath: '/manage/scooters'
+      preLoaderRoute: typeof ManageScootersRouteImport
       parentRoute: typeof ManageRoute
     }
     '/manage/settings': {
@@ -1045,6 +1083,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface ManageRouteChildren {
+  ManageBookingsRoute: typeof ManageBookingsRoute
   ManageCatalogueRoute: typeof ManageCatalogueRoute
   ManageCustomersRoute: typeof ManageCustomersRoute
   ManageDomainRoute: typeof ManageDomainRoute
@@ -1053,6 +1092,7 @@ interface ManageRouteChildren {
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
+  ManageScootersRoute: typeof ManageScootersRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
@@ -1061,6 +1101,7 @@ interface ManageRouteChildren {
 }
 
 const ManageRouteChildren: ManageRouteChildren = {
+  ManageBookingsRoute: ManageBookingsRoute,
   ManageCatalogueRoute: ManageCatalogueRoute,
   ManageCustomersRoute: ManageCustomersRoute,
   ManageDomainRoute: ManageDomainRoute,
@@ -1069,6 +1110,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRoute,
   ManageReviewsRoute: ManageReviewsRoute,
+  ManageScootersRoute: ManageScootersRoute,
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
