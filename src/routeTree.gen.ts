@@ -30,6 +30,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
+import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
@@ -47,6 +48,7 @@ import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
+import { Route as ScootersIndexRouteImport } from './routes/scooters.index'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -162,6 +164,11 @@ const WarrantyRoute = WarrantyRouteImport.update({
   path: '/warranty',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingTokenRoute = BookingTokenRouteImport.update({
+  id: '/booking/$token',
+  path: '/booking/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -247,6 +254,11 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
   path: '/quote/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ScootersIndexRoute = ScootersIndexRouteImport.update({
+  id: '/scooters/',
+  path: '/scooters/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TradePadRoute = TradePadRouteImport.update({
   id: '/pad',
   path: '/pad',
@@ -320,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -338,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
+  '/scooters/': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -368,6 +382,7 @@ export interface FileRoutesByTo {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -386,6 +401,7 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
+  '/scooters': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -418,6 +434,7 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
   '/manage/customers': typeof ManageCustomersRoute
@@ -436,6 +453,7 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
+  '/scooters/': typeof ScootersIndexRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
@@ -469,6 +487,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -487,6 +506,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/trade/pad'
     | '/manage/'
+    | '/scooters/'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -517,6 +537,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -535,6 +556,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/trade/pad'
     | '/manage'
+    | '/scooters'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -566,6 +588,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/booking/$token'
     | '/category/$slug'
     | '/manage/catalogue'
     | '/manage/customers'
@@ -584,6 +607,7 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/trade/pad'
     | '/manage/'
+    | '/scooters/'
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
@@ -616,10 +640,12 @@ export interface RootRouteChildren {
   TrackRoute: typeof TrackRoute
   TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
+  BookingTokenRoute: typeof BookingTokenRoute
   CategorySlugRoute: typeof CategorySlugRoute
   OrderIdRoute: typeof OrderIdRoute
   ProductSlugRoute: typeof ProductSlugRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
+  ScootersIndexRoute: typeof ScootersIndexRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
@@ -779,6 +805,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WarrantyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/booking/$token': {
+      id: '/booking/$token'
+      path: '/booking/$token'
+      fullPath: '/booking/$token'
+      preLoaderRoute: typeof BookingTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -896,6 +929,13 @@ declare module '@tanstack/react-router' {
       path: '/quote/$token'
       fullPath: '/quote/$token'
       preLoaderRoute: typeof QuoteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scooters/': {
+      id: '/scooters/'
+      path: '/scooters'
+      fullPath: '/scooters/'
+      preLoaderRoute: typeof ScootersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trade/pad': {
@@ -1031,10 +1071,12 @@ const rootRouteChildren: RootRouteChildren = {
   TrackRoute: TrackRoute,
   TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
+  BookingTokenRoute: BookingTokenRoute,
   CategorySlugRoute: CategorySlugRoute,
   OrderIdRoute: OrderIdRoute,
   ProductSlugRoute: ProductSlugRoute,
   QuoteTokenRoute: QuoteTokenRoute,
+  ScootersIndexRoute: ScootersIndexRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
