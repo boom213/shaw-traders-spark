@@ -15,8 +15,10 @@ export type AdminVehicleRow = {
   slug: string;
   name: string;
   brand: string | null;
+  description: string | null;
   status: string;
   stock: number;
+  isDemo: boolean;
   images: string[];
   specs: VehicleSpecs;
   price: VehiclePrice;
