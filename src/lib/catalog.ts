@@ -183,3 +183,22 @@ export const slugify = (s: string) =>
     .replace(/^-|-$/g, "");
 
 export const canonical = (path: string) => `${BUSINESS.site}${path}`;
+
+/**
+ * BreadcrumbList JSON-LD for a page. Pass the trail without "Home" —
+ * it is prepended automatically.
+ */
+export const breadcrumbLd = (trail: { name: string; path: string }[]) => ({
+  type: "application/ld+json",
+  children: JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [{ name: "Home", path: "/" }, ...trail].map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: canonical(item.path),
+    })),
+  }),
+});
+
