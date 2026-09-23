@@ -42,8 +42,10 @@ export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(asyn
     slug: String(r.slug),
     name: String(r.name),
     brand: r.brand,
+    description: r.description ?? null,
     status: String(r.status),
     stock: Number(r.stock ?? 0),
+    isDemo: String(((r.specs ?? {}) as Record<string, unknown>)["demo"] ?? "") === "true",
     images: ((r.product_images ?? []) as { url: string; sort_order: number }[])
       .slice()
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
