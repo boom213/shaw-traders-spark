@@ -6,6 +6,8 @@ const BASE = BUSINESS.site;
 const STATIC_PAGES: { path: string; priority: string; changefreq: string }[] = [
   { path: "/", priority: "1.0", changefreq: "daily" },
   { path: "/shop", priority: "0.9", changefreq: "daily" },
+  { path: "/scooters", priority: "0.9", changefreq: "daily" },
+  { path: "/service", priority: "0.5", changefreq: "monthly" },
   { path: "/categories", priority: "0.8", changefreq: "weekly" },
   { path: "/find-parts", priority: "0.8", changefreq: "weekly" },
   { path: "/offers", priority: "0.7", changefreq: "weekly" },
@@ -64,6 +66,7 @@ export const Route = createFileRoute("/sitemap.xml")({
               .from("products")
               .select("slug, updated_at")
               .eq("status", "visible")
+              .eq("product_kind", "part")
               .order("slug")
               .range(page * pageSize, page * pageSize + pageSize - 1);
             if (error) throw new Error(error.message);
@@ -71,6 +74,17 @@ export const Route = createFileRoute("/sitemap.xml")({
               entries.push(urlEntry(`/product/${p.slug}`, { lastmod: p.updated_at, priority: "0.7", changefreq: "weekly" }));
             }
             if (!products || products.length < pageSize) break;
+          }
+
+          const { data: vehicles, error: vErr } = await sb
+            .from("products")
+            .select("slug, updated_at")
+            .eq("status", "visible")
+            .eq("product_kind", "vehicle")
+            .order("slug");
+          if (vErr) throw new Error(vErr.message);
+          for (const v of vehicles ?? []) {
+            entries.push(urlEntry(`/scooters/${v.slug}`, { lastmod: v.updated_at, priority: "0.8", changefreq: "weekly" }));
           }
         } catch (err) {
           console.error("sitemap generation failed", err);
