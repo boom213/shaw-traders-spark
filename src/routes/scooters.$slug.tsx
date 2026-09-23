@@ -313,6 +313,9 @@ function ScooterPage() {
         <div>
           {vehicle.brand && <p className="text-xs uppercase tracking-wide text-muted-foreground">{vehicle.brand}</p>}
           <h1 className="font-display text-3xl font-bold tracking-tight">{vehicle.name}</h1>
+          {vehicle.extraSpecs?.['demo'] === "true" && (
+            <p className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">Sample data — not a real model</p>
+          )}
           {vehicle.specs.variant && <p className="mt-1 text-sm text-muted-foreground">{vehicle.specs.variant}</p>}
           {vehicle.description && <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{vehicle.description}</p>}
 
