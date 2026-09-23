@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { Button } from "@/components/ui/button";
-import { BUSINESS, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/find-parts")({
   head: () => ({
@@ -12,9 +12,13 @@ export const Route = createFileRoute("/find-parts")({
       { property: "og:title", content: "Find Parts for Your EV — Shaw Traders EV" },
       { property: "og:description", content: "Match EV spare parts to your vehicle brand, model and year." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/find-parts") },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: canonical("/find-parts") }],
+    scripts: [breadcrumbLd([{ name: "Find Parts for Your EV", path: "/find-parts" }])],
   }),
+
   component: FindPartsPage,
 });
 

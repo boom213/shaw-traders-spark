@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
-import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 
@@ -23,7 +23,9 @@ export const Route = createFileRoute("/contact")({
       { property: "og:url", content: canonical("/contact") },
     ],
     links: [{ rel: "canonical", href: canonical("/contact") }],
+    scripts: [breadcrumbLd([{ name: "Contact", path: "/contact" }])],
   }),
+
   component: ContactPage,
 });
 

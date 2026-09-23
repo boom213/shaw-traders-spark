@@ -4,7 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { SectionHeading, EmptyCatalogue, ProductGridSkeleton } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { offersFeed } from "@/lib/catalog.functions";
-import { canonical, type Product } from "@/lib/catalog";
+import { breadcrumbLd, canonical, type Product } from "@/lib/catalog";
 
 const offersQuery = () => queryOptions({ queryKey: ["offers"], queryFn: () => offersFeed(), staleTime: 60_000 });
 
@@ -16,10 +16,13 @@ export const Route = createFileRoute("/offers")({
       { property: "og:title", content: "Offers & Deals — Shaw Traders EV" },
       { property: "og:description", content: "Discounted EV spare parts and accessories from Shaw Traders EV." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/offers") },
       { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: canonical("/offers") }],
+    scripts: [breadcrumbLd([{ name: "Offers & Deals", path: "/offers" }])],
   }),
+
   component: OffersPage,
 });
 

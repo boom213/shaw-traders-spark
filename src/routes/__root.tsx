@@ -23,6 +23,20 @@ import { LanguageProvider } from "@/lib/i18n";
 import { setupServiceWorker } from "@/lib/pwa";
 import { setupErrorReporting } from "@/lib/error-reporting";
 import { categoriesQuery } from "@/lib/queries";
+import { BUSINESS } from "@/lib/catalog";
+
+/** Primary sections, emitted as SiteNavigationElement JSON-LD for sitelinks. */
+const SITE_SECTIONS = [
+  { name: "Shop EV Spare Parts", path: "/shop" },
+  { name: "Electric Scooters", path: "/scooters" },
+  { name: "Part Categories", path: "/categories" },
+  { name: "Find Parts for Your EV", path: "/find-parts" },
+  { name: "Offers & Deals", path: "/offers" },
+  { name: "Dealer & Bulk Orders", path: "/bulk" },
+  { name: "About Shaw Traders EV", path: "/about" },
+  { name: "Contact", path: "/contact" },
+];
+
 
 function NotFoundComponent() {
   return (
@@ -101,7 +115,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Shaw Traders EV" },
       { name: "google-site-verification", content: "trvCjda-37PeHboaItlX_sikYg_NNxdrA_2eoj8-Zng" },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: BUSINESS.name },
+      { property: "og:image", content: BUSINESS.banner },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: BUSINESS.banner },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -116,7 +133,67 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "manifest", href: "/manifest.webmanifest" },
 
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "@id": `${BUSINESS.site}/#organization`,
+          name: BUSINESS.name,
+          url: BUSINESS.site,
+          logo: {
+            "@type": "ImageObject",
+            url: BUSINESS.logo,
+            width: 512,
+            height: 512,
+          },
+          image: BUSINESS.banner,
+          ...(BUSINESS.sameAs.length > 0 ? { sameAs: BUSINESS.sameAs } : {}),
+          contactPoint: [
+            {
+              "@type": "ContactPoint",
+              telephone: `+91${BUSINESS.phone}`,
+              contactType: "customer service",
+              areaServed: "IN",
+              availableLanguage: ["en", "hi", "bn"],
+            },
+          ],
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "@id": `${BUSINESS.site}/#website`,
+          url: BUSINESS.site,
+          name: BUSINESS.name,
+          publisher: { "@id": `${BUSINESS.site}/#organization` },
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${BUSINESS.site}/shop?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify(
+          SITE_SECTIONS.map((s) => ({
+            "@context": "https://schema.org",
+            "@type": "SiteNavigationElement",
+            name: s.name,
+            url: `${BUSINESS.site}${s.path}`,
+          })),
+        ),
+      },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
