@@ -22,6 +22,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupServiceWorker } from "@/lib/pwa";
 import { setupErrorReporting } from "@/lib/error-reporting";
+import { categoriesQuery } from "@/lib/queries";
 
 function NotFoundComponent() {
   return (
@@ -84,6 +85,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Prefetched on the server so the header category nav and footer Shop column
+  // are present in the crawled HTML rather than filled in after hydration.
+  loader: ({ context }) => context.queryClient.ensureQueryData(categoriesQuery()),
   head: () => ({
     meta: [
       { charSet: "utf-8" },

@@ -7,7 +7,7 @@ import { BUSINESS, whatsappLink } from "@/lib/catalog";
 export const Route = createFileRoute("/find-parts")({
   head: () => ({
     meta: [
-      { title: "Find Parts for Your EV — Shaw Traders EV" },
+      { title: "Find Parts for Your EV" },
       { name: "description", content: "Tell us your EV brand, model and year and we will match the right battery, charger, motor or body part from our Bud Bud store." },
       { property: "og:title", content: "Find Parts for Your EV — Shaw Traders EV" },
       { property: "og:description", content: "Match EV spare parts to your vehicle brand, model and year." },

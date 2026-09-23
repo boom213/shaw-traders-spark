@@ -8,7 +8,7 @@ import { BUSINESS, whatsappLink } from "@/lib/catalog";
 export const Route = createFileRoute("/bulk")({
   head: () => ({
     meta: [
-      { title: "Bulk & Dealer Orders — Shaw Traders EV" },
+      { title: "Dealer & Bulk Orders" },
       { name: "description", content: "Bulk enquiry for e-rickshaw and EV workshops, dealers and fleet owners. Share your requirement and our Bud Bud team will quote." },
       { property: "og:title", content: "Bulk & Dealer Orders — Shaw Traders EV" },
       { property: "og:description", content: "Wholesale EV spare parts enquiries for workshops, dealers and fleets." },

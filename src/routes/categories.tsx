@@ -5,7 +5,7 @@ import { SectionHeading } from "@/components/site/Empty";
 export const Route = createFileRoute("/categories")({
   head: () => ({
     meta: [
-      { title: "All EV Part Categories — Shaw Traders EV" },
+      { title: "Part Categories" },
       { name: "description", content: "Browse every EV part category at Shaw Traders EV: batteries, chargers, motors, controllers, body parts, brakes, wheels, lighting and more." },
       { property: "og:title", content: "All EV Part Categories — Shaw Traders EV" },
       { property: "og:description", content: "Fourteen categories of EV spare parts and accessories for scooters, e-bikes and e-rickshaws." },
