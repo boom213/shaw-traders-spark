@@ -157,7 +157,7 @@ export const BUSINESS = {
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",
   /** 1200x630 share banner used as the site-wide default og:image. */
-  banner: "https://shawtradersev.com/og-banner.jpg",
+  banner: "https://shawtradersev.com/og-image.png",
   /**
    * TODO: add the real Google Business Profile, Instagram and Facebook URLs
    * here once confirmed by the owner. Do not add guessed or placeholder URLs —

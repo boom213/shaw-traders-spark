@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "lucide-react";
+import { Heart, Menu, MessageCircle, Search, ShoppingCart, User } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -16,9 +16,7 @@ import { categoriesQuery } from "@/lib/queries";
 function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5">
-      <span className="grid size-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-        <Zap className="size-5" />
-      </span>
+      <img src="/logo.png" alt="Shaw Traders EV" width={36} height={36} className="size-9 rounded-xl object-contain" />
       <span className="leading-tight">
         <span className="block font-display text-base font-bold tracking-tight">Shaw Traders EV</span>
         <span className="hidden text-[11px] text-muted-foreground sm:block">{BUSINESS.tagline}</span>
