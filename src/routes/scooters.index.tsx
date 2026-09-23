@@ -41,6 +41,9 @@ function ModelCard({ v, picked, onPick }: { v: VehicleModel; picked: boolean; on
         </div>
       </Link>
       <div className="space-y-2 p-4">
+        {v.extraSpecs?.['demo'] === "true" && (
+          <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">Sample data</span>
+        )}
         {v.brand && <p className="text-xs uppercase tracking-wide text-muted-foreground">{v.brand}</p>}
         <h3 className="font-display text-lg font-bold leading-tight">
           <Link to="/scooters/$slug" params={{ slug: v.slug }}>{v.name}</Link>
