@@ -39,15 +39,18 @@ export function SectionHeading({
   title,
   subtitle,
   action,
+  as = "h2",
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  as?: "h1" | "h2";
 }) {
+  const Title = as;
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{title}</h2>
+        <Title className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{title}</Title>
         {subtitle && <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>}
       </div>
       {action}
