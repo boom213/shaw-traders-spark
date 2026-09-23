@@ -15,8 +15,10 @@ export type AdminVehicleRow = {
   slug: string;
   name: string;
   brand: string | null;
+  description: string | null;
   status: string;
   stock: number;
+  isDemo: boolean;
   images: string[];
   specs: VehicleSpecs;
   price: VehiclePrice;
@@ -29,7 +31,7 @@ export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(asyn
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("products")
-    .select("id, slug, name, brand, status, stock, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)")
+    .select("id, slug, name, brand, description, status, stock, specs, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)")
     .eq("product_kind", "vehicle")
     .order("name")
     .limit(200);
@@ -40,8 +42,10 @@ export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(asyn
     slug: String(r.slug),
     name: String(r.name),
     brand: r.brand,
+    description: r.description ?? null,
     status: String(r.status),
     stock: Number(r.stock ?? 0),
+    isDemo: String(((r.specs ?? {}) as Record<string, unknown>)["demo"] ?? "") === "true",
     images: ((r.product_images ?? []) as { url: string; sort_order: number }[])
       .slice()
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -165,6 +169,86 @@ export const addVehiclePhoto = createServerFn({ method: "POST" })
     await supabaseAdmin.from("product_images").insert({ product_id: data.productId, url: data.url, sort_order: count ?? 0 } as never);
     return { ok: true };
   });
+
+/** Remove one photo from a model. */
+export const removeVehiclePhoto = createServerFn({ method: "POST" })
+  .inputValidator((data: { productId: string; url: string }) => ({ productId: uuid(data?.productId), url: text(data?.url, 400) }))
+  .handler(async ({ data }): Promise<{ ok: boolean }> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff();
+    if (!data.productId || !data.url) return { ok: false };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("product_images").delete().eq("product_id", data.productId).eq("url", data.url);
+    return { ok: true };
+  });
+
+/** Publish, draft or hide a model in one tap. */
+export const setVehicleStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; status: string }) => ({
+    id: uuid(data?.id),
+    status: ["draft", "visible", "hidden"].includes(String(data?.status)) ? String(data?.status) : "",
+  }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff();
+    if (!data.id || !data.status) return { ok: false, error: "Pick a state." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ status: data.status as never, updated_at: new Date().toISOString() } as never)
+      .eq("id", data.id)
+      .eq("product_kind", "vehicle");
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "vehicle.status", "products", data.id, { status: data.status });
+    return { ok: true };
+  });
+
+/** Turn the "Sample data" badge on a model on or off. */
+export const setVehicleDemo = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; isDemo: boolean }) => ({ id: uuid(data?.id), isDemo: Boolean(data?.isDemo) }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff();
+    if (!data.id) return { ok: false, error: "Model not found." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin.from("products").select("specs").eq("id", data.id).maybeSingle();
+    const specs = { ...((row?.specs ?? {}) as Record<string, unknown>) };
+    if (data.isDemo) specs["demo"] = "true";
+    else delete specs["demo"];
+    const { error } = await supabaseAdmin
+      .from("products")
+      .update({ specs: specs as never, updated_at: new Date().toISOString() } as never)
+      .eq("id", data.id)
+      .eq("product_kind", "vehicle");
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "vehicle.demo", "products", data.id, { isDemo: data.isDemo });
+    return { ok: true };
+  });
+
+/** Delete a model outright. Refused when a booking already points at it. */
+export const deleteVehicle = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => ({ id: uuid(data?.id) }))
+  .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff();
+    if (!data.id) return { ok: false, error: "Model not found." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { count } = await supabaseAdmin
+      .from("vehicle_bookings")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", data.id);
+    if ((count ?? 0) > 0) return { ok: false, error: "This model has bookings. Hide it instead of deleting." };
+
+    await supabaseAdmin.from("product_images").delete().eq("product_id", data.id);
+    await supabaseAdmin.from("vehicle_specs").delete().eq("product_id", data.id);
+    await supabaseAdmin.from("vehicle_pricing").delete().eq("product_id", data.id);
+    const { error } = await supabaseAdmin.from("products").delete().eq("id", data.id).eq("product_kind", "vehicle");
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "vehicle.delete", "products", data.id, {});
+    return { ok: true };
+  });
+
 
 export type BookingRow = {
   id: string;
