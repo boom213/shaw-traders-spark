@@ -254,8 +254,16 @@ function ProductPage() {
 
   return (
     <div className="container-page py-8">
-      <nav className="mb-5 text-xs text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/shop" className="hover:text-foreground">Shop</Link> /{" "}
+      <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted-foreground">
+        <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/shop" className="hover:text-foreground">Shop EV Spare Parts</Link> /{" "}
+        {product.category && product.categoryName ? (
+          <>
+            <Link to="/category/$slug" params={{ slug: product.category }} className="hover:text-foreground">
+              {product.categoryName}
+            </Link>{" "}
+            /{" "}
+          </>
+        ) : null}
         <span className="text-foreground">{product.name}</span>
       </nav>
 
