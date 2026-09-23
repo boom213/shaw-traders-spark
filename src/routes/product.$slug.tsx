@@ -579,6 +579,24 @@ function ProductPage() {
         </section>
       )}
 
+      <nav aria-label="Keep browsing" className="mt-14 flex flex-wrap gap-3 border-t border-border pt-6 text-sm">
+        {product.category && product.categoryName && (
+          <Link
+            to="/category/$slug"
+            params={{ slug: product.category }}
+            className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary"
+          >
+            More {product.categoryName}
+          </Link>
+        )}
+        <Link to="/shop" className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary">
+          Shop EV Spare Parts
+        </Link>
+        <Link to="/categories" className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary">
+          Part Categories
+        </Link>
+      </nav>
+
       <Dialog open={zoom} onOpenChange={setZoom}>
         <DialogContent className="max-w-3xl p-2">
           <img src={gallery[active] ?? gallery[0]} alt={product.name} className="max-h-[80vh] w-full rounded-xl object-contain" />
