@@ -11,6 +11,7 @@ import {
   vehicleTree,
   type ProductFilters,
 } from "@/lib/catalog.functions";
+import { listVehicles } from "@/lib/vehicles.functions";
 
 export const categoriesQuery = () =>
   queryOptions({ queryKey: ["categories"], queryFn: () => listCategories(), staleTime: 5 * 60_000 });

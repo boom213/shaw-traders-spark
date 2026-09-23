@@ -12,7 +12,8 @@ import { OffersStrip } from "@/components/home/OffersStrip";
 import { ScooterStrip } from "@/components/home/ScooterStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
-import { facetsQuery, homeQuery } from "@/lib/queries";
+import { ScooterShowcase } from "@/components/home/ScooterShowcase";
+import { facetsQuery, homeQuery, vehiclesQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
