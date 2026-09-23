@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
+import { LazySection } from "@/components/site/LazySection";
 import { HeroCarousel, heroImageFor } from "@/components/home/HeroCarousel";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
@@ -12,8 +13,9 @@ import { OffersStrip } from "@/components/home/OffersStrip";
 import { ScooterStrip } from "@/components/home/ScooterStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
-import { ScooterShowcase } from "@/components/home/ScooterShowcase";
-import { facetsQuery, homeQuery, vehiclesQuery } from "@/lib/queries";
+import { ScooterSection } from "@/components/home/ScooterSection";
+import { BrandsSection } from "@/components/home/BrandsSection";
+import { homeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
@@ -97,9 +99,6 @@ const TRUST = [
 
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
-  const { data: facets } = useQuery(facetsQuery());
-  const { data: scooters } = useQuery(vehiclesQuery());
-  const brands = facets?.brands ?? [];
   const highlights = home.categories.slice(0, 6);
 
   return (
@@ -162,80 +161,78 @@ function Home() {
         </section>
       )}
 
-      <section className="container-page py-6 lg:py-8">
-        <ScooterStrip />
-      </section>
+      <LazySection minHeight="12rem">
+        <section className="container-page py-6 lg:py-8">
+          <ScooterStrip />
+        </section>
+      </LazySection>
 
-      {(scooters?.length ?? 0) > 0 && (
+      <LazySection minHeight="24rem">
+        <ScooterSection />
+      </LazySection>
+
+      <LazySection minHeight="20rem">
         <section className="container-page py-8 lg:py-12">
           <SectionHeading
-            title="Electric Scooters"
-            subtitle="Full specifications, itemised on-road price and booking with a small token amount."
+            title="Shop by Category"
+            subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
             action={
               <Button variant="ghost" asChild>
-                <Link to="/scooters">View all scooters</Link>
+                <Link to="/categories">View all</Link>
               </Button>
             }
           />
-          <ScooterShowcase models={scooters ?? []} />
+          <CategoryCarousel categories={home.categories} />
         </section>
-      )}
+      </LazySection>
 
-
-
-      <section className="container-page py-8 lg:py-12">
-        <SectionHeading
-          title="Shop by Category"
-          subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
-          action={
-            <Button variant="ghost" asChild>
-              <Link to="/categories">View all</Link>
-            </Button>
-          }
-        />
-        <CategoryCarousel categories={home.categories} />
-      </section>
-
-      <section className="container-page py-4 lg:py-8">
-        <SectionHeading
-          title="New Arrivals"
-          subtitle="Fresh stock added recently by our counter team."
-          action={
-            <Button variant="ghost" asChild>
-              <Link to="/shop">Browse shop</Link>
-            </Button>
-          }
-        />
-        {home.latest.length === 0 ? <EmptyCatalogue /> : <ProductCarousel items={home.latest} label="New arrivals" />}
-      </section>
-
-      {home.bestSellers.length > 0 && (
-        <section className="container-page py-4 lg:py-8">
-          <SectionHeading title="Best Sellers" subtitle="Most ordered parts over the last 90 days." />
-          <ProductCarousel items={home.bestSellers} label="Best sellers" />
-        </section>
-      )}
-
-      <RecentlyViewedRow />
-
-
-      {home.discounted.length > 0 && (
+      <LazySection minHeight="24rem">
         <section className="container-page py-4 lg:py-8">
           <SectionHeading
-            title="Deals of the Day"
-            subtitle="Parts currently selling below MRP."
+            title="New Arrivals"
+            subtitle="Fresh stock added recently by our counter team."
             action={
               <Button variant="ghost" asChild>
-                <Link to="/offers">All offers</Link>
+                <Link to="/shop">Browse shop</Link>
               </Button>
             }
           />
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {home.discounted.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {home.latest.length === 0 ? <EmptyCatalogue /> : <ProductCarousel items={home.latest} label="New arrivals" />}
         </section>
+      </LazySection>
+
+      {home.bestSellers.length > 0 && (
+        <LazySection minHeight="24rem">
+          <section className="container-page py-4 lg:py-8">
+            <SectionHeading title="Best Sellers" subtitle="Most ordered parts over the last 90 days." />
+            <ProductCarousel items={home.bestSellers} label="Best sellers" />
+          </section>
+        </LazySection>
+      )}
+
+      <LazySection minHeight="0rem">
+        <RecentlyViewedRow />
+      </LazySection>
+
+      {home.discounted.length > 0 && (
+        <LazySection minHeight="24rem">
+          <section className="container-page py-4 lg:py-8">
+            <SectionHeading
+              title="Deals of the Day"
+              subtitle="Parts currently selling below MRP."
+              action={
+                <Button variant="ghost" asChild>
+                  <Link to="/offers">All offers</Link>
+                </Button>
+              }
+            />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {home.discounted.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </section>
+        </LazySection>
       )}
 
       <section className="container-page py-12 lg:py-16">
@@ -262,10 +259,12 @@ function Home() {
         </div>
       </section>
 
-      <section className="container-page py-12 lg:py-16">
-        <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle model and the part category you need." />
-        <FindPartsWidget />
-      </section>
+      <LazySection minHeight="18rem">
+        <section className="container-page py-12 lg:py-16">
+          <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle model and the part category you need." />
+          <FindPartsWidget />
+        </section>
+      </LazySection>
 
       <section className="container-page pb-12 lg:pb-16">
         <div className="grid gap-6 rounded-3xl border border-border bg-ink px-6 py-10 text-background sm:px-10 lg:grid-cols-[1.4fr_1fr] lg:items-center">
@@ -286,27 +285,9 @@ function Home() {
         </div>
       </section>
 
-      <section className="container-page pb-16">
-        <SectionHeading title="Brands We Deal In" subtitle="Brands currently listed in our catalogue." />
-        {brands.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted-foreground">
-            Brand list is being updated. Contact us on WhatsApp to check the brands currently in stock.
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {brands.slice(0, 24).map((b) => (
-              <Link
-                key={b}
-                to="/shop"
-                search={{ brand: b }}
-                className="rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold shadow-[var(--shadow-card)] hover:border-primary"
-              >
-                {b}
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+      <LazySection minHeight="14rem">
+        <BrandsSection />
+      </LazySection>
     </div>
   );
 }

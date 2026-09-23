@@ -41,7 +41,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="container-page flex h-16 items-center gap-3">
         <Sheet open={menu} onOpenChange={setMenu}>
-          <SheetTrigger className="-ml-1 grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden" aria-label={t("nav.menu")}>
+          <SheetTrigger className="-ml-1 grid size-10 place-items-center rounded-lg hover:bg-muted lg:hidden" aria-label={t("nav.menu")}>
             <Menu className="size-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-[85vw] max-w-sm overflow-y-auto p-6">
@@ -98,7 +98,7 @@ export function Header() {
 
           <button
             onClick={() => setMobileSearch((v) => !v)}
-            className="grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
+            className="grid size-10 place-items-center rounded-lg hover:bg-muted lg:hidden"
             aria-label={t("nav.search")}
           >
             <Search className="size-5" />
@@ -119,7 +119,7 @@ export function Header() {
             <MessageCircle className="size-5" />
           </a>
           {siteMode === "full" && (
-            <Link to="/cart" className="relative grid size-9 place-items-center rounded-lg hover:bg-muted" aria-label={t("nav.cart")}>
+            <Link to="/cart" className="relative grid size-10 place-items-center rounded-lg hover:bg-muted sm:size-9" aria-label={t("nav.cart")}>
               <ShoppingCart className="size-5" />
               {cartCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
@@ -138,14 +138,14 @@ export function Header() {
       )}
 
       <nav className="border-t border-border bg-surface">
-        <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-2">
+        <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-1.5">
           {navCategories.map((c) => (
             <Link
               key={c.slug}
               to="/category/$slug"
               params={{ slug: c.slug }}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-              activeProps={{ className: "shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium bg-background text-foreground shadow-[var(--shadow-card)]" }}
+              className="inline-flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              activeProps={{ className: "inline-flex min-h-10 shrink-0 items-center rounded-full px-3.5 text-[13px] font-medium bg-background text-foreground shadow-[var(--shadow-card)]" }}
             >
               {c.name}
             </Link>
