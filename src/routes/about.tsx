@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Phone, Users, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/site/Empty";
-import { BUSINESS, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -12,9 +12,13 @@ export const Route = createFileRoute("/about")({
       { property: "og:title", content: "About Shaw Traders EV" },
       { property: "og:description", content: "EV spare parts supplier serving owners, mechanics, workshops and dealers in Bardhaman, West Bengal." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/about") },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: canonical("/about") }],
+    scripts: [breadcrumbLd([{ name: "About", path: "/about" }])],
   }),
+
   component: AboutPage,
 });
 

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { BUSINESS, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/bulk")({
   head: () => ({
@@ -13,9 +13,13 @@ export const Route = createFileRoute("/bulk")({
       { property: "og:title", content: "Bulk & Dealer Orders — Shaw Traders EV" },
       { property: "og:description", content: "Wholesale EV spare parts enquiries for workshops, dealers and fleets." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: canonical("/bulk") },
       { name: "twitter:card", content: "summary" },
     ],
+    links: [{ rel: "canonical", href: canonical("/bulk") }],
+    scripts: [breadcrumbLd([{ name: "Dealer & Bulk Orders", path: "/bulk" }])],
   }),
+
   component: BulkPage,
 });
 
