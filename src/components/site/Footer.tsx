@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Phone, Zap } from "lucide-react";
+import { MapPin, Phone } from "lucide-react";
 import { BUSINESS } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { shopSettingsQuery } from "@/lib/shop-settings";
