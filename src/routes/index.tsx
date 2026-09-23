@@ -129,6 +129,7 @@ function Home() {
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { to: "/shop", label: "Shop EV Spare Parts", blurb: "Batteries, chargers, motors, controllers and body parts." },
+            { to: "/scooters", label: "Electric Scooters", blurb: "Full specifications, on-road price and booking with a small token." },
             { to: "/categories", label: "Part Categories", blurb: "Browse all 14 categories of EV spares." },
             { to: "/find-parts", label: "Find Parts for Your EV", blurb: "Match parts to your scooter brand and model." },
             { to: "/bulk", label: "Dealer & Bulk Orders", blurb: "Wholesale supply for garages, dealers and fleets." },
