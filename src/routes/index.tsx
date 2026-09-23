@@ -12,7 +12,8 @@ import { OffersStrip } from "@/components/home/OffersStrip";
 import { ScooterStrip } from "@/components/home/ScooterStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
-import { facetsQuery, homeQuery } from "@/lib/queries";
+import { ScooterShowcase } from "@/components/home/ScooterShowcase";
+import { facetsQuery, homeQuery, vehiclesQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
@@ -92,6 +93,7 @@ const TRUST = [
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
   const { data: facets } = useQuery(facetsQuery());
+  const { data: scooters } = useQuery(vehiclesQuery());
   const brands = facets?.brands ?? [];
   const highlights = home.categories.slice(0, 6);
 
@@ -158,6 +160,23 @@ function Home() {
       <section className="container-page py-6 lg:py-8">
         <ScooterStrip />
       </section>
+
+      {(scooters?.length ?? 0) > 0 && (
+        <section className="container-page py-8 lg:py-12">
+          <SectionHeading
+            title="Electric Scooters"
+            subtitle="Full specifications, itemised on-road price and booking with a small token amount."
+            action={
+              <Button variant="ghost" asChild>
+                <Link to="/scooters">View all scooters</Link>
+              </Button>
+            }
+          />
+          <ScooterShowcase models={scooters ?? []} />
+        </section>
+      )}
+
+
 
       <section className="container-page py-8 lg:py-12">
         <SectionHeading

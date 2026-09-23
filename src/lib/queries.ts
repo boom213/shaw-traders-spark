@@ -11,6 +11,7 @@ import {
   vehicleTree,
   type ProductFilters,
 } from "@/lib/catalog.functions";
+import { listVehicles } from "@/lib/vehicles.functions";
 
 export const categoriesQuery = () =>
   queryOptions({ queryKey: ["categories"], queryFn: () => listCategories(), staleTime: 5 * 60_000 });
@@ -44,6 +45,9 @@ export const facetsQuery = () =>
 
 export const homeQuery = () =>
   queryOptions({ queryKey: ["home"], queryFn: () => homeFeed(), staleTime: 60_000 });
+
+export const vehiclesQuery = () =>
+  queryOptions({ queryKey: ["vehicles"], queryFn: () => listVehicles(), staleTime: 5 * 60_000 });
 
 export const productsByIdsQuery = (ids: string[]) =>
   queryOptions({
