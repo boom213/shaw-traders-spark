@@ -221,7 +221,7 @@
 
 /* Filter labels share the eyebrow look. */
 @utility filters-panel {
-  & label[data-slot="label"] {
+  & > div > label:first-child {
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.08em;
