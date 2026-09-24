@@ -33,6 +33,12 @@ export type MyTradeAccount = {
     contactPerson: string;
     phone: string;
     decisionNote: string | null;
+    businessType: string;
+    yearsInBusiness: string;
+    staffCount: string;
+    monthlyVolume: string;
+    brands: string[];
+    partCategories: string[];
     documents: Record<string, string | null>;
     createdAt: string;
   } | null;
@@ -78,6 +84,12 @@ export const myTradeAccount = createServerFn({ method: "POST" }).handler(async (
           contactPerson: String(app.contact_person),
           phone: String(app.phone),
           decisionNote: app.decision_note,
+          businessType: app.business_type ?? "",
+          yearsInBusiness: app.years_in_business ?? "",
+          staffCount: app.staff_count ?? "",
+          monthlyVolume: app.monthly_volume ?? "",
+          brands: app.brands ?? [],
+          partCategories: app.part_categories ?? [],
           documents: Object.fromEntries(DOC_FIELDS.map((d) => [d.field, (app as Record<string, string | null>)[d.field] ?? null])),
           createdAt: String(app.created_at),
         }
@@ -95,6 +107,12 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     contactPerson: string;
     phone: string;
     documents?: Partial<Record<TradeDocField, string>>;
+    businessType?: string;
+    yearsInBusiness?: string;
+    staffCount?: string;
+    monthlyVolume?: string;
+    brands?: string[];
+    partCategories?: string[];
   }) => ({
     businessName: text(data?.businessName, 160),
     gstin: text(data?.gstin, 20).toUpperCase(),
@@ -103,6 +121,12 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     contactPerson: text(data?.contactPerson, 120),
     phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
     documents: (data?.documents ?? {}) as Partial<Record<TradeDocField, string>>,
+    businessType: pickOne(data?.businessType, BUSINESS_TYPES),
+    yearsInBusiness: pickOne(data?.yearsInBusiness, YEARS_OPTIONS),
+    staffCount: pickOne(data?.staffCount, STAFF_OPTIONS),
+    monthlyVolume: pickOne(data?.monthlyVolume, VOLUME_OPTIONS),
+    brands: cleanList(data?.brands),
+    partCategories: cleanList(data?.partCategories),
   }))
   .handler(async ({ data }) => {
     const { tradeAccount } = await import("@/lib/trade.server");
@@ -111,6 +135,8 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     if (data.businessName.length < 3) return { ok: false as const, message: "Please give your business name." };
     if (data.shopAddress.length < 8) return { ok: false as const, message: "Please give your shop address." };
     if (data.phone.length !== 10) return { ok: false as const, message: "Enter a 10-digit mobile number." };
+    if (!data.businessType) return { ok: false as const, message: "Please choose your business type." };
+    if (!data.monthlyVolume) return { ok: false as const, message: "Please choose your monthly purchase estimate." };
 
     const docs: Record<string, string | null> = {};
     for (const d of DOC_FIELDS) {
@@ -136,6 +162,12 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
       shop_address: data.shopAddress,
       contact_person: data.contactPerson || data.businessName,
       phone: data.phone,
+      business_type: data.businessType,
+      years_in_business: data.yearsInBusiness || null,
+      staff_count: data.staffCount || null,
+      monthly_volume: data.monthlyVolume,
+      brands: data.brands,
+      part_categories: data.partCategories,
       status: "pending" as const,
       decision_note: null,
       ...docs,
@@ -159,7 +191,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     await supabaseAdmin.from("profiles").update({ customer_type: "trade" } as never).eq("id", account.userId);
 
     const { notifyTradeApplication } = await import("@/lib/trade-notify.server");
-    await notifyTradeApplication(account.userId, data.businessName);
+    await notifyTradeApplication(account.userId, data.businessName, { type: data.businessType, volume: data.monthlyVolume });
     return { ok: true as const, message: "Thank you — we will check your documents and call you." };
   });
 
