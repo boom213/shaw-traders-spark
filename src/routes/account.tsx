@@ -19,10 +19,10 @@ import { productsByIdsQuery } from "@/lib/queries";
 export const Route = createFileRoute("/account")({
   head: () => ({
     meta: [
-      { title: "Your Account — Shaw Traders EV" },
-      { name: "description", content: "Sign in to view your Shaw Traders EV orders, saved items, recently viewed EV parts and your contact details." },
-      { property: "og:title", content: "Your Account — Shaw Traders EV" },
-      { property: "og:description", content: "Your orders, saved EV parts and profile details." },
+      { title: "Sign In / Register — Shaw Traders EV" },
+      { name: "description", content: "Create your free account or sign in with your mobile number. Track orders, save parts and get WhatsApp updates from Shaw Traders EV." },
+      { property: "og:title", content: "Sign In / Register — Shaw Traders EV" },
+      { property: "og:description", content: "Create your free account or sign in with your mobile number. Track orders, save parts and get WhatsApp updates from Shaw Traders EV." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
