@@ -110,9 +110,44 @@ function TradePage() {
 
   if (!user) {
     return (
-      <div className="container-page py-16 text-center">
-        <SectionHeading as="h1" title="Trade & wholesale account" subtitle="Sign in with your mobile number first, then send your shop papers." />
-        <Button className="mt-4" asChild><Link to="/account">Sign in</Link></Button>
+      <div className="container-page space-y-6 py-10">
+        <SectionHeading
+          as="h1"
+          title="Trade & wholesale account"
+          subtitle="For mechanics, garages, e-rickshaw workshops and retailers who buy EV parts regularly. Not a one-off order? Use Bulk Order Enquiry instead."
+        />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <h2 className="font-display text-lg font-semibold">What you get</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              {["Trade prices on every part", "Bulk order pad — add many parts at once", "Credit terms once approved", "Your own downloadable price list", "Freight delivery by transport"].map((b) => (
+                <li key={b} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" />{b}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <h2 className="font-display text-lg font-semibold">What you'll need</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Business name, contact person, GSTIN (if any), PAN and shop address, plus these papers (photo or PDF):</p>
+            <ul className="mt-3 space-y-2 text-sm">
+              {DOC_FIELDS.map((d) => (
+                <li key={d.field} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />{d.label}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <h2 className="font-display text-lg font-semibold">How it works</h2>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm">
+              <li>Sign in with your mobile number (one-time code).</li>
+              <li>Fill in your shop details and attach the papers.</li>
+              <li>We check them and open your account — you'll hear from us on WhatsApp.</li>
+            </ol>
+            <p className="mt-3 text-xs text-muted-foreground">Your papers stay private — only our staff can open them.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button asChild><Link to="/account">Sign in to apply</Link></Button>
+              <Button variant="outline" asChild><Link to="/bulk">One-off bulk enquiry</Link></Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
