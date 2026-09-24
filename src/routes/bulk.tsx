@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VOLUME_OPTIONS } from "@/lib/trade-options";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/bulk")({
@@ -28,11 +30,13 @@ function BulkPage() {
   const [phone, setPhone] = useState("");
   const [business, setBusiness] = useState("");
   const [requirement, setRequirement] = useState("");
+  const [volume, setVolume] = useState("");
 
   const message = `Bulk enquiry — Shaw Traders EV
 Name: ${name}
 Phone: ${phone}
 Business: ${business}
+Monthly purchase estimate: ${volume || "-"}
 Requirement: ${requirement}`;
 
   return (
@@ -48,6 +52,12 @@ Requirement: ${requirement}`;
         <Input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
         <Input placeholder="Mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
         <Input placeholder="Business / workshop name" value={business} onChange={(e) => setBusiness(e.target.value)} />
+        <Select value={volume || undefined} onValueChange={setVolume}>
+          <SelectTrigger className="min-h-10" aria-label="Monthly purchase estimate"><SelectValue placeholder="Monthly purchase estimate" /></SelectTrigger>
+          <SelectContent>
+            {VOLUME_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Textarea
           rows={5}
           placeholder="Parts needed and quantity (e.g. 20 x 60V charger, 10 x rear shocker)"
