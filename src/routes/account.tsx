@@ -80,7 +80,7 @@ function AuthPanel() {
 
         <div className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm">
           <p className="text-muted-foreground">Garage, mechanic, or fleet dealer? Looking for trade pricing and bulk order terms?</p>
-          <Link to="/account" search={{ next: "/trade" }} className="mt-1.5 inline-flex min-h-10 items-center font-semibold text-foreground underline-offset-4 hover:underline">
+          <Link to="/trade" className="mt-1.5 inline-flex min-h-10 items-center font-semibold text-foreground underline-offset-4 hover:underline">
             Register for a Trade &amp; Wholesale Account →
           </Link>
         </div>
