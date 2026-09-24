@@ -27,7 +27,10 @@ export function PhoneOtpForm({ idPrefix = "auth", onVerified }: { idPrefix?: str
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({ phone });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const off = /phone.provider|unsupported phone/i.test(error.message);
+      return toast.error(off ? "Text-message sign-in isn't available right now. Please use Continue with Google or call us." : error.message);
+    }
     setStage("code");
     toast.success(`Code sent to ${phone}`);
   };
