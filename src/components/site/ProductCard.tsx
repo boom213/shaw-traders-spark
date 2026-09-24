@@ -94,7 +94,7 @@ export function ProductCard({ product }: { product: Product }) {
           product.model && <p className="line-clamp-1 text-xs text-muted-foreground">Fits: {product.model}</p>
         )}
 
-        <div className="mt-2 flex items-end justify-between gap-2">
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
           {product.price !== undefined ? (
             <div className="min-w-0">
               <span className="block font-display text-xl font-semibold tabular-nums leading-none tracking-tight">{formatINR(product.price)}</span>
@@ -103,7 +103,7 @@ export function ProductCard({ product }: { product: Product }) {
               )}
             </div>
           ) : (
-            <p className="text-sm font-semibold text-foreground">
+            <p className="basis-full text-sm font-semibold leading-snug text-foreground">
               {t("product.priceOnRequest")}
             </p>
           )}
