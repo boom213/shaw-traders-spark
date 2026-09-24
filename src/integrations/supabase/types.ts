@@ -1741,6 +1741,74 @@ export type Database = {
           },
         ]
       }
+      trade_doc_checks: {
+        Row: {
+          checked_at: string
+          extracted: Json
+          field: string
+          id: string
+          issues: string[]
+          path: string
+          profile_id: string
+          status: string
+        }
+        Insert: {
+          checked_at?: string
+          extracted?: Json
+          field: string
+          id?: string
+          issues?: string[]
+          path: string
+          profile_id: string
+          status: string
+        }
+        Update: {
+          checked_at?: string
+          extracted?: Json
+          field?: string
+          id?: string
+          issues?: string[]
+          path?: string
+          profile_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      trade_internal_notes: {
+        Row: {
+          application_id: string
+          author_id: string | null
+          author_name: string
+          body: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          application_id: string
+          author_id?: string | null
+          author_name?: string
+          body: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          application_id?: string
+          author_id?: string | null
+          author_name?: string
+          body?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_internal_notes_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "trade_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trade_ledger: {
         Row: {
           amount: number
