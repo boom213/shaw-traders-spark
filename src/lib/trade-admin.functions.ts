@@ -107,7 +107,7 @@ export const decideTradeApplication = createServerFn({ method: "POST" })
 type DecisionInput = { id: string; decision: "approved" | "rejected" | "more_info_needed"; note: string; tier: string };
 
 /** Shared approval logic, used by the queue and by manual account creation. */
-async function runTradeDecision(actor: { name: string } & Record<string, unknown>, data: DecisionInput) {
+async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext, data: DecisionInput) {
     const { logAudit } = await import("@/lib/staff.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -233,7 +233,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
     });
 
     if (data.submitAs === "approved") {
-      const res = await runTradeDecision(actor as never, { id: appId, decision: "approved", note, tier: data.tier });
+      const res = await runTradeDecision(actor, { id: appId, decision: "approved", note, tier: data.tier });
       if (!res.ok) return res;
     }
     return { ok: true as const, status: data.submitAs };
