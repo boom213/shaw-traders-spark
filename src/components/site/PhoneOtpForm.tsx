@@ -19,9 +19,11 @@ export function PhoneOtpForm({ idPrefix = "auth", onVerified }: { idPrefix?: str
   const [stage, setStage] = useState<"mobile" | "code">("mobile");
   const [busy, setBusy] = useState(false);
   const phone = toE164(mobile);
+  const validMobile = /^[6-9]\d{9}$/.test(mobile);
+  const mobileErr = mobile && mobile.length === 10 && !validMobile ? "Indian mobile numbers start with 6, 7, 8 or 9" : "";
 
   const sendCode = async () => {
-    if (phone.length < 12) return toast.error("Enter your 10-digit mobile number");
+    if (!validMobile) return toast.error("Enter a valid 10-digit mobile number");
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({ phone });
     setBusy(false);
@@ -48,11 +50,12 @@ export function PhoneOtpForm({ idPrefix = "auth", onVerified }: { idPrefix?: str
         <Label htmlFor={`${idPrefix}-mobile`}>Mobile number</Label>
         <div className="flex items-center gap-2">
           <span className="grid h-10 shrink-0 place-items-center rounded-xl border border-border bg-surface px-3 text-sm">+91</span>
-          <Input id={`${idPrefix}-mobile`} inputMode="numeric" autoComplete="tel" placeholder="98765 43210" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+          <Input id={`${idPrefix}-mobile`} inputMode="numeric" autoComplete="tel-national" maxLength={10} pattern="[6-9][0-9]{9}" aria-invalid={mobileErr ? true : undefined} value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))} />
         </div>
+        {mobileErr && <p role="alert" className="text-xs text-destructive">{mobileErr}</p>}
         <p className="text-xs text-muted-foreground">New number? We'll automatically create your account.</p>
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Sending…" : "Send code"}</Button>
+      <Button type="submit" className="w-full" disabled={busy || !validMobile}>{busy ? "Sending…" : "Send code"}</Button>
     </form>
   ) : (
     <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void verify(); }}>
