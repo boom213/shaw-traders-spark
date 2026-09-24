@@ -341,8 +341,9 @@ function Shop() {
             <SlidersHorizontal className="size-4" /> Filter & Sort
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl p-6">
-          <h3 className="mb-4 font-display text-lg font-bold">Filter & Sort</h3>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border" aria-hidden />
+          <h3 className="mb-4 font-display text-lg font-semibold">Filter & Sort</h3>
           <div className="mb-6 grid gap-2">
             <Label className="font-semibold">Sort by</Label>
             <Select value={search.sort ?? "relevance"} onValueChange={(v) => apply({ sort: v === "relevance" ? undefined : v })}>
