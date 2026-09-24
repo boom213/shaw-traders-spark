@@ -12,8 +12,8 @@ import { canonical, formatINR } from "@/lib/catalog";
 import { uploadTradeDoc } from "@/lib/trade-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
-import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
-import { BUSINESS_TYPES, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS } from "@/lib/trade-options";
+import { categoriesQuery } from "@/lib/queries";
+import { BUSINESS_TYPES, EV_BRANDS, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS } from "@/lib/trade-options";
 import {
   DOC_FIELDS,
   deleteTradeDocument,
@@ -56,9 +56,8 @@ function TradePage() {
   });
   const [brands, setBrands] = useState<string[]>([]);
   const [partCategories, setPartCategories] = useState<string[]>([]);
-  const { data: tree } = useQuery(vehicleTreeQuery());
   const { data: cats } = useQuery(categoriesQuery());
-  const brandOptions = [...(tree ?? []).map((b) => b.brand), "Other"];
+  const brandOptions = EV_BRANDS;
   const categoryOptions = (cats ?? []).map((c) => c.name);
   const [docs, setDocs] = useState<Partial<Record<TradeDocField, string>>>({});
   const [busy, setBusy] = useState<string | null>(null);

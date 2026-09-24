@@ -16,3 +16,9 @@ export const cleanList = (v: unknown) =>
     .map((s) => String(s ?? "").trim().slice(0, 60))
     .filter(Boolean)
     .slice(0, 30);
+
+export const EV_BRANDS = [
+  "Ola Electric", "Ather", "TVS iQube", "Bajaj Chetak", "Hero Vida", "Hero Electric", "Okinawa", "Ampere",
+  "Pure EV", "Revolt", "Simple Energy", "Okaya", "Kinetic Green", "Lectrix", "BGauss", "Yulu",
+  "E-rickshaw (any make)", "Other",
+];
