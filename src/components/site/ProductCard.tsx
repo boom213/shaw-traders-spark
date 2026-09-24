@@ -86,9 +86,6 @@ export function ProductCard({ product }: { product: Product }) {
         >
           {product.name}
         </Link>
-        {product.rating && product.reviewCount ? (
-          <ProductRating rating={product.rating} count={product.reviewCount} />
-        ) : null}
         {fits ? (
           <span className="inline-flex w-fit max-w-full items-center gap-1 truncate rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
             <CheckCircle2 className="size-3 shrink-0" /> <span className="truncate">Fits your {vehicle?.model}</span>
