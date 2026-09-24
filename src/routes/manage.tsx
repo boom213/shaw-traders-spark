@@ -31,6 +31,7 @@ const NAV = [
   { to: "/manage/about", label: "About Gallery", icon: Images, exact: false },
   { to: "/manage/catalogue", label: "Stock & Photos", icon: Boxes, exact: false },
   { to: "/manage/import", label: "Price List", icon: FileSpreadsheet, exact: false },
+  { to: "/manage/brand-catalogue", label: "ST Catalogue", icon: FileSpreadsheet, exact: false },
   { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
   { to: "/manage/scooters", label: "Scooters", icon: Bike, exact: false },
   { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false },
