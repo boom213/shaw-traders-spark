@@ -14,8 +14,8 @@ export function ProductCarousel({ items, label }: { items: Product[]; label: str
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="hidden lg:flex" aria-label={`Previous items in ${label}`} />
-      <CarouselNext className="hidden lg:flex" aria-label={`Next items in ${label}`} />
+      <CarouselPrevious className="left-2 hidden lg:flex" aria-label={`Previous items in ${label}`} />
+      <CarouselNext className="right-2 hidden lg:flex" aria-label={`Next items in ${label}`} />
     </Carousel>
   );
 }

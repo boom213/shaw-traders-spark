@@ -50,8 +50,8 @@ export function CategoryCarousel({ categories }: { categories?: Category[] }) {
           );
         })}
       </CarouselContent>
-      <CarouselPrevious className="hidden lg:flex" aria-label="Previous categories" />
-      <CarouselNext className="hidden lg:flex" aria-label="Next categories" />
+      <CarouselPrevious className="left-2 hidden lg:flex" aria-label="Previous categories" />
+      <CarouselNext className="right-2 hidden lg:flex" aria-label="Next categories" />
     </Carousel>
   );
 }
