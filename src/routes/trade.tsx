@@ -134,6 +134,10 @@ function TradePage() {
           title="Trade & wholesale account"
           subtitle="For mechanics, garages, e-rickshaw workshops and retailers who buy EV parts regularly. Not a one-off order? Use Bulk Order Enquiry instead."
         />
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+          <p className="flex-1 text-sm">Step 1: sign in with your mobile number. The application form opens right after.</p>
+          <Button size="lg" asChild><Link to="/account" search={{ next: "/trade" }}>Sign in &amp; open the form</Link></Button>
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <h2 className="font-display text-lg font-semibold">What you get</h2>
@@ -161,7 +165,7 @@ function TradePage() {
             </ol>
             <p className="mt-3 text-xs text-muted-foreground">Your papers stay private — only our staff can open them.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild><Link to="/account">Sign in to apply</Link></Button>
+              <Button asChild><Link to="/account" search={{ next: "/trade" }}>Sign in to apply</Link></Button>
               <Button variant="outline" asChild><Link to="/bulk">One-off bulk enquiry</Link></Button>
             </div>
           </div>
