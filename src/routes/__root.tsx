@@ -106,11 +106,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Shaw Traders EV — EV Parts & Accessories, Bud Bud" },
+      { title: "Shaw Traders EV — EV Parts, Batteries & Electric Scooters, Bud Bud" },
       {
         name: "description",
         content:
-          "EV spare parts, batteries, chargers, motors and controllers from Shaw Traders EV, Defence Colony, Bud Bud, Bardhaman.",
+          "Genuine EV spare parts, batteries, chargers and electric scooters in Bud Bud, Bardhaman. Order online or on WhatsApp, open a trade account, or contact us today.",
       },
       { name: "author", content: "Shaw Traders EV" },
       { name: "google-site-verification", content: "trvCjda-37PeHboaItlX_sikYg_NNxdrA_2eoj8-Zng" },
