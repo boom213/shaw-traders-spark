@@ -67,7 +67,12 @@ function AuthPanel() {
           Sign in with your mobile number to see your orders and saved parts. Need help? Call {BUSINESS.phone}.
         </p>
 
-        <div className="mt-6"><PhoneOtpForm idPrefix="account" /></div>
+        {/* TEMP: remove once Twilio SMS is confirmed working */}
+        <div className="mt-6 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-foreground">
+          Text-message sign-in is temporarily unavailable. Please use Continue with Google below, or call us at {BUSINESS.phone}.
+        </div>
+
+        <div className="mt-4"><PhoneOtpForm idPrefix="account" /></div>
 
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" />
