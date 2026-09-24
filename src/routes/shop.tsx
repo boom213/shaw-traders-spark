@@ -85,7 +85,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
   const models = facets?.models ?? [];
 
   return (
-    <div className="grid gap-6 text-sm">
+    <div className="filters-panel grid gap-5 text-sm">
       <div className="grid gap-2">
         <Label className="font-semibold">Category</Label>
         <Select value={search.category ?? "all"} onValueChange={(v) => apply({ category: v === "all" ? undefined : v })}>
@@ -252,8 +252,8 @@ function Shop() {
 
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         <aside className="hidden lg:block">
-          <div className="sticky top-32 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-            <h3 className="mb-4 font-display text-base font-bold">Filters</h3>
+          <div className="sticky top-32 border-r border-border pr-6">
+            <h3 className="eyebrow mb-5">Filters</h3>
             <Filters search={search} apply={apply} />
           </div>
         </aside>
@@ -341,8 +341,9 @@ function Shop() {
             <SlidersHorizontal className="size-4" /> Filter & Sort
           </Button>
         </SheetTrigger>
-        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl p-6">
-          <h3 className="mb-4 font-display text-lg font-bold">Filter & Sort</h3>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border" aria-hidden />
+          <h3 className="mb-4 font-display text-lg font-semibold">Filter & Sort</h3>
           <div className="mb-6 grid gap-2">
             <Label className="font-semibold">Sort by</Label>
             <Select value={search.sort ?? "relevance"} onValueChange={(v) => apply({ sort: v === "relevance" ? undefined : v })}>

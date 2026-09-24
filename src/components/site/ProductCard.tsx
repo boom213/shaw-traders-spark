@@ -49,17 +49,17 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <article className="card-lift group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+    <article className="card-lift group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
       <button
         onClick={() => toggleWishlist(product.id)}
         aria-label="Add to wishlist"
-        className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:text-sale sm:size-9"
+        className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-full bg-background/90 text-muted-foreground hover:text-sale"
       >
-        <Heart className={cn("size-4", wished && "fill-sale text-sale")} />
+        <Heart className={cn("size-4", wished && "fill-sale text-sale")} strokeWidth={1.75} />
       </button>
       {off > 0 && (
-        <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sale px-2 py-1 text-[11px] font-bold text-sale-foreground">
-          {off}% OFF
+        <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sale-foreground">
+          −{off}%
         </span>
       )}
 
@@ -71,47 +71,43 @@ export function ProductCard({ product }: { product: Product }) {
           decoding="async"
           width={480}
           height={480}
-          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
-
       </Link>
 
-      <div className="flex flex-1 flex-col gap-1.5 p-3.5">
+      <div className="flex flex-1 flex-col gap-1 p-3 sm:p-3.5">
         {product.brand && (
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">{product.brand}</span>
+          <span className="eyebrow truncate">{product.brand}</span>
         )}
         <Link
           to="/product/$slug"
           params={{ slug: product.slug }}
-          className="line-clamp-2 text-sm font-semibold leading-snug hover:text-primary"
+          className="line-clamp-2 min-h-[2.5rem] text-sm font-medium leading-5 hover:text-primary"
         >
           {product.name}
         </Link>
         {fits ? (
-          <span className="inline-flex w-fit items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
-            <CheckCircle2 className="size-3" /> Fits your {vehicle?.model}
+          <span className="inline-flex w-fit max-w-full items-center gap-1 truncate rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
+            <CheckCircle2 className="size-3 shrink-0" /> <span className="truncate">Fits your {vehicle?.model}</span>
           </span>
         ) : (
           product.model && <p className="line-clamp-1 text-xs text-muted-foreground">Fits: {product.model}</p>
         )}
 
-        <div className="mt-1">
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
           {product.price !== undefined ? (
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-display text-lg font-bold">{formatINR(product.price)}</span>
+            <div className="min-w-0">
+              <span className="block font-display text-xl font-semibold tabular-nums leading-none tracking-tight">{formatINR(product.price)}</span>
               {product.mrp && product.mrp > product.price && (
-                <span className="text-xs text-muted-foreground line-through">{formatINR(product.mrp)}</span>
+                <span className="text-xs tabular-nums text-muted-foreground line-through">{formatINR(product.mrp)}</span>
               )}
             </div>
           ) : (
-            <p className="text-sm font-semibold text-foreground">
+            <p className="basis-full text-sm font-semibold leading-snug text-foreground">
               {t("product.priceOnRequest")}
             </p>
           )}
-        </div>
-
-        <div className="flex items-center justify-end gap-2">
-          <span className={cn("text-xs font-medium", inStock ? "text-primary" : "text-destructive")}>
+          <span className={cn("shrink-0 text-[11px] font-medium", inStock ? "text-muted-foreground" : "text-destructive")}>
             {inStock ? (product.stock <= 3 ? `Only ${product.stock} left` : t("product.inStock")) : t("product.outOfStock")}
           </span>
         </div>

@@ -37,8 +37,8 @@ export function OffersStrip({ offers }: { offers: OfferCoupon[] }) {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="hidden lg:flex" aria-label="Previous offers" />
-      <CarouselNext className="hidden lg:flex" aria-label="Next offers" />
+      <CarouselPrevious className="left-2 hidden lg:flex" aria-label="Previous offers" />
+      <CarouselNext className="right-2 hidden lg:flex" aria-label="Next offers" />
     </Carousel>
   );
 }

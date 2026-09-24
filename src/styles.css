@@ -67,12 +67,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --shadow-card: 0 1px 2px oklch(0.2 0.03 160 / 0.05), 0 8px 24px oklch(0.2 0.03 160 / 0.06);
-  --shadow-lift: 0 6px 12px oklch(0.2 0.03 160 / 0.08), 0 18px 40px oklch(0.2 0.03 160 / 0.12);
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 160 / 0.04);
+  --shadow-lift: 0 1px 2px oklch(0.2 0.02 160 / 0.05), 0 12px 32px -12px oklch(0.2 0.02 160 / 0.18);
 }
 
 :root {
-  --radius: 0.875rem;
+  --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.19 0.02 160);
   --ink: oklch(0.16 0.02 165);
@@ -86,7 +86,7 @@
   --secondary: oklch(0.96 0.01 160);
   --secondary-foreground: oklch(0.22 0.02 165);
   --muted: oklch(0.965 0.008 160);
-  --muted-foreground: oklch(0.52 0.02 165);
+  --muted-foreground: oklch(0.48 0.012 165);
   --accent: oklch(0.94 0.05 160);
   --accent-foreground: oklch(0.24 0.05 160);
   --destructive: oklch(0.58 0.22 27);
@@ -95,7 +95,7 @@
   --sale-foreground: oklch(0.99 0 0);
   --whatsapp: oklch(0.68 0.16 152);
   --whatsapp-foreground: oklch(0.14 0.02 165);
-  --border: oklch(0.92 0.008 160);
+  --border: oklch(0.91 0.004 160);
   --input: oklch(0.92 0.008 160);
   --ring: oklch(0.66 0.17 155);
   --chart-1: oklch(0.66 0.17 155);
@@ -196,9 +196,9 @@
     box-shadow 180ms ease,
     border-color 180ms ease;
   &:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lift);
-    border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+    border-color: color-mix(in oklch, var(--foreground) 22%, transparent);
   }
 }
 
@@ -206,5 +206,26 @@
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* Small uppercase label used for brands, section eyebrows and filter headings. */
+@utility eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+/* Filter labels share the eyebrow look. */
+@utility filters-panel {
+  & > div > label:first-child {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
   }
 }

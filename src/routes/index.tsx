@@ -101,35 +101,45 @@ function Home() {
 
   return (
     <div>
-      <section className="border-b border-border bg-surface">
-        <div className="container-page py-5 lg:py-10">
-          <div className="mb-4 lg:mb-6">
-            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-              Shaw Traders EV — Everything Your EV Needs
-            </h1>
-            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">
-              Spare parts, batteries, chargers and electric scooters for every major EV brand — one shop in Bud Bud, Bardhaman.
-            </p>
+      <section className="border-b border-border">
+        <div className="container-page py-6 lg:py-10">
+          <div className="mb-5 grid gap-4 lg:mb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="min-w-0">
+              <p className="eyebrow">Bud Bud · Bardhaman</p>
+              <h1 className="mt-2 font-display text-[1.625rem] font-semibold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
+                Shaw Traders EV — Everything Your EV Needs
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+                Spare parts, batteries, chargers and electric scooters for every major EV brand.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex">
+              <Button size="lg" asChild>
+                <Link to="/find-parts">Find Your EV</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link to="/shop">Shop All Parts</Link>
+              </Button>
+            </div>
           </div>
           <HeroCarousel slides={home.heroSlides} />
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button variant="outline" asChild>
-              <a href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)} target="_blank" rel="noreferrer">
-                <MessageCircle className="size-4" /> WhatsApp Us
-              </a>
-            </Button>
-            <span className="text-xs font-semibold text-primary">Bud Bud, Bardhaman · West Bengal</span>
-          </div>
-
-          <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <ul className="mt-5 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-4 sm:grid-cols-4">
             {TRUST.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium">
-                <Icon className="size-4 shrink-0 text-primary" />
-                {label}
+              <li key={label} className="flex min-w-0 items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Icon className="size-4 shrink-0 text-foreground" strokeWidth={1.5} />
+                <span className="truncate">{label}</span>
               </li>
             ))}
           </ul>
+          <a
+            href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-foreground underline-offset-4 hover:underline"
+          >
+            <MessageCircle className="size-4" strokeWidth={1.5} /> Need help? WhatsApp us
+          </a>
         </div>
       </section>
 

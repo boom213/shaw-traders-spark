@@ -71,7 +71,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             aria-label={`Slide ${i + 1} of ${list.length}`}
             aria-hidden={i !== current}
           >
-            <div className="relative aspect-[16/9] max-h-56 w-full overflow-hidden rounded-3xl border border-border bg-surface sm:aspect-[16/7] sm:max-h-none">
+            <div className="relative aspect-[2/1] max-h-44 w-full overflow-hidden rounded-2xl bg-ink sm:aspect-[21/7] sm:max-h-72 lg:max-h-80">
               <img
                 src={heroImageFor(slide)}
                 alt={slide.heading}
@@ -82,15 +82,15 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 decoding={i === 0 ? "sync" : "async"}
                 className="absolute inset-0 size-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-background/10" />
-              <div className="relative flex size-full flex-col justify-center gap-2 p-5 sm:gap-3 sm:p-10 lg:p-14">
-                <h2 className="line-clamp-2 max-w-xl font-display text-xl font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+              <div className="relative flex size-full flex-col justify-center gap-1.5 p-4 sm:gap-2 sm:p-8 lg:p-12">
+                <h2 className="line-clamp-2 max-w-md font-display text-lg font-semibold leading-[1.1] tracking-tight sm:text-3xl lg:text-4xl">
                   {slide.heading}
                 </h2>
-                {slide.subline && <p className="hidden max-w-md text-sm text-muted-foreground sm:block sm:text-base">{slide.subline}</p>}
+                {slide.subline && <p className="hidden max-w-sm line-clamp-2 text-sm text-muted-foreground sm:block">{slide.subline}</p>}
                 {slide.buttonLabel && slide.buttonHref && (
-                  <div className="mt-2">
-                    <Button size="lg" asChild tabIndex={i === current ? 0 : -1}>
+                  <div className="mt-1 sm:mt-2">
+                    <Button size="sm" className="h-10 px-4" asChild tabIndex={i === current ? 0 : -1}>
                       {slide.buttonHref.startsWith("http") ? (
                         <a href={slide.buttonHref} target="_blank" rel="noreferrer">
                           {slide.buttonLabel}

@@ -67,10 +67,10 @@ export function CategoryGrid({ limit }: { limit?: number }) {
             key={c.slug}
             to="/category/$slug"
             params={{ slug: c.slug }}
-            className="card-lift group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+            className="card-lift group flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
           >
-            <span className="grid size-12 place-items-center rounded-xl bg-accent text-accent-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-              <Icon className="size-6" />
+            <span className="grid size-11 place-items-center rounded-xl border border-border text-foreground transition-colors group-hover:border-primary group-hover:text-primary">
+              <Icon className="size-5" strokeWidth={1.5} />
             </span>
             <span className="mt-auto">
               <span className="block text-sm font-semibold leading-snug">{c.name}</span>
