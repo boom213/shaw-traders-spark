@@ -99,8 +99,16 @@ export const decideTradeApplication = createServerFn({ method: "POST" })
     tier: TIERS.includes(String(data?.tier) as never) ? String(data?.tier) : "trade",
   }))
   .handler(async ({ data }) => {
-    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const { requireStaff } = await import("@/lib/staff.server");
     const actor = await requireStaff();
+    return runTradeDecision(actor, data);
+  });
+
+type DecisionInput = { id: string; decision: "approved" | "rejected" | "more_info_needed"; note: string; tier: string };
+
+/** Shared approval logic, used by the queue and by manual account creation. */
+async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext, data: DecisionInput) {
+    const { logAudit } = await import("@/lib/staff.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: app } = await supabaseAdmin
@@ -141,6 +149,94 @@ export const decideTradeApplication = createServerFn({ method: "POST" })
     const { notifyTradeDecision } = await import("@/lib/trade-notify.server");
     await notifyTradeDecision(String(app.profile_id), data.decision, data.note);
     return { ok: true as const };
+}
+
+/** Staff open a trade account for a dealer who came in by phone or WhatsApp. */
+export const createTradeAccountManually = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    businessName: string; contactPerson?: string; phone: string; gstin?: string; pan?: string; shopAddress: string;
+    docsVerifiedInPerson?: boolean; submitAs?: "pending" | "approved"; tier?: string;
+  }) => ({
+    businessName: text(data?.businessName, 120),
+    contactPerson: text(data?.contactPerson, 80),
+    phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
+    gstin: text(data?.gstin, 20).toUpperCase(),
+    pan: text(data?.pan, 12).toUpperCase(),
+    shopAddress: text(data?.shopAddress, 400),
+    docsVerifiedInPerson: data?.docsVerifiedInPerson === true,
+    submitAs: data?.submitAs === "approved" ? ("approved" as const) : ("pending" as const),
+    tier: TIERS.includes(String(data?.tier) as never) ? String(data?.tier) : "trade",
+  }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff();
+    const { taxIdError } = await import("@/lib/trade-options");
+    if (data.businessName.length < 3) return { ok: false as const, error: "Please give the business name." };
+    if (data.phone.length !== 10) return { ok: false as const, error: "Enter a 10-digit mobile number." };
+    if (data.shopAddress.length < 8) return { ok: false as const, error: "Please give the shop address." };
+    const taxErr = taxIdError(data.gstin, data.pan);
+    if (taxErr) return { ok: false as const, error: taxErr };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const e164 = `+91${data.phone}`;
+
+    // Find an existing sign-in for this number, or create a pre-verified one.
+    let userId: string | null = null;
+    const { data: prof } = await supabaseAdmin.from("profiles").select("id").in("phone", [e164, data.phone, `91${data.phone}`]).limit(1).maybeSingle();
+    if (prof) userId = String(prof.id);
+    if (!userId) {
+      const { data: created, error } = await supabaseAdmin.auth.admin.createUser({ phone: e164, phone_confirm: true });
+      if (created?.user) userId = created.user.id;
+      else {
+        for (let page = 1; page <= 20 && !userId; page++) {
+          const { data: list } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 });
+          const hit = list?.users.find((u) => String(u.phone ?? "").replace(/\D/g, "").endsWith(data.phone));
+          if (hit) userId = hit.id;
+          if (!list || list.users.length < 200) break;
+        }
+        if (!userId) return { ok: false as const, error: error?.message ?? "Could not create the account." };
+      }
+    }
+
+    await supabaseAdmin.from("profiles").upsert(
+      { id: userId, phone: e164, full_name: data.contactPerson || null, customer_type: "trade" } as never,
+      { onConflict: "id" },
+    );
+
+    const { data: existing } = await supabaseAdmin.from("trade_applications").select("id, status").eq("profile_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (existing?.status === "approved") return { ok: false as const, error: "This number already has an approved trade account." };
+
+    const note = data.docsVerifiedInPerson ? `Documents verified in person by ${actor.name}` : `Created by ${actor.name}`;
+    const row = {
+      profile_id: userId,
+      business_name: data.businessName,
+      contact_person: data.contactPerson || data.businessName,
+      phone: data.phone,
+      gstin: data.gstin || null,
+      pan: data.pan || null,
+      shop_address: data.shopAddress,
+      status: "pending" as const,
+      decision_note: note,
+    };
+    let appId: string;
+    if (existing) {
+      await supabaseAdmin.from("trade_applications").update(row as never).eq("id", existing.id);
+      appId = String(existing.id);
+    } else {
+      const { data: ins, error } = await supabaseAdmin.from("trade_applications").insert(row as never).select("id").single();
+      if (error || !ins) return { ok: false as const, error: "Could not save the application." };
+      appId = String(ins.id);
+    }
+
+    await logAudit(supabaseAdmin as never, actor, "trade.application.manual_create", "trade_applications", appId, {
+      business: data.businessName, docsVerifiedInPerson: data.docsVerifiedInPerson, submitAs: data.submitAs,
+    });
+
+    if (data.submitAs === "approved") {
+      const res = await runTradeDecision(actor, { id: appId, decision: "approved", note, tier: data.tier });
+      if (!res.ok) return res;
+    }
+    return { ok: true as const, status: data.submitAs };
   });
 
 /** Credit limit, payment terms and tier for one trade account. */

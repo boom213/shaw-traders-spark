@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
@@ -43,44 +43,8 @@ function AccountPage() {
   return user ? <Dashboard /> : <AuthPanel />;
 }
 
-const toE164 = (raw: string) => {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10) return `+91${digits}`;
-  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
-  return digits ? `+${digits}` : "";
-};
-
 function AuthPanel() {
-  const [mobile, setMobile] = useState("");
-  const [code, setCode] = useState("");
-  const [stage, setStage] = useState<"mobile" | "code">("mobile");
   const [busy, setBusy] = useState(false);
-
-  const phone = toE164(mobile);
-
-  const sendCode = async () => {
-    if (phone.length < 12) return toast.error("Enter your 10-digit mobile number");
-    setBusy(true);
-    const { error } = await supabase.auth.signInWithOtp({ phone });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setStage("code");
-    toast.success(`Code sent to ${phone}`);
-  };
-
-  const verify = async () => {
-    const token = code.replace(/\D/g, "");
-    if (token.length !== 6) return toast.error("Enter the 6-digit code");
-    setBusy(true);
-    const { data, error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    const user = data.user;
-    if (user) {
-      await supabase.from("profiles").upsert({ id: user.id, phone }, { onConflict: "id" });
-    }
-    toast.success("You're signed in");
-  };
 
   const google = async () => {
     setBusy(true);
@@ -103,68 +67,7 @@ function AuthPanel() {
           Sign in with your mobile number to see your orders and saved parts. Need help? Call {BUSINESS.phone}.
         </p>
 
-        {stage === "mobile" ? (
-          <form
-            className="mt-6 space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void sendCode();
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="mobile">Mobile number</Label>
-              <div className="flex items-center gap-2">
-                <span className="grid h-10 shrink-0 place-items-center rounded-xl border border-border bg-surface px-3 text-sm">+91</span>
-                <Input
-                  id="mobile"
-                  inputMode="numeric"
-                  autoComplete="tel"
-                  placeholder="98765 43210"
-                  value={mobile}
-                  onChange={(e) => setMobile(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">New number? We'll automatically create your account.</p>
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Sending…" : "Send code"}
-            </Button>
-          </form>
-        ) : (
-          <form
-            className="mt-6 space-y-3"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void verify();
-            }}
-          >
-            <div className="space-y-1.5">
-              <Label htmlFor="otp">6-digit code sent to {phone}</Label>
-              <Input
-                id="otp"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                placeholder="123456"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Checking…" : "Verify and continue"}
-            </Button>
-            <button
-              type="button"
-              className="w-full text-sm text-muted-foreground underline"
-              onClick={() => {
-                setStage("mobile");
-                setCode("");
-              }}
-            >
-              Change number
-            </button>
-          </form>
-        )}
+        <div className="mt-6"><PhoneOtpForm idPrefix="account" /></div>
 
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" />

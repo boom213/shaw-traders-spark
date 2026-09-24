@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { BUSINESS_TYPES, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS, cleanList, pickOne } from "@/lib/trade-options";
+import { BUSINESS_TYPES, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS, cleanList, pickOne, taxIdError } from "@/lib/trade-options";
 
 export type TradeDocField =
   | "gst_certificate_path"
@@ -138,6 +138,8 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     if (data.phone.length !== 10) return { ok: false as const, message: "Enter a 10-digit mobile number." };
     if (!data.businessType) return { ok: false as const, message: "Please choose your business type." };
     if (!data.monthlyVolume) return { ok: false as const, message: "Please choose your monthly purchase estimate." };
+    const taxErr = taxIdError(data.gstin, data.pan);
+    if (taxErr) return { ok: false as const, message: taxErr };
 
     const docs: Record<string, string | null> = {};
     for (const d of DOC_FIELDS) {
