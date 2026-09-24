@@ -55,8 +55,8 @@ export function ScooterShowcase({ models }: { models: VehicleModel[] }) {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious className="hidden lg:flex" aria-label="Previous scooter" />
-      <CarouselNext className="hidden lg:flex" aria-label="Next scooter" />
+      <CarouselPrevious className="left-2 hidden lg:flex" aria-label="Previous scooter" />
+      <CarouselNext className="right-2 hidden lg:flex" aria-label="Next scooter" />
     </Carousel>
   );
 }
