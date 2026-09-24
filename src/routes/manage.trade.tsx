@@ -18,6 +18,7 @@ import {
   outstandingReport,
   setTradeTerms,
 } from "@/lib/trade-admin.functions";
+import { addTradeInternalNote, recheckApplication } from "@/lib/trade-ai.functions";
 
 export const Route = createFileRoute("/manage/trade")({ component: TradeAdmin });
 
@@ -177,7 +178,12 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
     <article className="space-y-3 rounded-2xl border border-border bg-card p-4">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="font-semibold">{app.businessName}</h3>
+          <h3 className="font-semibold">
+            {app.businessName}
+            {app.checks.some((c) => c.status === "unclear" || c.status === "mismatch") && (
+              <span className="ml-2 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">Has AI flags</span>
+            )}
+          </h3>
           <p className="text-sm text-muted-foreground">
             {app.contactPerson} · {app.phone} · {app.status}
           </p>
@@ -220,6 +226,9 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
           ),
         )}
       </div>
+
+      <AiPanel app={app} onDone={onDone} />
+      <NotesPanel app={app} onDone={onDone} />
 
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-sm">
@@ -382,5 +391,73 @@ function ManualTradeAccount({ onDone }: { onDone: () => Promise<void> }) {
         <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
     </section>
+  );
+}
+
+const FIELD_LABEL: Record<string, string> = {
+  gst_certificate_path: "GST certificate", shop_photo_path: "Shop photo", address_proof_path: "Proof of address",
+  pan_card_path: "PAN card", trade_licence_path: "Trade licence / Udyam",
+};
+
+function AiPanel({ app, onDone }: { app: App; onDone: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const missing = app.documents.filter((d) => !d.url && !d.label.includes("optional")).map((d) => d.label);
+  return (
+    <div className="space-y-2 rounded-xl border border-border bg-surface p-3">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold">AI check</h4>
+        <Button size="sm" variant="outline" disabled={busy} onClick={async () => {
+          setBusy(true);
+          try { await recheckApplication({ data: { id: app.id } }); await onDone(); toast.success("Papers re-checked"); }
+          catch { toast.error("AI check unavailable right now"); }
+          setBusy(false);
+        }}>
+          {busy ? <Loader2 className="size-4 animate-spin" /> : null} Re-run check
+        </Button>
+      </div>
+      {missing.length > 0 && <p className="text-xs text-destructive">Missing: {missing.join(", ")}</p>}
+      {app.checks.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No AI reading yet.</p>
+      ) : (
+        app.checks.map((c) => (
+          <div key={c.field} className="text-xs">
+            <p>
+              <span className="font-semibold">{FIELD_LABEL[c.field] ?? c.field}:</span>{" "}
+              <span className={c.status === "ok" ? "text-primary" : c.status === "error" ? "text-muted-foreground" : "text-destructive"}>
+                {{ ok: "Looks good", unclear: "Unclear", mismatch: "Doesn't match", error: "Couldn't check" }[c.status]}
+              </span>
+            </p>
+            {Object.keys(c.extracted).length > 0 && (
+              <p className="text-muted-foreground">{Object.entries(c.extracted).map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`).join(" · ")}</p>
+            )}
+            {c.issues.map((i) => <p key={i} className="text-destructive">{i}</p>)}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+function NotesPanel({ app, onDone }: { app: App; onDone: () => Promise<void> }) {
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="space-y-2 rounded-xl border border-dashed border-border p-3">
+      <h4 className="text-sm font-semibold">Internal notes <span className="font-normal text-muted-foreground">(staff only)</span></h4>
+      {app.notes.map((n) => (
+        <p key={n.id} className="text-xs"><span className="font-semibold">{n.author || "Staff"}</span>{" "}
+          <span className="text-muted-foreground">{new Date(n.createdAt).toLocaleString("en-IN")}</span><br />{n.body}</p>
+      ))}
+      <div className="flex gap-2">
+        <Input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a note for the team" aria-label="Internal note" />
+        <Button size="sm" variant="outline" disabled={busy || !body.trim()} onClick={async () => {
+          setBusy(true);
+          const res = await addTradeInternalNote({ data: { id: app.id, body } });
+          setBusy(false);
+          if (!res.ok) return toast.error("Could not save the note");
+          setBody(""); await onDone();
+        }}>Add</Button>
+      </div>
+    </div>
   );
 }

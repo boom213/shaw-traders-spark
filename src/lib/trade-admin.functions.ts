@@ -25,6 +25,8 @@ export type TradeApplicationRow = {
   paymentTermsDays: number;
   balance: number;
   overdue: boolean;
+  checks: import("@/lib/trade-ai.server").DocCheck[];
+  notes: { id: string; author: string; body: string; createdAt: string }[];
 };
 
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -47,6 +49,11 @@ export const listTradeApplications = createServerFn({ method: "POST" })
       .limit(100);
     if (data.status !== "all") query = query.eq("status", data.status as never);
     const { data: rows } = await query;
+    const ids = (rows ?? []).map((r) => String(r.id));
+    const pids = (rows ?? []).map((r) => String(r.profile_id));
+    const { toCheck } = await import("@/lib/trade-ai.functions");
+    const { data: checkRows } = pids.length ? await supabaseAdmin.from("trade_doc_checks" as never).select("*").in("profile_id", pids) : { data: [] };
+    const { data: noteRows } = ids.length ? await supabaseAdmin.from("trade_internal_notes" as never).select("*").in("application_id", ids).order("created_at") : { data: [] };
 
     return Promise.all(
       (rows ?? []).map(async (r) => {
@@ -83,6 +90,12 @@ export const listTradeApplications = createServerFn({ method: "POST" })
           paymentTermsDays: Number(profile?.payment_terms_days ?? 0),
           balance: credit.balance,
           overdue: credit.overdue,
+          checks: ((checkRows ?? []) as Record<string, unknown>[])
+            .filter((c) => c["profile_id"] === r.profile_id && (r as unknown as Record<string, unknown>)[String(c["field"])] === c["path"])
+            .map(toCheck),
+          notes: ((noteRows ?? []) as Record<string, unknown>[])
+            .filter((n) => n["application_id"] === r.id)
+            .map((n) => ({ id: String(n["id"]), author: String(n["author_name"] ?? ""), body: String(n["body"]), createdAt: String(n["created_at"]) })),
         };
       }),
     );
