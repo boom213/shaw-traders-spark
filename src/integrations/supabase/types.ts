@@ -1649,7 +1649,9 @@ export type Database = {
       trade_applications: {
         Row: {
           address_proof_path: string | null
+          brands: string[]
           business_name: string
+          business_type: string | null
           contact_person: string
           created_at: string
           decided_at: string | null
@@ -1657,21 +1659,27 @@ export type Database = {
           gst_certificate_path: string | null
           gstin: string | null
           id: string
+          monthly_volume: string | null
           pan: string | null
           pan_card_path: string | null
+          part_categories: string[]
           phone: string
           profile_id: string
           requested_tier: Database["public"]["Enums"]["price_tier"]
           reviewer: string | null
           shop_address: string
           shop_photo_path: string | null
+          staff_count: string | null
           status: Database["public"]["Enums"]["trade_application_status"]
           trade_licence_path: string | null
           updated_at: string
+          years_in_business: string | null
         }
         Insert: {
           address_proof_path?: string | null
+          brands?: string[]
           business_name: string
+          business_type?: string | null
           contact_person: string
           created_at?: string
           decided_at?: string | null
@@ -1679,21 +1687,27 @@ export type Database = {
           gst_certificate_path?: string | null
           gstin?: string | null
           id?: string
+          monthly_volume?: string | null
           pan?: string | null
           pan_card_path?: string | null
+          part_categories?: string[]
           phone: string
           profile_id: string
           requested_tier?: Database["public"]["Enums"]["price_tier"]
           reviewer?: string | null
           shop_address: string
           shop_photo_path?: string | null
+          staff_count?: string | null
           status?: Database["public"]["Enums"]["trade_application_status"]
           trade_licence_path?: string | null
           updated_at?: string
+          years_in_business?: string | null
         }
         Update: {
           address_proof_path?: string | null
+          brands?: string[]
           business_name?: string
+          business_type?: string | null
           contact_person?: string
           created_at?: string
           decided_at?: string | null
@@ -1701,17 +1715,21 @@ export type Database = {
           gst_certificate_path?: string | null
           gstin?: string | null
           id?: string
+          monthly_volume?: string | null
           pan?: string | null
           pan_card_path?: string | null
+          part_categories?: string[]
           phone?: string
           profile_id?: string
           requested_tier?: Database["public"]["Enums"]["price_tier"]
           reviewer?: string | null
           shop_address?: string
           shop_photo_path?: string | null
+          staff_count?: string | null
           status?: Database["public"]["Enums"]["trade_application_status"]
           trade_licence_path?: string | null
           updated_at?: string
+          years_in_business?: string | null
         }
         Relationships: [
           {

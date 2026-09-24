@@ -162,6 +162,13 @@
       "when": 1790153301872,
       "tag": "0022_about_gallery_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790265989375,
+      "tag": "0023_trade_application_business_details",
+      "breakpoints": true
     }
   ]
 }
