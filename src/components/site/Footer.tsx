@@ -58,8 +58,8 @@ export function Footer() {
             <li><Link to="/service" className="hover:text-foreground">Scooter Service & History</Link></li>
             <li><Link to="/find-parts" className="hover:text-foreground">Find Parts for Your EV</Link></li>
             <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
-            <li><Link to="/bulk" className="hover:text-foreground">Dealer & Bulk Orders</Link></li>
-            <li><Link to="/trade" className="hover:text-foreground">Trade / Wholesale Account</Link></li>
+            <li><Link to="/bulk" className="hover:text-foreground">Bulk Order Enquiry (one-off quote)</Link></li>
+            <li><Link to="/trade" className="hover:text-foreground">Trade / Wholesale Account (trade prices &amp; credit)</Link></li>
           </ul>
         </div>
 

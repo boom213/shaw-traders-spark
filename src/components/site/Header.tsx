@@ -57,9 +57,10 @@ export function Header() {
                 { to: "/service", label: "Scooter Service" },
                 { to: "/offers", label: t("nav.offers") },
                 { to: "/find-parts", label: t("nav.findParts") },
-                { to: "/bulk", label: t("nav.bulk") },
+                { to: "/bulk", label: "Bulk Order Enquiry (one-off)" },
+                { to: "/trade", label: "Trade / Wholesale Account (mechanics & dealers)" },
                 { to: "/track", label: t("nav.track") },
-                { to: "/account", label: t("nav.account") },
+                { to: "/account", label: "My Account / Sign in" },
                 { to: "/about", label: t("nav.about") },
                 { to: "/contact", label: t("nav.contact") },
               ].map((l) => (

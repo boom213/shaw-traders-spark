@@ -71,7 +71,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             aria-label={`Slide ${i + 1} of ${list.length}`}
             aria-hidden={i !== current}
           >
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-surface sm:aspect-[16/7]">
+            <div className="relative aspect-[16/9] max-h-56 w-full overflow-hidden rounded-3xl border border-border bg-surface sm:aspect-[16/7] sm:max-h-none">
               <img
                 src={heroImageFor(slide)}
                 alt={slide.heading}

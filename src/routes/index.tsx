@@ -10,7 +10,6 @@ import { HeroCarousel, heroImageFor } from "@/components/home/HeroCarousel";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { OffersStrip } from "@/components/home/OffersStrip";
-import { ScooterStrip } from "@/components/home/ScooterStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { ScooterSection } from "@/components/home/ScooterSection";
@@ -99,19 +98,23 @@ const TRUST = [
 
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
-  const highlights = home.categories.slice(0, 6);
 
   return (
     <div>
       <section className="border-b border-border bg-surface">
-        <div className="container-page py-6 lg:py-10">
-          <h1 className="sr-only">
-            Shaw Traders EV — EV parts, batteries, chargers and electric scooters in Bud Bud, Bardhaman
-          </h1>
+        <div className="container-page py-5 lg:py-10">
+          <div className="mb-4 lg:mb-6">
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+              Shaw Traders EV — Everything Your EV Needs
+            </h1>
+            <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground sm:text-base">
+              Spare parts, batteries, chargers and electric scooters for every major EV brand — one shop in Bud Bud, Bardhaman.
+            </p>
+          </div>
           <HeroCarousel slides={home.heroSlides} />
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button size="lg" variant="outline" asChild>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button variant="outline" asChild>
               <a href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)} target="_blank" rel="noreferrer">
                 <MessageCircle className="size-4" /> WhatsApp Us
               </a>
@@ -119,9 +122,9 @@ function Home() {
             <span className="text-xs font-semibold text-primary">Bud Bud, Bardhaman · West Bengal</span>
           </div>
 
-          <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             {TRUST.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-xs font-medium">
+              <li key={label} className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-medium">
                 <Icon className="size-4 shrink-0 text-primary" />
                 {label}
               </li>
@@ -130,30 +133,18 @@ function Home() {
         </div>
       </section>
 
-      <nav aria-label="Main sections" className="container-page py-8">
-        <h2 className="font-display text-lg font-bold">Explore Shaw Traders EV</h2>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            { to: "/shop", label: "Shop EV Spare Parts", blurb: "Batteries, chargers, motors, controllers and body parts." },
-            { to: "/scooters", label: "Electric Scooters", blurb: "Full specifications, on-road price and booking with a small token." },
-            { to: "/categories", label: "Part Categories", blurb: "Browse all 14 categories of EV spares." },
-            { to: "/find-parts", label: "Find Parts for Your EV", blurb: "Match parts to your scooter brand and model." },
-            { to: "/bulk", label: "Dealer & Bulk Orders", blurb: "Wholesale supply for garages, dealers and fleets." },
-            { to: "/about", label: "About Shaw Traders EV", blurb: "Our EV parts counter in Bud Bud, Bardhaman." },
-            { to: "/contact", label: "Contact Shaw Traders EV", blurb: "Phone, WhatsApp, address and shop timings." },
-          ].map((l) => (
-            <li key={l.to}>
-              <Link
-                to={l.to}
-                className="card-lift block rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
-              >
-                <span className="font-semibold">{l.label}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">{l.blurb}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <section className="container-page py-6 lg:py-10">
+        <SectionHeading
+          title="Shop by Category"
+          subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
+          action={
+            <Button variant="ghost" asChild>
+              <Link to="/categories">View all</Link>
+            </Button>
+          }
+        />
+        <CategoryCarousel categories={home.categories} />
+      </section>
 
       {home.offers.length > 0 && (
         <section className="container-page py-6">
@@ -161,29 +152,8 @@ function Home() {
         </section>
       )}
 
-      <LazySection minHeight="12rem">
-        <section className="container-page py-6 lg:py-8">
-          <ScooterStrip />
-        </section>
-      </LazySection>
-
       <LazySection minHeight="24rem">
         <ScooterSection />
-      </LazySection>
-
-      <LazySection minHeight="20rem">
-        <section className="container-page py-8 lg:py-12">
-          <SectionHeading
-            title="Shop by Category"
-            subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
-            action={
-              <Button variant="ghost" asChild>
-                <Link to="/categories">View all</Link>
-              </Button>
-            }
-          />
-          <CategoryCarousel categories={home.categories} />
-        </section>
       </LazySection>
 
       <LazySection minHeight="24rem">
@@ -235,29 +205,6 @@ function Home() {
         </LazySection>
       )}
 
-      <section className="container-page py-12 lg:py-16">
-        <SectionHeading title="Popular Departments" subtitle="Jump straight to the parts our counter sells the most." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {highlights.map((cat) => (
-            <Link
-              key={cat.slug}
-              to="/category/$slug"
-              params={{ slug: cat.slug }}
-              className="card-lift rounded-3xl border border-border bg-card p-5 shadow-[var(--shadow-card)]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="font-display text-lg font-bold">{cat.name}</h3>
-                <span className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold text-primary">
-                  {cat.productCount ?? 0} parts
-                </span>
-              </div>
-              <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">
-                {cat.blurb || "Contact us for price and availability."}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <LazySection minHeight="18rem">
         <section className="container-page py-12 lg:py-16">
