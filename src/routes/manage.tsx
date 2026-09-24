@@ -7,10 +7,26 @@ import { staffSession } from "@/lib/staff.functions";
 export const Route = createFileRoute("/manage")({
   ssr: false,
   beforeLoad: async () => {
-    const session = await staffSession();
+    // The server can be briefly unreachable (reloads, flaky mobile data); retry before giving up.
+    let session: Awaited<ReturnType<typeof staffSession>> | null = null;
+    for (let attempt = 0; attempt < 3 && !session; attempt++) {
+      try {
+        session = await staffSession();
+      } catch {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+      }
+    }
+    if (!session) throw new Error("Could not reach the server. Check your connection and try again.");
     if (!session.signedIn) throw redirect({ to: "/manage-login" });
     return { staff: session };
   },
+  errorComponent: ({ error, reset }) => (
+    <div className="container-page py-16 text-center">
+      <h1 className="font-display text-xl font-bold">Manager panel couldn't load</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      <Button className="mt-4" onClick={() => { reset(); window.location.reload(); }}>Try again</Button>
+    </div>
+  ),
   head: () => ({
     meta: [
       { title: "Manager Panel — Shaw Traders EV" },
