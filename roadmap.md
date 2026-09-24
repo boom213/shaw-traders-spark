@@ -16,6 +16,9 @@
 - Error reporting from customers' phones + /api/public/health uptime probe,
   surfaced in the manager overview.
 
+## Done
+- AI check of wholesale papers + staff AI panel and internal notes.
+
 ## Waiting on the owner
 - Prices and stock for the catalogue (Stock & Photos / Price List).
 - Razorpay keys for online payment.
