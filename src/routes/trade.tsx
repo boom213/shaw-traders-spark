@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { canonical, formatINR } from "@/lib/catalog";
@@ -13,7 +14,7 @@ import { uploadTradeDoc } from "@/lib/trade-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
 import { categoriesQuery } from "@/lib/queries";
-import { BUSINESS_TYPES, EV_BRANDS, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS } from "@/lib/trade-options";
+import { BUSINESS_TYPES, EV_BRANDS, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS, taxIdError } from "@/lib/trade-options";
 import {
   DOC_FIELDS,
   deleteTradeDocument,
@@ -106,7 +107,10 @@ function TradePage() {
     toast.success("Document removed");
   };
 
+  const taxErr = taxIdError(form.gstin, form.pan, false);
   const submit = async () => {
+    const err = taxIdError(form.gstin, form.pan);
+    if (err) return toast.error(err);
     setSaving(true);
     const res = await submitTradeApplication({ data: { ...form, brands, partCategories, documents: docs } });
     setSaving(false);
@@ -134,9 +138,13 @@ function TradePage() {
           title="Trade & wholesale account"
           subtitle="For mechanics, garages, e-rickshaw workshops and retailers who buy EV parts regularly. Not a one-off order? Use Bulk Order Enquiry instead."
         />
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-          <p className="flex-1 text-sm">Step 1: sign in with your mobile number. The application form opens right after.</p>
-          <Button size="lg" asChild><Link to="/account" search={{ next: "/trade" }}>Sign in &amp; open the form</Link></Button>
+        <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] md:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Step 1 of 2</p>
+            <h2 className="mt-1 font-display text-lg font-semibold">Verify your mobile number</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Once verified, the business details form (step 2) opens right here on this page.</p>
+          </div>
+          <PhoneOtpForm idPrefix="trade" />
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -165,7 +173,6 @@ function TradePage() {
             </ol>
             <p className="mt-3 text-xs text-muted-foreground">Your papers stay private — only our staff can open them.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild><Link to="/account" search={{ next: "/trade" }}>Sign in to apply</Link></Button>
               <Button variant="outline" asChild><Link to="/bulk">One-off bulk enquiry</Link></Button>
             </div>
           </div>
@@ -184,6 +191,9 @@ function TradePage() {
         title="Trade & wholesale account"
         subtitle="For mechanics, garages, e-rickshaw workshops and retailers. Wholesale rates, bulk ordering and account terms."
       />
+      {!account?.application && !isPending && (
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Step 2 of 2 · Mobile verified — tell us about your business</p>
+      )}
 
       {isPending ? (
         <div className="h-28 animate-pulse rounded-2xl bg-muted" />
@@ -223,10 +233,11 @@ function TradePage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input placeholder="Business / shop name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
                 <Input placeholder="Person we should speak to" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
-                <Input placeholder="GSTIN (if you have one)" value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value })} />
-                <Input placeholder="PAN" value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value })} />
+                <Input placeholder="GSTIN (if you have one)" maxLength={15} aria-invalid={taxErr?.includes("GSTIN") || undefined} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} />
+                <Input placeholder="PAN (e.g. ABCDE1234F)" maxLength={10} aria-invalid={taxErr?.includes("PAN") || undefined} value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })} />
                 <Input placeholder="Mobile number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
+              {taxErr && <p role="alert" className="-mt-1 text-sm text-destructive">{taxErr}</p>}
               <Textarea rows={3} placeholder="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} />
 
               <h2 className="pt-2 font-display text-lg font-semibold">About your business</h2>
@@ -283,6 +294,9 @@ function TradePage() {
                 ))}
               </div>
 
+              <p className="text-xs text-muted-foreground">
+                By submitting, you consent to Shaw Traders EV verifying these documents (GST, PAN, address proof) for account verification purposes.
+              </p>
               <Button className="w-full sm:w-auto" disabled={saving} onClick={submit}>
                 {saving ? <Loader2 className="size-4 animate-spin" /> : null}
                 {status ? "Send updated application" : "Send application"}
