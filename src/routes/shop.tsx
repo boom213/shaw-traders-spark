@@ -50,7 +50,7 @@ export const Route = createFileRoute("/shop")({
   }),
   head: () => ({
     meta: [
-      { title: "Shop EV Spare Parts" },
+      { title: "Shop EV Spare Parts — Shaw Traders EV" },
       { name: "description", content: "Search and filter EV batteries, chargers, motors, controllers, body parts and accessories by brand, voltage, capacity and price." },
       { property: "og:title", content: "Shop EV Spare Parts" },
       { property: "og:description", content: "Filter EV parts by category, brand, voltage, battery capacity, motor wattage and price." },
