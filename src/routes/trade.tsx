@@ -10,6 +10,10 @@ import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { canonical, formatINR } from "@/lib/catalog";
 import { uploadTradeDoc } from "@/lib/trade-upload";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
+import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
+import { BUSINESS_TYPES, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS } from "@/lib/trade-options";
 import {
   DOC_FIELDS,
   deleteTradeDocument,
@@ -46,7 +50,16 @@ function TradePage() {
   const qc = useQueryClient();
   const { data: account, isPending } = useQuery({ queryKey: ["trade-account"], queryFn: () => myTradeAccount() });
 
-  const [form, setForm] = useState({ businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "" });
+  const [form, setForm] = useState({
+    businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "",
+    businessType: "", yearsInBusiness: "", staffCount: "", monthlyVolume: "",
+  });
+  const [brands, setBrands] = useState<string[]>([]);
+  const [partCategories, setPartCategories] = useState<string[]>([]);
+  const { data: tree } = useQuery(vehicleTreeQuery());
+  const { data: cats } = useQuery(categoriesQuery());
+  const brandOptions = [...(tree ?? []).map((b) => b.brand), "Other"];
+  const categoryOptions = (cats ?? []).map((c) => c.name);
   const [docs, setDocs] = useState<Partial<Record<TradeDocField, string>>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -62,7 +75,13 @@ function TradePage() {
       shopAddress: app.shopAddress,
       contactPerson: app.contactPerson,
       phone: app.phone,
+      businessType: app.businessType,
+      yearsInBusiness: app.yearsInBusiness,
+      staffCount: app.staffCount,
+      monthlyVolume: app.monthlyVolume,
     });
+    setBrands(app.brands);
+    setPartCategories(app.partCategories);
     setDocs(Object.fromEntries(Object.entries(app.documents).filter(([, v]) => v)) as Partial<Record<TradeDocField, string>>);
   }, [account?.application?.id, account?.application?.status]);
 
@@ -90,7 +109,7 @@ function TradePage() {
 
   const submit = async () => {
     setSaving(true);
-    const res = await submitTradeApplication({ data: { ...form, documents: docs } });
+    const res = await submitTradeApplication({ data: { ...form, brands, partCategories, documents: docs } });
     setSaving(false);
     if (!res.ok) return toast.error(res.message);
     toast.success(res.message);
@@ -206,6 +225,25 @@ function TradePage() {
                 <Input placeholder="Mobile number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <Textarea rows={3} placeholder="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} />
+
+              <h2 className="pt-2 font-display text-lg font-semibold">About your business</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {([
+                  ["businessType", "Business type *", BUSINESS_TYPES],
+                  ["monthlyVolume", "Monthly purchase estimate *", VOLUME_OPTIONS],
+                  ["yearsInBusiness", "Years in business", YEARS_OPTIONS],
+                  ["staffCount", "Mechanics / staff", STAFF_OPTIONS],
+                ] as const).map(([key, label, opts]) => (
+                  <Select key={key} value={form[key] || undefined} onValueChange={(v) => setForm({ ...form, [key]: v })}>
+                    <SelectTrigger className="min-h-10" aria-label={label}><SelectValue placeholder={label} /></SelectTrigger>
+                    <SelectContent>
+                      {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ))}
+                <MultiSelectDropdown label="Scooter brands you service" options={brandOptions} value={brands} onChange={setBrands} />
+                <MultiSelectDropdown label="Parts you need most" options={categoryOptions} value={partCategories} onChange={setPartCategories} />
+              </div>
 
               <h2 className="pt-2 font-display text-lg font-semibold">Papers</h2>
               <p className="-mt-2 text-sm text-muted-foreground">

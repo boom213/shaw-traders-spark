@@ -14,6 +14,12 @@ export type TradeApplicationRow = {
   reviewer: string | null;
   createdAt: string;
   documents: { label: string; url: string | null }[];
+  businessType: string | null;
+  yearsInBusiness: string | null;
+  staffCount: string | null;
+  monthlyVolume: string | null;
+  brands: string[];
+  partCategories: string[];
   tier: string;
   creditLimit: number;
   paymentTermsDays: number;
@@ -66,6 +72,12 @@ export const listTradeApplications = createServerFn({ method: "POST" })
           reviewer: r.reviewer,
           createdAt: String(r.created_at),
           documents,
+          businessType: r.business_type,
+          yearsInBusiness: r.years_in_business,
+          staffCount: r.staff_count,
+          monthlyVolume: r.monthly_volume,
+          brands: r.brands ?? [],
+          partCategories: r.part_categories ?? [],
           tier: String(profile?.price_tier ?? "retail"),
           creditLimit: Number(profile?.credit_limit ?? 0),
           paymentTermsDays: Number(profile?.payment_terms_days ?? 0),
