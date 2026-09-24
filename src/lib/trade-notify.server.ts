@@ -23,7 +23,11 @@ async function record(kind: string, recipient: string, body: string, channel = "
 }
 
 /** A new or updated application has arrived. */
-export async function notifyTradeApplication(profileId: string, businessName: string): Promise<void> {
+export async function notifyTradeApplication(
+  profileId: string,
+  businessName: string,
+  extra?: { type?: string; volume?: string },
+): Promise<void> {
   const { notifySettings } = await import("@/lib/notify.server");
   const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
   const settings = await notifySettings();
@@ -36,6 +40,8 @@ export async function notifyTradeApplication(profileId: string, businessName: st
       "🧾 New trade account application",
       "",
       `Business: ${businessName}`,
+      ...(extra?.type ? [`Type: ${extra.type}`] : []),
+      ...(extra?.volume ? [`Monthly buying: ${extra.volume}`] : []),
       `Contact: ${who.name}${who.phone ? ` · ${who.phone}` : ""}`,
       "",
       `Review it here: ${BUSINESS.site}/manage/trade`,

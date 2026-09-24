@@ -179,6 +179,18 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
           </p>
           <p className="text-sm text-muted-foreground">{app.shopAddress}</p>
           <p className="text-xs text-muted-foreground">GSTIN {app.gstin ?? "—"} · PAN {app.pan ?? "—"}</p>
+          {app.monthlyVolume && (
+            <span className="mt-1.5 inline-flex rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
+              {app.monthlyVolume} / month
+            </span>
+          )}
+          {(app.businessType || app.yearsInBusiness || app.staffCount) && (
+            <p className="mt-1 text-sm">
+              {[app.businessType, app.yearsInBusiness && `${app.yearsInBusiness} in business`, app.staffCount && `${app.staffCount} staff`].filter(Boolean).join(" · ")}
+            </p>
+          )}
+          {app.brands.length > 0 && <p className="text-xs text-muted-foreground">Brands: {app.brands.join(", ")}</p>}
+          {app.partCategories.length > 0 && <p className="text-xs text-muted-foreground">Needs: {app.partCategories.join(", ")}</p>}
         </div>
         <div className="text-right text-sm">
           <p>Owes {formatINR(app.balance)}{app.overdue ? " · overdue" : ""}</p>
