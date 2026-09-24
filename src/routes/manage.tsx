@@ -86,7 +86,7 @@ function ManageLayout() {
         </Button>
       </div>
 
-      <nav className="mt-5 flex gap-2 overflow-x-auto pb-1">
+      <nav className="mt-5 flex flex-wrap gap-2">
         {NAV.map((n) => (
           <Link
             key={n.to}
