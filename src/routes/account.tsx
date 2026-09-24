@@ -28,7 +28,7 @@ export const Route = createFileRoute("/account")({
     ],
     links: [{ rel: "canonical", href: canonical("/account") }],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({ next: s.next === "/trade" ? ("/trade" as const) : undefined }),
+  validateSearch: (s: Record<string, unknown>): { next?: "/trade" } => (s.next === "/trade" ? { next: "/trade" } : {}),
   component: AccountPage,
 });
 
