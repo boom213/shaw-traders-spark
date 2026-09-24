@@ -71,7 +71,7 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
             aria-label={`Slide ${i + 1} of ${list.length}`}
             aria-hidden={i !== current}
           >
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl border border-border bg-surface sm:aspect-[16/7]">
+            <div className="relative aspect-[16/9] max-h-56 w-full overflow-hidden rounded-3xl border border-border bg-surface sm:aspect-[16/7] sm:max-h-none">
               <img
                 src={heroImageFor(slide)}
                 alt={slide.heading}
@@ -83,11 +83,11 @@ export function HeroCarousel({ slides }: { slides: HeroSlide[] }) {
                 className="absolute inset-0 size-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/75 to-background/10" />
-              <div className="relative flex size-full flex-col justify-center gap-3 p-6 sm:p-10 lg:p-14">
-                <h2 className="max-w-xl font-display text-3xl font-bold leading-[1.08] tracking-tight sm:text-4xl lg:text-5xl">
+              <div className="relative flex size-full flex-col justify-center gap-2 p-5 sm:gap-3 sm:p-10 lg:p-14">
+                <h2 className="line-clamp-2 max-w-xl font-display text-xl font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
                   {slide.heading}
                 </h2>
-                {slide.subline && <p className="max-w-md text-sm text-muted-foreground sm:text-base">{slide.subline}</p>}
+                {slide.subline && <p className="hidden max-w-md text-sm text-muted-foreground sm:block sm:text-base">{slide.subline}</p>}
                 {slide.buttonLabel && slide.buttonHref && (
                   <div className="mt-2">
                     <Button size="lg" asChild tabIndex={i === current ? 0 : -1}>
