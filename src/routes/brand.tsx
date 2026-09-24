@@ -106,9 +106,9 @@ function BrandPage() {
         <Button size="lg" asChild className="h-14 text-base">
           <Link to="/cart"><ShoppingCart className="size-5" /> Cart{count > 0 ? ` (${count})` : ""}</Link>
         </Button>
-        {/* Replace public/catalogue.pdf with the real ST catalogue PDF. */}
+        {/* Super admins upload the PDF from Manager panel → ST Catalogue. */}
         <Button size="lg" variant="outline" asChild className="h-14 text-base">
-          <a href="/catalogue.pdf" download><Download className="size-5" /> Download Catalogue</a>
+          <a href="/api/public/catalogue" download><Download className="size-5" /> Download Catalogue</a>
         </Button>
       </section>
     </div>
