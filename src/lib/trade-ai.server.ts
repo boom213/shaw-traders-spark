@@ -130,7 +130,7 @@ export async function runDocCheck(profileId: string, field: TradeDocField, path:
   };
   if (field === "gst_certificate_path") cmp("gstin", form.gstin, "GSTIN");
   if (field === "pan_card_path") cmp("pan", form.pan, "PAN");
-  if (field === "shop_photo_path" && /^no$/i.test(extracted["signboard_visible"] ?? "")) {
+  if (field === "shop_photo_path" && /^(no|false)$/i.test(extracted["signboard_visible"] ?? "")) {
     if (status === "ok") status = "unclear";
     issues.push("No signboard visible — please include the shop name board.");
   }
