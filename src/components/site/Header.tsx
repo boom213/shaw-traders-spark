@@ -26,7 +26,9 @@ function Logo() {
 
 export function Header() {
   const t = useT();
-  const { lists } = useStore();
+  const { lists, user } = useStore();
+  const userName = (user?.user_metadata?.full_name ?? user?.user_metadata?.name) as string | undefined;
+  const accountLabel = user ? userName?.split(" ")[0] || "Account" : "Sign In";
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const { mode: siteMode } = useSiteOrdering();
   const { data: categories } = useQuery(categoriesQuery());
@@ -101,8 +103,9 @@ export function Header() {
           >
             <Search className="size-5" />
           </button>
-          <Link to="/account" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label={t("nav.account")}>
+          <Link to="/account" className="hidden min-h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted sm:inline-flex" aria-label={t("nav.account")}>
             <User className="size-5" />
+            <span className="max-w-28 truncate">{accountLabel}</span>
           </Link>
           <Link to="/account" hash="wishlist" className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid" aria-label={t("nav.wishlist")}>
             <Heart className="size-5" />

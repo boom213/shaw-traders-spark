@@ -156,6 +156,46 @@ function Home() {
         <CategoryCarousel categories={home.categories} />
       </section>
 
+      <section className="container-page py-6 lg:py-10">
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            {
+              title: "For EV Owners & Riders",
+              bullets: ["Track your orders anytime", "Save your scooter for 1-tap fitment", "Order updates on WhatsApp"],
+              cta: { to: "/account" as const, label: "Sign In / Join" },
+            },
+            {
+              title: "For EV Workshops & Mechanics",
+              bullets: ["Wholesale trade pricing", "GST invoices", "Credit terms for approved accounts"],
+              cta: { to: "/trade" as const, label: "Apply for Trade Account" },
+              extra: true,
+            },
+          ].map((c) => (
+            <div key={c.title} className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+              <h2 className="font-display text-xl font-semibold tracking-tight">{c.title}</h2>
+              <ul className="mt-3 flex-1 space-y-2 text-sm text-muted-foreground">
+                {c.bullets.map((b) => (
+                  <li key={b} className="flex items-center gap-2">
+                    <BadgeCheck className="size-4 shrink-0 text-foreground" strokeWidth={1.5} />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <Button asChild>
+                  <Link to={c.cta.to}>{c.cta.label}</Link>
+                </Button>
+                {c.extra && (
+                  <Link to="/bulk" className="inline-flex min-h-10 items-center text-sm font-medium underline-offset-4 hover:underline">
+                    One-off bulk order? Request a quote
+                  </Link>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {home.offers.length > 0 && (
         <section className="container-page py-6">
           <OffersStrip offers={home.offers} />
@@ -223,24 +263,6 @@ function Home() {
         </section>
       </LazySection>
 
-      <section className="container-page pb-12 lg:pb-16">
-        <div className="grid gap-6 rounded-3xl border border-border bg-ink px-6 py-10 text-background sm:px-10 lg:grid-cols-[1.4fr_1fr] lg:items-center">
-          <div>
-            <h2 className="font-display text-3xl font-bold tracking-tight">Need EV Parts in Bulk?</h2>
-            <p className="mt-3 max-w-xl text-sm text-background/70">
-              Special support for dealers, workshops, mechanics and bulk buyers.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3 lg:justify-end">
-            <Button size="lg" asChild>
-              <Link to="/bulk">Request Bulk Quote</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background" asChild>
-              <a href={`tel:${BUSINESS.phone}`}>Contact Sales</a>
-            </Button>
-          </div>
-        </div>
-      </section>
 
       <LazySection minHeight="14rem">
         <BrandsSection />

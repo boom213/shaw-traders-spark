@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { myOrders } from "@/lib/orders.functions";
 import { reorderItems } from "@/lib/trade.functions";
 import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
@@ -75,6 +76,16 @@ function AuthPanel() {
     toast.success("You're signed in");
   };
 
+  const google = async () => {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/account` });
+    if (result.redirected) return;
+    setBusy(false);
+    if (result.error) return toast.error(result.error.message || "Google sign-in failed");
+    toast.success("You're signed in");
+  };
+
+
   return (
     <div className="container mx-auto grid place-items-center px-4 py-12">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
@@ -107,6 +118,7 @@ function AuthPanel() {
                   onChange={(e) => setMobile(e.target.value)}
                 />
               </div>
+              <p className="text-xs text-muted-foreground">New number? We'll automatically create your account.</p>
             </div>
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Sending…" : "Send code"}
@@ -147,6 +159,22 @@ function AuthPanel() {
             </button>
           </form>
         )}
+
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <Button type="button" variant="outline" className="w-full" disabled={busy} onClick={() => void google()}>
+          Continue with Google
+        </Button>
+
+        <div className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm">
+          <p className="text-muted-foreground">Garage, mechanic, or fleet dealer? Looking for trade pricing and bulk order terms?</p>
+          <Link to="/trade" className="mt-1.5 inline-flex min-h-10 items-center font-semibold text-foreground underline-offset-4 hover:underline">
+            Register for a Trade &amp; Wholesale Account →
+          </Link>
+        </div>
       </div>
     </div>
   );
