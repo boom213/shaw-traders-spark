@@ -142,8 +142,8 @@ function TradePage() {
         <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] md:grid-cols-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Step 1 of 2</p>
-            <h2 className="mt-1 font-display text-lg font-semibold">Verify your mobile number</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Once verified, the business details form (step 2) opens right here on this page.</p>
+            <h2 className="mt-1 font-display text-lg font-semibold">Sign in to apply</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Use your mobile number or Google. Once signed in, the business details form (step 2) opens right here on this page.</p>
           </div>
           <div>
             {/* TEMP: remove once Twilio SMS is confirmed working */}
@@ -191,7 +191,7 @@ function TradePage() {
           <div className="rounded-2xl border border-border bg-surface p-5">
             <h2 className="font-display text-lg font-semibold">How it works</h2>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm">
-              <li>Sign in with your mobile number (one-time code).</li>
+              <li>Sign in with your mobile number or Google.</li>
               <li>Fill in your shop details and attach the papers.</li>
               <li>We check them and open your account — you'll hear from us on WhatsApp.</li>
             </ol>
@@ -216,7 +216,9 @@ function TradePage() {
         subtitle="For mechanics, garages, e-rickshaw workshops and retailers. Wholesale rates, bulk ordering and account terms."
       />
       {!account?.application && !isPending && (
-        <p className="text-xs font-semibold uppercase tracking-wider text-primary">Step 2 of 2 · Mobile verified — tell us about your business</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+          Step 2 of 2 · Signed in{user?.phone ? ` as +${user.phone}` : user?.email ? ` as ${user.email}` : ""} — tell us about your business
+        </p>
       )}
 
       {isPending ? (
