@@ -20,16 +20,16 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
   head: ({ loaderData }) => ({
     meta: [
-      { title: "Shaw Traders EV — EV Parts, Batteries & Accessories | Bud Bud" },
+      { title: "Shaw Traders EV — EV Parts, Batteries & Electric Scooters, Bud Bud" },
       {
         name: "description",
         content:
-          "Buy EV batteries, chargers, motors, controllers and body parts from Shaw Traders EV, Bud Bud, Bardhaman. Retail, dealer and bulk supply with WhatsApp ordering.",
+          "Genuine EV spare parts, batteries, chargers and electric scooters in Bud Bud, Bardhaman. Order online or on WhatsApp, open a trade account, or contact us today.",
       },
-      { property: "og:title", content: "Shaw Traders EV — Everything Your EV Needs" },
+      { property: "og:title", content: "Shaw Traders EV — EV Parts, Batteries & Electric Scooters, Bud Bud" },
       {
         property: "og:description",
-        content: "Batteries, chargers, motors, controllers, body parts and EV accessories under one roof.",
+        content: "Genuine EV spare parts, batteries, chargers and electric scooters in Bud Bud, Bardhaman. Order online or on WhatsApp, open a trade account, or contact us today.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: canonical("/") },
