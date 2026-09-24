@@ -91,7 +91,7 @@ export const myTradeAccount = createServerFn({ method: "POST" }).handler(async (
           monthlyVolume: app.monthly_volume ?? "",
           brands: app.brands ?? [],
           partCategories: app.part_categories ?? [],
-          documents: Object.fromEntries(DOC_FIELDS.map((d) => [d.field, (app as Record<string, string | null>)[d.field] ?? null])),
+          documents: Object.fromEntries(DOC_FIELDS.map((d) => [d.field, (app as unknown as Record<string, string | null>)[d.field] ?? null])),
           createdAt: String(app.created_at),
         }
       : null,
