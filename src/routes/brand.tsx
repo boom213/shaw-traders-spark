@@ -44,8 +44,8 @@ const TILES = [
 ];
 
 function BrandPage() {
-  const { lists } = useStore() as unknown as { lists?: { cart: { qty: number }[] } };
-  const count = lists?.cart?.reduce((n, l) => n + l.qty, 0) ?? 0;
+  const { lists } = useStore();
+  const count = lists.cart.reduce((n, l) => n + l.qty, 0);
 
   return (
     <div className="mx-auto max-w-7xl space-y-10 px-4 py-6 sm:py-10">
