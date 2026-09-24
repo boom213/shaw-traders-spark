@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as BrandRouteImport } from './routes/brand'
 import { Route as BulkRouteImport } from './routes/bulk'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as CategoriesRouteImport } from './routes/categories'
@@ -77,6 +78,11 @@ const AboutRoute = AboutRouteImport.update({
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandRoute = BrandRouteImport.update({
+  id: '/brand',
+  path: '/brand',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulkRoute = BulkRouteImport.update({
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/brand': typeof BrandRoute
   '/bulk': typeof BulkRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/brand': typeof BrandRoute
   '/bulk': typeof BulkRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
@@ -456,6 +464,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
+  '/brand': typeof BrandRoute
   '/bulk': typeof BulkRoute
   '/cart': typeof CartRoute
   '/categories': typeof CategoriesRoute
@@ -514,6 +523,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/brand'
     | '/bulk'
     | '/cart'
     | '/categories'
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/brand'
     | '/bulk'
     | '/cart'
     | '/categories'
@@ -625,6 +636,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/account'
+    | '/brand'
     | '/bulk'
     | '/cart'
     | '/categories'
@@ -682,6 +694,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
+  BrandRoute: typeof BrandRoute
   BulkRoute: typeof BulkRoute
   CartRoute: typeof CartRoute
   CategoriesRoute: typeof CategoriesRoute
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brand': {
+      id: '/brand'
+      path: '/brand'
+      fullPath: '/brand'
+      preLoaderRoute: typeof BrandRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulk': {
@@ -1156,6 +1176,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
+  BrandRoute: BrandRoute,
   BulkRoute: BulkRoute,
   CartRoute: CartRoute,
   CategoriesRoute: CategoriesRoute,
