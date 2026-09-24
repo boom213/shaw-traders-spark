@@ -28,11 +28,17 @@ export const Route = createFileRoute("/account")({
     ],
     links: [{ rel: "canonical", href: canonical("/account") }],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({ next: s.next === "/trade" ? ("/trade" as const) : undefined }),
   component: AccountPage,
 });
 
 function AccountPage() {
   const { authReady, user } = useStore();
+  const { next } = Route.useSearch();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (user && next) void navigate({ to: next });
+  }, [user, next, navigate]);
   if (!authReady) return <div className="container mx-auto px-4 py-16 text-sm text-muted-foreground">Loading…</div>;
   return user ? <Dashboard /> : <AuthPanel />;
 }
@@ -78,7 +84,7 @@ function AuthPanel() {
 
   const google = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/account` });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/account${window.location.search}` });
     if (result.redirected) return;
     setBusy(false);
     if (result.error) return toast.error(result.error.message || "Google sign-in failed");
@@ -171,7 +177,7 @@ function AuthPanel() {
 
         <div className="mt-6 rounded-2xl border border-border bg-surface p-4 text-sm">
           <p className="text-muted-foreground">Garage, mechanic, or fleet dealer? Looking for trade pricing and bulk order terms?</p>
-          <Link to="/trade" className="mt-1.5 inline-flex min-h-10 items-center font-semibold text-foreground underline-offset-4 hover:underline">
+          <Link to="/account" search={{ next: "/trade" }} className="mt-1.5 inline-flex min-h-10 items-center font-semibold text-foreground underline-offset-4 hover:underline">
             Register for a Trade &amp; Wholesale Account →
           </Link>
         </div>
