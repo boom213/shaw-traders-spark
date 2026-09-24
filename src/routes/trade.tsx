@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { SectionHeading } from "@/components/site/Empty";
 import { useStore } from "@/hooks/useStore";
-import { canonical, formatINR } from "@/lib/catalog";
+import { BUSINESS, canonical, formatINR } from "@/lib/catalog";
+import { lovable } from "@/integrations/lovable/index";
 import { uploadTradeDoc } from "@/lib/trade-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
@@ -144,7 +145,30 @@ function TradePage() {
             <h2 className="mt-1 font-display text-lg font-semibold">Verify your mobile number</h2>
             <p className="mt-1 text-sm text-muted-foreground">Once verified, the business details form (step 2) opens right here on this page.</p>
           </div>
-          <PhoneOtpForm idPrefix="trade" />
+          <div>
+            {/* TEMP: remove once Twilio SMS is confirmed working */}
+            <div className="mb-4 rounded-xl bg-primary/10 px-4 py-2 text-sm font-medium text-foreground">
+              Text-message sign-in is temporarily unavailable. Please use Continue with Google below, or call us at {BUSINESS.phone}.
+            </div>
+            <PhoneOtpForm idPrefix="trade" />
+            <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/trade` });
+                if (result.redirected) return;
+                if (result.error) toast.error(result.error.message || "Google sign-in failed");
+              }}
+            >
+              Continue with Google
+            </Button>
+          </div>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
