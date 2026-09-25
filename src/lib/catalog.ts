@@ -158,12 +158,10 @@ export const BUSINESS = {
   logo: "https://shawtradersev.com/app-icon-512.png",
   /** 1200x630 share banner used as the site-wide default og:image. */
   banner: "https://shawtradersev.com/og-image.png",
-  /**
-   * TODO: add the real Google Business Profile, Instagram and Facebook URLs
-   * here once confirmed by the owner. Do not add guessed or placeholder URLs —
-   * an unverified sameAs entry weakens the entity signal instead of helping it.
-   */
-  sameAs: [] as string[],
+  sameAs: [
+    "https://www.facebook.com/shawtradersev/",
+    "https://www.instagram.com/shawtradersev/",
+  ],
 };
 
 

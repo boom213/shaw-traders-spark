@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { FaInstagram } from "react-icons/fa6";
 import { SocialLinks } from "@/components/site/SocialLinks";
 
 const FACEBOOK_VIDEOS = [
@@ -21,6 +23,47 @@ declare global {
 
 function processInstagramEmbeds() {
   window.instgrm?.Embeds.process();
+}
+
+function InstagramReel({ reel, index }: { reel: string; index: number }) {
+  const embedRef = useRef<HTMLQuoteElement>(null);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const frame = embedRef.current?.querySelector("iframe");
+      if (!frame || frame.offsetHeight < 100) setUnavailable(true);
+    }, 5000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (unavailable) {
+    return (
+      <a
+        href={reel}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex min-h-72 w-full flex-col items-center justify-center gap-4 bg-muted/30 p-8 text-center transition-colors hover:bg-muted/60"
+        aria-label={`Watch Shaw Traders EV Instagram reel ${index + 1}`}
+      >
+        <FaInstagram className="size-10 text-primary" aria-hidden="true" />
+        <span className="font-display text-lg font-semibold">Watch on Instagram</span>
+        <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          Open reel <ExternalLink className="size-4" aria-hidden="true" />
+        </span>
+      </a>
+    );
+  }
+
+  return (
+    <blockquote
+      ref={embedRef}
+      className="instagram-media m-0! min-w-0! w-full!"
+      data-instgrm-permalink={reel}
+      data-instgrm-version="14"
+      aria-label={`Shaw Traders EV Instagram reel ${index + 1}`}
+    />
+  );
 }
 
 export function SocialProofSection() {
@@ -70,12 +113,7 @@ export function SocialProofSection() {
 
           {INSTAGRAM_REELS.map((reel, index) => (
             <div key={reel} className="flex min-h-[34rem] justify-center overflow-hidden rounded-lg border border-border bg-background p-2">
-              <blockquote
-                className="instagram-media m-0! min-w-0! w-full!"
-                data-instgrm-permalink={reel}
-                data-instgrm-version="14"
-                aria-label={`Shaw Traders EV Instagram reel ${index + 1}`}
-              />
+              <InstagramReel reel={reel} index={index} />
             </div>
           ))}
         </div>
