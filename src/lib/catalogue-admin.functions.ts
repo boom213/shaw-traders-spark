@@ -98,6 +98,48 @@ export const catalogueList = createServerFn({ method: "POST" })
     return { items: (rows ?? []).map(mapRow), total: count ?? 0 };
   });
 
+/** Read-only product directory available to every staff role. */
+export const allProductsList = createServerFn({ method: "POST" })
+  .inputValidator((data: { q?: string; category?: string; status?: string; page?: number; pageSize?: number } | undefined) => ({
+    q: String(data?.q ?? "").trim().slice(0, 160),
+    category: String(data?.category ?? "").trim(),
+    status: ["visible", "draft", "hidden"].includes(String(data?.status)) ? String(data?.status) : "",
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: [10, 20, 50, 100].includes(Number(data?.pageSize)) ? Number(data?.pageSize) : 20,
+  }))
+  .handler(async ({ data }): Promise<{ items: CatalogueRow[]; total: number }> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "operations" });
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
+
+    let categoryId = "";
+    if (data.category) {
+      const { data: category, error: categoryError } = await sb
+        .from("categories")
+        .select("id")
+        .eq("slug", data.category)
+        .maybeSingle();
+      if (categoryError) throw new Error(categoryError.message);
+      if (!category) return { items: [], total: 0 };
+      categoryId = category.id;
+    }
+
+    let query = sb.from("products").select(SELECT.replace("categories!inner", "categories"), { count: "exact" });
+    if (data.q) {
+      const term = data.q.replace(/[%,()]/g, " ");
+      query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,brand.ilike.%${term}%,model.ilike.%${term}%,rack_location.ilike.%${term}%`);
+    }
+    if (categoryId) query = query.eq("category_id", categoryId);
+    if (data.status) query = query.eq("status", data.status);
+
+    const from = data.page * data.pageSize;
+    const { data: rows, count, error } = await query
+      .order("name")
+      .range(from, from + data.pageSize - 1);
+    if (error) throw new Error(error.message);
+    return { items: (rows ?? []).map(mapRow), total: count ?? 0 };
+  });
+
 export const createCatalogueProduct = createServerFn({ method: "POST" })
   .inputValidator((data: {
     name: string;
