@@ -126,17 +126,33 @@ export const listCounterSales = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase().slice(0, 120) }))
   .handler(async ({ data }): Promise<CounterSale[]> => {
     const { sb } = await counterAdmin();
-    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, cancelled_at, cancel_reason, created_at, profiles(full_name, phone), orders(human_id, public_token, total, tax_amount, payment_status, credit_due_date, order_items(name_snapshot, qty, price_snapshot, image_snapshot, products(sku))), counter_sale_payments(id, amount, method, reference, note, received_on, recorded_by_name, created_at)").order("created_at", { ascending: false }).limit(300);
+    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, cancelled_at, cancel_reason, created_at").order("created_at", { ascending: false }).limit(300);
     if (error) throw new Error(error.message);
+    const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
+    const profileIds = [...new Set(((rows ?? []) as Row[]).map((row) => String(row['profile_id'])))];
+    if (orderIds.length === 0) return [];
+    const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
+      sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
+      sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
+      sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku)").in("order_id", orderIds),
+      sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at").in("order_id", orderIds),
+    ]);
+    const orderMap = new Map(((orders ?? []) as Row[]).map((item) => [String(item['id']), item]));
+    const profileMap = new Map(((profiles ?? []) as Row[]).map((item) => [String(item['id']), item]));
+    const itemsMap = new Map<string, Row[]>();
+    for (const item of (items ?? []) as Row[]) itemsMap.set(String(item['order_id']), [...(itemsMap.get(String(item['order_id'])) ?? []), item]);
+    const paymentsMap = new Map<string, Row[]>();
+    for (const payment of (payments ?? []) as Row[]) paymentsMap.set(String(payment['order_id']), [...(paymentsMap.get(String(payment['order_id'])) ?? []), payment]);
     const mapped = ((rows ?? []) as Row[]).map((row): CounterSale => {
-      const order = row['orders'] as Row;
-      const profile = row['profiles'] as Row;
-      const payments = ((row['counter_sale_payments'] ?? []) as Row[]).sort((a, b) => String(b['created_at']).localeCompare(String(a['created_at'])));
+      const order = orderMap.get(String(row['order_id'])) ?? {};
+      const profile = profileMap.get(String(row['profile_id'])) ?? {};
+      const saleItems = itemsMap.get(String(row['order_id'])) ?? [];
+      const payments = (paymentsMap.get(String(row['order_id'])) ?? []).sort((a, b) => String(b['created_at']).localeCompare(String(a['created_at'])));
       const total = Number(order?.['total'] ?? 0);
       const paid = payments.reduce((sum, payment) => sum + Number(payment['amount'] ?? 0), 0);
       return {
         orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
-        items: ((order?.['order_items'] ?? []) as Row[]).map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null })),
+        items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null })),
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']) })),
       };
     });
