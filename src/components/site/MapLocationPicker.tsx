@@ -1,7 +1,9 @@
 import { Crosshair, MapPin, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getGoogleMapsBrowserConfig } from "@/lib/google-maps.functions";
 import {
   Dialog,
   DialogContent,
@@ -40,12 +42,11 @@ declare global {
 
 let mapsPromise: Promise<MapsApi> | null = null;
 
-function loadMaps(): Promise<MapsApi> {
+function loadMaps(config: { key: string; channel: string }): Promise<MapsApi> {
   if (window.google?.maps) return Promise.resolve(window.google.maps);
   if (mapsPromise) return mapsPromise;
 
-  const key = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY'];
-  const channel = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID'];
+  const { key, channel } = config;
   if (!key) return Promise.reject(new Error("Google Maps is not configured"));
 
   mapsPromise = new Promise((resolve, reject) => {
@@ -82,6 +83,7 @@ export function MapLocationPicker({
   const listenersRef = useRef<{ remove: () => void }[]>([]);
   const [point, setPoint] = useState<DeliveryCoordinates>(value ?? DEFAULT_POINT);
   const [loading, setLoading] = useState(true);
+  const getMapConfig = useServerFn(getGoogleMapsBrowserConfig);
 
   useEffect(() => {
     if (!open || !mapElement.current) return;
@@ -89,7 +91,11 @@ export function MapLocationPicker({
     setLoading(true);
     setPoint(value ?? DEFAULT_POINT);
 
-    void loadMaps()
+    void getMapConfig()
+      .then((config) => {
+        if (!config.key) throw new Error("Google Maps is not configured");
+        return loadMaps(config);
+      })
       .then((maps) => {
         if (!active || !mapElement.current) return;
         const initial = value ?? DEFAULT_POINT;
