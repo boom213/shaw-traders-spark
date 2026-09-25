@@ -97,6 +97,16 @@ function printPackingSlip(o: ManageOrder) {
 }
 
 export const Route = createFileRoute("/manage/orders")({
+  head: () => ({
+    meta: [
+      { title: "Manage Orders — Shaw Traders EV" },
+      { name: "description", content: "Review and fulfil Shaw Traders EV customer orders." },
+      { property: "og:title", content: "Manage Orders — Shaw Traders EV" },
+      { property: "og:description", content: "Review and fulfil Shaw Traders EV customer orders." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ManageOrders,
 });
 
