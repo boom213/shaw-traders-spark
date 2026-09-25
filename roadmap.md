@@ -10,3 +10,4 @@
 - [x] Verify the homepage and account journeys on desktop and mobile.
 - [x] Match the storefront homepage closely to the new supplied visual reference.
 - [x] Add a role-aware profile menu with customer, trade, and permitted staff destinations.
+- [x] Add sample scooter models and hide RTO charges for registration-free vehicles.
