@@ -52,11 +52,10 @@ export function CookieConsent() {
   if (!hydrated || choice) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 p-3 pb-24 lg:pb-3">
-      <div className="mx-auto grid max-w-3xl gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:flex sm:items-center sm:justify-between">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 p-2 lg:bottom-0 lg:p-3">
+      <div className="pointer-events-auto mx-auto grid max-w-3xl gap-2 rounded-lg border border-border bg-card p-3 shadow-[var(--shadow-card)] sm:flex sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">
-          We use essential cookies to keep you signed in and remember your cart. May we also use analytics cookies to
-          see which parts people look for?{" "}
+          Essential cookies keep you signed in and remember your cart. Allow anonymous shop analytics?{" "}
           <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>

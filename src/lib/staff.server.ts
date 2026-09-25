@@ -1,7 +1,8 @@
 import { getRequestHeader } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { can, roleAtLeast, type StaffCapability, type StaffRole } from "@/lib/staff-permissions";
 
-export type StaffRole = "super_admin" | "owner" | "manager" | "staff";
+export type { StaffRole } from "@/lib/staff-permissions";
 
 export type StaffContext = {
   userId: string;
@@ -72,16 +73,21 @@ export async function staffContext(): Promise<StaffContext | null> {
   };
 }
 
-const RANK: Record<StaffRole, number> = { super_admin: 0, owner: 1, manager: 2, staff: 3 };
-
 /** Throws unless the caller is signed in as staff with enough privilege. */
-export async function requireStaff(opts?: { owner?: boolean; superAdmin?: boolean }): Promise<StaffContext> {
+export async function requireStaff(opts?: {
+  manager?: boolean;
+  owner?: boolean;
+  superAdmin?: boolean;
+  capability?: StaffCapability;
+}): Promise<StaffContext> {
   const ctx = await staffContext();
   if (!ctx) throw new Error("Staff sign-in required");
   if (opts?.superAdmin && ctx.role !== "super_admin") {
     throw new Error("Only a super admin can change this");
   }
-  if (opts?.owner && RANK[ctx.role] > RANK["owner"]) throw new Error("Only the owner can do this");
+  if (opts?.owner && !roleAtLeast(ctx.role, "owner")) throw new Error("Only an owner can do this");
+  if (opts?.manager && !roleAtLeast(ctx.role, "manager")) throw new Error("Manager access required");
+  if (opts?.capability && !can(ctx.role, opts.capability)) throw new Error("You do not have access to this section");
   return ctx;
 }
 

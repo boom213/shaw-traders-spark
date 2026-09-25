@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Grid2x2, Home, Search, ShoppingCart, User } from "lucide-react";
+import { Home, SearchCheck, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { useT, type TranslationKey } from "@/lib/i18n";
@@ -7,8 +7,8 @@ import { AccountMenu } from "@/components/site/AccountMenu";
 
 const base = [
   { to: "/", key: "nav.home" as TranslationKey, icon: Home },
-  { to: "/categories", key: "nav.categories" as TranslationKey, icon: Grid2x2 },
-  { to: "/shop", key: "nav.search" as TranslationKey, icon: Search },
+  { to: "/shop", key: "nav.shop" as TranslationKey, icon: ShoppingBag },
+  { to: "/find-parts", key: "nav.findParts" as TranslationKey, icon: SearchCheck },
 ] as const;
 
 const cartItem = { to: "/cart", key: "nav.cart" as TranslationKey, icon: ShoppingCart } as const;
@@ -22,7 +22,7 @@ export function MobileTabBar() {
   const items = mode === "full" ? [...base, cartItem, accountItem] : [...base, accountItem];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Mobile navigation">
       <ul className={mode === "full" ? "grid grid-cols-5" : "grid grid-cols-4"}>
         {items.map(({ to, key, icon: Icon }) => (
           <li key={to}>

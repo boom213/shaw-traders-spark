@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,8 @@ import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
 
 export function FindPartsWidget() {
   const navigate = useNavigate();
-  const { data: tree, isPending } = useQuery(vehicleTreeQuery());
-  const { data: categories } = useQuery(categoriesQuery());
+  const { data: tree } = useSuspenseQuery(vehicleTreeQuery());
+  const { data: categories } = useSuspenseQuery(categoriesQuery());
   const { vehicle, setVehicle } = useVehicle();
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -63,10 +63,10 @@ export function FindPartsWidget() {
               setBrand(v);
               setModel("");
             }}
-            disabled={isPending || brands.length === 0}
+            disabled={brands.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder={isPending ? "Loading…" : "Select brand"} />
+              <SelectValue placeholder="Select brand" />
             </SelectTrigger>
             <SelectContent className="max-h-72">
               {brands.map((b) => (
@@ -115,7 +115,7 @@ export function FindPartsWidget() {
         Show parts that fit
       </Button>
 
-      {!isPending && brands.length === 0 && (
+      {brands.length === 0 && (
         <p className="mt-3 text-sm text-muted-foreground">
           Vehicle details are still being added. Message us on WhatsApp with your vehicle and we will confirm the fit.
         </p>

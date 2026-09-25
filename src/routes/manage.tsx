@@ -1,12 +1,14 @@
-import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
-import { BellRing, Bike, Boxes, Briefcase, CalendarCheck, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Users } from "lucide-react";
+import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
+import { BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
+import { can, capabilityForManagePath, ROLE_LABEL, type StaffCapability, type StaffRole } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     // The server can be briefly unreachable (reloads, flaky mobile data); retry before giving up.
     let session: Awaited<ReturnType<typeof staffSession>> | null = null;
     for (let attempt = 0; attempt < 3 && !session; attempt++) {
@@ -18,6 +20,8 @@ export const Route = createFileRoute("/manage")({
     }
     if (!session) throw new Error("Could not reach the server. Check your connection and try again.");
     if (!session.signedIn) throw redirect({ to: "/manage-login" });
+    const capability = capabilityForManagePath(location.pathname);
+    if (!can(session.role, capability)) throw redirect({ to: "/manage", search: { denied: "1" } });
     return { staff: session };
   },
   errorComponent: ({ error, reset }) => (
@@ -41,67 +45,66 @@ export const Route = createFileRoute("/manage")({
   component: ManageLayout,
 });
 
-const NAV = [
-  { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/manage/home", label: "Home Banners", icon: Images, exact: false },
-  { to: "/manage/about", label: "About Gallery", icon: Images, exact: false },
-  { to: "/manage/catalogue", label: "Stock & Photos", icon: Boxes, exact: false },
-  { to: "/manage/import", label: "Price List", icon: FileSpreadsheet, exact: false },
-  { to: "/manage/brand-catalogue", label: "ST Catalogue", icon: FileSpreadsheet, exact: false },
-  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false },
-  { to: "/manage/scooters", label: "Scooters", icon: Bike, exact: false },
-  { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false },
-  { to: "/manage/enquiries", label: "Availability Asks", icon: PhoneCall, exact: false },
-  { to: "/manage/customers", label: "Customers", icon: Users, exact: false },
-  { to: "/manage/trade", label: "Trade & Credit", icon: Briefcase, exact: false },
-  { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false },
-  { to: "/manage/summary", label: "Daily Summary", icon: BellRing, exact: false },
-  { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false },
-  { to: "/manage/settings", label: "Payments & GST", icon: Settings, exact: false },
-  { to: "/manage/staff", label: "Staff", icon: ShieldCheck, exact: false },
+const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAPABILITY; label: string; icon: typeof LayoutDashboard; exact: boolean; capability: StaffCapability; group: string }[] = [
+  { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true, capability: "operations", group: "Work" },
+  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/enquiries", label: "Enquiries", icon: PhoneCall, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/customers", label: "Customers", icon: Users, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/catalogue", label: "Products & Stock", icon: Boxes, exact: false, capability: "catalogue", group: "Manage" },
+  { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Manage" },
+  { to: "/manage/scooters", label: "Vehicle Catalogue", icon: Bike, exact: false, capability: "catalogue", group: "Manage" },
+  { to: "/manage/trade", label: "Trade & Credit", icon: Briefcase, exact: false, capability: "trade", group: "Manage" },
+  { to: "/manage/home", label: "Home Banners", icon: Images, exact: false, capability: "content", group: "Manage" },
+  { to: "/manage/about", label: "About Gallery", icon: Images, exact: false, capability: "content", group: "Manage" },
+  { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Insights" },
+  { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Owner" },
+  { to: "/manage/settings", label: "Payments & GST", icon: Settings, exact: false, capability: "settings", group: "Owner" },
+  { to: "/manage/brand-catalogue", label: "Brand Catalogue", icon: FileSpreadsheet, exact: false, capability: "settings", group: "Owner" },
+  { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "System" },
 ] as const;
 
 function ManageLayout() {
   const router = useRouter();
   const { staff } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const role = staff.role as StaffRole;
+  const visibleNav = NAV.filter((item) => can(role, item.capability));
+  const active = visibleNav.find((item) => item.exact ? pathname === item.to : pathname.startsWith(item.to)) ?? visibleNav[0];
+  const groups = [...new Set(visibleNav.map((item) => item.group))];
 
   return (
-    <div className="container-page py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="container-page py-6 lg:py-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Manager panel</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Shaw Traders EV · signed in as {staff.signedIn ? `${staff.name} (${staff.role})` : "staff"}
+            Shaw Traders EV · {staff.signedIn ? staff.name : "Staff"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            await supabase.auth.signOut();
-            await router.navigate({ to: "/manage-login", replace: true });
-          }}
-        >
-          <LogOut className="size-4" /> Sign out
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><Button variant="outline" size="sm">{ROLE_LABEL[role]} <ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>{staff.signedIn ? staff.email : "Staff account"}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild><Link to="/"><Store className="size-4" /> View storefront</Link></DropdownMenuItem>
+            <DropdownMenuItem onSelect={async () => { await supabase.auth.signOut(); await router.navigate({ to: "/manage-login", replace: true }); }}><LogOut className="size-4" /> Sign out</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <nav className="mt-5 flex flex-wrap gap-2">
-        {NAV.map((n) => (
-          <Link
-            key={n.to}
-            to={n.to}
-            activeOptions={{ exact: n.exact }}
-            activeProps={{ className: "bg-primary text-primary-foreground border-primary" }}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium hover:border-primary"
-          >
-            <n.icon className="size-4" /> {n.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="mt-6">
-        <Outlet />
+      <div className="grid gap-6 pt-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside>
+          <nav className="hidden space-y-5 lg:block" aria-label="Manager navigation">
+            {groups.map((group) => <div key={group}><p className="mb-1.5 px-3 text-xs font-semibold uppercase text-muted-foreground">{group}</p><div className="grid gap-1">{visibleNav.filter((n) => n.group === group).map((n) => <Link key={n.to} to={n.to} activeOptions={{ exact: n.exact }} activeProps={{ className: "bg-muted text-foreground" }} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"><n.icon className="size-4" />{n.label}</Link>)}</div></div>)}
+          </nav>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" className="w-full justify-between lg:hidden">{active?.label ?? "Manager menu"}<ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[min(22rem,calc(100vw-2rem))]">{visibleNav.map((n) => <DropdownMenuItem key={n.to} asChild><Link to={n.to}><n.icon className="size-4" />{n.label}</Link></DropdownMenuItem>)}</DropdownMenuContent>
+          </DropdownMenu>
+        </aside>
+        <div className="min-w-0"><Outlet /></div>
       </div>
     </div>
   );

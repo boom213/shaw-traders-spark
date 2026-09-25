@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "lucide-react";
+import { Heart, Menu, MessageCircle, Search, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -10,6 +10,7 @@ import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
+import { AccountMenu } from "@/components/site/AccountMenu";
 
 function Logo() {
   return (
@@ -53,13 +54,11 @@ export function Header() {
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
-                { to: "/scooters", label: "Electric Scooters" },
-                { to: "/service", label: "Scooter Service" },
-                { to: "/offers", label: t("nav.offers") },
                 { to: "/find-parts", label: t("nav.findParts") },
+                { to: "/trade", label: "Trade Account" },
                 { to: "/bulk", label: t("nav.bulk") },
+                { to: "/service", label: "Service" },
                 { to: "/track", label: t("nav.track") },
-                { to: "/account", label: t("nav.account") },
                 { to: "/about", label: t("nav.about") },
                 { to: "/contact", label: t("nav.contact") },
               ].map((l) => (
@@ -73,7 +72,7 @@ export function Header() {
                 </Link>
               ))}
             </nav>
-            <p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {(categories ?? []).length > 0 && <><p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
               {t("nav.categories")}
             </p>
             <nav className="grid gap-0.5 text-sm">
@@ -88,14 +87,25 @@ export function Header() {
                   {c.name}
                 </Link>
               ))}
-            </nav>
+            </nav></>}
             <LanguageSwitch className="mt-6 px-3" />
           </SheetContent>
         </Sheet>
 
         <Logo />
 
-        <div className="mx-auto hidden max-w-xl flex-1 lg:block">
+        <nav className="ml-5 hidden items-center gap-1 xl:flex" aria-label="Store navigation">
+          {[
+            { to: "/shop", label: "Shop" },
+            { to: "/find-parts", label: "Find Parts" },
+            { to: "/trade", label: "Trade" },
+            { to: "/bulk", label: "Bulk Orders" },
+            { to: "/service", label: "Service" },
+            { to: "/contact", label: "Contact" },
+          ].map((item) => <Link key={item.to} to={item.to} className="rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-2.5 py-2 text-sm font-semibold text-foreground bg-muted" }}>{item.label}</Link>)}
+        </nav>
+
+        <div className="mx-auto hidden max-w-sm flex-1 lg:block xl:ml-3">
           <SearchBox />
         </div>
 
@@ -109,13 +119,7 @@ export function Header() {
           >
             <Search className="size-5" />
           </button>
-          <Link
-            to="/account"
-            className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid"
-            aria-label={t("nav.account")}
-          >
-            <User className="size-5" />
-          </Link>
+          <AccountMenu />
           <Link
             to="/account"
             hash="wishlist"
@@ -156,7 +160,7 @@ export function Header() {
         </div>
       )}
 
-      <nav className="border-t border-border bg-surface">
+      {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
         <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-2">
           {navCategories.map((c) => (
             <Link
@@ -173,7 +177,7 @@ export function Header() {
             </Link>
           ))}
         </div>
-      </nav>
+      </nav>}
     </header>
   );
 }
