@@ -3,6 +3,7 @@ import { Grid2x2, Home, Search, ShoppingCart, User } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { useT, type TranslationKey } from "@/lib/i18n";
+import { AccountMenu } from "@/components/site/AccountMenu";
 
 const base = [
   { to: "/", key: "nav.home" as TranslationKey, icon: Home },
@@ -25,7 +26,7 @@ export function MobileTabBar() {
       <ul className={mode === "full" ? "grid grid-cols-5" : "grid grid-cols-4"}>
         {items.map(({ to, key, icon: Icon }) => (
           <li key={to}>
-            <Link
+            {to === "/account" ? <AccountMenu variant="tab" /> : <Link
               to={to}
               className="relative flex flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground"
               activeOptions={{ exact: to === "/" }}
@@ -38,7 +39,7 @@ export function MobileTabBar() {
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </Link>}
           </li>
         ))}
       </ul>
