@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { isOrderingMode, type OrderingMode } from "@/lib/ordering";
+import { getPublicShopSettings } from "@/lib/shop-settings.functions";
 
 export type ShopSettings = {
   orderingMode: OrderingMode;
@@ -45,10 +45,7 @@ export const shopSettingsQuery = () =>
     queryKey: ["shop-settings"],
     staleTime: 30_000,
     queryFn: async (): Promise<ShopSettings> => {
-      const { data } = await supabase
-        .from("shop_settings")
-        .select("ordering_mode, browse_banner, gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
-        .maybeSingle();
+      const data = await getPublicShopSettings();
       if (!data) return DEFAULT_SETTINGS;
       return {
         orderingMode: isOrderingMode(data.ordering_mode) ? data.ordering_mode : "full",

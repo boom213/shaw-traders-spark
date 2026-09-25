@@ -37,8 +37,10 @@ export async function uploadProductPhoto(productId: string, file: File): Promise
 
 /** Upload a photo a customer attached to their review. */
 export async function uploadReviewPhoto(productId: string, file: File): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sign in to add review photos");
   const blob = await toWebp(file);
-  const name = `${productId}/${crypto.randomUUID()}.webp`;
+  const name = `${user.id}/${productId}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("review-photos").upload(name, blob, {
     contentType: "image/webp",
     cacheControl: "31536000",
