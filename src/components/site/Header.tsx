@@ -94,7 +94,7 @@ export function Header() {
 
         <Logo />
 
-        <nav className="ml-5 hidden items-center gap-1 xl:flex" aria-label="Store navigation">
+        <nav className="ml-4 hidden items-center gap-0.5 lg:flex" aria-label="Store navigation">
           {[
             { to: "/shop", label: "Shop" },
             { to: "/find-parts", label: "Find Parts" },
@@ -105,7 +105,7 @@ export function Header() {
           ].map((item) => <Link key={item.to} to={item.to} className="rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-2.5 py-2 text-sm font-semibold text-foreground bg-muted" }}>{item.label}</Link>)}
         </nav>
 
-        <div className="mx-auto hidden max-w-sm flex-1 lg:block xl:ml-3">
+        <div className="mx-auto hidden max-w-sm flex-1 2xl:block 2xl:ml-3">
           <SearchBox />
         </div>
 
