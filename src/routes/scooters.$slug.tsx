@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, canonical, formatINR, whatsappLink } from "@/lib/catalog";
 import { getVehicle, requestFinance, requestTestRide } from "@/lib/vehicles.functions";
@@ -258,16 +257,15 @@ function ExchangeForm() {
         <SelectTrigger aria-label="Condition"><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value="Good">Good</SelectItem></SelectContent>
       </Select>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="block cursor-not-allowed" tabIndex={0} aria-label="Exchange valuation not available">
-              <Button disabled variant="outline" className="w-full pointer-events-none">Get a valuation</Button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>Not available</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="group relative" tabIndex={0} aria-label="Exchange valuation not available">
+        <Button disabled variant="outline" className="w-full pointer-events-none">Get a valuation</Button>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+        >
+          Not available
+        </span>
+      </div>
     </div>
   );
 }
