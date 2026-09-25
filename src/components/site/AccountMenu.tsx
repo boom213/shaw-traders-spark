@@ -24,6 +24,7 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
   const meta = (user?.user_metadata ?? {}) as Record<string, string | undefined>;
   const first = (meta.full_name || meta.name || "").split(" ")[0];
   const label = user ? first || "Account" : "Sign In / Register";
+  const tabLabel = user ? first || "Account" : "Account";
   const pending = !isTrade && account?.application != null;
   const { data: staff } = useQuery({ queryKey: ["account-staff-session", user?.id], queryFn: () => staffSession(), enabled: Boolean(user), retry: false });
 
@@ -38,11 +39,11 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
     <DropdownMenu>
       {variant === "tab" ? (
         <DropdownMenuTrigger
-          className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground data-[state=open]:font-semibold data-[state=open]:text-primary"
-          aria-label="Account menu"
+          className="flex h-16 w-full min-w-0 flex-col items-center justify-center gap-1 px-1 text-[10px] font-medium leading-none text-muted-foreground data-[state=open]:font-semibold data-[state=open]:text-primary sm:text-xs"
+          aria-label={user ? `${label} account menu` : "Sign in or register"}
         >
-          <User className="size-5" aria-hidden="true" />
-          <span className="max-w-full truncate px-1">{label}</span>
+          <User className="size-5 shrink-0" aria-hidden="true" />
+          <span className="max-w-full truncate">{tabLabel}</span>
         </DropdownMenuTrigger>
       ) : (
         <DropdownMenuTrigger
