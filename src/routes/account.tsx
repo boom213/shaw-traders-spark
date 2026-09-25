@@ -237,7 +237,7 @@ function Dashboard() {
         </Button>
       </header>
 
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <section id="details" className="scroll-mt-52 space-y-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
         <h2 className="text-lg font-semibold">Your details</h2>
         <div className="grid gap-3 md:grid-cols-3">
           <Input placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -247,7 +247,7 @@ function Dashboard() {
         <Button disabled={saving} onClick={() => void saveProfile()}>Save details</Button>
       </section>
 
-      <section className="space-y-3">
+      <section id="orders" className="scroll-mt-52 space-y-3">
         <SectionHeading title="Your orders" subtitle="Every order placed with your account" />
         {ordersPending ? (
           <div className="grid gap-2">{[0, 1].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />)}</div>
@@ -297,7 +297,7 @@ function Dashboard() {
       </section>
 
       {saved.length > 0 && (
-        <section className="space-y-3">
+        <section id="wishlist" className="scroll-mt-52 space-y-3">
           <SectionHeading title="Saved for later" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {saved.map((p) => p && <ProductCard key={p.id} product={p} />)}
