@@ -17,34 +17,34 @@ const INSTAGRAM_REELS = [
 export function SocialProofSection() {
   return (
     <section className="border-y border-border bg-surface" aria-labelledby="social-proof-title">
-      <div className="container-page py-10 lg:py-14">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
+      <div className="container-page py-6 lg:py-8">
+        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
             <p className="eyebrow">Follow us</p>
-            <h2 id="social-proof-title" className="mt-1 font-display text-2xl font-bold sm:text-3xl">
+            <h2 id="social-proof-title" className="mt-1 truncate font-display text-xl font-bold sm:text-2xl">
               As seen on our socials
             </h2>
           </div>
-          <SocialLinks />
+          <div className="shrink-0"><SocialLinks /></div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {FACEBOOK_VIDEOS.map((video, index) => (
             <a
               key={video}
               href={video}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-lg border border-border bg-background p-8 text-center transition-colors hover:bg-muted/60"
+              className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-3 py-2.5 transition-colors hover:bg-muted/60"
               aria-label={`Watch Shaw Traders EV Facebook video ${index + 1}`}
             >
-              <span className="relative flex size-12 items-center justify-center rounded-full border border-border">
-                <FaFacebookF className="size-5 text-primary" aria-hidden="true" />
-                <Play className="absolute -bottom-1 -right-1 size-4 fill-current text-foreground" aria-hidden="true" />
+              <span className="relative flex size-7 shrink-0 items-center justify-center rounded-full border border-border">
+                <FaFacebookF className="size-3.5 text-primary" aria-hidden="true" />
+                <Play className="absolute -bottom-0.5 -right-0.5 size-2.5 fill-current text-foreground" aria-hidden="true" />
               </span>
-              <span className="font-display text-lg font-semibold">Watch on Facebook</span>
-              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                Open video <ExternalLink className="size-4" aria-hidden="true" />
+              <span className="min-w-0 truncate text-xs font-semibold">Facebook {index + 1}</span>
+              <span className="ml-auto shrink-0 text-muted-foreground">
+                <ExternalLink className="size-3" aria-hidden="true" />
               </span>
             </a>
           ))}
@@ -55,13 +55,13 @@ export function SocialProofSection() {
               href={reel}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-lg border border-border bg-background p-8 text-center transition-colors hover:bg-muted/60"
+              className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-3 py-2.5 transition-colors hover:bg-muted/60"
               aria-label={`Watch Shaw Traders EV Instagram reel ${index + 1}`}
             >
-              <FaInstagram className="size-10 text-primary" aria-hidden="true" />
-              <span className="font-display text-lg font-semibold">Watch on Instagram</span>
-              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-                Open reel <ExternalLink className="size-4" aria-hidden="true" />
+              <FaInstagram className="size-7 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0 truncate text-xs font-semibold">Instagram {index + 1}</span>
+              <span className="ml-auto shrink-0 text-muted-foreground">
+                <ExternalLink className="size-3" aria-hidden="true" />
               </span>
             </a>
           ))}
