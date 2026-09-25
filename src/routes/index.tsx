@@ -103,7 +103,7 @@ function Home() {
     <div>
       <section className="border-b border-border">
         <div className="container-page py-6 lg:py-10">
-          <div className="mb-5 grid gap-4 lg:mb-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="mb-5 grid gap-4 lg:mb-6">
             <div className="min-w-0">
               <p className="eyebrow">Bud Bud · Bardhaman</p>
               <h1 className="mt-2 font-display text-[1.625rem] font-semibold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
