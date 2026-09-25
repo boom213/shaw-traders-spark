@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
+import { MapLocationPicker, type DeliveryCoordinates } from "@/components/site/MapLocationPicker";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +71,7 @@ function CheckoutPage() {
   const abandon = useServerFn(abandonPayment);
 
   const [step, setStep] = useState(1);
+  const [mapOpen, setMapOpen] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [pending, setPending] = useState<PendingOrder | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -81,6 +83,8 @@ function CheckoutPage() {
     city: "",
     state: "West Bengal",
     pincode: "",
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
   });
   const [delivery, setDelivery] = useState<(typeof DELIVERY)[number]>(DELIVERY[0]);
   const [payment, setPayment] = useState<string>(PAYMENT[0].id);
@@ -293,6 +297,25 @@ function CheckoutPage() {
                 <F label="State" v={addr.state} on={(v) => setAddr({ ...addr, state: v })} />
                 <F label="PIN code" v={addr.pincode} on={(v) => setAddr({ ...addr, pincode: v })} />
               </div>
+              <div className="rounded-lg border border-border bg-surface p-3">
+                {addr.latitude !== undefined && addr.longitude !== undefined ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="grid size-8 place-items-center rounded-full bg-accent text-primary"><MapPin className="size-4" /></span>
+                      <span><strong className="block">Exact location added</strong><span className="text-xs text-muted-foreground">Delivery pin saved with this address</span></span>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}>Adjust</Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setAddr({ ...addr, latitude: undefined, longitude: undefined })}>Remove</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div><p className="text-sm font-semibold">Help us find your address</p><p className="text-xs text-muted-foreground">Add an exact map pin for easier delivery. Optional.</p></div>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}><MapPin className="size-4" /> Choose on map</Button>
+                  </div>
+                )}
+              </div>
               <Button
                 className="mt-1 w-fit"
                 onClick={() => {
@@ -306,6 +329,13 @@ function CheckoutPage() {
               </Button>
             </div>
           )}
+
+          <MapLocationPicker
+            open={mapOpen}
+            value={addr.latitude !== undefined && addr.longitude !== undefined ? { latitude: addr.latitude, longitude: addr.longitude } : undefined}
+            onOpenChange={setMapOpen}
+            onConfirm={(coordinates: DeliveryCoordinates) => setAddr({ ...addr, ...coordinates })}
+          />
 
           {step === 2 && (
             <div className="grid gap-4">
