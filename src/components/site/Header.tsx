@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { BadgeCheck, Heart, MapPin, Menu, MessageCircle, PackageCheck, ShoppingCart, Truck } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,7 +29,7 @@ export function Header() {
   const { lists } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const { mode: siteMode } = useSiteOrdering();
-  const { data: categories } = useQuery(categoriesQuery());
+  const { data: categories } = useSuspenseQuery(categoriesQuery());
   const navCategories = NAV_CATEGORIES.map((slug) => (categories ?? []).find((c) => c.slug === slug)).filter(
     (c): c is NonNullable<typeof c> => Boolean(c),
   );
