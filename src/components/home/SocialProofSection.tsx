@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { ExternalLink } from "lucide-react";
-import { FaInstagram } from "react-icons/fa6";
+import { ExternalLink, Play } from "lucide-react";
+import { FaFacebookF, FaInstagram } from "react-icons/fa6";
 import { SocialLinks } from "@/components/site/SocialLinks";
 
 const FACEBOOK_VIDEOS = [
@@ -15,74 +14,7 @@ const INSTAGRAM_REELS = [
   "https://www.instagram.com/shawtradersev/reel/DcU7wJYhMxD/",
 ];
 
-declare global {
-  interface Window {
-    instgrm?: { Embeds: { process: () => void } };
-  }
-}
-
-function processInstagramEmbeds() {
-  window.instgrm?.Embeds.process();
-}
-
-function InstagramReel({ reel, index }: { reel: string; index: number }) {
-  const embedRef = useRef<HTMLQuoteElement>(null);
-  const [unavailable, setUnavailable] = useState(false);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const frame = embedRef.current?.querySelector("iframe");
-      if (!frame || frame.offsetHeight < 100) setUnavailable(true);
-    }, 5000);
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  if (unavailable) {
-    return (
-      <a
-        href={reel}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex min-h-72 w-full flex-col items-center justify-center gap-4 bg-muted/30 p-8 text-center transition-colors hover:bg-muted/60"
-        aria-label={`Watch Shaw Traders EV Instagram reel ${index + 1}`}
-      >
-        <FaInstagram className="size-10 text-primary" aria-hidden="true" />
-        <span className="font-display text-lg font-semibold">Watch on Instagram</span>
-        <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          Open reel <ExternalLink className="size-4" aria-hidden="true" />
-        </span>
-      </a>
-    );
-  }
-
-  return (
-    <blockquote
-      ref={embedRef}
-      className="instagram-media m-0! min-w-0! w-full!"
-      data-instgrm-permalink={reel}
-      data-instgrm-version="14"
-      aria-label={`Shaw Traders EV Instagram reel ${index + 1}`}
-    />
-  );
-}
-
 export function SocialProofSection() {
-  useEffect(() => {
-    const existing = document.querySelector<HTMLScriptElement>('script[src="https://www.instagram.com/embed.js"]');
-    if (existing) {
-      if (window.instgrm) processInstagramEmbeds();
-      else existing.addEventListener("load", processInstagramEmbeds, { once: true });
-      return () => existing.removeEventListener("load", processInstagramEmbeds);
-    }
-
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://www.instagram.com/embed.js";
-    script.addEventListener("load", processInstagramEmbeds, { once: true });
-    document.body.appendChild(script);
-    return () => script.removeEventListener("load", processInstagramEmbeds);
-  }, []);
-
   return (
     <section className="border-y border-border bg-surface" aria-labelledby="social-proof-title">
       <div className="container-page py-10 lg:py-14">
@@ -98,23 +30,40 @@ export function SocialProofSection() {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           {FACEBOOK_VIDEOS.map((video, index) => (
-            <div key={video} className="aspect-video overflow-hidden rounded-lg border border-border bg-background">
-              <iframe
-                src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(video)}&show_text=false`}
-                title={`Shaw Traders EV Facebook video ${index + 1}`}
-                className="size-full border-0"
-                scrolling="no"
-                allowFullScreen
-                loading="lazy"
-                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-              />
-            </div>
+            <a
+              key={video}
+              href={video}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-lg border border-border bg-background p-8 text-center transition-colors hover:bg-muted/60"
+              aria-label={`Watch Shaw Traders EV Facebook video ${index + 1}`}
+            >
+              <span className="relative flex size-12 items-center justify-center rounded-full border border-border">
+                <FaFacebookF className="size-5 text-primary" aria-hidden="true" />
+                <Play className="absolute -bottom-1 -right-1 size-4 fill-current text-foreground" aria-hidden="true" />
+              </span>
+              <span className="font-display text-lg font-semibold">Watch on Facebook</span>
+              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                Open video <ExternalLink className="size-4" aria-hidden="true" />
+              </span>
+            </a>
           ))}
 
           {INSTAGRAM_REELS.map((reel, index) => (
-            <div key={reel} className="flex min-h-[34rem] justify-center overflow-hidden rounded-lg border border-border bg-background p-2">
-              <InstagramReel reel={reel} index={index} />
-            </div>
+            <a
+              key={reel}
+              href={reel}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-56 flex-col items-center justify-center gap-4 rounded-lg border border-border bg-background p-8 text-center transition-colors hover:bg-muted/60"
+              aria-label={`Watch Shaw Traders EV Instagram reel ${index + 1}`}
+            >
+              <FaInstagram className="size-10 text-primary" aria-hidden="true" />
+              <span className="font-display text-lg font-semibold">Watch on Instagram</span>
+              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                Open reel <ExternalLink className="size-4" aria-hidden="true" />
+              </span>
+            </a>
           ))}
         </div>
       </div>
