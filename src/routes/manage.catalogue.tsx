@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Camera, GripVertical, Loader2, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { catalogueList, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { catalogueList, createCatalogueProduct, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
 import { uploadProductPhoto } from "@/lib/photo-upload";
 import { categoriesQuery } from "@/lib/queries";
 import { placeholderFor } from "@/lib/placeholders";
@@ -27,27 +29,37 @@ const FILTERS = [
   { value: "hidden", label: "Hidden" },
   { value: "no-rack", label: "No shelf location" },
 ] as const;
+const PAGE_SIZES = [10, 20, 50, 100] as const;
 
 function CataloguePage() {
+  const { staff } = Route.useRouteContext();
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [cat, setCat] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(20);
 
   const { data: categories } = useQuery(categoriesQuery());
   const { data, isPending } = useQuery({
-    queryKey: ["catalogue-admin", term, cat, filter, page],
-    queryFn: () => catalogueList({ data: { q: term, category: cat, filter, page } }),
+    queryKey: ["catalogue-admin", term, cat, filter, page, pageSize],
+    queryFn: () => catalogueList({ data: { q: term, category: cat, filter, page, pageSize } }),
+    placeholderData: (previous) => previous,
   });
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
-  const pages = Math.max(1, Math.ceil(total / 30));
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : page * pageSize + 1;
+  const to = Math.min(total, (page + 1) * pageSize);
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div><h2 className="font-display text-lg font-bold">Products & stock</h2><p className="text-sm text-muted-foreground">Products are assigned to the same categories shown on the homepage.</p></div>
+          {staff.role === "super_admin" && <AddProductDialog categories={categories ?? []} />}
+        </div>
         <form
           className="flex gap-2"
           onSubmit={(e) => {
@@ -62,15 +74,16 @@ function CataloguePage() {
 
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {FILTERS.map((f) => (
-            <button
+            <Button
+              type="button"
+              size="sm"
+              variant={filter === f.value ? "default" : "outline"}
               key={f.value}
               onClick={() => { setFilter(f.value); setPage(0); }}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                filter === f.value ? "border-primary bg-primary text-primary-foreground" : "border-border"
-              }`}
+              className="shrink-0 rounded-full"
             >
               {f.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -85,7 +98,14 @@ function CataloguePage() {
           ))}
         </select>
 
-        <p className="mt-3 text-xs text-muted-foreground">{total} products match. Changes save as soon as you tap Save on a card.</p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">{total} products match. Changes save as soon as you tap Save on a card.</p>
+          <label className="flex items-center gap-2 text-xs font-medium">Rows per page
+            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+              {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+            </select>
+          </label>
+        </div>
       </div>
 
       {isPending && [0, 1, 2].map((i) => <div key={i} className="h-56 animate-pulse rounded-2xl bg-muted" />)}
@@ -98,13 +118,71 @@ function CataloguePage() {
 
       {items.map((p) => <ProductCard key={p.id} product={p} />)}
 
-      <div className="sticky bottom-3 flex items-center justify-between gap-2 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
-        <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage((n) => n - 1)}>Back</Button>
-        <span className="text-sm text-muted-foreground">Page {page + 1} of {pages}</span>
-        <Button variant="outline" size="sm" disabled={page + 1 >= pages} onClick={() => setPage((n) => n + 1)}>Next</Button>
+      <div className="sticky bottom-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
+        <span className="text-sm text-muted-foreground">Showing {from}–{to} of {total}</span>
+        <div className="flex items-center gap-2">
+          <Button aria-label="Previous page" variant="outline" size="icon" disabled={page === 0 || isPending} onClick={() => setPage((n) => Math.max(0, n - 1))}><ChevronLeft className="size-4" /></Button>
+          <span className="min-w-24 text-center text-sm">Page {page + 1} of {pages}</span>
+          <Button aria-label="Next page" variant="outline" size="icon" disabled={page + 1 >= pages || isPending} onClick={() => setPage((n) => Math.min(pages - 1, n + 1))}><ChevronRight className="size-4" /></Button>
+        </div>
       </div>
     </div>
   );
+}
+
+type CategoryOption = { slug: string; name: string };
+
+function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", sku: "", category: "", brand: "", price: "", mrp: "", stock: "0", description: "", status: "draft" });
+  const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const optionalNumber = (value: string) => value.trim() === "" ? null : Number(value);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    const result = await createCatalogueProduct({ data: {
+      name: form.name,
+      sku: form.sku,
+      category: form.category,
+      brand: form.brand,
+      price: optionalNumber(form.price),
+      mrp: optionalNumber(form.mrp),
+      stock: Number(form.stock || 0),
+      description: form.description,
+      status: form.status,
+    } });
+    setSaving(false);
+    if (!result.ok) return toast.error(result.error);
+    toast.success("Product added");
+    setOpen(false);
+    setForm({ name: "", sku: "", category: "", brand: "", price: "", mrp: "", stock: "0", description: "", status: "draft" });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
+      queryClient.invalidateQueries({ queryKey: ["categories"] }),
+      queryClient.invalidateQueries({ queryKey: ["home"] }),
+      queryClient.invalidateQueries({ queryKey: ["products"] }),
+    ]);
+  };
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button><Plus className="size-4" /> Add product</Button></DialogTrigger>
+    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogHeader><DialogTitle>Add product</DialogTitle><DialogDescription>Choose a homepage category. New products start as drafts unless you select Visible.</DialogDescription></DialogHeader>
+      <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
+        <Cell label="Product name"><Input required minLength={2} value={form.name} onChange={(e) => set("name", e.target.value)} /></Cell>
+        <Cell label="Product code (SKU)"><Input required minLength={2} value={form.sku} onChange={(e) => set("sku", e.target.value.toUpperCase())} /></Cell>
+        <Cell label="Homepage category"><select required value={form.category} onChange={(e) => set("category", e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">Choose category</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></Cell>
+        <Cell label="Brand"><Input value={form.brand} onChange={(e) => set("brand", e.target.value)} /></Cell>
+        <Cell label="Price ₹"><Input min="0" step="0.01" type="number" value={form.price} onChange={(e) => set("price", e.target.value)} /></Cell>
+        <Cell label="MRP ₹"><Input min="0" step="0.01" type="number" value={form.mrp} onChange={(e) => set("mrp", e.target.value)} /></Cell>
+        <Cell label="Opening stock"><Input required min="0" step="1" type="number" value={form.stock} onChange={(e) => set("stock", e.target.value)} /></Cell>
+        <Cell label="Visibility"><select value={form.status} onChange={(e) => set("status", e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="draft">Draft</option><option value="visible">Visible on storefront</option><option value="hidden">Hidden</option></select></Cell>
+        <div className="grid gap-1 sm:col-span-2"><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>
+        <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={saving || categories.length === 0}>{saving ? "Adding…" : "Add product"}</Button></div>
+      </form>
+    </DialogContent>
+  </Dialog>;
 }
 
 function ProductCard({ product }: { product: CatalogueRow }) {
