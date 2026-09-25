@@ -14,13 +14,13 @@ import {
 export type DeliveryCoordinates = { latitude: number; longitude: number };
 
 type MapInstance = {
-  setCenter: (point: DeliveryCoordinates) => void;
+  setCenter: (point: { lat: number; lng: number }) => void;
   setZoom: (zoom: number) => void;
   addListener: (event: string, handler: (event: { latLng?: { lat: () => number; lng: () => number } }) => void) => { remove: () => void };
 };
 
 type MarkerInstance = {
-  setPosition: (point: DeliveryCoordinates) => void;
+  setPosition: (point: { lat: number; lng: number }) => void;
   addListener: (event: string, handler: () => void) => { remove: () => void };
   getPosition: () => { lat: () => number; lng: () => number } | null;
   setMap: (map: null) => void;
@@ -63,6 +63,7 @@ function loadMaps(): Promise<MapsApi> {
 }
 
 const DEFAULT_POINT: DeliveryCoordinates = { latitude: 23.406, longitude: 87.914 };
+const mapPoint = (point: DeliveryCoordinates) => ({ lat: point.latitude, lng: point.longitude });
 
 export function MapLocationPicker({
   open,
@@ -93,7 +94,7 @@ export function MapLocationPicker({
         if (!active || !mapElement.current) return;
         const initial = value ?? DEFAULT_POINT;
         const map = new maps.Map(mapElement.current, {
-          center: initial,
+          center: mapPoint(initial),
           zoom: value ? 17 : 13,
           clickableIcons: false,
           streetViewControl: false,
@@ -101,7 +102,7 @@ export function MapLocationPicker({
           fullscreenControl: false,
           styles: [{ featureType: "poi", stylers: [{ visibility: "off" }] }],
         });
-        const marker = new maps.Marker({ map, position: initial, draggable: true, title: "Delivery location" });
+        const marker = new maps.Marker({ map, position: mapPoint(initial), draggable: true, title: "Delivery location" });
         mapRef.current = map;
         markerRef.current = marker;
         listenersRef.current = [
@@ -109,7 +110,7 @@ export function MapLocationPicker({
             const latLng = event.latLng;
             if (!latLng) return;
             const next = { latitude: latLng.lat(), longitude: latLng.lng() };
-            marker.setPosition(next);
+            marker.setPosition(mapPoint(next));
             setPoint(next);
           }),
           marker.addListener("dragend", () => {
@@ -142,8 +143,8 @@ export function MapLocationPicker({
       ({ coords }) => {
         const next = { latitude: coords.latitude, longitude: coords.longitude };
         setPoint(next);
-        markerRef.current?.setPosition(next);
-        mapRef.current?.setCenter(next);
+        markerRef.current?.setPosition(mapPoint(next));
+        mapRef.current?.setCenter(mapPoint(next));
         mapRef.current?.setZoom(18);
       },
       () => toast.error("Location permission was not granted. Tap the map to place the pin."),
@@ -171,8 +172,8 @@ export function MapLocationPicker({
             <Button type="button" variant="ghost" onClick={() => {
               const next = value;
               setPoint(next);
-              markerRef.current?.setPosition(next);
-              mapRef.current?.setCenter(next);
+              markerRef.current?.setPosition(mapPoint(next));
+              mapRef.current?.setCenter(mapPoint(next));
             }}>
               <RotateCcw className="size-4" /> Reset
             </Button>
