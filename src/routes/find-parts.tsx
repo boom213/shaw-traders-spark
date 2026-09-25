@@ -3,8 +3,15 @@ import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { Button } from "@/components/ui/button";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
+import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/find-parts")({
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(vehicleTreeQuery()),
+      context.queryClient.ensureQueryData(categoriesQuery()),
+    ]);
+  },
   head: () => ({
     meta: [
       { title: "Find Parts for Your EV" },

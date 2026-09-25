@@ -12,7 +12,6 @@ import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { OffersStrip } from "@/components/home/OffersStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
-import { ScooterSection } from "@/components/home/ScooterSection";
 import { BrandsSection } from "@/components/home/BrandsSection";
 import { homeQuery } from "@/lib/queries";
 
@@ -143,7 +142,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="container-page py-6 lg:py-10">
+      {home.categories.length > 0 && <section className="container-page py-6 lg:py-10">
         <SectionHeading
           title="Shop by Category"
           subtitle="Part categories for electric scooters, e-bikes and e-rickshaws."
@@ -154,7 +153,7 @@ function Home() {
           }
         />
         <CategoryCarousel categories={home.categories} />
-      </section>
+      </section>}
 
       <section className="container-page py-6 lg:py-10">
         <div className="grid gap-4 md:grid-cols-2">
@@ -201,10 +200,6 @@ function Home() {
           <OffersStrip offers={home.offers} />
         </section>
       )}
-
-      <LazySection minHeight="24rem">
-        <ScooterSection />
-      </LazySection>
 
       <LazySection minHeight="24rem">
         <section className="container-page py-4 lg:py-8">

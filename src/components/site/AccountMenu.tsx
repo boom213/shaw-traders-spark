@@ -13,6 +13,8 @@ import {
 import { useStore } from "@/hooks/useStore";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { supabase } from "@/integrations/supabase/client";
+import { staffSession } from "@/lib/staff.functions";
+import { useQuery } from "@tanstack/react-query";
 
 export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab" }) {
   const { user } = useStore();
@@ -21,8 +23,9 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
   const navigate = useNavigate();
   const meta = (user?.user_metadata ?? {}) as Record<string, string | undefined>;
   const first = (meta.full_name || meta.name || "").split(" ")[0];
-  const label = user ? first || "Account" : "Sign In";
+  const label = user ? first || "Account" : "Sign In / Register";
   const pending = !isTrade && account?.application != null;
+  const { data: staff } = useQuery({ queryKey: ["account-staff-session", user?.id], queryFn: () => staffSession(), enabled: Boolean(user), retry: false });
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -95,6 +98,12 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
+            {staff?.signedIn && (
+              <DropdownMenuItem asChild>
+                <Link to="/manage">Open Manager Panel</Link>
+              </DropdownMenuItem>
+            )}
+            {staff?.signedIn && <DropdownMenuSeparator />}
             <DropdownMenuItem onSelect={() => void signOut()}>Sign Out</DropdownMenuItem>
           </>
         )}
