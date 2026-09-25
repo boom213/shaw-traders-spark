@@ -171,7 +171,7 @@
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   /* Visible keyboard focus everywhere, including links and custom controls. */

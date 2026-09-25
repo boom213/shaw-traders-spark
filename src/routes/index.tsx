@@ -15,6 +15,7 @@ import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { BrandsSection } from "@/components/home/BrandsSection";
 import { ScooterSection } from "@/components/home/ScooterSection";
 import { homeQuery } from "@/lib/queries";
+import storefrontHero from "@/assets/hero-storefront-reference.jpg";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
@@ -102,17 +103,17 @@ function Home() {
 
   return (
     <div>
-      <section className="border-b border-border bg-surface">
-        <div className="container-page py-3 sm:py-5">
-          <div className="relative min-h-[31rem] overflow-hidden rounded-xl bg-ink sm:min-h-[34rem] lg:min-h-[36rem]">
-            <img src={heroImageFor(heroSlide)} alt="Electric scooter and genuine EV parts from Shaw Traders EV" className="absolute inset-0 size-full object-cover object-[67%_center]" width={1600} height={800} fetchPriority="high" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_92%,transparent)_38%,color-mix(in_oklch,var(--background)_35%,transparent)_70%,transparent_100%)]" />
-            <div className="relative flex min-h-[31rem] max-w-2xl flex-col justify-center px-5 py-10 sm:min-h-[34rem] sm:px-10 lg:min-h-[36rem] lg:px-16">
+      <section className="border-b border-border bg-background">
+        <div className="container-page py-3 sm:py-4">
+          <div className="relative min-h-[32rem] overflow-hidden rounded-xl bg-surface sm:min-h-[34rem] lg:min-h-[25.5rem]">
+            <img src={storefrontHero} alt="Electric scooter and genuine EV parts from Shaw Traders EV" className="absolute inset-0 size-full object-cover object-[64%_center]" width={1600} height={720} fetchPriority="high" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_96%,transparent)_34%,color-mix(in_oklch,var(--background)_48%,transparent)_53%,transparent_70%)]" />
+            <div className="relative flex min-h-[32rem] max-w-[42rem] flex-col justify-center px-5 py-8 sm:min-h-[34rem] sm:px-10 lg:min-h-[25.5rem] lg:px-16">
               <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-[11px] font-semibold uppercase text-accent-foreground">
                 <span className="size-1.5 rounded-full bg-primary" /> Trusted EV parts showroom
               </p>
-              <h1 className="max-w-xl font-display text-[2.35rem] font-bold leading-[1.02] sm:text-5xl lg:text-6xl">
-                Shaw Traders EV<br /><span className="text-primary">Everything Your EV Needs</span>
+              <h1 className="max-w-xl font-display text-[2.35rem] font-bold leading-[1.02] sm:text-5xl lg:text-[3.25rem]">
+                Shaw Traders EV —<br />Everything Your<br /><span className="text-primary">EV Needs</span>
               </h1>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Genuine spare parts, batteries, chargers and electric scooters for every major EV brand.
@@ -125,7 +126,7 @@ function Home() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-7 grid max-w-xl gap-2 sm:grid-cols-2 lg:grid-cols-3">
+               <div className="mt-5 grid max-w-xl gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 <Button size="lg" className="w-full" asChild><Link to="/shop">Shop EV Parts <ArrowRight /></Link></Button>
                 <Button size="lg" variant="outline" className="w-full bg-background/90" asChild><Link to="/find-parts"><Search /> Find Your EV</Link></Button>
                 <Button size="lg" variant="outline" className="w-full bg-background/90 sm:col-span-2 lg:col-span-1" asChild><a href="/api/public/catalogue" download><Download /> Brochure</a></Button>
@@ -135,17 +136,22 @@ function Home() {
               </a>
             </div>
           </div>
-          {home.categories.length > 0 && (
-            <div className="relative z-10 -mt-3 rounded-xl border border-border bg-background p-3 shadow-[var(--shadow-lift)] sm:mx-5 sm:-mt-6 sm:p-4">
-              <div className="mb-3 flex items-center justify-between px-1">
-                <h2 className="font-display text-base font-semibold">Shop by category</h2>
-                <Link to="/categories" className="text-xs font-semibold text-primary hover:underline">View all →</Link>
-              </div>
-              <CategoryCarousel categories={home.categories} />
-            </div>
-          )}
         </div>
       </section>
+
+      {home.categories.length > 0 && (
+        <section className="container-page py-5 lg:py-7">
+          <div className="mb-5 text-center">
+            <p className="eyebrow">Shop by category</p>
+            <div className="relative mt-1">
+              <h2 className="font-display text-2xl font-bold sm:text-3xl">Everything You Need for Your EV</h2>
+              <Link to="/categories" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline sm:absolute sm:right-0 sm:top-2">View all →</Link>
+            </div>
+            <span className="mx-auto mt-2 block h-0.5 w-8 bg-primary" />
+          </div>
+          <CategoryCarousel categories={home.categories} />
+        </section>
+      )}
 
       <BrandsSection />
 

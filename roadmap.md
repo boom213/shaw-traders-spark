@@ -8,3 +8,4 @@
 - [x] Add traditional email/password sign-in and sign-up while preserving phone and Google.
 - [x] Add and verify forgot-password and reset-password recovery.
 - [x] Verify the homepage and account journeys on desktop and mobile.
+- [ ] Match the storefront homepage closely to the new supplied visual reference.
