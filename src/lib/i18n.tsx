@@ -36,7 +36,7 @@ const EN = {
   "product.outOfStock": "Out of Stock",
   "product.inStock": "In stock",
   "product.priceOnRequest": "Price on request — ask on WhatsApp",
-  "product.askPrice": "Ask price on WhatsApp",
+  "product.askPrice": "Get price",
   "common.viewAll": "View All",
 } as const;
 
@@ -64,7 +64,7 @@ const BN: Record<TranslationKey, string> = {
   "product.outOfStock": "স্টকে নেই",
   "product.inStock": "স্টকে আছে",
   "product.priceOnRequest": "দাম জানতে হোয়াটসঅ্যাপে জিজ্ঞাসা করুন",
-  "product.askPrice": "হোয়াটসঅ্যাপে দাম জিজ্ঞাসা করুন",
+  "product.askPrice": "দাম জানুন",
   "common.viewAll": "সব দেখুন",
 };
 
@@ -90,7 +90,7 @@ const HI: Record<TranslationKey, string> = {
   "product.outOfStock": "स्टॉक में नहीं",
   "product.inStock": "स्टॉक में है",
   "product.priceOnRequest": "कीमत के लिए व्हाट्सएप पर पूछें",
-  "product.askPrice": "व्हाट्सएप पर कीमत पूछें",
+  "product.askPrice": "कीमत जानें",
   "common.viewAll": "सभी देखें",
 };
 
