@@ -49,18 +49,19 @@ const mapRow = (r: Row): CatalogueRow => ({
 
 /** Searchable, filterable product list for the phone-friendly catalogue screen. */
 export const catalogueList = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string; category?: string; filter?: string; page?: number } | undefined) => ({
+  .inputValidator((data: { q?: string; category?: string; filter?: string; page?: number; pageSize?: number } | undefined) => ({
     q: String(data?.q ?? "").trim(),
     category: String(data?.category ?? ""),
     filter: String(data?.filter ?? "all"),
-    page: Math.max(0, Number(data?.page ?? 0)),
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: [10, 20, 50, 100].includes(Number(data?.pageSize)) ? Number(data?.pageSize) : 20,
   }))
   .handler(async ({ data }): Promise<{ items: CatalogueRow[]; total: number }> => {
     const { sb } = await adminAs();
-    const size = 30;
+    const size = data.pageSize;
 
-    // Photo and low-stock filters need the joined rows, so they are applied in memory
-    // over a wider slice; price/stock filters push down to the database.
+    // Photo and low-stock filters compare joined/calculated values. Read every
+    // matching row in bounded batches so their totals and later pages stay exact.
     const inMemory = data.filter === "no-photo" || data.filter === "low-stock";
     let query = sb.from("products").select(SELECT, { count: "exact" });
     if (data.q) {
@@ -74,9 +75,15 @@ export const catalogueList = createServerFn({ method: "POST" })
     if (data.filter === "no-stock") query = query.eq("stock", 0);
 
     if (inMemory) {
-      const { data: rows, error } = await query.order("name").limit(1500);
-      if (error) throw new Error(error.message);
-      let items = (rows ?? []).map(mapRow);
+      const allRows: Row[] = [];
+      const batchSize = 1000;
+      for (let from = 0; ; from += batchSize) {
+        const { data: rows, error } = await query.order("name").range(from, from + batchSize - 1);
+        if (error) throw new Error(error.message);
+        allRows.push(...((rows ?? []) as Row[]));
+        if ((rows ?? []).length < batchSize) break;
+      }
+      let items = allRows.map(mapRow);
       items =
         data.filter === "no-photo"
           ? items.filter((p) => p.images.length === 0)
@@ -89,6 +96,72 @@ export const catalogueList = createServerFn({ method: "POST" })
       .range(data.page * size, data.page * size + size - 1);
     if (error) throw new Error(error.message);
     return { items: (rows ?? []).map(mapRow), total: count ?? 0 };
+  });
+
+export const createCatalogueProduct = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    name: string;
+    sku: string;
+    category: string;
+    brand?: string;
+    price?: number | null;
+    mrp?: number | null;
+    stock?: number;
+    description?: string;
+    status?: string;
+  }) => ({
+    name: String(data?.name ?? "").trim().slice(0, 180),
+    sku: String(data?.sku ?? "").trim().toUpperCase().slice(0, 80),
+    category: String(data?.category ?? "").trim(),
+    brand: String(data?.brand ?? "").trim().slice(0, 120),
+    price: data?.price === null || data?.price === undefined ? null : Number(data.price),
+    mrp: data?.mrp === null || data?.mrp === undefined ? null : Number(data.mrp),
+    stock: Math.max(0, Math.floor(Number(data?.stock ?? 0))),
+    description: String(data?.description ?? "").trim().slice(0, 5000),
+    status: ["visible", "draft", "hidden"].includes(String(data?.status)) ? String(data.status) : "draft",
+  }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ superAdmin: true });
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
+    if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
+    if (data.sku.length < 2) return { ok: false as const, error: "Enter a product code." };
+    if (data.price !== null && (!Number.isFinite(data.price) || data.price < 0)) return { ok: false as const, error: "Price must be zero or more." };
+    if (data.mrp !== null && (!Number.isFinite(data.mrp) || data.mrp < 0)) return { ok: false as const, error: "MRP must be zero or more." };
+    const { data: category } = await sb.from("categories").select("id, name").eq("slug", data.category).maybeSingle();
+    if (!category) return { ok: false as const, error: "Choose a valid homepage category." };
+
+    const slugBase = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
+    let slug = slugBase;
+    for (let suffix = 2; ; suffix++) {
+      const { data: existing } = await sb.from("products").select("id").eq("slug", slug).maybeSingle();
+      if (!existing) break;
+      slug = `${slugBase}-${suffix}`;
+    }
+    const { data: product, error } = await sb.from("products").insert({
+      name: data.name,
+      sku: data.sku,
+      slug,
+      category_id: category.id,
+      brand: data.brand || null,
+      price: data.price,
+      mrp: data.mrp,
+      stock: data.stock,
+      description: data.description || null,
+      status: data.status,
+      product_kind: "part",
+    } as never).select("id").single();
+    if (error) {
+      const duplicate = error.code === "23505";
+      return { ok: false as const, error: duplicate ? "That product code is already in use." : error.message };
+    }
+    await logAudit(sb as never, actor, "products.created", "products", product.id, {
+      name: data.name,
+      sku: data.sku,
+      category: category.name,
+      status: data.status,
+    });
+    return { ok: true as const, id: product.id, slug };
   });
 
 /** Save price, MRP, stock, brand and reorder level for one product. */
