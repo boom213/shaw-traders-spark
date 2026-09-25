@@ -7,4 +7,4 @@
 - [x] Redesign the homepage to match the supplied storefront reference.
 - [x] Add traditional email/password sign-in and sign-up while preserving phone and Google.
 - [x] Add and verify forgot-password and reset-password recovery.
-- [ ] Verify the homepage and account journeys on desktop and mobile.
+- [x] Verify the homepage and account journeys on desktop and mobile.

@@ -52,20 +52,20 @@ export function CookieConsent() {
   if (!hydrated || choice) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 p-2 lg:bottom-0 lg:p-3">
-      <div className="pointer-events-auto mx-auto grid max-w-3xl gap-2 rounded-lg border border-border bg-card p-3 shadow-[var(--shadow-card)] sm:flex sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          Essential cookies keep you signed in and remember your cart. Allow anonymous shop analytics?{" "}
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 p-2 lg:bottom-0 lg:p-3">
+      <div className="pointer-events-auto mx-auto flex max-w-3xl items-center justify-between gap-2 rounded-lg border border-border bg-card p-2.5 shadow-[var(--shadow-lift)] sm:p-3">
+        <p className="min-w-0 text-xs leading-snug text-muted-foreground sm:text-sm">
+          Cookies keep you signed in and remember your cart. Analytics is optional.{" "}
           <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>
         </p>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={() => setConsent("rejected")}>
-            Essential only
+        <div className="flex shrink-0 gap-1.5 sm:gap-2">
+          <Button variant="outline" size="sm" className="px-2 text-[11px] sm:px-3 sm:text-xs" onClick={() => setConsent("rejected")}>
+            Essential
           </Button>
-          <Button size="sm" onClick={() => setConsent("accepted")}>
-            Accept all
+          <Button size="sm" className="px-2 text-[11px] sm:px-3 sm:text-xs" onClick={() => setConsent("accepted")}>
+            Accept
           </Button>
         </div>
       </div>
