@@ -27,7 +27,7 @@ export type AdminVehicleRow = {
 /** Every scooter model the shop lists, including drafts and hidden ones. */
 export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(async (): Promise<AdminVehicleRow[]> => {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability: "catalogue" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("products")
@@ -72,7 +72,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
   .inputValidator((data: SaveVehicleInput) => data)
   .handler(async ({ data }): Promise<{ ok: boolean; id?: string; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const staff = await requireStaff();
+    const staff = await requireStaff({ capability: "catalogue" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { slugify } = await import("@/lib/catalog");
 
@@ -159,7 +159,7 @@ export const addVehiclePhoto = createServerFn({ method: "POST" })
   .inputValidator((data: { productId: string; url: string }) => ({ productId: uuid(data?.productId), url: text(data?.url, 400) }))
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "catalogue" });
     if (!data.productId || !data.url) return { ok: false };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count } = await supabaseAdmin
@@ -175,7 +175,7 @@ export const removeVehiclePhoto = createServerFn({ method: "POST" })
   .inputValidator((data: { productId: string; url: string }) => ({ productId: uuid(data?.productId), url: text(data?.url, 400) }))
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "catalogue" });
     if (!data.productId || !data.url) return { ok: false };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("product_images").delete().eq("product_id", data.productId).eq("url", data.url);
@@ -190,7 +190,7 @@ export const setVehicleStatus = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const staff = await requireStaff();
+    const staff = await requireStaff({ capability: "catalogue" });
     if (!data.id || !data.status) return { ok: false, error: "Pick a state." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
@@ -208,7 +208,7 @@ export const setVehicleDemo = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; isDemo: boolean }) => ({ id: uuid(data?.id), isDemo: Boolean(data?.isDemo) }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const staff = await requireStaff();
+    const staff = await requireStaff({ capability: "catalogue" });
     if (!data.id) return { ok: false, error: "Model not found." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin.from("products").select("specs").eq("id", data.id).maybeSingle();
@@ -230,7 +230,7 @@ export const deleteVehicle = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => ({ id: uuid(data?.id) }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const staff = await requireStaff();
+    const staff = await requireStaff({ capability: "catalogue" });
     if (!data.id) return { ok: false, error: "Model not found." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
