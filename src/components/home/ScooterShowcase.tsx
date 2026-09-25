@@ -12,7 +12,7 @@ export function ScooterShowcase({ models }: { models: VehicleModel[] }) {
       <CarouselContent className="-ml-3">
         {models.map((v) => (
           <CarouselItem key={v.id} className="basis-4/5 pl-3 sm:basis-1/2 lg:basis-1/3">
-            <div className="h-full overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
+            <div className="h-full overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
               <Link to="/scooters/$slug" params={{ slug: v.slug }} className="block">
                 <div className="aspect-4/3 w-full overflow-hidden bg-surface">
                   {v.images[0] ? (
