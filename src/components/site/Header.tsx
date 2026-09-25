@@ -4,7 +4,6 @@ import { Heart, Menu, MessageCircle, Search, ShoppingCart, User, Zap } from "luc
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
-import { VehiclePicker } from "@/components/site/VehiclePicker";
 import { AccountMenu } from "@/components/site/AccountMenu";
 
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
@@ -54,7 +53,6 @@ export function Header() {
             <div className="mb-6">
               <Logo />
             </div>
-            <VehiclePicker className="mb-4 w-full justify-start" />
 
             <nav className="grid gap-1 text-sm">
               {[
@@ -106,7 +104,6 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
-          <VehiclePicker className="hidden sm:flex" />
           <LanguageSwitch className="hidden lg:block" />
 
           <button
