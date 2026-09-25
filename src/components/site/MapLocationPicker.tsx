@@ -86,7 +86,7 @@ export function MapLocationPicker({
   const getMapConfig = useServerFn(getGoogleMapsBrowserConfig);
 
   useEffect(() => {
-    if (!open || !mapElement.current) return;
+    if (!open) return;
     let active = true;
     setLoading(true);
     setPoint(value ?? DEFAULT_POINT);
