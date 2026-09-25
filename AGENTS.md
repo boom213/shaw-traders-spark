@@ -13,3 +13,4 @@
 - Model in-house wholesale sales as dedicated counter-sale records linked to orders, with immutable price snapshots and separate payment entries, so online checkout behavior stays unchanged and partial payments remain auditable.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
+- Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
