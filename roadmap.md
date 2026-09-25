@@ -21,3 +21,4 @@
 - [x] Add optional map pin selection to delivery addresses and preserve coordinates on orders.
 - [x] Restrict wishlist controls to signed-in customers and verify account sync, display, removal, and cart actions.
 - [x] Hide the optional map selection controls from checkout.
+- [x] Add homepage social proof videos and Facebook/Instagram profile links.
