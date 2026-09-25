@@ -167,7 +167,8 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", sku: "", category: "", brand: "", price: "", mrp: "", stock: "0", description: "", status: "draft" });
+  const [files, setFiles] = useState<File[]>([]);
+  const [form, setForm] = useState({ name: "", sku: "", category: "", brand: "", price: "", wholesalePrice: "", mrp: "", stock: "", reorderThreshold: "", rackLocation: "", description: "", status: "draft" });
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
   const optionalNumber = (value: string) => value.trim() === "" ? null : Number(value);
   const submit = async (event: React.FormEvent) => {
@@ -179,16 +180,32 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
       category: form.category,
       brand: form.brand,
       price: optionalNumber(form.price),
+      wholesalePrice: optionalNumber(form.wholesalePrice),
       mrp: optionalNumber(form.mrp),
       stock: Number(form.stock || 0),
+      reorderThreshold: optionalNumber(form.reorderThreshold),
+      rackLocation: form.rackLocation,
       description: form.description,
       status: form.status,
     } });
+    if (!result.ok) { setSaving(false); return toast.error(result.error); }
+    if (files.length > 0) {
+      try {
+        const urls: string[] = [];
+        for (const file of files.slice(0, 8)) urls.push(await uploadProductPhoto(result.id, file));
+        const photoResult = await setProductImages({ data: { id: result.id, urls } });
+        if (!photoResult.ok) throw new Error(photoResult.error ?? "Could not save photos");
+      } catch (error) {
+        setSaving(false);
+        toast.error(error instanceof Error ? `Product added, but photos failed: ${error.message}` : "Product added, but photos failed");
+        return;
+      }
+    }
     setSaving(false);
-    if (!result.ok) return toast.error(result.error);
     toast.success("Product added");
     setOpen(false);
-    setForm({ name: "", sku: "", category: "", brand: "", price: "", mrp: "", stock: "0", description: "", status: "draft" });
+    setFiles([]);
+    setForm({ name: "", sku: "", category: "", brand: "", price: "", wholesalePrice: "", mrp: "", stock: "", reorderThreshold: "", rackLocation: "", description: "", status: "draft" });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
       queryClient.invalidateQueries({ queryKey: ["categories"] }),
@@ -199,16 +216,29 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button><Plus className="size-4" /> Add product</Button></DialogTrigger>
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-      <DialogHeader><DialogTitle>Add product</DialogTitle><DialogDescription>Choose a homepage category. New products start as drafts unless you select Visible.</DialogDescription></DialogHeader>
+      <DialogHeader><DialogTitle>Add product</DialogTitle><DialogDescription>Only the product name and homepage category are required. Add the rest now or later.</DialogDescription></DialogHeader>
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
         <Cell label="Product name"><Input required minLength={2} value={form.name} onChange={(e) => set("name", e.target.value)} /></Cell>
-        <Cell label="Product code (SKU)"><Input required minLength={2} value={form.sku} onChange={(e) => set("sku", e.target.value.toUpperCase())} /></Cell>
+        <Cell label="Product code (SKU) — optional"><Input value={form.sku} placeholder="Generated automatically if blank" onChange={(e) => set("sku", e.target.value.toUpperCase())} /></Cell>
         <Cell label="Homepage category"><select required value={form.category} onChange={(e) => set("category", e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">Choose category</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></Cell>
         <Cell label="Brand"><Input value={form.brand} onChange={(e) => set("brand", e.target.value)} /></Cell>
         <Cell label="Price ₹"><Input min="0" step="0.01" type="number" value={form.price} onChange={(e) => set("price", e.target.value)} /></Cell>
+        <Cell label="Wholesale price ₹"><Input min="0" step="0.01" type="number" value={form.wholesalePrice} onChange={(e) => set("wholesalePrice", e.target.value)} /></Cell>
         <Cell label="MRP ₹"><Input min="0" step="0.01" type="number" value={form.mrp} onChange={(e) => set("mrp", e.target.value)} /></Cell>
-        <Cell label="Opening stock"><Input required min="0" step="1" type="number" value={form.stock} onChange={(e) => set("stock", e.target.value)} /></Cell>
+        <Cell label="Opening stock"><Input min="0" step="1" type="number" placeholder="0" value={form.stock} onChange={(e) => set("stock", e.target.value)} /></Cell>
+        <Cell label="Warn at"><Input min="0" step="1" type="number" placeholder="3" value={form.reorderThreshold} onChange={(e) => set("reorderThreshold", e.target.value)} /></Cell>
+        <Cell label="Shelf"><Input placeholder="A-3 / Rack 2 / Bin 14" value={form.rackLocation} onChange={(e) => set("rackLocation", e.target.value)} /></Cell>
         <Cell label="Visibility"><select value={form.status} onChange={(e) => set("status", e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="draft">Draft</option><option value="visible">Visible on storefront</option><option value="hidden">Hidden</option></select></Cell>
+        <div className="grid gap-2 sm:col-span-2">
+          <Label>Product photos — optional</Label>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" onClick={() => document.getElementById("new-product-camera")?.click()}><Camera className="size-4" /> Take photo</Button>
+            <Button type="button" variant="outline" onClick={() => document.getElementById("new-product-gallery")?.click()}>Choose from gallery</Button>
+          </div>
+          <input id="new-product-camera" type="file" accept="image/*" capture="environment" hidden onChange={(event) => setFiles(Array.from(event.target.files ?? []).slice(0, 8))} />
+          <input id="new-product-gallery" type="file" accept="image/*" multiple hidden onChange={(event) => setFiles(Array.from(event.target.files ?? []).slice(0, 8))} />
+          {files.length > 0 && <p className="text-xs text-muted-foreground">{files.length} photo{files.length === 1 ? "" : "s"} selected. Photos are uploaded after the product is created.</p>}
+        </div>
         <div className="grid gap-1 sm:col-span-2"><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>
         <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={saving || categories.length === 0}>{saving ? "Adding…" : "Add product"}</Button></div>
       </form>
@@ -219,6 +249,7 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
 function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow; canDelete: boolean; onDeleted: () => void }) {
   const queryClient = useQueryClient();
   const [price, setPrice] = useState(product.price === null ? "" : String(product.price));
+  const [wholesalePrice, setWholesalePrice] = useState(product.wholesalePrice === null ? "" : String(product.wholesalePrice));
   const [mrp, setMrp] = useState(product.mrp === null ? "" : String(product.mrp));
   const [stock, setStock] = useState(String(product.stock));
   const [threshold, setThreshold] = useState(product.reorderThreshold === null ? "" : String(product.reorderThreshold));
@@ -236,6 +267,7 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
       data: {
         id: product.id,
         price: num(price),
+        wholesalePrice: num(wholesalePrice),
         mrp: num(mrp),
         stock: Number(stock || 0),
         reorderThreshold: num(threshold),
@@ -285,6 +317,7 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
 
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Cell label="Price ₹"><Input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} /></Cell>
+        <Cell label="Wholesale price ₹"><Input inputMode="decimal" value={wholesalePrice} onChange={(e) => setWholesalePrice(e.target.value)} /></Cell>
         <Cell label="MRP ₹"><Input inputMode="decimal" value={mrp} onChange={(e) => setMrp(e.target.value)} /></Cell>
         <Cell label="Stock"><Input inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} /></Cell>
         <Cell label="Warn at"><Input inputMode="numeric" placeholder="3" value={threshold} onChange={(e) => setThreshold(e.target.value)} /></Cell>
