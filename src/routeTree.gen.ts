@@ -62,6 +62,7 @@ import { Route as ApiPublicCatalogueRouteImport } from './routes/api/public/cata
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
+import { Route as ManageCustomersCustomerIdRouteImport } from './routes/manage.customers.$customerId'
 import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
 import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
 import { Route as ApiPublicCronServiceRemindersRouteImport } from './routes/api/public/cron/service-reminders'
@@ -334,6 +335,12 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ManageCustomersCustomerIdRoute =
+  ManageCustomersCustomerIdRouteImport.update({
+    id: '/$customerId',
+    path: '/$customerId',
+    getParentRoute: () => ManageCustomersRoute,
+  } as any)
 const ApiPublicCronCartRemindersRoute =
   ApiPublicCronCartRemindersRouteImport.update({
     id: '/api/public/cron/cart-reminders',
@@ -395,7 +402,7 @@ export interface FileRoutesByFullPath {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
-  '/manage/customers': typeof ManageCustomersRoute
+  '/manage/customers': typeof ManageCustomersRouteWithChildren
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
@@ -418,6 +425,7 @@ export interface FileRoutesByFullPath {
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
@@ -454,7 +462,7 @@ export interface FileRoutesByTo {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
-  '/manage/customers': typeof ManageCustomersRoute
+  '/manage/customers': typeof ManageCustomersRouteWithChildren
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
@@ -477,6 +485,7 @@ export interface FileRoutesByTo {
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
@@ -515,7 +524,7 @@ export interface FileRoutesById {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
-  '/manage/customers': typeof ManageCustomersRoute
+  '/manage/customers': typeof ManageCustomersRouteWithChildren
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
@@ -538,6 +547,7 @@ export interface FileRoutesById {
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
+    | '/manage/customers/$customerId'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/service-reminders'
@@ -659,6 +670,7 @@ export interface FileRouteTypes {
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
+    | '/manage/customers/$customerId'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/service-reminders'
@@ -719,6 +731,7 @@ export interface FileRouteTypes {
     | '/api/public/client-error'
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
+    | '/manage/customers/$customerId'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/service-reminders'
@@ -1142,6 +1155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/manage/customers/$customerId': {
+      id: '/manage/customers/$customerId'
+      path: '/$customerId'
+      fullPath: '/manage/customers/$customerId'
+      preLoaderRoute: typeof ManageCustomersCustomerIdRouteImport
+      parentRoute: typeof ManageCustomersRoute
+    }
     '/api/public/cron/cart-reminders': {
       id: '/api/public/cron/cart-reminders'
       path: '/api/public/cron/cart-reminders'
@@ -1180,12 +1200,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ManageCustomersRouteChildren {
+  ManageCustomersCustomerIdRoute: typeof ManageCustomersCustomerIdRoute
+}
+
+const ManageCustomersRouteChildren: ManageCustomersRouteChildren = {
+  ManageCustomersCustomerIdRoute: ManageCustomersCustomerIdRoute,
+}
+
+const ManageCustomersRouteWithChildren = ManageCustomersRoute._addFileChildren(
+  ManageCustomersRouteChildren,
+)
+
 interface ManageRouteChildren {
   ManageAboutRoute: typeof ManageAboutRoute
   ManageBookingsRoute: typeof ManageBookingsRoute
   ManageBrandCatalogueRoute: typeof ManageBrandCatalogueRoute
   ManageCatalogueRoute: typeof ManageCatalogueRoute
-  ManageCustomersRoute: typeof ManageCustomersRoute
+  ManageCustomersRoute: typeof ManageCustomersRouteWithChildren
   ManageDomainRoute: typeof ManageDomainRoute
   ManageEnquiriesRoute: typeof ManageEnquiriesRoute
   ManageHomeRoute: typeof ManageHomeRoute
@@ -1205,7 +1237,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageBookingsRoute: ManageBookingsRoute,
   ManageBrandCatalogueRoute: ManageBrandCatalogueRoute,
   ManageCatalogueRoute: ManageCatalogueRoute,
-  ManageCustomersRoute: ManageCustomersRoute,
+  ManageCustomersRoute: ManageCustomersRouteWithChildren,
   ManageDomainRoute: ManageDomainRoute,
   ManageEnquiriesRoute: ManageEnquiriesRoute,
   ManageHomeRoute: ManageHomeRoute,
