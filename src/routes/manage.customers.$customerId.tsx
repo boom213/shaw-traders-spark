@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MapPin, Plus, Save, Search, ShoppingCart, Trash2 } from "lucide-react";
+import { ArrowLeft, MapPin, Plus, Save, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -16,7 +16,7 @@ import {
   updateManagedCustomer,
   type ManageCustomerAddress,
 } from "@/lib/manage-data.functions";
-import { formatINR, statusLabel } from "@/lib/catalog";
+import { formatINR, statusLabel, type Product } from "@/lib/catalog";
 import { productsByIdsQuery, productsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/manage/customers/$customerId")({
@@ -178,11 +178,11 @@ function ManageCustomerPage() {
   );
 }
 
-function ProductSection({ title, subtitle, products, empty }: { title: string; subtitle: string; products: NonNullable<ReturnType<typeof productsByIdsQuery>["queryFn"]> extends Promise<infer T> ? T : never; empty: string }) {
+function ProductSection({ title, subtitle, products, empty }: { title: string; subtitle: string; products: Product[]; empty: string }) {
   return <section className="space-y-4 border-t border-border pt-6"><div><h3 className="font-display text-lg font-bold">{title}</h3><p className="text-sm text-muted-foreground">{subtitle}</p></div><ProductGrid products={products} empty={empty} /></section>;
 }
 
-function ProductGrid({ products, empty }: { products: import("@/lib/catalog").Product[]; empty: string }) {
+function ProductGrid({ products, empty }: { products: Product[]; empty: string }) {
   if (!products.length) return <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">{empty}</p>;
   return <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>;
 }
