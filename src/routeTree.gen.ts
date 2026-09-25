@@ -37,6 +37,7 @@ import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageAboutRouteImport } from './routes/manage.about'
+import { Route as ManageAllProductsRouteImport } from './routes/manage.all-products'
 import { Route as ManageBookingsRouteImport } from './routes/manage.bookings'
 import { Route as ManageBrandCatalogueRouteImport } from './routes/manage.brand-catalogue'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
@@ -208,6 +209,11 @@ const ManageIndexRoute = ManageIndexRouteImport.update({
 const ManageAboutRoute = ManageAboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => ManageRoute,
+} as any)
+const ManageAllProductsRoute = ManageAllProductsRouteImport.update({
+  id: '/all-products',
+  path: '/all-products',
   getParentRoute: () => ManageRoute,
 } as any)
 const ManageBookingsRoute = ManageBookingsRouteImport.update({
@@ -405,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/about': typeof ManageAboutRoute
+  '/manage/all-products': typeof ManageAllProductsRoute
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -466,6 +473,7 @@ export interface FileRoutesByTo {
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/about': typeof ManageAboutRoute
+  '/manage/all-products': typeof ManageAllProductsRoute
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -528,6 +536,7 @@ export interface FileRoutesById {
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
   '/manage/about': typeof ManageAboutRoute
+  '/manage/all-products': typeof ManageAllProductsRoute
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
@@ -592,6 +601,7 @@ export interface FileRouteTypes {
     | '/booking/$token'
     | '/category/$slug'
     | '/manage/about'
+    | '/manage/all-products'
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/booking/$token'
     | '/category/$slug'
     | '/manage/about'
+    | '/manage/all-products'
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
@@ -714,6 +725,7 @@ export interface FileRouteTypes {
     | '/booking/$token'
     | '/category/$slug'
     | '/manage/about'
+    | '/manage/all-products'
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
@@ -990,6 +1002,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageAboutRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/all-products': {
+      id: '/manage/all-products'
+      path: '/all-products'
+      fullPath: '/manage/all-products'
+      preLoaderRoute: typeof ManageAllProductsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/bookings': {
       id: '/manage/bookings'
       path: '/bookings'
@@ -1233,6 +1252,7 @@ const ManageCustomersRouteWithChildren = ManageCustomersRoute._addFileChildren(
 
 interface ManageRouteChildren {
   ManageAboutRoute: typeof ManageAboutRoute
+  ManageAllProductsRoute: typeof ManageAllProductsRoute
   ManageBookingsRoute: typeof ManageBookingsRoute
   ManageBrandCatalogueRoute: typeof ManageBrandCatalogueRoute
   ManageCatalogueRoute: typeof ManageCatalogueRoute
@@ -1253,6 +1273,7 @@ interface ManageRouteChildren {
 
 const ManageRouteChildren: ManageRouteChildren = {
   ManageAboutRoute: ManageAboutRoute,
+  ManageAllProductsRoute: ManageAllProductsRoute,
   ManageBookingsRoute: ManageBookingsRoute,
   ManageBrandCatalogueRoute: ManageBrandCatalogueRoute,
   ManageCatalogueRoute: ManageCatalogueRoute,

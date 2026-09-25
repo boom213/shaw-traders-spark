@@ -14,3 +14,4 @@
 - [x] Add super-admin customer editing with addresses, order history, and product shopping.
 - [x] Add Super Admin product creation by homepage category with filtered 10/20/50/100 pagination.
 - [x] Add Super Admin-only permanent product deletion with confirmation and dependency safeguards.
+- [ ] Add a read-only searchable and paginated All Products page for every staff role.
