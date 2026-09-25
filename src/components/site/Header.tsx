@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
 import { VehiclePicker } from "@/components/site/VehiclePicker";
+import { AccountMenu } from "@/components/site/AccountMenu";
 
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
@@ -115,13 +116,7 @@ export function Header() {
           >
             <Search className="size-5" />
           </button>
-          <Link
-            to="/account"
-            className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid"
-            aria-label={t("nav.account")}
-          >
-            <User className="size-5" />
-          </Link>
+          <AccountMenu />
           <Link
             to="/account"
             hash="wishlist"
