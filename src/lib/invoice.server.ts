@@ -210,17 +210,17 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
         ] as [string, string][])
       : ([["GST", "Not applicable"]] as [string, string][])),
   ];
-  const summaryHeight = summaryRows.length * 15 + 132;
+  const summaryHeight = summaryRows.length * 15 + 180;
   if (y < summaryHeight) newPage(false);
   y -= 16;
   for (const [label, value] of summaryRows) {
-    right(label, 462, 9, font, MUTED);
+    right(label, 445, 9, font, MUTED);
     right(value, CONTENT_RIGHT - 7, 9);
     y -= 15;
   }
   horizontal(y + 5, 1, BORDER);
   y -= 9;
-  right("TOTAL", 462, 12, bold);
+  right("TOTAL", 445, 12, bold);
   right(money(document.total), CONTENT_RIGHT - 7, 12, bold);
 
   const detailsY = y - 30;
