@@ -216,6 +216,110 @@ export type Database = {
         }
         Relationships: []
       }
+      counter_sale_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          note: string | null
+          order_id: string
+          received_on: string
+          recorded_by: string
+          recorded_by_name: string
+          reference: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          note?: string | null
+          order_id: string
+          received_on?: string
+          recorded_by: string
+          recorded_by_name: string
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          note?: string | null
+          order_id?: string
+          received_on?: string
+          recorded_by?: string
+          recorded_by_name?: string
+          reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_sale_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      counter_sales: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string
+          invoice_kind: string
+          note: string | null
+          order_id: string
+          price_override_reason: string | null
+          profile_id: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by: string
+          created_by_name: string
+          invoice_kind: string
+          note?: string | null
+          order_id: string
+          price_override_reason?: string | null
+          profile_id: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string
+          invoice_kind?: string
+          note?: string | null
+          order_id?: string
+          price_override_reason?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "counter_sales_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counter_sales_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
@@ -2271,6 +2375,32 @@ export type Database = {
         Args: { p_registration: string }
         Returns: number
       }
+      cancel_counter_sale: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_order_id: string
+          p_reason: string
+        }
+        Returns: boolean
+      }
+      create_counter_sale: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_invoice_kind: string
+          p_items: Json
+          p_note: string
+          p_override_reason: string
+          p_profile_id: string
+        }
+        Returns: {
+          human_id: string
+          order_id: string
+          public_token: string
+          total: number
+        }[]
+      }
       create_order: {
         Args: {
           p_address: Json
@@ -2338,6 +2468,19 @@ export type Database = {
           spent: boolean
           unit_price: number
         }[]
+      }
+      record_counter_sale_payment: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_method: string
+          p_note: string
+          p_order_id: string
+          p_received_on: string
+          p_reference: string
+        }
+        Returns: number
       }
       release_order: {
         Args: { p_order_id: string; p_reason?: string }
