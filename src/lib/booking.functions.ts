@@ -39,7 +39,7 @@ export const startBooking = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: product } = await supabaseAdmin
       .from("products")
-      .select("id, name, status, product_kind, vehicle_specs(variant), vehicle_pricing(ex_showroom, rto, insurance, accessories, subsidy, on_road, token_amount)")
+      .select("id, name, status, product_kind, vehicle_specs(variant, registration_required), vehicle_pricing(ex_showroom, rto, insurance, accessories, subsidy, on_road, token_amount)")
       .eq("slug", data.slug)
       .maybeSingle();
 
@@ -50,7 +50,7 @@ export const startBooking = createServerFn({ method: "POST" })
       | Record<string, number>
       | null;
     const specRow = (Array.isArray(product.vehicle_specs) ? product.vehicle_specs[0] : product.vehicle_specs) as
-      | { variant?: string | null }
+      | { variant?: string | null; registration_required?: boolean }
       | null;
     const onRoad = Number(priceRow?.['on_road'] ?? 0);
     if (!priceRow || onRoad <= 0) return { error: "The price for this model is not published yet. Please call the shop." };
@@ -74,7 +74,7 @@ export const startBooking = createServerFn({ method: "POST" })
         variant: specRow?.variant ?? null,
         price_breakdown: {
           exShowroom: Number(priceRow['ex_showroom'] ?? 0),
-          rto: Number(priceRow['rto'] ?? 0),
+          rto: specRow?.registration_required === false ? 0 : Number(priceRow['rto'] ?? 0),
           insurance: Number(priceRow['insurance'] ?? 0),
           accessories: Number(priceRow['accessories'] ?? 0),
           subsidy: Number(priceRow['subsidy'] ?? 0),

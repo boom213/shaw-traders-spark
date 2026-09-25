@@ -85,7 +85,7 @@ function ManageScooters() {
 
   const onRoad =
     (Number(form.price.exShowroom) || 0) +
-    (Number(form.price.rto) || 0) +
+    (form.specs.registrationRequired !== false ? Number(form.price.rto) || 0 : 0) +
     (Number(form.price.insurance) || 0) +
     (Number(form.price.accessories) || 0) -
     (Number(form.price.subsidy) || 0);
@@ -263,7 +263,14 @@ function ManageScooters() {
           <input
             type="checkbox"
             checked={form.specs.registrationRequired !== false}
-            onChange={(e) => setSpec({ registrationRequired: e.target.checked })}
+            onChange={(e) => {
+              const registrationRequired = e.target.checked;
+              setForm((current) => ({
+                ...current,
+                specs: { ...current.specs, registrationRequired },
+                price: registrationRequired ? current.price : { ...current.price, rto: 0 },
+              }));
+            }}
           />
           Needs RTO registration
         </label>
@@ -271,12 +278,12 @@ function ManageScooters() {
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Price breakdown (₹)</p>
         {([
           ["exShowroom", "Ex-showroom"],
-          ["rto", "RTO & registration"],
+          ...(form.specs.registrationRequired !== false ? [["rto", "RTO & registration"]] : []),
           ["insurance", "Insurance"],
           ["accessories", "Accessories & handling"],
           ["subsidy", "Subsidy (subtracted)"],
           ["tokenAmount", "Token to book"],
-        ] as const).map(([key, label]) => (
+        ] as [keyof typeof form.price, string][]).map(([key, label]) => (
           <div key={key} className="grid gap-1.5">
             <Label htmlFor={`p-${key}`}>{label}</Label>
             <Input id={`p-${key}`} inputMode="numeric" value={String(form.price[key] ?? 0)} onChange={(e) => setPrice({ [key]: Number(e.target.value) || 0 })} />

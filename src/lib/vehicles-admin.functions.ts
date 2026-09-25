@@ -119,6 +119,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
       .map((c) => c.trim())
       .filter(Boolean)
       .slice(0, 12);
+    const registrationRequired = data?.specs?.registrationRequired !== false;
 
     await supabaseAdmin.from("vehicle_specs").upsert({
       product_id: id,
@@ -133,7 +134,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
       kerb_weight: text(data?.specs?.kerbWeight, 80) || null,
       warranty_years: num(data?.specs?.warrantyYears),
       warranty_km: num(data?.specs?.warrantyKm),
-      registration_required: data?.specs?.registrationRequired !== false,
+      registration_required: registrationRequired,
       service_interval_months: Math.max(1, Number(data?.specs?.serviceIntervalMonths ?? 6) || 6),
       service_interval_km: Math.max(100, Number(data?.specs?.serviceIntervalKm ?? 3000) || 3000),
       updated_at: new Date().toISOString(),
@@ -142,7 +143,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
     await supabaseAdmin.from("vehicle_pricing").upsert({
       product_id: id,
       ex_showroom: money(data?.price?.exShowroom),
-      rto: money(data?.price?.rto),
+      rto: registrationRequired ? money(data?.price?.rto) : 0,
       insurance: money(data?.price?.insurance),
       accessories: money(data?.price?.accessories),
       subsidy: money(data?.price?.subsidy),

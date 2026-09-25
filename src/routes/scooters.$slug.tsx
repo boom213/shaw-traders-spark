@@ -273,7 +273,7 @@ function ExchangeForm({ slug }: { slug: string }) {
 function ScooterPage() {
   const { vehicle, others } = Route.useLoaderData();
   const [active, setActive] = useState(0);
-  const lines = priceLines(vehicle.price);
+  const lines = priceLines(vehicle.price, vehicle.specs.registrationRequired);
   const specRows = SPEC_ROWS.filter((r) => Boolean(vehicle.specs[r.key]));
 
   return (

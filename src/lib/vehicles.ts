@@ -74,10 +74,13 @@ export const EMPTY_PRICE: VehiclePrice = {
 };
 
 /** The itemised lines a buyer compares, in the order they expect to read them. */
-export function priceLines(price: VehiclePrice): { label: string; amount: number; negative?: boolean }[] {
+export function priceLines(
+  price: VehiclePrice,
+  registrationRequired = true,
+): { label: string; amount: number; negative?: boolean }[] {
   return [
     { label: "Ex-showroom price", amount: price.exShowroom },
-    { label: "RTO & registration", amount: price.rto },
+    ...(registrationRequired ? [{ label: "RTO & registration", amount: price.rto }] : []),
     { label: "Insurance", amount: price.insurance },
     { label: "Accessories & handling", amount: price.accessories },
     ...(price.subsidy > 0 ? [{ label: "Subsidy (FAME / state)", amount: price.subsidy, negative: true }] : []),
