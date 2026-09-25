@@ -26,7 +26,7 @@ const mapRow = (r: Record<string, unknown>): AboutPhoto => ({
 /** Every About page photo, in display order — including the switched-off ones. */
 export const listPhotos = createServerFn({ method: "POST" }).handler(async (): Promise<AboutPhoto[]> => {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability: "content" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.from("about_gallery_photos").select(SELECT).order("sort_order").limit(50);
   return (data ?? []).map((r) => mapRow(r as Record<string, unknown>));
@@ -42,7 +42,7 @@ export const savePhoto = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const row = { image_url: data.imageUrl, caption: data.caption, is_active: data.isActive };
@@ -78,7 +78,7 @@ export const togglePhoto = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("about_gallery_photos")
@@ -98,7 +98,7 @@ export const reorderPhotos = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let i = 0;
     for (const id of data.ids) {
@@ -115,7 +115,7 @@ export const deletePhoto = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => ({ id: clean(data?.id, 40) }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("about_gallery_photos").delete().eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };

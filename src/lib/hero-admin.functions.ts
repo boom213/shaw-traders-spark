@@ -30,7 +30,7 @@ const mapRow = (r: Record<string, unknown>): AdminSlide => ({
 /** Every home banner, in display order — including the switched-off ones. */
 export const listSlides = createServerFn({ method: "POST" }).handler(async (): Promise<AdminSlide[]> => {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability: "content" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.from("hero_slides").select(SELECT).order("sort_order").limit(50);
   return (data ?? []).map((r) => mapRow(r as Record<string, unknown>));
@@ -59,7 +59,7 @@ export const saveSlide = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.heading.length < 3) return { ok: false as const, error: "Give the banner a heading." };
 
@@ -100,7 +100,7 @@ export const toggleSlide = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("hero_slides").update({ is_active: data.isActive } as never).eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
@@ -115,7 +115,7 @@ export const reorderSlides = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let i = 0;
     for (const id of data.ids) {
@@ -132,7 +132,7 @@ export const deleteSlide = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string }) => ({ id: clean(data?.id, 40) }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "content" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("hero_slides").delete().eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };

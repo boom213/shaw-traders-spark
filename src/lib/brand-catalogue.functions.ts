@@ -17,7 +17,7 @@ export const catalogueUploadUrl = createServerFn({ method: "POST" }).handler(asy
 /** When the current catalogue was uploaded, if any. */
 export const catalogueInfo = createServerFn({ method: "POST" }).handler(async () => {
   const { requireStaff } = await import("@/lib/staff.server");
-  const ctx = await requireStaff();
+  const ctx = await requireStaff({ capability: "settings" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.storage.from("product-photos").list("catalogue");
   const f = data?.find((x) => `catalogue/${x.name}` === CATALOGUE_PATH);

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
-import { BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
+import { AlertTriangle, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +69,7 @@ function ManageLayout() {
   const router = useRouter();
   const { staff } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const denied = useRouterState({ select: (s) => new URLSearchParams(s.location.searchStr).get("denied") === "1" });
   const role = staff.role as StaffRole;
   const visibleNav = NAV.filter((item) => can(role, item.capability));
   const active = visibleNav.find((item) => item.exact ? pathname === item.to : pathname.startsWith(item.to)) ?? visibleNav[0];
@@ -104,7 +105,10 @@ function ManageLayout() {
             <DropdownMenuContent align="start" className="w-[min(22rem,calc(100vw-2rem))]">{visibleNav.map((n) => <DropdownMenuItem key={n.to} asChild><Link to={n.to}><n.icon className="size-4" />{n.label}</Link></DropdownMenuItem>)}</DropdownMenuContent>
           </DropdownMenu>
         </aside>
-        <div className="min-w-0"><Outlet /></div>
+        <div className="min-w-0">
+          {denied && <div className="mb-4 flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm"><AlertTriangle className="size-4 text-destructive" />Your role does not allow that section.</div>}
+          <Outlet />
+        </div>
       </div>
     </div>
   );

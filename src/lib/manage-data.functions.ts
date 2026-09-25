@@ -54,17 +54,17 @@ const mapManageOrder = (row: Row): ManageOrder => ({
   })),
 });
 
-async function admin() {
+async function admin(capability: "operations" | "catalogue" | "reports" | "settings" = "operations") {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
 
 /** Admin client plus the signed-in staff member, for changes that must be audited. */
-async function adminAs() {
+async function adminAs(capability: "operations" | "catalogue" | "reports" | "settings" = "operations") {
   const { requireStaff, logAudit } = await import("@/lib/staff.server");
-  const actor = await requireStaff();
+  const actor = await requireStaff({ capability });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return { sb: supabaseAdmin, actor, logAudit };
 }
@@ -191,7 +191,7 @@ export const manageProducts = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<{ items: Product[]; total: number }> => {
-    const sb = await admin();
+    const sb = await admin("catalogue");
     const { PRODUCT_SELECT, mapProduct } = await import("@/lib/product-map");
     const size = 40;
     let query = sb.from("products").select(PRODUCT_SELECT, { count: "exact" });
@@ -218,7 +218,7 @@ export const saveProducts = createServerFn({ method: "POST" })
     }) => ({ updates: Array.isArray(data?.updates) ? data.updates.slice(0, 200) : [] }),
   )
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await adminAs("catalogue");
     const ids = data.updates.map((u) => u.id);
     const { data: before } = await sb.from("products").select("id, name, price, mrp, stock, brand").in("id", ids);
     const beforeById = new Map((before ?? []).map((b) => [String(b.id), b]));
@@ -277,7 +277,7 @@ export type ShopSettingsRow = {
 
 /** Shop-wide payment, GST and cash-on-delivery settings. */
 export const getShopSettings = createServerFn({ method: "POST" }).handler(async (): Promise<ShopSettingsRow> => {
-  const sb = await admin();
+  const sb = await admin("settings");
   const { data } = await sb.from("shop_settings").select("*").maybeSingle();
   const { razorpayKeys } = await import("@/lib/razorpay.server");
   const { staffContext } = await import("@/lib/staff.server");
@@ -312,7 +312,7 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
 export const saveShopSettings = createServerFn({ method: "POST" })
   .inputValidator((data: Omit<ShopSettingsRow, "onlinePayments" | "whatsappReady" | "isSuperAdmin">) => data)
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await adminAs("settings");
     const pincodes = String(data.codPincodes ?? "")
       .split(/[^0-9]+/)
       .filter((p) => /^\d{6}$/.test(p));
@@ -555,7 +555,7 @@ export const staffInvoice = createServerFn({ method: "POST" })
 
 /** Today's summary plus the last few messages the shop sent. */
 export const dailySummaryPreview = createServerFn({ method: "POST" }).handler(async () => {
-  const sb = await admin();
+  const sb = await admin("reports");
   const { buildDailySummary } = await import("@/lib/notify.server");
   const summary = await buildDailySummary(new Date());
   const { data: recent } = await sb
@@ -579,7 +579,7 @@ export const dailySummaryPreview = createServerFn({ method: "POST" }).handler(as
 
 /** Send today's summary to the owner right now. */
 export const sendSummaryNow = createServerFn({ method: "POST" }).handler(async () => {
-  const { actor } = await adminAs();
+  const { actor } = await adminAs("reports");
   const { sendDailySummary } = await import("@/lib/notify.server");
   const res = await sendDailySummary(new Date(), true);
   return { ok: true as const, day: res.day, by: actor.name };

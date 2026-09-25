@@ -37,7 +37,7 @@ export const listTradeApplications = createServerFn({ method: "POST" })
   .inputValidator((data: { status?: string } | undefined) => ({ status: String(data?.status ?? "pending") }))
   .handler(async ({ data }): Promise<TradeApplicationRow[]> => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { signedDocUrl, tradeBalance } = await import("@/lib/trade.server");
     const { DOC_FIELDS } = await import("@/lib/trade.functions");
@@ -113,7 +113,7 @@ export const decideTradeApplication = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "trade" });
     return runTradeDecision(actor, data);
   });
 
@@ -182,7 +182,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "trade" });
     const { taxIdError } = await import("@/lib/trade-options");
     if (data.businessName.length < 3) return { ok: false as const, error: "Please give the business name." };
     if (data.phone.length !== 10) return { ok: false as const, error: "Enter a 10-digit mobile number." };
@@ -286,7 +286,7 @@ export const addLedgerEntry = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "trade" });
     if (data.amount <= 0) return { ok: false as const, error: "Enter an amount." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("trade_ledger").insert({
@@ -336,7 +336,7 @@ export type OutstandingRow = {
 /** Who owes money, oldest unpaid invoice first. */
 export const outstandingReport = createServerFn({ method: "POST" }).handler(async (): Promise<OutstandingRow[]> => {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability: "trade" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { tradeBalance } = await import("@/lib/trade.server");
 
@@ -478,7 +478,7 @@ export const listTradePricing = createServerFn({ method: "POST" })
   .inputValidator((data: { search?: string } | undefined) => ({ search: text(data?.search, 80) }))
   .handler(async ({ data }) => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     let query = supabaseAdmin
       .from("products")

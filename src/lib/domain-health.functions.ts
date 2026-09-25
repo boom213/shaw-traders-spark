@@ -81,7 +81,7 @@ async function checkHost(host: string): Promise<HostReachability> {
 export const getDomainHealth = createServerFn({ method: "GET" }).handler(
   async (): Promise<DomainHealth> => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "settings" });
 
     const [rootA, wwwA, verifyTxt, hostRoot, hostWww, ns] = await Promise.all([
       checkRecord(ROOT, "A", EXPECTED_A),
