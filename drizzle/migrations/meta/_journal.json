@@ -176,6 +176,13 @@
       "when": 1790355522110,
       "tag": "0024_add_wholesale_counter_sales",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790358949685,
+      "tag": "0025_tighten_selected_public_and_storage_policies",
+      "breakpoints": true
     }
   ]
 }
