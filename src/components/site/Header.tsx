@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
+import { BadgeCheck, Heart, MapPin, Menu, MessageCircle, PackageCheck, ShoppingCart, Truck } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -37,6 +37,17 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+      <div className="hidden bg-ink text-primary-foreground lg:block">
+        <div className="container-page flex h-8 items-center justify-between text-[11px] font-medium">
+          <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-primary" /> Bud Bud, Bardhaman, West Bengal</span>
+          <div className="flex items-center gap-7">
+            <span className="flex items-center gap-1.5"><BadgeCheck className="size-3.5" /> Genuine products</span>
+            <span className="flex items-center gap-1.5"><Truck className="size-3.5" /> Fast delivery</span>
+            <span className="flex items-center gap-1.5"><PackageCheck className="size-3.5" /> Dealer &amp; retail support</span>
+          </div>
+          <a href={`tel:+91${BUSINESS.phone}`} className="hover:underline">Call / WhatsApp: +91 {BUSINESS.phone}</a>
+        </div>
+      </div>
       <div className="container-page grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <Sheet open={menu} onOpenChange={setMenu}>
           <SheetTrigger

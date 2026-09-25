@@ -15,17 +15,17 @@ export function CategoryCarousel({ categories }: { categories?: Category[] }) {
 
   return (
     <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} aria-label="Shop by category" className="w-full">
-      <CarouselContent className="-ml-3">
+      <CarouselContent className="-ml-2">
         {list.map((c) => {
           const Icon = CATEGORY_ICONS[c.slug] ?? Package;
           return (
-            <CarouselItem key={c.slug} className="basis-1/2 pl-3 sm:basis-1/3 lg:basis-1/5 xl:basis-1/6">
+            <CarouselItem key={c.slug} className="basis-[38%] pl-2 sm:basis-1/4 lg:basis-1/7">
               <Link
                 to="/category/$slug"
                 params={{ slug: c.slug }}
-                className="card-lift group block overflow-hidden rounded-2xl border border-border bg-card"
+                className="group block overflow-hidden rounded-lg border border-border bg-card text-center transition-colors hover:border-primary"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-surface">
+                <div className="relative aspect-[5/3] w-full overflow-hidden bg-surface">
                   <img
                     src={c.imageUrl || placeholderFor(c.slug)}
                     alt={c.name}
@@ -35,15 +35,12 @@ export function CategoryCarousel({ categories }: { categories?: Category[] }) {
                     decoding="async"
                     className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
-                  <span className="absolute left-2 top-2 grid size-8 place-items-center rounded-lg bg-background/90 text-foreground">
+                   <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-md bg-background/90 text-foreground">
                     <Icon className="size-4" strokeWidth={1.5} />
                   </span>
                 </div>
-                <div className="p-3">
-                  <span className="block truncate text-sm font-semibold leading-snug">{c.name}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {c.productCount ? `${c.productCount} parts` : "Shop now"}
-                  </span>
+                 <div className="px-2 py-2.5">
+                   <span className="block truncate text-xs font-semibold leading-snug sm:text-sm">{c.name}</span>
                 </div>
               </Link>
             </CarouselItem>
