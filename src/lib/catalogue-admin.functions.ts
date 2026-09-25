@@ -130,7 +130,7 @@ export const allProductsList = createServerFn({ method: "POST" })
       query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,brand.ilike.%${term}%,model.ilike.%${term}%,rack_location.ilike.%${term}%`);
     }
     if (categoryId) query = query.eq("category_id", categoryId);
-    if (data.status) query = query.eq("status", data.status);
+    if (data.status) query = query.eq("status", data.status as "visible" | "draft" | "hidden");
 
     const from = data.page * data.pageSize;
     const { data: rows, count, error } = await query
