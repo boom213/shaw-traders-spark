@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BadgeCheck, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
+import { BadgeCheck, Download, Handshake, IndianRupee, MessageCircle, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -112,9 +112,14 @@ function Home() {
                 Spare parts, batteries, chargers and electric scooters for every major EV brand.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:flex">
+            <div className="flex flex-wrap gap-2">
               <Button size="lg" asChild>
                 <Link to="/find-parts">Find Your EV</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <a href="/api/public/catalogue" download>
+                  <Download className="size-4" /> Download Brochure
+                </a>
               </Button>
               <Button size="lg" variant="outline" asChild>
                 <Link to="/shop">Shop All Parts</Link>
