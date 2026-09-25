@@ -164,6 +164,43 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
     return { ok: true as const, id: product.id, slug };
   });
 
+/** Permanently remove one product. Restricted to Super Admins. */
+export const deleteCatalogueProduct = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => ({ id: String(data?.id ?? "").trim() }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ superAdmin: true });
+    const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
+    if (!data.id) return { ok: false as const, error: "Product not found." };
+
+    const { data: product, error: readError } = await sb
+      .from("products")
+      .select("id, name, sku, categories(name)")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readError) return { ok: false as const, error: readError.message };
+    if (!product) return { ok: false as const, error: "This product has already been deleted." };
+
+    const { error } = await sb.from("products").delete().eq("id", data.id);
+    if (error) {
+      if (error.code === "23503") {
+        return {
+          ok: false as const,
+          error: "This product is linked to a booking, service request, valuation, finance request, or another retained record. Set it to Hidden instead.",
+        };
+      }
+      return { ok: false as const, error: error.message };
+    }
+
+    const category = product.categories as { name?: string } | null;
+    await logAudit(sb as never, actor, "products.deleted", "products", data.id, {
+      name: product.name,
+      sku: product.sku,
+      category: category?.name ?? null,
+    });
+    return { ok: true as const };
+  });
+
 /** Save price, MRP, stock, brand and reorder level for one product. */
 export const quickSaveProduct = createServerFn({ method: "POST" })
   .inputValidator((data: {
