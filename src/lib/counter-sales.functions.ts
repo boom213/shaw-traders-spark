@@ -147,7 +147,7 @@ export const createCounterSale = createServerFn({ method: "POST" })
   .inputValidator((data: { customerId: string; invoiceKind: string; overrideReason?: string; note?: string; items: Array<{ productId: string; qty: number; unitPrice: number }> }) => ({ customerId: String(data?.customerId ?? ""), invoiceKind: data?.invoiceKind === "gst" ? "gst" : "non_gst", overrideReason: String(data?.overrideReason ?? "").trim().slice(0, 300), note: String(data?.note ?? "").trim().slice(0, 500), items: (data?.items ?? []).slice(0, 100).map((item) => ({ product_id: String(item.productId), qty: Math.max(1, Math.floor(Number(item.qty) || 1)), unit_price: Math.round((Number(item.unitPrice) || 0) * 100) / 100 })) }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await counterAdmin();
-    const { data: created, error } = await sb.rpc("create_counter_sale", { p_profile_id: data.customerId, p_items: data.items, p_invoice_kind: data.invoiceKind, p_override_reason: data.overrideReason || null, p_note: data.note || null, p_actor_id: actor.userId, p_actor_name: actor.name });
+    const { data: created, error } = await sb.rpc("create_counter_sale", { p_profile_id: data.customerId, p_items: data.items, p_invoice_kind: data.invoiceKind, p_override_reason: data.overrideReason, p_note: data.note, p_actor_id: actor.userId, p_actor_name: actor.name });
     if (error) return { ok: false as const, error: error.message };
     const sale = Array.isArray(created) ? created[0] : created;
     if (!sale) return { ok: false as const, error: "The sale could not be created." };
@@ -160,7 +160,7 @@ export const recordCounterPayment = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await counterAdmin();
     if (!data.method) return { ok: false as const, error: "Choose a payment method." };
-    const { data: balance, error } = await sb.rpc("record_counter_sale_payment", { p_order_id: data.orderId, p_amount: data.amount, p_method: data.method, p_reference: data.reference || null, p_note: data.note || null, p_received_on: data.receivedOn, p_actor_id: actor.userId, p_actor_name: actor.name });
+    const { data: balance, error } = await sb.rpc("record_counter_sale_payment", { p_order_id: data.orderId, p_amount: data.amount, p_method: data.method, p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_actor_id: actor.userId, p_actor_name: actor.name });
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb as never, actor, "counter_sale.payment_recorded", "orders", data.orderId, { amount: data.amount, method: data.method, reference: data.reference, receivedOn: data.receivedOn, balance });
     return { ok: true as const, balance: Number(balance ?? 0) };

@@ -81,6 +81,7 @@ function CounterSalesPage() {
   async function downloadInvoice(sale: CounterSale) {
     try {
       const result = await counterSaleInvoice({ data: { orderId: sale.orderId } });
+      if (!("base64" in result)) throw new Error(result.error);
       const binary = atob(result.base64);
       const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
       const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
