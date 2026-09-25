@@ -351,8 +351,9 @@ function ProductPage() {
 
             {mode === "full" && product.price !== undefined && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Button variant="outline" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
+                <Button variant="outline" className="w-full" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
                 <Button
+                  className="w-full"
                   disabled={product.stock <= 0}
                   onClick={() => {
                     if (add()) void navigate({ to: "/checkout" });

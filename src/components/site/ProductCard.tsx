@@ -134,13 +134,13 @@ export function ProductCard({ product }: { product: Product }) {
             </Button>
           </div>
         ) : (
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
-          <Button variant="outline" size="sm" className="h-10 sm:h-9" disabled={!inStock} onClick={add}>
+        <div className="mt-auto grid grid-cols-1 gap-2 pt-3 sm:grid-cols-2">
+          <Button variant="outline" size="sm" className="h-10 w-full sm:h-9" disabled={!inStock} onClick={add}>
             {t("product.addToCart")}
           </Button>
           <Button
             size="sm"
-            className="h-10 sm:h-9"
+            className="h-10 w-full sm:h-9"
             disabled={!inStock}
             onClick={() => {
               if (add()) void navigate({ to: "/checkout" });
