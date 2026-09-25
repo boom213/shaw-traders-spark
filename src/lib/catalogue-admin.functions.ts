@@ -17,6 +17,7 @@ export type CatalogueRow = {
   categoryName: string;
   brand: string | null;
   price: number | null;
+  wholesalePrice: number | null;
   mrp: number | null;
   stock: number;
   reorderThreshold: number | null;
@@ -26,7 +27,7 @@ export type CatalogueRow = {
 };
 
 const SELECT =
-  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, categories!inner(slug, name), product_images(url, sort_order)";
+  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
 
 const mapRow = (r: Row): CatalogueRow => ({
   id: String(r['id']),
@@ -36,6 +37,12 @@ const mapRow = (r: Row): CatalogueRow => ({
   categoryName: String(r['categories']?.['name'] ?? ""),
   brand: r['brand'] ?? null,
   price: r['price'] === null || r['price'] === undefined ? null : Number(r['price']),
+  wholesalePrice: (() => {
+    const tier = ((r['price_tiers'] ?? []) as Row[])
+      .filter((item) => item['tier'] === "trade")
+      .sort((a, b) => Number(a['min_qty'] ?? 1) - Number(b['min_qty'] ?? 1))[0];
+    return tier?.['price'] === null || tier?.['price'] === undefined ? null : Number(tier['price']);
+  })(),
   mrp: r['mrp'] === null || r['mrp'] === undefined ? null : Number(r['mrp']),
   stock: Number(r['stock'] ?? 0),
   reorderThreshold: r['reorder_threshold'] === null || r['reorder_threshold'] === undefined ? null : Number(r['reorder_threshold']),
@@ -147,8 +154,11 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
     category: string;
     brand?: string;
     price?: number | null;
+    wholesalePrice?: number | null;
     mrp?: number | null;
     stock?: number;
+    reorderThreshold?: number | null;
+    rackLocation?: string;
     description?: string;
     status?: string;
   }) => ({
@@ -157,8 +167,11 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
     category: String(data?.category ?? "").trim(),
     brand: String(data?.brand ?? "").trim().slice(0, 120),
     price: data?.price === null || data?.price === undefined ? null : Number(data.price),
+    wholesalePrice: data?.wholesalePrice === null || data?.wholesalePrice === undefined ? null : Number(data.wholesalePrice),
     mrp: data?.mrp === null || data?.mrp === undefined ? null : Number(data.mrp),
     stock: Math.max(0, Math.floor(Number(data?.stock ?? 0))),
+    reorderThreshold: data?.reorderThreshold === null || data?.reorderThreshold === undefined ? null : Math.max(0, Math.floor(Number(data.reorderThreshold))),
+    rackLocation: String(data?.rackLocation ?? "").trim().slice(0, 120),
     description: String(data?.description ?? "").trim().slice(0, 5000),
     status: ["visible", "draft", "hidden"].includes(String(data?.status)) ? String(data.status) : "draft",
   }))
@@ -167,8 +180,8 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
     const actor = await requireStaff({ superAdmin: true });
     const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
-    if (data.sku.length < 2) return { ok: false as const, error: "Enter a product code." };
     if (data.price !== null && (!Number.isFinite(data.price) || data.price < 0)) return { ok: false as const, error: "Price must be zero or more." };
+    if (data.wholesalePrice !== null && (!Number.isFinite(data.wholesalePrice) || data.wholesalePrice < 0)) return { ok: false as const, error: "Wholesale price must be zero or more." };
     if (data.mrp !== null && (!Number.isFinite(data.mrp) || data.mrp < 0)) return { ok: false as const, error: "MRP must be zero or more." };
     const { data: category } = await sb.from("categories").select("id, name").eq("slug", data.category).maybeSingle();
     if (!category) return { ok: false as const, error: "Choose a valid homepage category." };
@@ -180,15 +193,22 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
       if (!existing) break;
       slug = `${slugBase}-${suffix}`;
     }
+    let sku = data.sku;
+    if (!sku) {
+      const prefix = data.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8) || "ITEM";
+      sku = `${prefix}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+    }
     const { data: product, error } = await sb.from("products").insert({
       name: data.name,
-      sku: data.sku,
+      sku,
       slug,
       category_id: category.id,
       brand: data.brand || null,
       price: data.price,
       mrp: data.mrp,
       stock: data.stock,
+      reorder_threshold: data.reorderThreshold,
+      rack_location: data.rackLocation || null,
       description: data.description || null,
       status: data.status,
       product_kind: "part",
@@ -197,9 +217,18 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
       const duplicate = error.code === "23505";
       return { ok: false as const, error: duplicate ? "That product code is already in use." : error.message };
     }
+    if (data.wholesalePrice !== null) {
+      const { error: tierError } = await sb.from("price_tiers").insert({
+        product_id: product.id,
+        tier: "trade",
+        price: data.wholesalePrice,
+        min_qty: 1,
+      } as never);
+      if (tierError) return { ok: false as const, error: `Product added, but wholesale price could not be saved: ${tierError.message}` };
+    }
     await logAudit(sb as never, actor, "products.created", "products", product.id, {
       name: data.name,
-      sku: data.sku,
+      sku,
       category: category.name,
       status: data.status,
     });
@@ -248,6 +277,7 @@ export const quickSaveProduct = createServerFn({ method: "POST" })
   .inputValidator((data: {
     id: string;
     price?: number | null;
+    wholesalePrice?: number | null;
     mrp?: number | null;
     stock?: number;
     brand?: string | null;
@@ -269,6 +299,16 @@ export const quickSaveProduct = createServerFn({ method: "POST" })
     if (Object.keys(patch).length === 0) return { ok: true as const };
     const { error } = await sb.from("products").update(patch as never).eq("id", data.id);
     if (error) return { ok: false as const, error: error.message };
+    if (data.wholesalePrice !== undefined) {
+      const { error: clearError } = await sb.from("price_tiers").delete().eq("product_id", data.id).eq("tier", "trade").eq("min_qty", 1);
+      if (clearError) return { ok: false as const, error: clearError.message };
+      if (data.wholesalePrice !== null) {
+        const value = Number(data.wholesalePrice);
+        if (!Number.isFinite(value) || value < 0) return { ok: false as const, error: "Wholesale price must be zero or more." };
+        const { error: tierError } = await sb.from("price_tiers").insert({ product_id: data.id, tier: "trade", price: value, min_qty: 1 } as never);
+        if (tierError) return { ok: false as const, error: tierError.message };
+      }
+    }
     if (
       data.stock !== undefined &&
       Number(before?.stock ?? 0) <= 0 &&
