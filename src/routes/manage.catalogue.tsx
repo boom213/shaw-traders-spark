@@ -313,14 +313,14 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
                 <Trash2 className="size-4" /> {deleting ? "Deleting…" : "Delete"}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-lg">
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This permanently deletes the product and its related photos. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
+              <AlertDialogFooter className="gap-2 sm:gap-0">
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
