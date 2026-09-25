@@ -14,3 +14,4 @@
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
+- Generate customer, staff, and counter-sale invoices through one shared paginated A4 PDF template so tax fields and print layout stay consistent.
