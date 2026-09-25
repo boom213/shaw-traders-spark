@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
+import { mkdir, writeFile } from "node:fs/promises";
 import { billToLines, createInvoicePdf, type InvoiceDocument } from "@/lib/invoice.server";
+
+async function saveQaPdf(name: string, bytes: Uint8Array) {
+  const directory = process.env["INVOICE_QA_DIR"];
+  if (!directory) return;
+  await mkdir(directory, { recursive: true });
+  await writeFile(`${directory}/${name}`, bytes);
+}
 
 function invoice(overrides: Partial<InvoiceDocument> = {}): InvoiceDocument {
   return {
@@ -39,6 +47,7 @@ describe("invoice PDF", () => {
 
   it("creates a valid one-page GST invoice", async () => {
     const bytes = await createInvoicePdf(invoice());
+    await saveQaPdf("gst-invoice.pdf", bytes);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getPageCount()).toBe(1);
     expect(pdf.getTitle()).toBe("Tax Invoice CS-260925-1001");
@@ -52,6 +61,7 @@ describe("invoice PDF", () => {
       productId: `product-${index + 1}`,
     }));
     const bytes = await createInvoicePdf(invoice({ items, taxAmount: 0, gstRate: 0, gstIncluded: false }));
+    await saveQaPdf("long-non-gst-invoice.pdf", bytes);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getPageCount()).toBeGreaterThan(1);
     expect(pdf.getPageCount()).toBeLessThan(6);
