@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -176,6 +176,8 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
 function TestRideForm({ slug }: { slug: string }) {
   const [f, setF] = useState({ name: "", phone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, note: "" });
   const [msg, setMsg] = useState<string | null>(null);
+  const [minimumDate, setMinimumDate] = useState("");
+  useEffect(() => setMinimumDate(localDateInputValue()), []);
   return (
     <div className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
       <h3 className="font-display text-lg font-bold">Book a test ride</h3>
@@ -184,7 +186,7 @@ function TestRideForm({ slug }: { slug: string }) {
       <Input
         type="date"
         aria-label="Preferred date"
-        min={localDateInputValue()}
+        min={minimumDate || undefined}
         value={f.date}
         onChange={(e) => setF({ ...f, date: e.target.value })}
       />

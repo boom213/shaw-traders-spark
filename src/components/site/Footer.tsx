@@ -5,6 +5,7 @@ import { BUSINESS } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 import { reopenConsent } from "@/components/site/CookieConsent";
+import { SocialLinks } from "@/components/site/SocialLinks";
 
 export function Footer() {
   const { data: categories } = useQuery(categoriesQuery());
@@ -32,6 +33,10 @@ export function Footer() {
               {settings.supportEmail}
             </a>
           )}
+          <div className="mt-5">
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Follow us</p>
+            <SocialLinks />
+          </div>
         </div>
 
         <div>

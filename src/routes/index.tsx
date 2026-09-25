@@ -13,6 +13,7 @@ import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { BrandsSection } from "@/components/home/BrandsSection";
 import { ScooterSection } from "@/components/home/ScooterSection";
+import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { homeQuery } from "@/lib/queries";
 import storefrontHero from "@/assets/hero-storefront-reference.jpg";
 
@@ -257,6 +258,10 @@ function Home() {
           <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle model and the part category you need." />
           <FindPartsWidget />
         </section>
+      </LazySection>
+
+      <LazySection minHeight="40rem">
+        <SocialProofSection />
       </LazySection>
 
 
