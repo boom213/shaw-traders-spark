@@ -14,7 +14,7 @@ import { useStore } from "@/hooks/useStore";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { supabase } from "@/integrations/supabase/client";
 
-export function AccountMenu() {
+export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab" }) {
   const { user } = useStore();
   const { account, isTrade } = useTradeAccount();
   const qc = useQueryClient();
@@ -33,15 +33,30 @@ export function AccountMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className="hidden h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted sm:flex"
-        aria-label="Account menu"
+      {variant === "tab" ? (
+        <DropdownMenuTrigger
+          className="flex w-full flex-col items-center gap-1 py-2.5 text-[11px] text-muted-foreground data-[state=open]:font-semibold data-[state=open]:text-primary"
+          aria-label="Account menu"
+        >
+          <User className="size-5" aria-hidden="true" />
+          <span className="max-w-full truncate px-1">{label}</span>
+        </DropdownMenuTrigger>
+      ) : (
+        <DropdownMenuTrigger
+          className="hidden h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium hover:bg-muted sm:flex"
+          aria-label="Account menu"
+        >
+          <User className="size-5" />
+          <span className="max-w-24 truncate">{label}</span>
+          <ChevronDown className="size-3.5 text-muted-foreground" />
+        </DropdownMenuTrigger>
+      )}
+      <DropdownMenuContent
+        align="end"
+        side={variant === "tab" ? "top" : "bottom"}
+        sideOffset={variant === "tab" ? 10 : 4}
+        className={variant === "tab" ? "w-64 [&_[role=menuitem]]:py-2.5" : "w-60"}
       >
-        <User className="size-5" />
-        <span className="max-w-24 truncate">{label}</span>
-        <ChevronDown className="size-3.5 text-muted-foreground" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
         {!user ? (
           <DropdownMenuItem asChild>
             <Link to="/account">Sign In / Register</Link>
