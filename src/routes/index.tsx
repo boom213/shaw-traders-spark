@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, Download, Handshake, IndianRupee, MessageCircle, Search, ShieldCheck, Truck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Download, Handshake, IndianRupee, MessageCircle, Search, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { LazySection } from "@/components/site/LazySection";
-import { HeroCarousel, heroImageFor } from "@/components/home/HeroCarousel";
+import { heroImageFor } from "@/components/home/HeroCarousel";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { OffersStrip } from "@/components/home/OffersStrip";
