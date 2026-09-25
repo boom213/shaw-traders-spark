@@ -135,7 +135,6 @@ export type OrderView = {
 
 /** Slugs in display order — used for icons and quick nav only. */
 export const NAV_CATEGORIES = [
-  "ev-batteries",
   "chargers",
   "motors",
   "controllers",
@@ -145,6 +144,7 @@ export const NAV_CATEGORIES = [
   "lighting",
   "suspension",
   "accessories",
+  "ev-batteries",
 ];
 
 export const BUSINESS = {
