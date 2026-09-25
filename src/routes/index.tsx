@@ -104,7 +104,7 @@ function Home() {
         <div className="container-page py-3 sm:py-4">
           <div className="relative min-h-[32rem] overflow-hidden rounded-xl bg-surface sm:min-h-[34rem] lg:min-h-[25.5rem]">
             <img src={storefrontHero} alt="Electric scooter and genuine EV parts from Shaw Traders EV" className="absolute inset-0 size-full object-cover object-[64%_center]" width={1600} height={720} fetchPriority="high" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_96%,transparent)_34%,color-mix(in_oklch,var(--background)_48%,transparent)_53%,transparent_70%)]" />
+            <div className="absolute inset-0 bg-background/80 lg:bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_96%,transparent)_34%,color-mix(in_oklch,var(--background)_48%,transparent)_53%,transparent_70%)]" />
             <div className="relative flex min-h-[32rem] max-w-[42rem] flex-col justify-center px-5 py-8 sm:min-h-[34rem] sm:px-10 lg:min-h-[25.5rem] lg:px-16">
               <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-[11px] font-semibold uppercase text-accent-foreground">
                 <span className="size-1.5 rounded-full bg-primary" /> Trusted EV parts showroom
