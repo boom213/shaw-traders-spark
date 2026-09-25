@@ -7,6 +7,17 @@ const phone10 = (v: unknown) => String(v ?? "").replace(/\D/g, "").slice(-10);
 const numOrNull = (v: unknown) => (v === undefined || v === null || v === "" ? null : Number(v));
 const dateOrNull = (v: unknown) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) ? String(v) : null);
 
+function todayInKolkata(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
 /** Every scooter model on sale, newest first. */
 export const listVehicles = createServerFn({ method: "GET" }).handler(async (): Promise<VehicleModel[]> => {
   const { publicClient } = await import("@/lib/supabase-public.server");
@@ -87,6 +98,7 @@ export const requestTestRide = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     if (!data.name || data.phone.length !== 10) return { ok: false, error: "Please give your name and a 10-digit mobile number." };
+    if (data.date && data.date < todayInKolkata()) return { ok: false, error: "Please choose today or a future date." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const productId = await productIdForSlug(data.slug);
     const { error } = await supabaseAdmin.from("test_ride_requests").insert({

@@ -78,6 +78,13 @@ function Note({ text }: { text: string | null }) {
   return <p className="mt-2 text-sm font-medium text-primary">{text}</p>;
 }
 
+function localDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; colours: string[]; tokenAmount: number; modelName: string }) {
   const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", colour: colours[0] ?? "" });
   const [busy, setBusy] = useState(false);
@@ -174,7 +181,13 @@ function TestRideForm({ slug }: { slug: string }) {
       <h3 className="font-display text-lg font-bold">Book a test ride</h3>
       <Input placeholder="Your name" aria-label="Your name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
       <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
-      <Input type="date" aria-label="Preferred date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} />
+      <Input
+        type="date"
+        aria-label="Preferred date"
+        min={localDateInputValue()}
+        value={f.date}
+        onChange={(e) => setF({ ...f, date: e.target.value })}
+      />
       <Select value={f.slot} onValueChange={(v) => setF({ ...f, slot: v })}>
         <SelectTrigger aria-label="Time slot"><SelectValue /></SelectTrigger>
         <SelectContent>{TEST_RIDE_SLOTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
