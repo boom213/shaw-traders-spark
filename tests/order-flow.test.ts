@@ -41,10 +41,10 @@ async function stockOf(id: string) {
   return data?.stock as number;
 }
 
-async function placeOrder(items: { product_id: string; qty: number }[], method: string, coupon?: string) {
+async function placeOrder(items: { product_id: string; qty: number }[], method: string, coupon?: string, deliveryAddress = address) {
   const { data, error } = await sb.rpc("create_order", {
     p_items: items,
-    p_address: address,
+    p_address: deliveryAddress,
     p_payment_method: method,
     p_shipping_code: "standard",
     p_coupon_code: coupon ?? undefined,
@@ -208,6 +208,14 @@ describe("create_order", () => {
     const { row } = await placeOrder([{ product_id: id, qty: 1 }], "Cash on Delivery");
     expect(row.human_id).toMatch(/^STE-\d{6}-\d{4}$/);
     expect(String(row.public_token).length).toBeGreaterThanOrEqual(20);
+  });
+
+  it("preserves an optional precise delivery pin in the address snapshot", async () => {
+    const id = await makeProduct(500, 2);
+    const pinnedAddress = { ...address, latitude: 23.406123, longitude: 87.914456 };
+    const { row } = await placeOrder([{ product_id: id, qty: 1 }], "Cash on Delivery", undefined, pinnedAddress);
+    const { data: order } = await sb.from("orders").select("address").eq("id", row.order_id).single();
+    expect(order?.address).toMatchObject({ latitude: 23.406123, longitude: 87.914456 });
   });
 });
 

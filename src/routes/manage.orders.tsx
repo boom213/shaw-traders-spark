@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Check, MessageCircle, Printer } from "lucide-react";
+import { Check, MapPin, MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,14 @@ function customerWhatsApp(o: ManageOrder) {
   const digits = String(o.address['phone'] ?? "").replace(/\D/g, "").slice(-10);
   const text = `Hello ${String(o.address['name'] ?? "")}, this is ${BUSINESS.name} about your order ${o.humanId}.`;
   return `https://wa.me/91${digits}?text=${encodeURIComponent(text)}`;
+}
+
+function deliveryMapUrl(address: Record<string, string>) {
+  const latitude = Number(address['latitude']);
+  const longitude = Number(address['longitude']);
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+    : null;
 }
 
 function escapeHtml(s: string) {
@@ -89,6 +97,16 @@ function printPackingSlip(o: ManageOrder) {
 }
 
 export const Route = createFileRoute("/manage/orders")({
+  head: () => ({
+    meta: [
+      { title: "Manage Orders — Shaw Traders EV" },
+      { name: "description", content: "Review and fulfil Shaw Traders EV customer orders." },
+      { property: "og:title", content: "Manage Orders — Shaw Traders EV" },
+      { property: "og:description", content: "Review and fulfil Shaw Traders EV customer orders." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ManageOrders,
 });
 
@@ -147,7 +165,9 @@ function ManageOrders() {
         </p>
       )}
 
-      {(orders ?? []).map((o) => (
+      {(orders ?? []).map((o) => {
+        const mapUrl = deliveryMapUrl(o.address);
+        return (
         <div key={o.id} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -200,6 +220,11 @@ function ManageOrders() {
                 <MessageCircle className="size-4" /> WhatsApp customer
               </a>
             </Button>
+            {mapUrl && (
+              <Button size="sm" variant="outline" asChild>
+                <a href={mapUrl} target="_blank" rel="noreferrer"><MapPin className="size-4" /> View delivery pin</a>
+              </Button>
+            )}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -226,7 +251,8 @@ function ManageOrders() {
             <RefundForm order={o} onDone={refresh} />
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

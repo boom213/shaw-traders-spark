@@ -10,6 +10,13 @@ export type Address = {
   city: string;
   state: string;
   pincode: string;
+  latitude?: number;
+  longitude?: number;
+};
+
+const coordinate = (value: unknown, min: number, max: number) => {
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) && number >= min && number <= max ? number : undefined;
 };
 
 export type StartCheckoutResult =
@@ -29,15 +36,20 @@ const cleanItems = (items: CartItemInput[] | undefined) =>
     .filter((i) => /^[0-9a-f-]{36}$/i.test(i.product_id))
     .slice(0, 50);
 
-const cleanAddress = (a: Address | undefined) => ({
-  name: String(a?.name ?? "").trim().slice(0, 120),
-  phone: String(a?.phone ?? "").replace(/\D/g, "").slice(-10),
-  line1: String(a?.line1 ?? "").trim().slice(0, 300),
-  landmark: String(a?.landmark ?? "").trim().slice(0, 160),
-  city: String(a?.city ?? "").trim().slice(0, 120),
-  state: String(a?.state ?? "").trim().slice(0, 120),
-  pincode: String(a?.pincode ?? "").replace(/\D/g, "").slice(0, 6),
-});
+export const cleanAddress = (a: Address | undefined) => {
+  const latitude = coordinate(a?.latitude, -90, 90);
+  const longitude = coordinate(a?.longitude, -180, 180);
+  return {
+    name: String(a?.name ?? "").trim().slice(0, 120),
+    phone: String(a?.phone ?? "").replace(/\D/g, "").slice(-10),
+    line1: String(a?.line1 ?? "").trim().slice(0, 300),
+    landmark: String(a?.landmark ?? "").trim().slice(0, 160),
+    city: String(a?.city ?? "").trim().slice(0, 120),
+    state: String(a?.state ?? "").trim().slice(0, 120),
+    pincode: String(a?.pincode ?? "").replace(/\D/g, "").slice(0, 6),
+    ...(latitude !== undefined && longitude !== undefined ? { latitude, longitude } : {}),
+  };
+};
 
 const friendly = (message: string) =>
   message.replace(/^.*?(?:ERROR|error):\s*/, "").replace(/\s*CONTEXT:[\s\S]*$/, "").trim() ||
