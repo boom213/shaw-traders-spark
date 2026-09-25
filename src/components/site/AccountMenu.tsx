@@ -43,6 +43,7 @@ const STAFF_LINKS = [
   { to: "/manage/enquiries", label: "Enquiries", icon: PackageSearch, capability: "operations" },
   { to: "/manage/bookings", label: "Bookings & service", icon: Wrench, capability: "operations" },
   { to: "/manage/customers", label: "Customers", icon: Users, capability: "operations" },
+  { to: "/manage/all-products", label: "All products", icon: ShoppingBag, capability: "operations" },
   { to: "/manage/catalogue", label: "Products & stock", icon: Boxes, capability: "catalogue" },
   { to: "/manage/scooters", label: "Vehicle catalogue", icon: Bike, capability: "catalogue" },
   { to: "/manage/trade", label: "Trade & credit", icon: BriefcaseBusiness, capability: "trade" },

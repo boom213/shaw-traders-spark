@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
-import { AlertTriangle, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PhoneCall, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
+import { AlertTriangle, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PhoneCall, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false, capability: "operations", group: "Work" },
   { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Work" },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false, capability: "operations", group: "Work" },
+  { to: "/manage/all-products", label: "All Products", icon: PackageSearch, exact: false, capability: "operations", group: "Work" },
   { to: "/manage/catalogue", label: "Products & Stock", icon: Boxes, exact: false, capability: "catalogue", group: "Manage" },
   { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Manage" },
   { to: "/manage/scooters", label: "Vehicle Catalogue", icon: Bike, exact: false, capability: "catalogue", group: "Manage" },

@@ -43,6 +43,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/reviews": "operations",
   "/manage/bookings": "operations",
   "/manage/customers": "operations",
+  "/manage/all-products": "operations",
   "/manage/catalogue": "catalogue",
   "/manage/import": "catalogue",
   "/manage/scooters": "catalogue",
