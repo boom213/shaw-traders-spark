@@ -164,7 +164,7 @@ export function Header() {
       </nav>
 
       {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
-        <div className="container-page hide-scrollbar flex items-center overflow-x-auto py-0">
+        <div className="container-page hide-scrollbar flex items-center overflow-x-auto py-0 lg:justify-center">
           {navCategories.map((c) => {
             const Icon = CATEGORY_ICONS[c.slug] ?? Package;
             return (
