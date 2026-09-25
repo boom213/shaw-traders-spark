@@ -15,6 +15,17 @@ import { placeholderFor } from "@/lib/placeholders";
 import { STATUS_CHIP, isProductStatus, type ProductStatus } from "@/lib/ordering";
 
 export const Route = createFileRoute("/manage/catalogue")({
+  head: () => ({
+    meta: [
+      { title: "Products & Stock — Shaw Traders EV Manager" },
+      { name: "description", content: "Manage product categories, catalogue visibility, prices, stock and product photos." },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Products & Stock — Shaw Traders EV Manager" },
+      { property: "og:description", content: "Manage product categories, catalogue visibility, prices, stock and product photos." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: CataloguePage,
 });
 
