@@ -23,7 +23,7 @@ export function ProductRating({ rating, count }: { rating?: number; count?: numb
 
 export function ProductCard({ product }: { product: Product }) {
   const t = useT();
-  const { lists, addToCart, toggleWishlist } = useStore();
+  const { lists, user, wishlistReady, addToCart, toggleWishlist } = useStore();
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
   const mode = useProductOrdering(product);
@@ -50,13 +50,21 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <article className="card-lift group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      <button
-        onClick={() => toggleWishlist(product.id)}
-        aria-label="Add to wishlist"
-        className="absolute right-2 top-2 z-10 grid size-10 place-items-center rounded-full bg-background/90 text-muted-foreground hover:text-sale"
-      >
-        <Heart className={cn("size-4", wished && "fill-sale text-sale")} strokeWidth={1.75} />
-      </button>
+      {user && wishlistReady && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            toggleWishlist(product.id);
+            toast.success(wished ? "Removed from wishlist" : "Saved to wishlist");
+          }}
+          aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
+          className="absolute right-2 top-2 z-10 size-10 rounded-full bg-background/90 text-muted-foreground hover:bg-background hover:text-sale"
+        >
+          <Heart className={cn("size-4", wished && "fill-sale text-sale")} strokeWidth={1.75} />
+        </Button>
+      )}
       {off > 0 && (
         <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sale-foreground">
           −{off}%

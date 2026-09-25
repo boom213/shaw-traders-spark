@@ -154,7 +154,7 @@ export const Route = createFileRoute("/product/$slug")({
 function ProductPage() {
   const { slug } = Route.useParams();
   const { data } = useSuspenseQuery(productQuery(slug));
-  const { lists, user, addToCart, markViewed, toggleWishlist } = useStore();
+  const { lists, user, wishlistReady, addToCart, markViewed, toggleWishlist } = useStore();
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
@@ -376,9 +376,19 @@ function ProductPage() {
 
             <EnquiryDialog product={product} open={enquiry} onOpenChange={setEnquiry} />
 
-            <Button variant="ghost" className="mt-2 w-full" onClick={() => toggleWishlist(product.id)}>
-              {lists.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
-            </Button>
+            {user && wishlistReady && (
+              <Button
+                variant="ghost"
+                className="mt-2 w-full"
+                onClick={() => {
+                  const wished = lists.wishlist.includes(product.id);
+                  toggleWishlist(product.id);
+                  toast.success(wished ? "Removed from wishlist" : "Saved to wishlist");
+                }}
+              >
+                {lists.wishlist.includes(product.id) ? "Remove from Wishlist" : "Save to Wishlist"}
+              </Button>
+            )}
 
             {product.stock <= 0 && (
               <div className="mt-4 rounded-xl bg-surface p-4">

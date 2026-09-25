@@ -27,7 +27,7 @@ function Logo() {
 
 export function Header() {
   const t = useT();
-  const { lists } = useStore();
+  const { lists, user, wishlistReady } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const { mode: siteMode } = useSiteOrdering();
   const { data: categories } = useSuspenseQuery(categoriesQuery());
@@ -103,14 +103,21 @@ export function Header() {
         <div className="flex shrink-0 items-center justify-end gap-1">
           <LanguageSwitch className="hidden lg:block" />
           <AccountMenu />
-          <Link
-            to="/account"
-            hash="wishlist"
-            className="hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid"
-            aria-label={t("nav.wishlist")}
-          >
-            <Heart className="size-5" />
-          </Link>
+          {user && wishlistReady && (
+            <Link
+              to="/account"
+              hash="wishlist"
+              className="relative hidden size-9 place-items-center rounded-lg hover:bg-muted sm:grid"
+              aria-label={t("nav.wishlist")}
+            >
+              <Heart className="size-5" />
+              {lists.wishlist.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {lists.wishlist.length}
+                </span>
+              )}
+            </Link>
+          )}
           <a
             href={whatsappLink(`Hello ${BUSINESS.name}, I have a question about EV parts.`)}
             target="_blank"
