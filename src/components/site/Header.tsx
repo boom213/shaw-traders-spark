@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BadgeCheck, Heart, MapPin, Menu, MessageCircle, PackageCheck, ShoppingCart, Truck } from "lucide-react";
+import { Heart, Menu, MessageCircle, Package, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -11,6 +11,7 @@ import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
+import { CATEGORY_ICONS } from "@/components/site/CategoryGrid";
 
 function Logo() {
   return (
@@ -37,18 +38,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="hidden bg-ink text-primary-foreground lg:block">
-        <div className="container-page flex h-8 items-center justify-between text-[11px] font-medium">
-          <span className="flex items-center gap-1.5"><MapPin className="size-3.5 text-primary" /> Bud Bud, Bardhaman, West Bengal</span>
-          <div className="flex items-center gap-7">
-            <span className="flex items-center gap-1.5"><BadgeCheck className="size-3.5" /> Genuine products</span>
-            <span className="flex items-center gap-1.5"><Truck className="size-3.5" /> Fast delivery</span>
-            <span className="flex items-center gap-1.5"><PackageCheck className="size-3.5" /> Dealer &amp; retail support</span>
-          </div>
-          <a href={`tel:+91${BUSINESS.phone}`} className="hover:underline">Call / WhatsApp: +91 {BUSINESS.phone}</a>
-        </div>
-      </div>
-      <div className="container-page grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+      <div className="container-page grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 lg:h-[4.5rem] lg:gap-7">
         <Sheet open={menu} onOpenChange={setMenu}>
           <SheetTrigger
             className="-ml-1 grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
@@ -106,7 +96,7 @@ export function Header() {
           <Logo />
         </div>
 
-        <div className="mx-auto hidden w-full max-w-xl min-w-0 lg:block">
+        <div className="mx-auto hidden w-full max-w-2xl min-w-0 lg:block">
           <SearchBox />
         </div>
 
@@ -152,7 +142,7 @@ export function Header() {
       </div>
 
       <nav className="hidden border-t border-border lg:block" aria-label="Store navigation">
-        <div className="container-page flex h-11 items-center justify-center gap-1">
+        <div className="container-page flex h-11 items-center justify-center gap-4">
           {[
             { to: "/shop", label: "Shop" },
             { to: "/find-parts", label: "Find Parts" },
@@ -164,8 +154,8 @@ export function Header() {
             <Link
               key={item.to}
               to={item.to}
-              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "rounded-md bg-muted px-4 py-2 text-sm font-semibold text-foreground" }}
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-md bg-muted px-3 py-2 text-sm font-semibold text-foreground" }}
             >
               {item.label}
             </Link>
@@ -174,21 +164,25 @@ export function Header() {
       </nav>
 
       {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
-        <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-2">
-          {navCategories.map((c) => (
-            <Link
-              key={c.slug}
-              to="/category/$slug"
-              params={{ slug: c.slug }}
-              className="shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
-              activeProps={{
-                className:
-                  "shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium bg-background text-foreground shadow-[var(--shadow-card)]",
-              }}
-            >
-              {c.name}
-            </Link>
-          ))}
+        <div className="container-page hide-scrollbar flex items-center overflow-x-auto py-0">
+          {navCategories.map((c) => {
+            const Icon = CATEGORY_ICONS[c.slug] ?? Package;
+            return (
+              <Link
+                key={c.slug}
+                to="/category/$slug"
+                params={{ slug: c.slug }}
+                className="flex h-11 min-w-[9rem] shrink-0 items-center justify-center gap-2 border-r border-border px-4 text-[13px] font-medium text-muted-foreground transition-colors first:border-l hover:bg-background hover:text-foreground"
+                activeProps={{
+                  className:
+                    "flex h-11 min-w-[9rem] shrink-0 items-center justify-center gap-2 border-x border-border bg-background px-4 text-[13px] font-semibold text-foreground",
+                }}
+              >
+                <Icon className="size-4 text-foreground" strokeWidth={1.7} />
+                {c.name}
+              </Link>
+            );
+          })}
         </div>
       </nav>}
     </header>
