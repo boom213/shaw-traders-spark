@@ -123,7 +123,7 @@ export function ProductCard({ product }: { product: Product }) {
             <Button size="sm" className="h-10 sm:h-9" onClick={() => setEnquiry(true)}>
               Check availability
             </Button>
-            <Button size="sm" variant="outline" className="h-10 sm:h-9" asChild>
+            <Button size="sm" variant="outline" className="h-10 px-2 text-xs sm:h-9" asChild>
               <a
                 href={whatsappLink(`Hello, please share the price and availability of ${product.name} (${product.sku}).`)}
                 target="_blank"
