@@ -9,3 +9,4 @@
 - [x] Add and verify forgot-password and reset-password recovery.
 - [x] Verify the homepage and account journeys on desktop and mobile.
 - [x] Match the storefront homepage closely to the new supplied visual reference.
+- [x] Add a role-aware profile menu with customer, trade, and permitted staff destinations.
