@@ -13,6 +13,7 @@ import { OffersStrip } from "@/components/home/OffersStrip";
 import { RecentlyViewedRow } from "@/components/home/RecentlyViewedRow";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { BrandsSection } from "@/components/home/BrandsSection";
+import { ScooterSection } from "@/components/home/ScooterSection";
 import { homeQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/")({
@@ -159,6 +160,10 @@ function Home() {
         />
         <CategoryCarousel categories={home.categories} />
       </section>}
+
+      <LazySection minHeight="24rem">
+        <ScooterSection />
+      </LazySection>
 
       <section className="container-page py-6 lg:py-10">
         <div className="grid gap-4 md:grid-cols-2">
