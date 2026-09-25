@@ -113,16 +113,19 @@ function Home() {
                 Spare parts, batteries, chargers and electric scooters for every major EV brand.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button size="lg" asChild>
-                <Link to="/find-parts">Find Your EV</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
+            <div className="grid w-full gap-2 lg:w-auto lg:grid-cols-4">
+              <Button size="lg" variant="outline" className="w-full" asChild>
                 <a href="/api/public/catalogue" download>
                   <Download className="size-4" /> Download Brochure
                 </a>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button size="lg" variant="outline" className="w-full" asChild>
+                <Link to="/brand">View Brands</Link>
+              </Button>
+              <Button size="lg" className="w-full" asChild>
+                <Link to="/find-parts">Find Your EV</Link>
+              </Button>
+              <Button size="lg" variant="outline" className="w-full" asChild>
                 <Link to="/shop">Shop All Parts</Link>
               </Button>
             </div>
