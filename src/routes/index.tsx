@@ -6,7 +6,6 @@ import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { LazySection } from "@/components/site/LazySection";
-import { heroImageFor } from "@/components/home/HeroCarousel";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { OffersStrip } from "@/components/home/OffersStrip";
@@ -38,7 +37,7 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: canonical("/") },
-      { rel: "preload", as: "image", href: heroImageFor(loaderData?.heroSlides?.[0]), fetchPriority: "high" },
+      { rel: "preload", as: "image", href: storefrontHero, fetchPriority: "high" },
     ],
 
     scripts: [
@@ -99,8 +98,6 @@ const TRUST = [
 
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
-  const heroSlide = home.heroSlides[0];
-
   return (
     <div>
       <section className="border-b border-border bg-background">
