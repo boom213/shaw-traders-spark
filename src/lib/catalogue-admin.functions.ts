@@ -4,7 +4,7 @@ type Row = Record<string, any>;
 
 async function adminAs() {
   const { requireStaff, logAudit } = await import("@/lib/staff.server");
-  const actor = await requireStaff();
+  const actor = await requireStaff({ capability: "catalogue" });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return { sb: supabaseAdmin, actor, logAudit };
 }

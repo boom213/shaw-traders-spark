@@ -131,7 +131,7 @@ export const claimSuperAdmin = createServerFn({ method: "POST" })
 /** Everyone with access to the manager panel. */
 export const listStaff = createServerFn({ method: "POST" }).handler(async (): Promise<StaffMember[]> => {
   const { requireStaff } = await import("@/lib/staff.server");
-  const me = await requireStaff();
+  const me = await requireStaff({ capability: "staff.manage" });
   const sb = await adminClient();
   const { data: rows } = await sb
     .from("staff_roles")
@@ -236,7 +236,7 @@ export const revokeStaff = createServerFn({ method: "POST" })
 /** Recent changes made by staff, newest first. */
 export const recentAudit = createServerFn({ method: "POST" }).handler(async () => {
   const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
+  await requireStaff({ capability: "staff.manage" });
   const sb = await adminClient();
   const { data: rows } = await sb
     .from("audit_log")

@@ -44,7 +44,7 @@ export const recheckApplication = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => ({ id: s(d?.id, 40) }))
   .handler(async ({ data }) => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff();
+    await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: app } = await supabaseAdmin.from("trade_applications").select("*").eq("id", data.id).maybeSingle();
     if (!app) return { ok: false as const };
@@ -63,7 +63,7 @@ export const addTradeInternalNote = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!data.body) return { ok: false as const };
     const { requireStaff } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("trade_internal_notes" as never).insert(
       { application_id: data.id, author_id: actor.userId, author_name: actor.name || actor.email, body: data.body } as never,
