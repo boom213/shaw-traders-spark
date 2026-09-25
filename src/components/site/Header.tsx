@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, Search, ShoppingCart } from "lucide-react";
+import { Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -33,12 +33,11 @@ export function Header() {
   const navCategories = NAV_CATEGORIES.map((slug) => (categories ?? []).find((c) => c.slug === slug)).filter(
     (c): c is NonNullable<typeof c> => Boolean(c),
   );
-  const [mobileSearch, setMobileSearch] = useState(false);
   const [menu, setMenu] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-      <div className="container-page flex h-16 items-center gap-3">
+      <div className="container-page grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <Sheet open={menu} onOpenChange={setMenu}>
           <SheetTrigger
             className="-ml-1 grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
@@ -92,33 +91,16 @@ export function Header() {
           </SheetContent>
         </Sheet>
 
-        <Logo />
+        <div className="min-w-0">
+          <Logo />
+        </div>
 
-        <nav className="ml-4 hidden items-center gap-0.5 lg:flex" aria-label="Store navigation">
-          {[
-            { to: "/shop", label: "Shop" },
-            { to: "/find-parts", label: "Find Parts" },
-            { to: "/trade", label: "Trade" },
-            { to: "/bulk", label: "Bulk Orders" },
-            { to: "/service", label: "Service" },
-            { to: "/contact", label: "Contact" },
-          ].map((item) => <Link key={item.to} to={item.to} className="rounded-md px-2.5 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground" activeProps={{ className: "rounded-md px-2.5 py-2 text-sm font-semibold text-foreground bg-muted" }}>{item.label}</Link>)}
-        </nav>
-
-        <div className="mx-auto hidden max-w-sm flex-1 2xl:block 2xl:ml-3">
+        <div className="mx-auto hidden w-full max-w-xl min-w-0 lg:block">
           <SearchBox />
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="flex shrink-0 items-center justify-end gap-1">
           <LanguageSwitch className="hidden lg:block" />
-
-          <button
-            onClick={() => setMobileSearch((v) => !v)}
-            className="grid size-9 place-items-center rounded-lg hover:bg-muted lg:hidden"
-            aria-label={t("nav.search")}
-          >
-            <Search className="size-5" />
-          </button>
           <AccountMenu />
           <Link
             to="/account"
@@ -154,11 +136,31 @@ export function Header() {
         </div>
       </div>
 
-      {mobileSearch && (
-        <div className="container-page pb-3 lg:hidden">
-          <SearchBox autoFocus />
+      <div className="container-page pb-3 lg:hidden">
+        <SearchBox />
+      </div>
+
+      <nav className="hidden border-t border-border lg:block" aria-label="Store navigation">
+        <div className="container-page flex h-11 items-center justify-center gap-1">
+          {[
+            { to: "/shop", label: "Shop" },
+            { to: "/find-parts", label: "Find Parts" },
+            { to: "/trade", label: "Trade" },
+            { to: "/bulk", label: "Bulk Orders" },
+            { to: "/service", label: "Service" },
+            { to: "/contact", label: "Contact" },
+          ].map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              activeProps={{ className: "rounded-md bg-muted px-4 py-2 text-sm font-semibold text-foreground" }}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
-      )}
+      </nav>
 
       {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
         <div className="container-page hide-scrollbar flex gap-1 overflow-x-auto py-2">
