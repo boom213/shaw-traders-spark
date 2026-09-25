@@ -201,9 +201,10 @@ function Dashboard() {
     enabled: Boolean(user),
   });
 
-  const ids = Array.from(new Set([...lists.saved, ...lists.recentlyViewed]));
+  const ids = Array.from(new Set([...lists.wishlist, ...lists.saved, ...lists.recentlyViewed]));
   const { data: products } = useQuery(productsByIdsQuery(ids));
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
+  const wishlist = lists.wishlist.map((id) => byId.get(id)).filter(Boolean);
   const saved = lists.saved.map((id) => byId.get(id)).filter(Boolean);
   const viewed = lists.recentlyViewed.map((id) => byId.get(id)).filter(Boolean);
 
@@ -296,9 +297,22 @@ function Dashboard() {
         )}
       </section>
 
+      <section id="wishlist" className="scroll-mt-52 space-y-3">
+        <SectionHeading title="Your wishlist" subtitle="Parts you want to keep for later" />
+        {wishlist.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {wishlist.map((p) => p && <ProductCard key={p.id} product={p} />)}
+          </div>
+        ) : (
+          <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+            Your wishlist is empty. <Link to="/shop" className="font-medium text-primary underline">Browse products</Link>
+          </p>
+        )}
+      </section>
+
       {saved.length > 0 && (
-        <section id="wishlist" className="scroll-mt-52 space-y-3">
-          <SectionHeading title="Saved for later" />
+        <section className="space-y-3">
+          <SectionHeading title="Saved from your cart" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {saved.map((p) => p && <ProductCard key={p.id} product={p} />)}
           </div>

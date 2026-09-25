@@ -19,3 +19,5 @@
 - [x] Add manager wholesale counter sales with GST choice, invoices, stock updates, and partial offline payments.
 
 - [x] Add optional map pin selection to delivery addresses and preserve coordinates on orders.
+- [x] Restrict wishlist controls to signed-in customers and verify account sync, display, removal, and cart actions.
+- [ ] Connect a user-owned Google Maps key for shawtradersev.info and verify the checkout map on the custom domain.
