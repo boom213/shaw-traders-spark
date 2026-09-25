@@ -153,7 +153,7 @@ export const BUSINESS = {
   phone: "7501849610",
   phoneIntl: "917501849610",
   address: "Defence Colony, Bud Bud, Bardhaman, West Bengal – 713403, India",
-  site: "https://shawtradersev.com",
+  site: "https://shawtradersev.info",
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",
   /** 1200x630 share banner used as the site-wide default og:image. */

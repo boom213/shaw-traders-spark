@@ -19,4 +19,4 @@ Disallow: /cart
 Disallow: /order/
 Disallow: /api/
 
-Sitemap: https://shawtradersev.com/sitemap.xml
+Sitemap: https://shawtradersev.info/sitemap.xml
