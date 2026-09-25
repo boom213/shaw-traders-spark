@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,17 @@ import { manageCustomers } from "@/lib/manage-data.functions";
 import { BUSINESS, formatINR, whatsappLink } from "@/lib/catalog";
 
 export const Route = createFileRoute("/manage/customers")({
+  head: () => ({
+    meta: [
+      { title: "Customers — Shaw Traders EV" },
+      { name: "description", content: "Customer accounts, order history and account access for Shaw Traders EV staff." },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Customers — Shaw Traders EV" },
+      { property: "og:description", content: "Customer accounts and order history for Shaw Traders EV staff." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: ManageCustomers,
 });
 
@@ -46,21 +57,23 @@ function ManageCustomers() {
                 <th className="p-3">Customer</th>
                 <th className="p-3">Phone</th>
                 <th className="p-3">City</th>
+                <th className="p-3">Account</th>
                 <th className="p-3">Orders</th>
                 <th className="p-3">Total value</th>
                 <th className="p-3">Last order</th>
-                <th className="p-3">Contact</th>
+                <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {(customers ?? []).map((c) => (
-                <tr key={c.phone} className="border-t border-border">
+                <tr key={c.id} className="border-t border-border">
                   <td className="p-3 font-medium">
                     {c.name}
                     {c.email && <span className="block text-xs text-muted-foreground">{c.email}</span>}
                   </td>
                   <td className="p-3">{c.phone}</td>
                   <td className="p-3">{c.city ?? "—"}</td>
+                  <td className="p-3 capitalize">{c.customerType} · {c.priceTier}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1.5">
                       {c.orders.map((o) => (
@@ -69,18 +82,12 @@ function ManageCustomers() {
                     </div>
                   </td>
                   <td className="p-3">{formatINR(c.spend)}</td>
-                  <td className="p-3 text-muted-foreground">{new Date(c.last).toLocaleDateString("en-IN")}</td>
+                  <td className="p-3 text-muted-foreground">{c.last ? new Date(c.last).toLocaleDateString("en-IN") : "—"}</td>
                   <td className="p-3">
-                    <div className="flex gap-2">
-                      <a href={`tel:${c.phone}`} className="text-primary hover:underline">Call</a>
-                      <a
-                        href={whatsappLink(`Hello ${c.name}, this is ${BUSINESS.name} regarding your order.`)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        WhatsApp
-                      </a>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" asChild><Link to="/manage/customers/$customerId" params={{ customerId: c.id }}>View customer</Link></Button>
+                      {c.phone && <a href={`tel:${c.phone}`} className="self-center text-primary hover:underline">Call</a>}
+                      {c.phone && <a href={whatsappLink(`Hello ${c.name}, this is ${BUSINESS.name} regarding your order.`)} target="_blank" rel="noreferrer" className="self-center text-primary hover:underline">WhatsApp</a>}
                     </div>
                   </td>
                 </tr>

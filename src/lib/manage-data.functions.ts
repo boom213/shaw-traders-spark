@@ -111,52 +111,219 @@ export const setOrderStatus = createServerFn({ method: "POST" })
   });
 
 export type ManageCustomer = {
+  id: string;
   phone: string;
   name: string;
   email?: string;
   city?: string;
+  customerType: "retail" | "trade";
+  priceTier: "retail" | "trade" | "distributor";
   orders: { humanId: string; token: string }[];
   spend: number;
-  last: string;
+  last: string | null;
 };
 
 export const manageCustomers = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase() }))
   .handler(async ({ data }): Promise<ManageCustomer[]> => {
     const sb = await admin();
-    const { data: rows, error } = await sb
-      .from("orders")
-      .select("human_id, public_token, total, address, contact_phone, placed_at")
-      .order("placed_at", { ascending: false })
-      .limit(1000);
-    if (error) throw new Error(error.message);
+    const [{ data: profiles, error: profileError }, { data: orders, error: orderError }, { data: addresses, error: addressError }] = await Promise.all([
+      sb.from("profiles").select("id, full_name, phone, email, customer_type, price_tier").order("created_at", { ascending: false }).limit(1000),
+      sb.from("orders").select("profile_id, human_id, public_token, total, placed_at").not("profile_id", "is", null).order("placed_at", { ascending: false }).limit(5000),
+      sb.from("addresses").select("profile_id, city, is_default").limit(3000),
+    ]);
+    if (profileError) throw new Error(profileError.message);
+    if (orderError) throw new Error(orderError.message);
+    if (addressError) throw new Error(addressError.message);
 
-    const map = new Map<string, ManageCustomer>();
-    for (const o of (rows ?? []) as Row[]) {
-      const addr = (o['address'] ?? {}) as Record<string, string>;
-      const phone = String(o['contact_phone'] ?? addr['phone'] ?? "unknown");
-      const entry = map.get(phone);
-      const ref = { humanId: String(o['human_id']), token: String(o['public_token']) };
-      if (entry) {
-        entry.orders.push(ref);
-        entry.spend += Number(o['total']);
-        if (String(o['placed_at']) > entry.last) entry.last = String(o['placed_at']);
-      } else {
-        map.set(phone, {
-          phone,
-          name: addr['name'] ?? "Customer",
-          ...(addr['email'] ? { email: addr['email'] } : {}),
-          ...(addr['city'] ? { city: addr['city'] } : {}),
-          orders: [ref],
-          spend: Number(o['total']),
-          last: String(o['placed_at']),
-        });
-      }
+    const ordersByProfile = new Map<string, Row[]>();
+    for (const order of (orders ?? []) as Row[]) {
+      const profileId = String(order['profile_id']);
+      ordersByProfile.set(profileId, [...(ordersByProfile.get(profileId) ?? []), order]);
     }
-    const list = [...map.values()].sort((a, b) => b.last.localeCompare(a.last));
+    const cityByProfile = new Map<string, string>();
+    for (const address of (addresses ?? []) as Row[]) {
+      const profileId = String(address['profile_id']);
+      if (address['is_default'] || !cityByProfile.has(profileId)) cityByProfile.set(profileId, String(address['city'] ?? ""));
+    }
+
+    const list = ((profiles ?? []) as Row[]).map((profile): ManageCustomer => {
+      const id = String(profile['id']);
+      const customerOrders = ordersByProfile.get(id) ?? [];
+      return {
+        id,
+        phone: String(profile['phone'] ?? ""),
+        name: String(profile['full_name'] ?? profile['email'] ?? "Customer"),
+        ...(profile['email'] ? { email: String(profile['email']) } : {}),
+        ...(cityByProfile.get(id) ? { city: cityByProfile.get(id) } : {}),
+        customerType: profile['customer_type'] === "trade" ? "trade" : "retail",
+        priceTier: ["retail", "trade", "distributor"].includes(String(profile['price_tier']))
+          ? profile['price_tier'] as ManageCustomer['priceTier']
+          : "retail",
+        orders: customerOrders.map((order) => ({ humanId: String(order['human_id']), token: String(order['public_token']) })),
+        spend: customerOrders.reduce((sum, order) => sum + Number(order['total'] ?? 0), 0),
+        last: customerOrders[0]?.['placed_at'] ? String(customerOrders[0]['placed_at']) : null,
+      };
+    }).sort((a, b) => (b.last ?? "").localeCompare(a.last ?? ""));
     return data.q
-      ? list.filter((c) => `${c.name} ${c.phone} ${c.city ?? ""}`.toLowerCase().includes(data.q))
+      ? list.filter((c) => `${c.name} ${c.email ?? ""} ${c.phone} ${c.city ?? ""}`.toLowerCase().includes(data.q))
       : list;
+  });
+
+export type ManageCustomerAddress = {
+  id: string;
+  name: string;
+  phone: string;
+  line1: string;
+  landmark: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+};
+
+export type ManageCustomerDetail = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  customerType: "retail" | "trade";
+  priceTier: "retail" | "trade" | "distributor";
+  creditLimit: number;
+  paymentTermsDays: number;
+  addresses: ManageCustomerAddress[];
+  orders: Array<{
+    id: string;
+    humanId: string;
+    token: string;
+    total: number;
+    status: string;
+    placedAt: string;
+    items: Array<{ productId: string | null; name: string; qty: number; price: number | null }>;
+  }>;
+};
+
+export const manageCustomerDetail = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string }) => ({ customerId: String(data?.customerId ?? "") }))
+  .handler(async ({ data }): Promise<ManageCustomerDetail | null> => {
+    const sb = await admin();
+    const [{ data: profile, error: profileError }, { data: addresses, error: addressError }, { data: orders, error: orderError }] = await Promise.all([
+      sb.from("profiles").select("id, full_name, email, phone, customer_type, price_tier, credit_limit, payment_terms_days").eq("id", data.customerId).maybeSingle(),
+      sb.from("addresses").select("id, name, phone, line1, landmark, city, state, pincode, is_default").eq("profile_id", data.customerId).order("is_default", { ascending: false }).order("created_at", { ascending: false }),
+      sb.from("orders").select("id, human_id, public_token, total, status, placed_at, order_items(product_id, name_snapshot, qty, price_snapshot)").eq("profile_id", data.customerId).order("placed_at", { ascending: false }).limit(200),
+    ]);
+    if (profileError) throw new Error(profileError.message);
+    if (addressError) throw new Error(addressError.message);
+    if (orderError) throw new Error(orderError.message);
+    if (!profile) return null;
+    return {
+      id: String(profile.id),
+      name: String(profile.full_name ?? profile.email ?? "Customer"),
+      email: String(profile.email ?? ""),
+      phone: String(profile.phone ?? ""),
+      customerType: profile.customer_type === "trade" ? "trade" : "retail",
+      priceTier: (["retail", "trade", "distributor"].includes(String(profile.price_tier)) ? profile.price_tier : "retail") as ManageCustomerDetail['priceTier'],
+      creditLimit: Number(profile.credit_limit ?? 0),
+      paymentTermsDays: Number(profile.payment_terms_days ?? 0),
+      addresses: ((addresses ?? []) as Row[]).map((address) => ({
+        id: String(address['id']),
+        name: String(address['name'] ?? profile.full_name ?? ""),
+        phone: String(address['phone'] ?? profile.phone ?? ""),
+        line1: String(address['line1'] ?? ""),
+        landmark: String(address['landmark'] ?? ""),
+        city: String(address['city'] ?? ""),
+        state: String(address['state'] ?? ""),
+        pincode: String(address['pincode'] ?? ""),
+        isDefault: Boolean(address['is_default']),
+      })),
+      orders: ((orders ?? []) as Row[]).map((order) => ({
+        id: String(order['id']),
+        humanId: String(order['human_id']),
+        token: String(order['public_token']),
+        total: Number(order['total'] ?? 0),
+        status: String(order['status']),
+        placedAt: String(order['placed_at']),
+        items: ((order['order_items'] ?? []) as Row[]).map((item) => ({
+          productId: item['product_id'] ? String(item['product_id']) : null,
+          name: String(item['name_snapshot']),
+          qty: Number(item['qty']),
+          price: item['price_snapshot'] === null ? null : Number(item['price_snapshot']),
+        })),
+      })),
+    };
+  });
+
+export const updateManagedCustomer = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string; customerType: string; priceTier: string; creditLimit: number; paymentTermsDays: number }) => ({
+    customerId: String(data?.customerId ?? ""),
+    customerType: String(data?.customerType ?? ""),
+    priceTier: String(data?.priceTier ?? ""),
+    creditLimit: Number(data?.creditLimit ?? 0),
+    paymentTermsDays: Number(data?.paymentTermsDays ?? 0),
+  }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ superAdmin: true });
+    if (!data.customerId) throw new Error("Customer is required");
+    if (!(["retail", "trade"] as string[]).includes(data.customerType)) throw new Error("Choose a valid account type");
+    if (!(["retail", "trade", "distributor"] as string[]).includes(data.priceTier)) throw new Error("Choose a valid price tier");
+    if (!Number.isFinite(data.creditLimit) || data.creditLimit < 0 || data.creditLimit > 100000000) throw new Error("Enter a valid credit limit");
+    if (!Number.isInteger(data.paymentTermsDays) || data.paymentTermsDays < 0 || data.paymentTermsDays > 365) throw new Error("Payment terms must be from 0 to 365 days");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: before } = await supabaseAdmin.from("profiles").select("customer_type, price_tier, credit_limit, payment_terms_days, trade_approved_at").eq("id", data.customerId).maybeSingle();
+    if (!before) throw new Error("Customer not found");
+    const patch = {
+      customer_type: data.customerType,
+      price_tier: data.priceTier,
+      credit_limit: data.creditLimit,
+      payment_terms_days: data.paymentTermsDays,
+      trade_approved_at: data.customerType === "trade" ? (before.trade_approved_at ?? new Date().toISOString()) : null,
+    };
+    const { error } = await supabaseAdmin.from("profiles").update(patch as never).eq("id", data.customerId);
+    if (error) throw new Error(error.message);
+    await logAudit(supabaseAdmin as never, actor, "customer.account_updated", "profiles", data.customerId, { before, after: patch });
+    return { ok: true as const };
+  });
+
+export const saveManagedCustomerAddress = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string; addressId?: string; line1: string; landmark?: string; city: string; state: string; pincode: string; isDefault?: boolean }) => ({
+    customerId: String(data?.customerId ?? ""),
+    addressId: String(data?.addressId ?? ""),
+    line1: String(data?.line1 ?? "").trim().slice(0, 240),
+    landmark: String(data?.landmark ?? "").trim().slice(0, 120),
+    city: String(data?.city ?? "").trim().slice(0, 80),
+    state: String(data?.state ?? "").trim().slice(0, 80),
+    pincode: String(data?.pincode ?? "").replace(/\D/g, "").slice(0, 6),
+    isDefault: Boolean(data?.isDefault),
+  }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ superAdmin: true });
+    if (data.line1.length < 5 || data.city.length < 2 || data.state.length < 2 || !/^\d{6}$/.test(data.pincode)) throw new Error("Enter a complete address and 6-digit pincode");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin.from("profiles").select("full_name, phone").eq("id", data.customerId).maybeSingle();
+    if (!profile) throw new Error("Customer not found");
+    if (data.isDefault) await supabaseAdmin.from("addresses").update({ is_default: false }).eq("profile_id", data.customerId);
+    const values = { profile_id: data.customerId, name: profile.full_name, phone: profile.phone, line1: data.line1, landmark: data.landmark || null, city: data.city, state: data.state, pincode: data.pincode, is_default: data.isDefault };
+    const result = data.addressId
+      ? await supabaseAdmin.from("addresses").update(values as never).eq("id", data.addressId).eq("profile_id", data.customerId).select("id").maybeSingle()
+      : await supabaseAdmin.from("addresses").insert(values as never).select("id").single();
+    if (result.error) throw new Error(result.error.message);
+    const savedId = String(result.data?.id ?? data.addressId);
+    await logAudit(supabaseAdmin as never, actor, data.addressId ? "customer.address_updated" : "customer.address_added", "addresses", savedId, { customerId: data.customerId, address: values });
+    return { ok: true as const, id: savedId };
+  });
+
+export const deleteManagedCustomerAddress = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string; addressId: string }) => ({ customerId: String(data?.customerId ?? ""), addressId: String(data?.addressId ?? "") }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ superAdmin: true });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("addresses").delete().eq("id", data.addressId).eq("profile_id", data.customerId);
+    if (error) throw new Error(error.message);
+    await logAudit(supabaseAdmin as never, actor, "customer.address_deleted", "addresses", data.addressId, { customerId: data.customerId });
+    return { ok: true as const };
   });
 
 export const manageStats = createServerFn({ method: "POST" }).handler(async () => {

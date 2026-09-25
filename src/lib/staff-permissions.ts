@@ -58,5 +58,6 @@ export const MANAGE_ROUTE_CAPABILITY = {
 
 export function capabilityForManagePath(pathname: string): StaffCapability {
   const path = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
+  if (path.startsWith("/manage/customers/")) return "operations";
   return MANAGE_ROUTE_CAPABILITY[path as keyof typeof MANAGE_ROUTE_CAPABILITY] ?? "operations";
 }
