@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, canonical, formatINR, whatsappLink } from "@/lib/catalog";
-import { getVehicle, requestExchange, requestFinance, requestTestRide } from "@/lib/vehicles.functions";
+import { getVehicle, requestFinance, requestTestRide } from "@/lib/vehicles.functions";
 import { startBooking, verifyBookingPayment } from "@/lib/booking.functions";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { SPEC_ROWS, TEST_RIDE_SLOTS, emi, priceLines } from "@/lib/vehicles";
@@ -236,36 +236,36 @@ function FinanceForm({ slug, onRoad }: { slug: string; onRoad: number }) {
   );
 }
 
-function ExchangeForm({ slug }: { slug: string }) {
-  const [f, setF] = useState({ name: "", phone: "", brand: "", model: "", year: "", km: "", condition: "Good" });
-  const [msg, setMsg] = useState<string | null>(null);
+function ExchangeForm() {
   return (
-    <div className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <h3 className="font-display text-lg font-bold">Exchange your old scooter</h3>
-      <Input placeholder="Your name" aria-label="Your name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-      <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
-      <div className="grid grid-cols-2 gap-3">
-        <Input placeholder="Make" aria-label="Current make" value={f.brand} onChange={(e) => setF({ ...f, brand: e.target.value })} />
-        <Input placeholder="Model" aria-label="Current model" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} />
-        <Input placeholder="Year" aria-label="Year" inputMode="numeric" value={f.year} onChange={(e) => setF({ ...f, year: e.target.value })} />
-        <Input placeholder="Km run" aria-label="Kilometres run" inputMode="numeric" value={f.km} onChange={(e) => setF({ ...f, km: e.target.value })} />
+    <div className="grid gap-3 rounded-2xl border border-border bg-muted/40 p-5 opacity-70 shadow-[var(--shadow-card)]" aria-disabled="true">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-display text-lg font-bold">Exchange your old scooter</h3>
+        <span className="shrink-0 rounded-full border border-border bg-background px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+          Unavailable
+        </span>
       </div>
-      <Select value={f.condition} onValueChange={(v) => setF({ ...f, condition: v })}>
+      <Input disabled placeholder="Your name" aria-label="Your name" />
+      <Input disabled placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" />
+      <div className="grid grid-cols-2 gap-3">
+        <Input disabled placeholder="Make" aria-label="Current make" />
+        <Input disabled placeholder="Model" aria-label="Current model" />
+        <Input disabled placeholder="Year" aria-label="Year" inputMode="numeric" />
+        <Input disabled placeholder="Km run" aria-label="Kilometres run" inputMode="numeric" />
+      </div>
+      <Select disabled value="Good">
         <SelectTrigger aria-label="Condition"><SelectValue /></SelectTrigger>
-        <SelectContent>{["Excellent", "Good", "Average", "Needs work"].map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        <SelectContent><SelectItem value="Good">Good</SelectItem></SelectContent>
       </Select>
-      <Button
-        variant="outline"
-        onClick={async () => {
-          const r = await requestExchange({
-            data: { slug, name: f.name, phone: f.phone, brand: f.brand, model: f.model, year: Number(f.year) || 0, km: Number(f.km) || 0, condition: f.condition },
-          });
-          setMsg(r.ok ? "Sent. We will tell you what your scooter is worth." : (r.error ?? "Please try again."));
-        }}
-      >
-        Get a valuation
-      </Button>
-      <Note text={msg} />
+      <div className="group relative" tabIndex={0} aria-label="Exchange valuation not available">
+        <Button disabled variant="outline" className="w-full pointer-events-none">Get a valuation</Button>
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus:opacity-100"
+        >
+          Not available
+        </span>
+      </div>
     </div>
   );
 }
@@ -399,7 +399,7 @@ function ScooterPage() {
       <section className="mt-12 grid gap-4 md:grid-cols-3" aria-label="Test ride, finance and exchange">
         <TestRideForm slug={vehicle.slug} />
         <FinanceForm slug={vehicle.slug} onRoad={vehicle.price.onRoad} />
-        <ExchangeForm slug={vehicle.slug} />
+        <ExchangeForm />
       </section>
 
       {others.length > 0 && (
