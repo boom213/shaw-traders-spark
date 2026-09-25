@@ -100,7 +100,7 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     ? `Amounts are ${document.gstIncluded ? "inclusive" : "exclusive"} of GST at ${document.gstRate}%. This is a computer generated invoice.`
     : "This order carries no GST charge. This is a computer generated invoice.";
 
-  let page: PDFPage;
+  let page: PDFPage = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   let y = 0;
 
   const drawOuterBorder = () => {
@@ -167,7 +167,8 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     newPage(true);
   };
 
-  newPage();
+  drawOuterBorder();
+  drawHeader();
   y = PAGE_HEIGHT - 140;
   text("BILL TO", MARGIN, 8, bold, MUTED);
   y -= 16;
