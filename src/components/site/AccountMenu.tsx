@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgePercent,
+  Banknote,
   Bike,
   Boxes,
   BriefcaseBusiness,
@@ -44,6 +45,7 @@ const STAFF_LINKS = [
   { to: "/manage/bookings", label: "Bookings & service", icon: Wrench, capability: "operations" },
   { to: "/manage/customers", label: "Customers", icon: Users, capability: "operations" },
   { to: "/manage/all-products", label: "All products", icon: ShoppingBag, capability: "operations" },
+  { to: "/manage/counter-sales", label: "Counter sales", icon: Banknote, capability: "counter-sales" },
   { to: "/manage/catalogue", label: "Products & stock", icon: Boxes, capability: "catalogue" },
   { to: "/manage/scooters", label: "Vehicle catalogue", icon: Bike, capability: "catalogue" },
   { to: "/manage/trade", label: "Trade & credit", icon: BriefcaseBusiness, capability: "trade" },

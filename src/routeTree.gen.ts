@@ -41,6 +41,7 @@ import { Route as ManageAllProductsRouteImport } from './routes/manage.all-produ
 import { Route as ManageBookingsRouteImport } from './routes/manage.bookings'
 import { Route as ManageBrandCatalogueRouteImport } from './routes/manage.brand-catalogue'
 import { Route as ManageCatalogueRouteImport } from './routes/manage.catalogue'
+import { Route as ManageCounterSalesRouteImport } from './routes/manage.counter-sales'
 import { Route as ManageCustomersRouteImport } from './routes/manage.customers'
 import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageEnquiriesRouteImport } from './routes/manage.enquiries'
@@ -231,6 +232,11 @@ const ManageCatalogueRoute = ManageCatalogueRouteImport.update({
   path: '/catalogue',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageCounterSalesRoute = ManageCounterSalesRouteImport.update({
+  id: '/counter-sales',
+  path: '/counter-sales',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageCustomersRoute = ManageCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
+  '/manage/counter-sales': typeof ManageCounterSalesRoute
   '/manage/customers': typeof ManageCustomersRouteWithChildren
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
@@ -477,6 +484,7 @@ export interface FileRoutesByTo {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
+  '/manage/counter-sales': typeof ManageCounterSalesRoute
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
@@ -540,6 +548,7 @@ export interface FileRoutesById {
   '/manage/bookings': typeof ManageBookingsRoute
   '/manage/brand-catalogue': typeof ManageBrandCatalogueRoute
   '/manage/catalogue': typeof ManageCatalogueRoute
+  '/manage/counter-sales': typeof ManageCounterSalesRoute
   '/manage/customers': typeof ManageCustomersRouteWithChildren
   '/manage/domain': typeof ManageDomainRoute
   '/manage/enquiries': typeof ManageEnquiriesRoute
@@ -605,6 +614,7 @@ export interface FileRouteTypes {
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
+    | '/manage/counter-sales'
     | '/manage/customers'
     | '/manage/domain'
     | '/manage/enquiries'
@@ -667,6 +677,7 @@ export interface FileRouteTypes {
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
+    | '/manage/counter-sales'
     | '/manage/domain'
     | '/manage/enquiries'
     | '/manage/home'
@@ -729,6 +740,7 @@ export interface FileRouteTypes {
     | '/manage/bookings'
     | '/manage/brand-catalogue'
     | '/manage/catalogue'
+    | '/manage/counter-sales'
     | '/manage/customers'
     | '/manage/domain'
     | '/manage/enquiries'
@@ -1030,6 +1042,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageCatalogueRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/counter-sales': {
+      id: '/manage/counter-sales'
+      path: '/counter-sales'
+      fullPath: '/manage/counter-sales'
+      preLoaderRoute: typeof ManageCounterSalesRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/customers': {
       id: '/manage/customers'
       path: '/customers'
@@ -1256,6 +1275,7 @@ interface ManageRouteChildren {
   ManageBookingsRoute: typeof ManageBookingsRoute
   ManageBrandCatalogueRoute: typeof ManageBrandCatalogueRoute
   ManageCatalogueRoute: typeof ManageCatalogueRoute
+  ManageCounterSalesRoute: typeof ManageCounterSalesRoute
   ManageCustomersRoute: typeof ManageCustomersRouteWithChildren
   ManageDomainRoute: typeof ManageDomainRoute
   ManageEnquiriesRoute: typeof ManageEnquiriesRoute
@@ -1277,6 +1297,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageBookingsRoute: ManageBookingsRoute,
   ManageBrandCatalogueRoute: ManageBrandCatalogueRoute,
   ManageCatalogueRoute: ManageCatalogueRoute,
+  ManageCounterSalesRoute: ManageCounterSalesRoute,
   ManageCustomersRoute: ManageCustomersRouteWithChildren,
   ManageDomainRoute: ManageDomainRoute,
   ManageEnquiriesRoute: ManageEnquiriesRoute,

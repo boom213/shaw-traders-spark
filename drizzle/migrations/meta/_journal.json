@@ -169,6 +169,13 @@
       "when": 1790265989375,
       "tag": "0023_trade_application_business_details",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790355522110,
+      "tag": "0024_add_wholesale_counter_sales",
+      "breakpoints": true
     }
   ]
 }

@@ -16,3 +16,4 @@
 - [x] Add Super Admin-only permanent product deletion with confirmation and dependency safeguards.
 - [x] Add a read-only searchable and paginated All Products page for every staff role.
 - [x] Expand Add Product with photos, stock warning, shelf, optional details, and staff-only wholesale pricing.
+- [ ] Add manager wholesale counter sales with GST choice, invoices, stock updates, and partial offline payments.
