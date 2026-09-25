@@ -4,11 +4,22 @@ import { useRef, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { catalogueList, createCatalogueProduct, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
+import { catalogueList, createCatalogueProduct, deleteCatalogueProduct, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
 import { uploadProductPhoto } from "@/lib/photo-upload";
 import { categoriesQuery } from "@/lib/queries";
 import { placeholderFor } from "@/lib/placeholders";
@@ -127,7 +138,16 @@ function CataloguePage() {
         </p>
       )}
 
-      {items.map((p) => <ProductCard key={p.id} product={p} />)}
+      {items.map((p) => (
+        <ProductCard
+          key={p.id}
+          product={p}
+          canDelete={staff.role === "super_admin"}
+          onDeleted={() => {
+            if (items.length === 1 && page > 0) setPage((current) => Math.max(0, current - 1));
+          }}
+        />
+      ))}
 
       <div className="sticky bottom-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
         <span className="text-sm text-muted-foreground">Showing {from}–{to} of {total}</span>
@@ -196,7 +216,7 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
   </Dialog>;
 }
 
-function ProductCard({ product }: { product: CatalogueRow }) {
+function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow; canDelete: boolean; onDeleted: () => void }) {
   const queryClient = useQueryClient();
   const [price, setPrice] = useState(product.price === null ? "" : String(product.price));
   const [mrp, setMrp] = useState(product.mrp === null ? "" : String(product.mrp));
@@ -205,6 +225,7 @@ function ProductCard({ product }: { product: CatalogueRow }) {
   const [rack, setRack] = useState(product.rackLocation ?? "");
   const [status, setStatus] = useState<ProductStatus>(isProductStatus(product.status) ? product.status : "visible");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
   const low = product.stock <= (product.reorderThreshold ?? 3);
@@ -227,6 +248,21 @@ function ProductCard({ product }: { product: CatalogueRow }) {
     toast.success("Saved");
     void queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] });
     void queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] });
+  };
+
+  const remove = async () => {
+    setDeleting(true);
+    const result = await deleteCatalogueProduct({ data: { id: product.id } });
+    setDeleting(false);
+    if (!result.ok) return toast.error(result.error);
+    toast.success(`${product.name} deleted`);
+    onDeleted();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
+      queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] }),
+      queryClient.invalidateQueries({ queryKey: ["home"] }),
+      queryClient.invalidateQueries({ queryKey: ["products"] }),
+    ]);
   };
 
   return (
@@ -266,9 +302,41 @@ function ProductCard({ product }: { product: CatalogueRow }) {
         </Cell>
       </div>
 
-      <Button className="mt-3 w-full sm:w-auto" disabled={saving} onClick={() => void save()}>
-        {saving ? "Saving…" : "Save"}
-      </Button>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <Button className="w-full sm:w-auto" disabled={saving || deleting} onClick={() => void save()}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
+        {canDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="w-full sm:w-auto" variant="destructive" disabled={saving || deleting}>
+                <Trash2 className="size-4" /> {deleting ? "Deleting…" : "Delete"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently deletes the product and its related photos. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    void remove();
+                  }}
+                  disabled={deleting}
+                >
+                  {deleting ? "Deleting…" : "Delete permanently"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
     </div>
   );
 }
