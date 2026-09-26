@@ -239,6 +239,13 @@
       "when": 1790444000995,
       "tag": "0033_paginate_manager_customers_and_aggregate_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790444484128,
+      "tag": "0034_create_managed_product_brands",
+      "breakpoints": true
     }
   ]
 }
