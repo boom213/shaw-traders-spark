@@ -271,6 +271,12 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
     slug: String(input?.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 180),
     category: String(input?.category ?? "").trim(),
     brand: String(input?.brand ?? "").trim().slice(0, 120),
+    specs: Object.fromEntries(
+      Object.entries(input?.specs ?? {})
+        .slice(0, 50)
+        .map(([name, value]) => [String(name).trim().slice(0, 120), String(value).trim().slice(0, 500)])
+        .filter(([name, value]) => name && value),
+    ),
     status: ["visible", "draft", "hidden"].includes(String(input?.status)) ? String(input.status) : "draft",
     orderingMode: ["full", "enquiry", "browse"].includes(String(input?.orderingMode)) ? String(input.orderingMode) : "",
     stock: Math.max(0, Math.floor(Number(input?.stock ?? 0))),
@@ -283,6 +289,10 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
+    const specificationNames = Object.keys(data.specs).map((name) => name.toLocaleLowerCase());
+    if (new Set(specificationNames).size !== specificationNames.length) {
+      return { ok: false as const, error: "Each specification name must be unique." };
+    }
     if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
     if (!data.sku) return { ok: false as const, error: "Enter a product code (SKU)." };
     if (!data.slug) return { ok: false as const, error: "Enter a valid product URL slug." };

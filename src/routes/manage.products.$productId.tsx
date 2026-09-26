@@ -34,9 +34,10 @@ export const Route = createFileRoute("/manage/products/$productId")({
 });
 
 type CompatibilityRow = { vehicleModel: string; yearFrom: string; yearTo: string; variant: string };
+type SpecificationRow = { name: string; value: string };
 
 type FormState = Omit<UpdateCatalogueProductInput, "price" | "wholesalePrice" | "mrp" | "stock" | "reorderThreshold" | "specs" | "compatibility"> & {
-  price: string; wholesalePrice: string; mrp: string; stock: string; reorderThreshold: string; specsText: string; compatibility: CompatibilityRow[];
+  price: string; wholesalePrice: string; mrp: string; stock: string; reorderThreshold: string; specifications: SpecificationRow[]; compatibility: CompatibilityRow[];
 };
 
 const text = (value: string | null) => value ?? "";
@@ -61,7 +62,9 @@ function initialForm(product: CatalogueProductDetail): FormState {
     status: product.status,
     orderingMode: product.orderingMode ?? "",
     description: text(product.description),
-    specsText: JSON.stringify(product.specs, null, 2),
+    specifications: Object.entries(product.specs).length
+      ? Object.entries(product.specs).map(([name, value]) => ({ name, value }))
+      : [{ name: "", value: "" }],
     voltage: text(product.voltage),
     ah: text(product.ah),
     wattage: text(product.wattage),
@@ -109,15 +112,19 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    let specs: Record<string, string>;
-    try {
-      const parsed = JSON.parse(form.specsText || "{}");
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
-      specs = Object.fromEntries(Object.entries(parsed).map(([key, value]) => [String(key), String(value)]));
-    } catch {
-      toast.error("Specifications must be a valid JSON object.");
+    const enteredSpecifications = form.specifications.map((row) => ({ name: row.name.trim(), value: row.value.trim() }));
+    const incomplete = enteredSpecifications.find((row) => (row.name && !row.value) || (!row.name && row.value));
+    if (incomplete) {
+      toast.error("Complete both the specification name and value, or leave both blank.");
       return;
     }
+    const filledSpecifications = enteredSpecifications.filter((row) => row.name && row.value);
+    const normalizedNames = filledSpecifications.map((row) => row.name.toLocaleLowerCase());
+    if (new Set(normalizedNames).size !== normalizedNames.length) {
+      toast.error("Each specification name must be unique.");
+      return;
+    }
+    const specs = Object.fromEntries(filledSpecifications.map((row) => [row.name, row.value]));
     setSaving(true);
     const result = await saveProduct({ data: {
       ...form,
@@ -175,6 +182,10 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
     set("compatibility", form.compatibility.map((row, current) => current === index ? { ...row, [key]: value } : row));
   };
 
+  const updateSpecification = (index: number, key: keyof SpecificationRow, value: string) => {
+    set("specifications", form.specifications.map((row, current) => current === index ? { ...row, [key]: value } : row));
+  };
+
   return (
     <form className="space-y-6" onSubmit={(event) => void submit(event)}>
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-5">
@@ -230,7 +241,52 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
         </div>
         <Field label="Box contents"><Textarea rows={3} value={form.boxContents} onChange={(event) => set("boxContents", event.target.value)} /></Field>
         <Field label="Shipping information"><Textarea rows={3} value={form.shippingInfo} onChange={(event) => set("shippingInfo", event.target.value)} /></Field>
-        <Field label="Specifications (JSON)"><Textarea className="font-mono text-xs" rows={8} value={form.specsText} onChange={(event) => set("specsText", event.target.value)} /></Field>
+        <div className="space-y-3">
+          <div>
+            <Label>Additional specifications</Label>
+            <p className="mt-1 text-xs text-muted-foreground">Add details not already covered above.</p>
+          </div>
+          <div className="space-y-2">
+            {form.specifications.map((row, index) => (
+              <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
+                <Input
+                  aria-label={`Specification name ${index + 1}`}
+                  maxLength={120}
+                  placeholder="Specification name"
+                  value={row.name}
+                  onChange={(event) => updateSpecification(index, "name", event.target.value)}
+                />
+                <Input
+                  aria-label={`Specification value ${index + 1}`}
+                  maxLength={500}
+                  placeholder="Value"
+                  value={row.value}
+                  onChange={(event) => updateSpecification(index, "value", event.target.value)}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Remove specification ${index + 1}`}
+                  onClick={() => {
+                    const remaining = form.specifications.filter((_, current) => current !== index);
+                    set("specifications", remaining.length ? remaining : [{ name: "", value: "" }]);
+                  }}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={form.specifications.length >= 50}
+            onClick={() => set("specifications", [...form.specifications, { name: "", value: "" }])}
+          >
+            <Plus /> Add specification
+          </Button>
+        </div>
       </Section>
 
       <Section title="Vehicle compatibility" single>
