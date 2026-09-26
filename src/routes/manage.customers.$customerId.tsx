@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/site/ProductCard";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   deleteManagedCustomerAddress,
   manageCustomerDetail,
+  manageCustomerOrders,
   saveManagedCustomerAddress,
   updateManagedCustomer,
   type ManageCustomerAddress,
@@ -60,12 +62,14 @@ function ManageCustomerPage() {
   const [address, setAddress] = useState(EMPTY_ADDRESS);
   const [search, setSearch] = useState("");
   const [term, setTerm] = useState("");
+  const [orderPage, setOrderPage] = useState(0);
 
   const detailQuery = useQuery({
     queryKey: ["manage-customer", customerId],
     queryFn: () => manageCustomerDetail({ data: { customerId } }),
   });
   const customer = detailQuery.data;
+  const ordersQuery = useQuery({ queryKey: ["manage-customer-orders", customerId, orderPage], queryFn: () => manageCustomerOrders({ data: { customerId, page: orderPage } }), placeholderData: (previous) => previous });
 
   useEffect(() => {
     if (!customer) return;
@@ -78,8 +82,8 @@ function ManageCustomerPage() {
   }, [customer]);
 
   const purchasedIds = useMemo(
-    () => [...new Set((customer?.orders ?? []).flatMap((order) => order.items.map((item) => item.productId)).filter((id): id is string => Boolean(id)))],
-    [customer],
+    () => customer?.purchasedProductIds ?? [],
+    [customer?.purchasedProductIds],
   );
   const purchasedQuery = useQuery(productsByIdsQuery(purchasedIds));
   const catalogueQuery = useQuery(productsQuery({ q: term, pageSize: 12, inStock: false }));
@@ -158,13 +162,14 @@ function ManageCustomerPage() {
       </section>
 
       <section className="space-y-4 border-t border-border pt-6">
-        <div><h3 className="font-display text-lg font-bold">Order history</h3><p className="text-sm text-muted-foreground">{customer.orders.length} order(s) · {formatINR(customer.orders.reduce((sum, order) => sum + order.total, 0))} lifetime value</p></div>
-        {customer.orders.length === 0 ? <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">This customer has not placed an order yet.</p> : customer.orders.map((order) => (
+        <div><h3 className="font-display text-lg font-bold">Order history</h3><p className="text-sm text-muted-foreground">{customer.orderCount} order(s) · {formatINR(customer.lifetimeValue)} lifetime value</p></div>
+        {(ordersQuery.data?.items ?? []).length === 0 ? <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">This customer has not placed an order yet.</p> : (ordersQuery.data?.items ?? []).map((order) => (
           <article key={order.id} className="rounded-lg border border-border bg-card p-4">
             <div className="flex flex-wrap justify-between gap-3"><div><Link to="/order/$id" params={{ id: order.id }} search={{ t: order.token }} className="font-semibold text-primary hover:underline">{order.humanId}</Link><p className="text-xs text-muted-foreground">{new Date(order.placedAt).toLocaleDateString("en-IN")} · {statusLabel(order.status)}</p></div><strong>{formatINR(order.total)}</strong></div>
             <ul className="mt-3 space-y-1 text-sm">{order.items.map((item, index) => <li key={`${order.id}-${index}`} className="flex justify-between gap-3"><span>{item.name} × {item.qty}</span><span className="text-muted-foreground">{item.price === null ? "—" : formatINR(item.price * item.qty)}</span></li>)}</ul>
           </article>
         ))}
+        <ListPager page={orderPage} total={ordersQuery.data?.total ?? 0} busy={ordersQuery.isFetching} onPage={setOrderPage} />
       </section>
 
       <ProductSection title="Previously purchased" subtitle="Open full product details or add an available item to this browser’s cart." products={purchasedQuery.data ?? []} empty="No previously purchased products are available in the current catalogue." />
