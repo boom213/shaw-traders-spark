@@ -1,17 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Bike, CheckCircle2, Eye, EyeOff, LogOut, Mail, UserRound } from "lucide-react";
+import { Bike, CheckCircle2, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
+import { AddressFields, EMPTY_ADDRESS, validateCustomerAddress, type CustomerAddressInput } from "@/components/site/AddressFields";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -343,6 +347,8 @@ function Dashboard() {
         )}
       </section>
 
+      <AddressBook userId={user.id} />
+
       <section id="orders" className="scroll-mt-52 space-y-3">
         <SectionHeading title="Your orders" subtitle="Every order placed with your account" />
         {ordersPending ? (
@@ -457,5 +463,182 @@ function Dashboard() {
         </section>
       )}
     </div>
+  );
+}
+
+type SavedAddress = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  alternate_phone: string | null;
+  line1: string | null;
+  landmark: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  is_default: boolean;
+};
+
+function AddressBook({ userId }: { userId: string }) {
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
+  const [makeDefault, setMakeDefault] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<SavedAddress | null>(null);
+
+  const { data: addresses = [], isPending } = useQuery({
+    queryKey: ["my-addresses", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addresses")
+        .select("id, name, phone, alternate_phone, line1, landmark, city, state, pincode, is_default")
+        .eq("profile_id", userId)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as SavedAddress[];
+    },
+  });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["my-addresses", userId] });
+  const openNew = () => {
+    setEditingId(null);
+    setForm(EMPTY_ADDRESS);
+    setMakeDefault(addresses.length === 0);
+    setDialogOpen(true);
+  };
+  const openEdit = (address: SavedAddress) => {
+    setEditingId(address.id);
+    setForm({
+      name: address.name ?? "",
+      phone: address.phone ?? "",
+      alternatePhone: address.alternate_phone ?? "",
+      line1: address.line1 ?? "",
+      landmark: address.landmark ?? "",
+      city: address.city ?? "",
+      state: address.state ?? "West Bengal",
+      pincode: address.pincode ?? "",
+    });
+    setMakeDefault(address.is_default);
+    setDialogOpen(true);
+  };
+  const save = async () => {
+    const validationError = validateCustomerAddress(form);
+    if (validationError) return toast.error(validationError);
+    setSaving(true);
+    if (makeDefault) {
+      const { error } = await supabase.from("addresses").update({ is_default: false }).eq("profile_id", userId).eq("is_default", true);
+      if (error) {
+        setSaving(false);
+        return toast.error("Could not update your default address");
+      }
+    }
+    const row = {
+      profile_id: userId,
+      name: form.name.trim(),
+      phone: form.phone,
+      alternate_phone: form.alternatePhone || null,
+      line1: form.line1.trim(),
+      landmark: form.landmark.trim() || null,
+      city: form.city.trim(),
+      state: form.state.trim(),
+      pincode: form.pincode,
+      is_default: makeDefault,
+    };
+    const result = editingId
+      ? await supabase.from("addresses").update(row).eq("id", editingId).eq("profile_id", userId)
+      : await supabase.from("addresses").insert(row);
+    setSaving(false);
+    if (result.error) return toast.error("Could not save this address");
+    setDialogOpen(false);
+    await refresh();
+    toast.success(editingId ? "Address updated" : "Address saved");
+  };
+  const setDefault = async (id: string) => {
+    const clear = await supabase.from("addresses").update({ is_default: false }).eq("profile_id", userId).eq("is_default", true);
+    if (clear.error) return toast.error("Could not update your default address");
+    const result = await supabase.from("addresses").update({ is_default: true }).eq("id", id).eq("profile_id", userId);
+    if (result.error) return toast.error("Could not update your default address");
+    await refresh();
+    toast.success("Default address updated");
+  };
+  const remove = async () => {
+    if (!deleting) return;
+    const { error } = await supabase.from("addresses").delete().eq("id", deleting.id).eq("profile_id", userId);
+    if (error) return toast.error("Could not delete this address");
+    setDeleting(null);
+    await refresh();
+    toast.success("Address deleted");
+  };
+
+  return (
+    <section id="addresses" className="scroll-mt-52 space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Addresses</h2>
+          <p className="text-sm text-muted-foreground">Manage delivery addresses for faster checkout.</p>
+        </div>
+        <Button onClick={openNew}><Plus className="size-4" /> Add new address</Button>
+      </div>
+      {isPending ? <div className="py-4"><SparkRing /> <span className="text-sm text-muted-foreground">Loading addresses…</span></div> : addresses.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border p-5 text-sm text-muted-foreground">You have no saved addresses yet.</p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {addresses.map((address) => (
+            <article key={address.id} className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex gap-3">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="font-semibold">{address.name}</p>
+                    <p className="text-sm text-muted-foreground">{address.phone}{address.alternate_phone ? ` · Alt: ${address.alternate_phone}` : ""}</p>
+                  </div>
+                </div>
+                {address.is_default && <span className="rounded-full bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground">Default</span>}
+              </div>
+              <p className="text-sm text-muted-foreground">{[address.line1, address.landmark, address.city, address.state, address.pincode].filter(Boolean).join(", ")}</p>
+              <div className="mt-auto flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => openEdit(address)}><Pencil className="size-3.5" /> Edit</Button>
+                {!address.is_default && <Button size="sm" variant="outline" onClick={() => void setDefault(address.id)}>Set as default</Button>}
+                <Button size="sm" variant="ghost" aria-label={`Delete address for ${address.name ?? "customer"}`} onClick={() => setDeleting(address)}><Trash2 className="size-3.5" /> Delete</Button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Edit address" : "Add new address"}</DialogTitle>
+            <DialogDescription>Save an address you can select during checkout.</DialogDescription>
+          </DialogHeader>
+          <AddressFields value={form} onChange={setForm} />
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox checked={makeDefault} onCheckedChange={(checked) => setMakeDefault(checked === true)} />
+            Make this my default address
+          </label>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button disabled={saving} onClick={() => void save()}>{saving && <SparkRing />}{saving ? "Saving…" : "Save address"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this address?</AlertDialogTitle>
+            <AlertDialogDescription>This saved address will be permanently removed. Existing orders will not be affected.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void remove()}>Delete address</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
   );
 }
