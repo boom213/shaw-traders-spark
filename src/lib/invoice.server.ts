@@ -310,7 +310,7 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   }
   horizontal(y + 5, 1, BORDER);
   y -= 9;
-  right("TOTAL", 445, 12, bold);
+  right("TOTAL", 418, 12, bold);
   right(money(document.total), CONTENT_RIGHT - 7, 12, bold);
 
   const detailsY = y - 30;
