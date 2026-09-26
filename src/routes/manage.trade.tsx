@@ -19,6 +19,7 @@ import {
   setTradeTerms,
 } from "@/lib/trade-admin.functions";
 import { addTradeInternalNote, recheckApplication } from "@/lib/trade-ai.functions";
+import { vendorDashboard } from "@/lib/vendor-payments.functions";
 
 export const Route = createFileRoute("/manage/trade")({ component: TradeAdmin });
 
@@ -114,27 +115,42 @@ function TradeAdmin() {
 
 function PaymentBox({ profileId, onDone }: { profileId: string; onDone: () => Promise<void> }) {
   const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState<"cash" | "upi_qr" | "bank_transfer" | "wholesaler_adjustment" | "other">("cash");
+  const [reference, setReference] = useState("");
+  const [receivedOn, setReceivedOn] = useState(new Date().toISOString().slice(0, 10));
+  const [vendorId, setVendorId] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: vendorData } = useQuery({ queryKey: ["vendor-dashboard"], queryFn: () => vendorDashboard() });
+  const needsReference = method === "upi_qr" || method === "bank_transfer" || method === "wholesaler_adjustment";
   return (
-    <div className="flex items-center gap-2">
+    <div className="grid min-w-64 gap-2 sm:grid-cols-2">
       <Input
-        className="h-9 w-28"
+        className="h-9"
         inputMode="decimal"
         placeholder="Amount"
         aria-label="Payment received"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />
+      <select className="h-9 rounded-md border border-input bg-background px-2 text-sm" value={method} onChange={(e) => { setMethod(e.target.value as typeof method); setVendorId(""); }} aria-label="Payment method">
+        <option value="cash">Cash</option><option value="upi_qr">UPI / QR</option><option value="bank_transfer">Bank transfer</option><option value="wholesaler_adjustment">Wholesaler adjustment</option><option value="other">Other</option>
+      </select>
+      <Input type="date" className="h-9" value={receivedOn} onChange={(e) => setReceivedOn(e.target.value)} aria-label="Payment date" />
+      <Input className="h-9" placeholder={needsReference ? "Reference / reason" : "Reference (optional)"} value={reference} onChange={(e) => setReference(e.target.value)} aria-label="Payment reference" />
+      {method === "upi_qr" && <select className="h-9 rounded-md border border-input bg-background px-2 text-sm sm:col-span-2" value={vendorId} onChange={(e) => setVendorId(e.target.value)} aria-label="UPI payment destination"><option value="">Paid to our own UPI</option>{vendorData?.vendors.filter((vendor) => vendor.active).map((vendor) => <option key={vendor.id} value={vendor.id}>Paid to {vendor.name}</option>)}</select>}
       <Button
+        className="sm:col-span-2"
         size="sm"
         variant="outline"
-        disabled={busy || !amount}
+        disabled={busy || !amount || (needsReference && !reference.trim())}
         onClick={async () => {
           setBusy(true);
-          const res = await addLedgerEntry({ data: { profileId, kind: "payment", amount: Number(amount) } });
+          const res = await addLedgerEntry({ data: { profileId, kind: "payment", amount: Number(amount), method, reference, receivedOn, vendorId } });
           setBusy(false);
           if (!res.ok) return toast.error(res.error ?? "Could not save that");
           setAmount("");
+          setReference("");
+          setVendorId("");
           toast.success("Payment recorded");
           await onDone();
         }}
