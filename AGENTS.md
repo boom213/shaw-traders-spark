@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Keep All Products read-only for Staff; Manager+ may edit products and managed brand dropdown values through catalogue-protected routes.
-- Model wholesale sales and vendor payouts as atomic, auditable records with immutable prices and staff attribution.
+- Model wholesale payments as auditable receipts and report them without overlapping order, ledger, or vendor totals.
 - Keep counter-sale Vendor QR selection optional; when staff select a vendor, atomically link the receipt to an auditable vendor payment.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.

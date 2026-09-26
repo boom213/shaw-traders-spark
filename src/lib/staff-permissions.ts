@@ -58,6 +58,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/home": "content",
   "/manage/about": "content",
   "/manage/summary": "reports",
+  "/manage/payment-reports": "reports",
   "/manage/domain": "settings",
   "/manage/settings": "settings",
   "/manage/brand-catalogue": "settings",
