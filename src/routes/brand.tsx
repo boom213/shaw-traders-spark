@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Download, ShoppingCart, Store, UserRound } from "lucide-react";
+import { ArrowRight, ShoppingCart, Store, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
+import { BrochureDownloadDialog } from "@/components/site/BrochureDownloadDialog";
 import { useStore } from "@/hooks/useStore";
 import { breadcrumbLd, canonical } from "@/lib/catalog";
 import type { HeroSlide } from "@/lib/catalog.functions";
@@ -107,9 +108,7 @@ function BrandPage() {
           <Link to="/cart"><ShoppingCart className="size-5" /> Cart{count > 0 ? ` (${count})` : ""}</Link>
         </Button>
         {/* Super admins upload the PDF from Manager panel → ST Catalogue. */}
-        <Button size="lg" variant="outline" asChild className="h-14 text-base">
-          <a href="/api/public/catalogue" download><Download className="size-5" /> Download Catalogue</a>
-        </Button>
+        <BrochureDownloadDialog className="h-14 text-base" label="Download Brochure" />
       </section>
     </div>
   );
