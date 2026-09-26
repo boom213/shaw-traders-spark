@@ -15,7 +15,7 @@
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
-- Use one A4 invoice template; staff photos are snapshot-first and WebP conversion must bundle without runtime files.
+- Keep one A4 invoice; use snapshot then catalogue photos, 5s fetch timeouts, and bundled WebP conversion.
 - Keep homepage social links iframe-free and lazy-mounted below the primary shopping content so third-party media does not delay the storefront.
 - Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
@@ -24,4 +24,4 @@
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
 - Centralize manager refresh in `MANAGE_QUERY_OPTIONS`; keep sidebar collapse browser-local to the shared desktop layout.
 
-- Keep manager list pages server-paginated at 8 rows, fetch counter-sale customer details on demand, and compute overview totals in the database to prevent scale-related slowdowns.
+- Page manager lists by 8, fetch counter-sale customers on demand, and compute overview totals in the database.
