@@ -10,9 +10,6 @@ export type TradeDocField =
 
 export const DOC_FIELDS: { field: TradeDocField; label: string; required: boolean }[] = [
   { field: "gst_certificate_path", label: "GST certificate", required: true },
-  { field: "shop_photo_path", label: "Shop photo showing the signboard", required: true },
-  { field: "address_proof_path", label: "Proof of address", required: true },
-  { field: "pan_card_path", label: "PAN card", required: true },
   { field: "trade_licence_path", label: "Trade licence or Udyam registration (optional)", required: false },
 ];
 

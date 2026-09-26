@@ -30,9 +30,9 @@ import {
 export const Route = createFileRoute("/trade")({
   head: () => ({
     meta: [
-      { title: "Trade & Wholesale Account — Shaw Traders EV" },
+      { title: "Register for a Wholesale Account — Shaw Traders EV" },
       { name: "description", content: "Mechanics, garages and retailers: open a wholesale account with Shaw Traders EV for trade prices, bulk ordering and credit terms." },
-      { property: "og:title", content: "Trade & Wholesale Account — Shaw Traders EV" },
+      { property: "og:title", content: "Register for a Wholesale Account — Shaw Traders EV" },
       { property: "og:description", content: "Wholesale prices, bulk order pad and credit terms for EV workshops and retailers." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -154,7 +154,7 @@ function TradePage() {
       <div className="container-page space-y-6 py-10">
         <SectionHeading
           as="h1"
-          title="Trade & wholesale account"
+          title="Register for a Wholesale Account"
           subtitle="For mechanics, garages, e-rickshaw workshops and retailers who buy EV parts regularly. Not a one-off order? Use Bulk Order Enquiry instead."
         />
         <div className="grid gap-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] md:grid-cols-2">
@@ -230,7 +230,7 @@ function TradePage() {
     <div className="container-page space-y-6 py-10">
       <SectionHeading
         as="h1"
-        title="Trade & wholesale account"
+        title="Register for a Wholesale Account"
         subtitle="For mechanics, garages, e-rickshaw workshops and retailers. Wholesale rates, bulk ordering and account terms."
       />
       {!account?.application && !isPending && (
@@ -342,7 +342,7 @@ function TradePage() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                By submitting, you consent to Shaw Traders EV verifying these documents (GST, PAN, address proof) for account verification purposes.
+                 By submitting, you consent to Shaw Traders EV verifying the attached business documents for account verification purposes.
               </p>
               <Button className="w-full sm:w-auto" disabled={saving} onClick={submit}>
                 {saving ? <Loader2 className="size-4 animate-spin" /> : null}

@@ -24,3 +24,4 @@
 - [x] Add homepage social proof videos and Facebook/Instagram profile links.
 - [x] Add a brochure enquiry popup, shop email notification, and post-submit download.
 - [x] Complete and verify Razorpay Standard Checkout with secure test credentials.
+- [x] Simplify wholesale registration documents and rename the account heading.
