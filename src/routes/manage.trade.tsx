@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,8 @@ function TradeAdmin() {
 
   return (
     <div className="space-y-8">
+      <ManualTradeAccount onDone={refresh} />
+
       <section className="space-y-3">
         <h2 className="font-display text-xl font-semibold">Trade applications</h2>
         <div className="flex flex-wrap gap-2">
@@ -66,8 +68,6 @@ function TradeAdmin() {
           (applications ?? []).map((a) => <ApplicationCard key={a.id} app={a} onDone={refresh} />)
         )}
       </section>
-
-      <ManualTradeAccount onDone={refresh} />
 
       <CategoryPricing />
 
@@ -334,12 +334,16 @@ function ManualTradeAccount({ onDone }: { onDone: () => Promise<void> }) {
 
   if (!open) {
     return (
-      <Button variant="outline" onClick={() => setOpen(true)}>Create trade account manually</Button>
+      <div className="flex justify-end">
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="size-4" /> Add wholesaler
+        </Button>
+      </div>
     );
   }
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <h2 className="font-display text-xl font-semibold">Create trade account manually</h2>
+      <h2 className="font-display text-xl font-semibold">Add wholesaler</h2>
       <p className="text-sm text-muted-foreground">For a dealer who sent details by phone or WhatsApp. They can later sign in with a code on this mobile number and see their account.</p>
       <div className="grid gap-2 sm:grid-cols-2">
         <Input placeholder="Business name" value={f.businessName} onChange={(e) => setF({ ...f, businessName: e.target.value })} />
