@@ -5,6 +5,11 @@ export type Vehicle = { brand: string; model: string };
 const KEY = "shaw-ev-vehicle";
 const EVENT = "shaw-ev-vehicle-change";
 
+export function clearSavedVehicle() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(KEY);
+}
+
 export function readVehicle(): Vehicle | null {
   if (typeof window === "undefined") return null;
   try {
@@ -35,7 +40,7 @@ export function useVehicle() {
   const setVehicle = useCallback((next: Vehicle | null) => {
     if (typeof window === "undefined") return;
     if (next) window.localStorage.setItem(KEY, JSON.stringify(next));
-    else window.localStorage.removeItem(KEY);
+    else clearSavedVehicle();
     window.dispatchEvent(new Event(EVENT));
   }, []);
 
