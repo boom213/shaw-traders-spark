@@ -34,3 +34,4 @@
 - [x] Add reliable wholesale/vendor payment records and late-payment protection.
 - [x] Auto-release abandoned online-payment stock and notify customers.
 - [x] Add a full product editor opened from All Products for catalogue-authorized admins.
+- [x] Add vendor QR selection and atomic linked accounting to counter-sale offline payments.
