@@ -26,7 +26,7 @@ async function record(kind: string, recipient: string, body: string, channel = "
 export async function notifyTradeApplication(
   profileId: string,
   businessName: string,
-  extra?: { type?: string; volume?: string },
+  extra?: { type?: string; volume?: string; alternatePhone?: string },
 ): Promise<void> {
   const { notifySettings } = await import("@/lib/notify.server");
   const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
@@ -43,6 +43,7 @@ export async function notifyTradeApplication(
       ...(extra?.type ? [`Type: ${extra.type}`] : []),
       ...(extra?.volume ? [`Monthly buying: ${extra.volume}`] : []),
       `Contact: ${who.name}${who.phone ? ` · ${who.phone}` : ""}`,
+      ...(extra?.alternatePhone ? [`Alt: ${extra.alternatePhone}`] : []),
       "",
       `Review it here: ${BUSINESS.site}/manage/trade`,
     ].join("\n"),

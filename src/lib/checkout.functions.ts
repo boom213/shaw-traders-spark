@@ -143,8 +143,31 @@ export const startCheckout = createServerFn({ method: "POST" })
       | undefined;
     if (!row) return { error: "Could not place the order. Please try again." };
 
-    if (data.address.alternatePhone) {
-      await supabaseAdmin.from("orders").update({ alternate_phone: data.address.alternatePhone }).eq("id", row.order_id);
+    await supabaseAdmin
+      .from("orders")
+      .update({ alternate_phone: data.address.alternatePhone || null })
+      .eq("id", row.order_id);
+    if (userId) {
+      const { data: savedAddress } = await supabaseAdmin
+        .from("addresses")
+        .select("id")
+        .eq("profile_id", userId)
+        .eq("is_default", true)
+        .maybeSingle();
+      const addressRow = {
+        profile_id: userId,
+        name: data.address.name,
+        phone: data.address.phone,
+        alternate_phone: data.address.alternatePhone || null,
+        line1: data.address.line1,
+        landmark: data.address.landmark || null,
+        city: data.address.city,
+        state: data.address.state,
+        pincode: data.address.pincode,
+        is_default: true,
+      };
+      if (savedAddress) await supabaseAdmin.from("addresses").update(addressRow).eq("id", savedAddress.id);
+      else await supabaseAdmin.from("addresses").insert(addressRow);
     }
 
     const payLater = data.paymentMethod === "Cash on Delivery" || data.paymentMethod === "Credit (account)";

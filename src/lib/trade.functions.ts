@@ -197,7 +197,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     await supabaseAdmin.from("profiles").update({ customer_type: "trade" } as never).eq("id", account.userId);
 
     const { notifyTradeApplication } = await import("@/lib/trade-notify.server");
-    await notifyTradeApplication(account.userId, data.businessName, { type: data.businessType, volume: data.monthlyVolume });
+    await notifyTradeApplication(account.userId, data.businessName, { type: data.businessType, volume: data.monthlyVolume, alternatePhone: data.alternatePhone });
     return { ok: true as const, message: "Thank you — we will check your documents and call you." };
   });
 
