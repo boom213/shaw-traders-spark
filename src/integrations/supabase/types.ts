@@ -229,8 +229,10 @@ export type Database = {
           order_id: string
           received_on: string
           recorded_by: string
+          recorded_by_email: string | null
           recorded_by_name: string
           reference: string | null
+          vendor_id: string | null
         }
         Insert: {
           amount: number
@@ -241,8 +243,10 @@ export type Database = {
           order_id: string
           received_on?: string
           recorded_by: string
+          recorded_by_email?: string | null
           recorded_by_name: string
           reference?: string | null
+          vendor_id?: string | null
         }
         Update: {
           amount?: number
@@ -253,8 +257,10 @@ export type Database = {
           order_id?: string
           received_on?: string
           recorded_by?: string
+          recorded_by_email?: string | null
           recorded_by_name?: string
           reference?: string | null
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -262,6 +268,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "counter_sale_payments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "qr_vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -2624,6 +2637,21 @@ export type Database = {
           p_order_id: string
           p_received_on: string
           p_reference: string
+        }
+        Returns: number
+      }
+      record_counter_sale_payment_with_vendor: {
+        Args: {
+          p_actor_email: string
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_method: string
+          p_note: string
+          p_order_id: string
+          p_received_on: string
+          p_reference: string
+          p_vendor_id: string
         }
         Returns: number
       }

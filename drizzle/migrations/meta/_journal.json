@@ -218,6 +218,13 @@
       "when": 1790436511765,
       "tag": "0030_preserve_counter_payment_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790440285930,
+      "tag": "0031_link_counter_payments_to_vendor_qr",
+      "breakpoints": true
     }
   ]
 }
