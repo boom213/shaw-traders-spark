@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
+import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -64,6 +64,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/home", label: "Home Banners", icon: Images, exact: false, capability: "content", group: "Manage" },
   { to: "/manage/about", label: "About Gallery", icon: Images, exact: false, capability: "content", group: "Manage" },
   { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Insights" },
+  { to: "/manage/payment-reports", label: "Payment Reports", icon: ChartNoAxesCombined, exact: false, capability: "reports", group: "Insights" },
   { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Owner" },
   { to: "/manage/settings", label: "Site Settings", icon: Settings, exact: false, capability: "settings", group: "Owner" },
   { to: "/manage/brand-catalogue", label: "Brand Catalogue", icon: FileSpreadsheet, exact: false, capability: "settings", group: "Owner" },

@@ -39,3 +39,4 @@
 - [x] Keep counter-sale Vendor QR selection optional and record linked vendor payments when a vendor is selected.
 - [x] Fix manager tab freshness, database-side customer pagination/statistics, and stale offline cache behavior.
 - [x] Add admin-managed product brands shared by product creation and editing.
+- [x] Add a paginated counter-sales payment dashboard with online reconciliation, charting, and CSV/PDF exports.

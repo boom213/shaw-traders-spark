@@ -2544,6 +2544,30 @@ export type Database = {
         }
         Returns: boolean
       }
+      counter_payment_report_page: {
+        Args: {
+          p_from: string
+          p_limit: number
+          p_offset: number
+          p_to: string
+        }
+        Returns: {
+          amount: number
+          created_at: string
+          customer_name: string
+          human_id: string
+          id: string
+          method: string
+          note: string
+          order_id: string
+          received_on: string
+          recorded_by_email: string
+          recorded_by_name: string
+          reference: string
+          total_count: number
+          vendor_name: string
+        }[]
+      }
       create_counter_sale:
         | {
             Args: {
@@ -2639,6 +2663,31 @@ export type Database = {
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: boolean
+      }
+      online_payment_report_page: {
+        Args: {
+          p_from: string
+          p_limit: number
+          p_offset: number
+          p_to: string
+        }
+        Returns: {
+          customer_name: string
+          gross: number
+          human_id: string
+          net: number
+          order_id: string
+          paid_at: string
+          payment_id: string
+          provider: string
+          refunded: number
+          status: string
+          total_count: number
+        }[]
+      }
+      payment_report_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
       }
       place_order: {
         Args: {

@@ -260,6 +260,20 @@
       "when": 1790445718950,
       "tag": "0036_record_optional_counter_sale_vendor_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790446570690,
+      "tag": "0037_add_payment_reporting_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790446615266,
+      "tag": "0038_align_online_payment_report_to_period_activity",
+      "breakpoints": true
     }
   ]
 }
