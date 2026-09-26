@@ -701,6 +701,15 @@ export const staffInvoice = createServerFn({ method: "POST" })
     return invoicePdfBase64(data.orderId);
   });
 
+/** Internal picking invoice with product photos and rack locations. */
+export const staffPickingInvoice = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .handler(async ({ data }) => {
+    await admin();
+    const { invoicePdfBase64 } = await import("@/lib/invoice.server");
+    return invoicePdfBase64(data.orderId, true);
+  });
+
 /** Today's summary plus the last few messages the shop sent. */
 export const dailySummaryPreview = createServerFn({ method: "POST" }).handler(async () => {
   const sb = await admin("reports");

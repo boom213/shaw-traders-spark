@@ -13,6 +13,7 @@ import {
   setOrderStatus,
   setTracking,
   staffInvoice,
+  staffPickingInvoice,
   type ManageOrder,
 } from "@/lib/manage-data.functions";
 import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, type OrderStatus } from "@/lib/catalog";
@@ -242,6 +243,7 @@ function ManageOrders() {
               </button>
             ))}
             <InvoiceButton orderId={o.id} />
+            <InvoiceButton orderId={o.id} staffCopy />
             <Button variant="ghost" size="sm" asChild>
               <Link to="/order/$id" params={{ id: o.id }} search={{ t: o.token }}>Open order page</Link>
             </Button>
@@ -258,8 +260,9 @@ function ManageOrders() {
   );
 }
 
-function InvoiceButton({ orderId }: { orderId: string }) {
-  const get = useServerFn(staffInvoice);
+function InvoiceButton({ orderId, staffCopy = false }: { orderId: string; staffCopy?: boolean }) {
+  const getCustomerInvoice = useServerFn(staffInvoice);
+  const getStaffInvoice = useServerFn(staffPickingInvoice);
   const [busy, setBusy] = useState(false);
   return (
     <Button
@@ -268,13 +271,13 @@ function InvoiceButton({ orderId }: { orderId: string }) {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        const res = await get({ data: { orderId } });
+        const res = await (staffCopy ? getStaffInvoice : getCustomerInvoice)({ data: { orderId } });
         setBusy(false);
         if ("error" in res) return toast.error(res.error);
         downloadPdf(res.base64, res.fileName);
       }}
     >
-      {busy ? "Preparing…" : "Download invoice"}
+      {busy ? "Preparing…" : staffCopy ? "Staff Invoice" : "Download invoice"}
     </Button>
   );
 }

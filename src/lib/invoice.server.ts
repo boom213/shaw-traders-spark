@@ -13,6 +13,8 @@ export type InvoiceItem = {
   qty: number;
   price: number;
   productId?: string | null;
+  image?: string | null;
+  rackLocation?: string | null;
 };
 
 export type InvoiceDocument = {
@@ -31,6 +33,7 @@ export type InvoiceDocument = {
   shippingMethod?: string | null;
   address: Record<string, unknown>;
   contactPhone?: string | null;
+  staffCopy?: boolean;
   items: InvoiceItem[];
   hsnById: Map<string, string>;
   defaultHsn: string;
@@ -94,6 +97,20 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   const font = await pdf.embedFont(bytesFromDataUrl(regularFontUrl), { subset: true });
   const bold = await pdf.embedFont(bytesFromDataUrl(boldFontUrl), { subset: true });
   const logo = await pdf.embedPng(bytesFromDataUrl(invoiceLogoUrl));
+  const thumbnails = await Promise.all(document.items.map(async (item) => {
+    if (!document.staffCopy || !item.image) return null;
+    try {
+      const response = await fetch(item.image);
+      if (!response.ok) return null;
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const type = response.headers.get("content-type")?.toLowerCase() ?? "";
+      if (type.includes("png") || (bytes[0] === 0x89 && bytes[1] === 0x50)) return await pdf.embedPng(bytes);
+      if (type.includes("jpeg") || type.includes("jpg") || (bytes[0] === 0xff && bytes[1] === 0xd8)) return await pdf.embedJpg(bytes);
+      return null;
+    } catch {
+      return null;
+    }
+  }));
   const dateText = new Date(document.placedAt).toLocaleString("en-IN");
   const gstin = clean(document.business.gstin) || clean(document.gstin);
   const disclaimer = document.taxAmount > 0
@@ -120,8 +137,9 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     const logoSize = 55;
     page.drawImage(logo, { x: MARGIN, y: PAGE_HEIGHT - MARGIN - logoSize, width: logoSize, height: logoSize });
     const detailsX = MARGIN + logoSize + 13;
+    const rightBlockLeft = 368;
     y = PAGE_HEIGHT - MARGIN - 5;
-    text(document.business.legalName, detailsX, 15, bold);
+    text(fitText(document.business.legalName, bold, 15, rightBlockLeft - detailsX - 12), detailsX, 15, bold);
     y -= 15;
     for (const addressLine of document.business.billingAddress.split("\n").map(clean).filter(Boolean).slice(0, 3)) {
       text(fitText(addressLine, font, 8.5, 280), detailsX, 8.5, font, MUTED);
@@ -138,6 +156,10 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
       y -= 14;
       right(`GSTIN: ${gstin}`, CONTENT_RIGHT, 9, bold);
     }
+    if (document.staffCopy) {
+      y = PAGE_HEIGHT - 112;
+      right("STAFF COPY — INTERNAL USE ONLY", CONTENT_RIGHT, 7.5, bold, MUTED);
+    }
     y = PAGE_HEIGHT - 119;
     horizontal(y);
   };
@@ -146,9 +168,11 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     const top = y;
     page.drawRectangle({ x: MARGIN, y: top - 23, width: CONTENT_RIGHT - MARGIN, height: 23, color: HEADER_FILL, borderColor: BORDER, borderWidth: 0.6 });
     y = top - 15;
-    text("Item", MARGIN + 7, 8.5, bold);
-    text("HSN", 324, 8.5, bold);
-    right("Qty", 400, 8.5, bold);
+    if (document.staffCopy) text("Photo", MARGIN + 7, 8.5, bold);
+    text("Item", document.staffCopy ? 86 : MARGIN + 7, 8.5, bold);
+    if (document.staffCopy) text("Shelf", 275, 8.5, bold);
+    text("HSN", document.staffCopy ? 337 : 324, 8.5, bold);
+    right("Qty", document.staffCopy ? 408 : 400, 8.5, bold);
     right("Rate", 474, 8.5, bold);
     right("Amount", CONTENT_RIGHT - 7, 8.5, bold);
     y = top - 23;
@@ -184,15 +208,25 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   for (const [index, item] of document.items.entries()) {
     ensureItemSpace();
     const rowTop = y;
-    const rowHeight = 27;
+    const rowHeight = document.staffCopy ? 36 : 27;
     if (index % 2 === 1) page.drawRectangle({ x: MARGIN, y: rowTop - rowHeight, width: CONTENT_RIGHT - MARGIN, height: rowHeight, color: STRIPE_FILL });
     const gross = item.price * item.qty;
     const taxable = document.gstRate > 0 && document.gstIncluded ? gross / (1 + document.gstRate / 100) : gross;
     taxableTotal += taxable;
-    y = rowTop - 17;
-    text(fitText(item.name, font, 8.5, 260), MARGIN + 7, 8.5);
-    text(document.hsnById.get(String(item.productId)) ?? document.defaultHsn, 324, 8.5);
-    right(String(item.qty), 400, 8.5);
+    y = rowTop - (document.staffCopy ? 22 : 17);
+    if (document.staffCopy) {
+      const thumbnail = thumbnails[index];
+      if (thumbnail) {
+        const scale = Math.min(26 / thumbnail.width, 26 / thumbnail.height);
+        const width = thumbnail.width * scale;
+        const height = thumbnail.height * scale;
+        page.drawImage(thumbnail, { x: MARGIN + 7 + (26 - width) / 2, y: rowTop - 31 + (26 - height) / 2, width, height });
+      }
+    }
+    text(fitText(item.name, font, 8.5, document.staffCopy ? 178 : 260), document.staffCopy ? 86 : MARGIN + 7, 8.5);
+    if (document.staffCopy) text(fitText(clean(item.rackLocation) || "—", font, 8.5, 52), 275, 8.5);
+    text(document.hsnById.get(String(item.productId)) ?? document.defaultHsn, document.staffCopy ? 337 : 324, 8.5);
+    right(String(item.qty), document.staffCopy ? 408 : 400, 8.5);
     right(money(item.price), 474, 8.5);
     right(money(gross), CONTENT_RIGHT - 7, 8.5);
     horizontal(rowTop - rowHeight, 0.45);
@@ -241,17 +275,17 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
 
   pdf.setTitle(`Tax Invoice ${document.humanId}`);
   pdf.setAuthor(document.business.legalName);
-  pdf.setSubject("Tax Invoice");
+  pdf.setSubject(document.staffCopy ? "Staff Invoice — Internal Use Only" : "Tax Invoice");
   pdf.setCreator("Shaw Traders EV");
   return pdf.save();
 }
 
-export async function invoicePdfBase64(orderId: string): Promise<{ base64: string; fileName: string } | { error: string }> {
+export async function invoicePdfBase64(orderId: string, staffCopy = false): Promise<{ base64: string; fileName: string } | { error: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: order } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, human_id, placed_at, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, contact_phone, order_items(name_snapshot, qty, price_snapshot, product_id)",
+      "id, human_id, placed_at, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, contact_phone, order_items(name_snapshot, qty, price_snapshot, image_snapshot, product_id, products(rack_location))",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -287,11 +321,14 @@ export async function invoicePdfBase64(orderId: string): Promise<{ base64: strin
     shippingMethod: clean(source["shipping_method"]) || null,
     address: (source["address"] ?? {}) as Record<string, unknown>,
     contactPhone: clean(source["contact_phone"]) || null,
+    staffCopy,
     items: sourceItems.map((item) => ({
       name: clean(item["name_snapshot"]),
       qty: Number(item["qty"] ?? 1),
       price: Number(item["price_snapshot"] ?? 0),
       productId: clean(item["product_id"]) || null,
+      image: staffCopy ? clean(item["image_snapshot"]) || null : null,
+      rackLocation: staffCopy ? clean((item["products"] as Row | null)?.["rack_location"]) || null : null,
     })),
     hsnById,
     defaultHsn: String(settings?.default_hsn ?? "8507"),
@@ -304,5 +341,5 @@ export async function invoicePdfBase64(orderId: string): Promise<{ base64: strin
   const bytes = await createInvoicePdf(document);
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return { base64: btoa(binary), fileName: `Invoice-${document.humanId}.pdf` };
+  return { base64: btoa(binary), fileName: `${staffCopy ? "Staff-Invoice" : "Invoice"}-${document.humanId}.pdf` };
 }

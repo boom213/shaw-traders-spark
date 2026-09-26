@@ -54,7 +54,7 @@ export type CounterSale = {
   cancelReason: string | null;
   note: string | null;
   overrideReason: string | null;
-  items: Array<{ name: string; sku: string; qty: number; price: number; image: string | null }>;
+  items: Array<{ name: string; sku: string; qty: number; price: number; image: string | null; rackLocation: string | null }>;
   payments: Array<{ id: string; amount: number; method: string; reference: string | null; note: string | null; receivedOn: string; recordedBy: string; vendorName: string | null }>;
 };
 
@@ -151,7 +151,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
     const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
       sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
-      sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku)").in("order_id", orderIds),
+      sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku, rack_location)").in("order_id", orderIds),
       sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at, qr_vendors(name)").in("order_id", orderIds),
     ]);
     const orderMap = new Map(((orders ?? []) as Row[]).map((item) => [String(item['id']), item]));
@@ -169,7 +169,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
       const paid = payments.reduce((sum, payment) => sum + Number(payment['amount'] ?? 0), 0);
       return {
         orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), createdByEmail: String(row['created_by_email'] ?? ""), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
-        items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null })),
+        items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null, rackLocation: (item['products'] as Row | null)?.['rack_location'] ? String((item['products'] as Row)['rack_location']) : null })),
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null })),
       };
     });
@@ -217,4 +217,12 @@ export const counterSaleInvoice = createServerFn({ method: "POST" })
     await counterAdmin();
     const { invoicePdfBase64 } = await import("@/lib/invoice.server");
     return invoicePdfBase64(data.orderId);
+  });
+
+export const counterSaleStaffInvoice = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .handler(async ({ data }) => {
+    await counterAdmin();
+    const { invoicePdfBase64 } = await import("@/lib/invoice.server");
+    return invoicePdfBase64(data.orderId, true);
   });

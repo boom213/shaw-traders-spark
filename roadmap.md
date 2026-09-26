@@ -41,3 +41,4 @@
 - [x] Add admin-managed product brands shared by product creation and editing.
 - [x] Add a paginated counter-sales payment dashboard with online reconciliation, charting, and CSV/PDF exports.
 - [x] Add a persistent collapsible desktop manager sidebar.
+- [x] Fix long legal-name invoice overlap and add staff-only invoices with photos and rack locations.

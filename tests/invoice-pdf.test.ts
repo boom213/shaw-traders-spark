@@ -66,4 +66,26 @@ describe("invoice PDF", () => {
     expect(pdf.getPageCount()).toBeGreaterThan(1);
     expect(pdf.getPageCount()).toBeLessThan(6);
   });
+
+  it("keeps a long legal name inside a valid customer invoice", async () => {
+    const bytes = await createInvoicePdf(invoice({ business: { legalName: "Shaw Traders Electric Mobility Components and Vehicles Private Limited", billingAddress: "Defence Colony, Bud Bud\nBardhaman, West Bengal 713403", gstin: "19ABCDE1234F1Z5" } }));
+    await saveQaPdf("long-legal-name-invoice.pdf", bytes);
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+  });
+
+  it("creates a paginated internal staff copy and ignores broken thumbnails", async () => {
+    const items = Array.from({ length: 32 }, (_, index) => ({
+      name: `Workshop component with a long product description ${index + 1}`,
+      qty: index + 1,
+      price: 125.5,
+      productId: `product-${index + 1}`,
+      rackLocation: index % 2 ? null : `Rack A-${index + 1}`,
+      image: index === 0 ? "https://invalid.invalid/missing.jpg" : null,
+    }));
+    const bytes = await createInvoicePdf(invoice({ staffCopy: true, items }));
+    await saveQaPdf("staff-invoice.pdf", bytes);
+    const pdf = await PDFDocument.load(bytes);
+    expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
+    expect(pdf.getPageCount()).toBeGreaterThan(1);
+  });
 });
