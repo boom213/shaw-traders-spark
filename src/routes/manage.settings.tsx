@@ -13,7 +13,7 @@ import { ORDERING_MODES } from "@/lib/ordering";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/manage/settings")({
-  head: () => ({ meta: [{ title: "Payments & GST — Manager Panel" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Site Settings — Manager Panel" }, { name: "robots", content: "noindex" }] }),
   component: SettingsPage,
 });
 

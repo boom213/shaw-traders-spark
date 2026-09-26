@@ -50,7 +50,7 @@ const STAFF_LINKS = [
   { to: "/manage/scooters", label: "Vehicle catalogue", icon: Bike, capability: "catalogue" },
   { to: "/manage/trade", label: "Trade & credit", icon: BriefcaseBusiness, capability: "trade" },
   { to: "/manage/summary", label: "Reports", icon: Gauge, capability: "reports" },
-  { to: "/manage/settings", label: "Payments & GST", icon: Settings, capability: "settings" },
+  { to: "/manage/settings", label: "Site Settings", icon: Settings, capability: "settings" },
   { to: "/manage/brand-catalogue", label: "Brand catalogue", icon: FileSpreadsheet, capability: "settings" },
   { to: "/manage/staff", label: "Staff access", icon: ShieldCheck, capability: "staff.manage" },
 ] as const satisfies ReadonlyArray<{ to: string; label: string; icon: typeof User; capability: StaffCapability }>;
@@ -159,7 +159,7 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem asChild>
-                <Link to="/trade"><BriefcaseBusiness className="size-4" /> Apply for a trade account</Link>
+                <Link to="/trade"><BriefcaseBusiness className="size-4" /> Register for a Wholesale Account</Link>
               </DropdownMenuItem>
             )}
             {staffRole && <>
