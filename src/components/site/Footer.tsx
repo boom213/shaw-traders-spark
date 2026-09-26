@@ -69,7 +69,6 @@ export function Footer() {
             <li><Link to="/cart" className="hover:text-foreground">Cart</Link></li>
             <li><Link to="/offers" className="hover:text-foreground">Offers</Link></li>
             <li><Link to="/service" className="hover:text-foreground">Service & History</Link></li>
-            <li><Link to="/find-parts" className="hover:text-foreground">Find Parts for Your EV</Link></li>
             <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
             <li><Link to="/bulk" className="hover:text-foreground">Bulk Order Enquiry (one-off quote)</Link></li>
             <li><Link to="/trade" className="hover:text-foreground">Trade / Wholesale Account (trade prices &amp; credit)</Link></li>

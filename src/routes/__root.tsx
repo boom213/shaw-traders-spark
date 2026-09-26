@@ -28,7 +28,6 @@ const SITE_SECTIONS = [
   { name: "Shop EV Spare Parts", path: "/shop" },
   { name: "Electric Scooters", path: "/scooters" },
   { name: "Part Categories", path: "/categories" },
-  { name: "Find Parts for Your EV", path: "/find-parts" },
   { name: "Offers & Deals", path: "/offers" },
   { name: "Dealer & Bulk Orders", path: "/bulk" },
   { name: "About Shaw Traders EV", path: "/about" },

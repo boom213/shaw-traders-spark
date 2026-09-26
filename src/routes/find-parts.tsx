@@ -1,27 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { Button } from "@/components/ui/button";
 import { SparkCharge } from "@/components/site/SparkLoaders";
-import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
 import { staffSession } from "@/lib/staff.functions";
 
 export const Route = createFileRoute("/find-parts")({
   head: () => ({
     meta: [
-      { title: "Find Parts for Your EV" },
-      { name: "description", content: "Tell us your EV brand, model and year and we will match the right battery, charger, motor or body part from our Bud Bud store." },
-      { property: "og:title", content: "Find Parts for Your EV — Shaw Traders EV" },
-      { property: "og:description", content: "Match EV spare parts to your vehicle brand, model and year." },
+      { title: "Page Not Found — Shaw Traders EV" },
+      { name: "description", content: "The requested page is not publicly available." },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Page Not Found — Shaw Traders EV" },
+      { property: "og:description", content: "The requested page is not publicly available." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: canonical("/find-parts") },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: canonical("/find-parts") }],
-    scripts: [breadcrumbLd([{ name: "Find Parts for Your EV", path: "/find-parts" }])],
   }),
 
   component: FindPartsPage,
@@ -41,10 +39,14 @@ function FindPartsPage() {
 
   if (!staff?.signedIn) {
     return (
-      <section className="w-full bg-muted py-20 text-center sm:py-28">
-        <div className="container-page">
-          <h1 className="font-display text-3xl font-bold sm:text-4xl">Coming Soon</h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">We're improving this feature — check back soon.</p>
+      <section className="flex min-h-[60vh] items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="text-7xl font-bold text-foreground">404</h1>
+          <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+          <p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist or has been moved.</p>
+          <Button asChild className="mt-6">
+            <Link to="/">Go home</Link>
+          </Button>
         </div>
       </section>
     );
