@@ -73,6 +73,19 @@ describe("invoice PDF", () => {
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
   });
 
+  it("keeps a long billing address out of the invoice details block", async () => {
+    const bytes = await createInvoicePdf(invoice({
+      humanId: "CS-260926-1093",
+      business: {
+        legalName: "Shaw Traders EV",
+        billingAddress: "CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403",
+        gstin: "19ABCDE1234F1Z5",
+      },
+    }));
+    await saveQaPdf("long-billing-address-invoice.pdf", bytes);
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+  });
+
   it("creates a paginated internal staff copy and ignores broken thumbnails", async () => {
     const items = Array.from({ length: 32 }, (_, index) => ({
       name: `Workshop component with a long product description ${index + 1}`,

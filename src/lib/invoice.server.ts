@@ -186,14 +186,15 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     page.drawImage(logo, { x: MARGIN, y: PAGE_HEIGHT - MARGIN - logoSize, width: logoSize, height: logoSize });
     const detailsX = MARGIN + logoSize + 13;
     const rightBlockLeft = 368;
+    const leftBlockWidth = rightBlockLeft - detailsX - 12;
     y = PAGE_HEIGHT - MARGIN - 5;
-    text(fitText(document.business.legalName, bold, 15, rightBlockLeft - detailsX - 12), detailsX, 15, bold);
+    text(fitText(document.business.legalName, bold, 15, leftBlockWidth), detailsX, 15, bold);
     y -= 15;
     for (const addressLine of document.business.billingAddress.split("\n").map(clean).filter(Boolean).slice(0, 3)) {
-      text(fitText(addressLine, font, 8.5, 280), detailsX, 8.5, font, MUTED);
+      text(fitText(addressLine, font, 8.5, leftBlockWidth), detailsX, 8.5, font, MUTED);
       y -= 11;
     }
-    text(`Phone ${BUSINESS.phone}  |  ${BUSINESS.site}`, detailsX, 8.5, font, MUTED);
+    text(fitText(`Phone ${BUSINESS.phone}  |  ${BUSINESS.site}`, font, 8.5, leftBlockWidth), detailsX, 8.5, font, MUTED);
     y = PAGE_HEIGHT - MARGIN - 2;
     right(continued ? "TAX INVOICE — CONTINUED" : "TAX INVOICE", CONTENT_RIGHT, continued ? 11 : 15, bold);
     y -= 18;
