@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatINR } from "@/lib/catalog";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { BOOKING_FLOW, bookingStatusLabel } from "@/lib/vehicles";
 import {
   addServiceRecord,
@@ -53,9 +55,11 @@ function ManageBookings() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState("open");
   const [leadKind, setLeadKind] = useState("test_ride");
+  const [bookingPage, setBookingPage] = useState(0);
+  const [leadPage, setLeadPage] = useState(0);
 
-  const { data: bookings } = useQuery({ queryKey: ["bookings", filter], queryFn: () => listBookings({ data: { status: filter } }) });
-  const { data: leads } = useQuery({ queryKey: ["vehicle-leads", leadKind], queryFn: () => listLeads({ data: { kind: leadKind } }) });
+  const { data: bookings, isFetching: bookingsFetching } = useQuery({ queryKey: ["bookings", filter, bookingPage], queryFn: () => listBookings({ data: { status: filter, page: bookingPage } }), placeholderData: (previous) => previous, ...MANAGE_QUERY_OPTIONS });
+  const { data: leads, isFetching: leadsFetching } = useQuery({ queryKey: ["vehicle-leads", leadKind, leadPage], queryFn: () => listLeads({ data: { kind: leadKind, page: leadPage } }), placeholderData: (previous) => previous, ...MANAGE_QUERY_OPTIONS });
   const { data: due } = useQuery({ queryKey: ["service-due"], queryFn: () => listServiceDue() });
 
   const move = useMutation({
@@ -68,7 +72,7 @@ function ManageBookings() {
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-bold">Scooter bookings</h2>
-          <Select value={filter} onValueChange={setFilter}>
+          <Select value={filter} onValueChange={(value) => { setFilter(value); setBookingPage(0); }}>
             <SelectTrigger className="w-52" aria-label="Filter bookings"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open bookings</SelectItem>
@@ -79,7 +83,7 @@ function ManageBookings() {
         </div>
 
         <div className="grid gap-3">
-          {(bookings ?? []).map((b) => (
+          {(bookings?.items ?? []).map((b) => (
             <div key={b.id} className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -104,20 +108,21 @@ function ManageBookings() {
               )}
             </div>
           ))}
-          {(bookings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nothing here right now.</p>}
+          {(bookings?.items ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nothing here right now.</p>}
         </div>
+        <div className="mt-3"><ListPager page={bookingPage} total={bookings?.total ?? 0} busy={bookingsFetching} onPage={setBookingPage} /></div>
       </section>
 
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-bold">Requests from customers</h2>
-          <Select value={leadKind} onValueChange={setLeadKind}>
+          <Select value={leadKind} onValueChange={(value) => { setLeadKind(value); setLeadPage(0); }}>
             <SelectTrigger className="w-52" aria-label="Request type"><SelectValue /></SelectTrigger>
             <SelectContent>{LEAD_KINDS.map((k) => <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="grid gap-3">
-          {(leads ?? []).map((l) => (
+          {(leads?.items ?? []).map((l) => (
             <div key={l.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
               <div>
                 <p className="font-semibold">{l.name} · {l.phone}{l.alternatePhone ? ` · Alt: ${l.alternatePhone}` : ""}{l.model ? ` · ${l.model}` : ""}</p>
@@ -138,8 +143,9 @@ function ManageBookings() {
               </div>
             </div>
           ))}
-          {(leads ?? []).length === 0 && <p className="text-sm text-muted-foreground">No requests of this kind.</p>}
+          {(leads?.items ?? []).length === 0 && <p className="text-sm text-muted-foreground">No requests of this kind.</p>}
         </div>
+        <div className="mt-3"><ListPager page={leadPage} total={leads?.total ?? 0} busy={leadsFetching} onPage={setLeadPage} /></div>
       </section>
 
       <section>

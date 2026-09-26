@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ExternalLink, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/catalog";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/trade-admin.functions";
 import { addTradeInternalNote, recheckApplication } from "@/lib/trade-ai.functions";
 import { vendorDashboard } from "@/lib/vendor-payments.functions";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 export const Route = createFileRoute("/manage/trade")({ component: TradeAdmin });
 
@@ -34,9 +36,12 @@ const FILTERS = [
 function TradeAdmin() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string>("pending");
-  const { data: applications, isPending } = useQuery({
-    queryKey: ["trade-applications", filter],
-    queryFn: () => listTradeApplications({ data: { status: filter } }),
+  const [page, setPage] = useState(0);
+  const { data: applications, isPending, isFetching } = useQuery({
+    queryKey: ["trade-applications", filter, page],
+    queryFn: () => listTradeApplications({ data: { status: filter, page } }),
+    placeholderData: (previous) => previous,
+    ...MANAGE_QUERY_OPTIONS,
   });
   const { data: outstanding } = useQuery({ queryKey: ["trade-outstanding"], queryFn: () => outstandingReport() });
 
@@ -53,7 +58,7 @@ function TradeAdmin() {
         <h2 className="font-display text-xl font-semibold">Trade applications</h2>
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
-            <Button key={f.id} size="sm" variant={filter === f.id ? "default" : "outline"} onClick={() => setFilter(f.id)}>
+            <Button key={f.id} size="sm" variant={filter === f.id ? "default" : "outline"} onClick={() => { setFilter(f.id); setPage(0); }}>
               {f.label}
             </Button>
           ))}
@@ -61,13 +66,14 @@ function TradeAdmin() {
 
         {isPending ? (
           <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-        ) : (applications ?? []).length === 0 ? (
+        ) : (applications?.items ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nothing here right now.
           </p>
         ) : (
-          (applications ?? []).map((a) => <ApplicationCard key={a.id} app={a} onDone={refresh} />)
+          (applications?.items ?? []).map((a) => <ApplicationCard key={a.id} app={a} onDone={refresh} />)
         )}
+        <ListPager page={page} total={applications?.total ?? 0} busy={isFetching} onPage={setPage} />
       </section>
 
       <CategoryPricing />

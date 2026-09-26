@@ -35,8 +35,8 @@ const TIERS = ["retail", "trade", "distributor"] as const;
 
 /** The trade application queue, with short-lived links to the documents. */
 export const listTradeApplications = createServerFn({ method: "POST" })
-  .inputValidator((data: { status?: string } | undefined) => ({ status: String(data?.status ?? "pending") }))
-  .handler(async ({ data }): Promise<TradeApplicationRow[]> => {
+  .inputValidator((data: { status?: string; page?: number } | undefined) => ({ status: String(data?.status ?? "pending"), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: TradeApplicationRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -45,18 +45,18 @@ export const listTradeApplications = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("trade_applications")
-      .select("*, profiles(price_tier, credit_limit, payment_terms_days)")
+      .select("*, profiles(price_tier, credit_limit, payment_terms_days)", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(100);
+      .range(data.page * 8, data.page * 8 + 7);
     if (data.status !== "all") query = query.eq("status", data.status as never);
-    const { data: rows } = await query;
+    const { data: rows, count } = await query;
     const ids = (rows ?? []).map((r) => String(r.id));
     const pids = (rows ?? []).map((r) => String(r.profile_id));
     const { toCheck } = await import("@/lib/trade-ai.functions");
     const { data: checkRows } = pids.length ? await supabaseAdmin.from("trade_doc_checks" as never).select("*").in("profile_id", pids) : { data: [] };
     const { data: noteRows } = ids.length ? await supabaseAdmin.from("trade_internal_notes" as never).select("*").in("application_id", ids).order("created_at") : { data: [] };
 
-    return Promise.all(
+    const items = await Promise.all(
       (rows ?? []).map(async (r) => {
         const profile = (r as { profiles?: { price_tier?: string; credit_limit?: number; payment_terms_days?: number } | null }).profiles;
         const credit = await tradeBalance(String(r.profile_id));
@@ -101,6 +101,7 @@ export const listTradeApplications = createServerFn({ method: "POST" })
         };
       }),
     );
+    return { items, total: count ?? 0 };
   });
 
 /** Approve, reject or ask for one more document. */

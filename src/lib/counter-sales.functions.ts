@@ -66,58 +66,53 @@ async function counterAdmin() {
 }
 
 export const counterSaleSetup = createServerFn({ method: "POST" }).handler(async (): Promise<{
-  customers: CounterCustomer[];
   gst: { enabled: boolean; rate: number; included: boolean; gstin: string };
   vendors: CounterPaymentVendor[];
 }> => {
   const { sb } = await counterAdmin();
-  const [{ data: profiles, error: profileError }, { data: addresses }, { data: ledger }, { data: settings }, { data: vendors, error: vendorError }] = await Promise.all([
-    sb.from("profiles").select("id, full_name, email, phone, price_tier, credit_limit, payment_terms_days").eq("customer_type", "trade").not("trade_approved_at", "is", null).order("full_name").limit(1000),
-    sb.from("addresses").select("profile_id, name, phone, line1, landmark, city, state, pincode, is_default, created_at").order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(3000),
-    sb.from("trade_ledger").select("profile_id, kind, amount, due_date, settled").limit(10000),
+  const [{ data: settings }, { data: vendors, error: vendorError }] = await Promise.all([
     sb.from("shop_settings").select("gst_enabled, gst_rate, prices_include_gst, gstin").maybeSingle(),
     sb.from("qr_vendors").select("id, name, upi_id, qr_image_path").eq("active", true).order("name"),
   ]);
-  if (profileError) throw new Error(profileError.message);
   if (vendorError) throw new Error(vendorError.message);
   const vendorRows = await Promise.all(((vendors ?? []) as Row[]).map(async (vendor): Promise<CounterPaymentVendor> => {
     const path = vendor['qr_image_path'] ? String(vendor['qr_image_path']) : "";
     const { data: signed } = path ? await sb.storage.from("vendor-qr-codes").createSignedUrl(path, 300) : { data: null };
     return { id: String(vendor['id']), name: String(vendor['name']), upiId: vendor['upi_id'] ? String(vendor['upi_id']) : null, qrUrl: signed?.signedUrl ?? null };
   }));
-  const addressByProfile = new Map<string, Record<string, string>>();
-  for (const address of (addresses ?? []) as Row[]) {
-    const id = String(address['profile_id']);
-    if (!addressByProfile.has(id)) {
-      addressByProfile.set(id, Object.fromEntries(Object.entries(address).filter(([key, value]) => !["profile_id", "created_at", "is_default"].includes(key) && value != null)) as Record<string, string>);
-    }
-  }
-  const ledgerByProfile = new Map<string, Row[]>();
-  for (const entry of (ledger ?? []) as Row[]) {
-    const id = String(entry['profile_id']);
-    ledgerByProfile.set(id, [...(ledgerByProfile.get(id) ?? []), entry]);
-  }
-  const today = new Date().toISOString().slice(0, 10);
   return {
-    customers: ((profiles ?? []) as Row[]).map((profile) => {
-      const entries = ledgerByProfile.get(String(profile['id'])) ?? [];
-      return {
-        id: String(profile['id']),
-        name: String(profile['full_name'] ?? profile['email'] ?? "Wholesale customer"),
-        email: String(profile['email'] ?? ""),
-        phone: String(profile['phone'] ?? ""),
-        priceTier: profile['price_tier'] === "distributor" ? "distributor" : "trade",
-        creditLimit: Number(profile['credit_limit'] ?? 0),
-        paymentTermsDays: Number(profile['payment_terms_days'] ?? 0),
-        balance: entries.reduce((sum, entry) => sum + (entry['kind'] === "payment" ? -Number(entry['amount']) : Number(entry['amount'])), 0),
-        overdue: entries.some((entry) => entry['kind'] === "invoice" && !entry['settled'] && entry['due_date'] && String(entry['due_date']) < today),
-        address: addressByProfile.get(String(profile['id'])) ?? null,
-      };
-    }),
     gst: { enabled: Boolean(settings?.gst_enabled), rate: Number(settings?.gst_rate ?? 0), included: Boolean(settings?.prices_include_gst), gstin: String(settings?.gstin ?? "") },
     vendors: vendorRows,
   };
 });
+
+export type CounterCustomerChoice = Pick<CounterCustomer, "id" | "name" | "email" | "phone">;
+
+export const searchCounterCustomers = createServerFn({ method: "POST" })
+  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120) }))
+  .handler(async ({ data }): Promise<CounterCustomerChoice[]> => {
+    const { sb } = await counterAdmin();
+    let query = sb.from("profiles").select("id, full_name, email, phone").eq("customer_type", "trade").not("trade_approved_at", "is", null).order("full_name").limit(8);
+    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`); }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((profile) => ({ id: String(profile.id), name: String(profile.full_name ?? profile.email ?? "Wholesale customer"), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
+  });
+
+export const counterCustomerDetail = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string }) => ({ customerId: String(data?.customerId ?? "") }))
+  .handler(async ({ data }): Promise<CounterCustomer | null> => {
+    const { sb } = await counterAdmin();
+    const [{ data: profile, error }, { data: address }, { data: balance }, { data: overdue }] = await Promise.all([
+      sb.from("profiles").select("id, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle(),
+      sb.from("addresses").select("name, phone, line1, landmark, city, state, pincode").eq("profile_id", data.customerId).order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      sb.rpc("trade_balance", { _profile_id: data.customerId }),
+      sb.rpc("trade_overdue", { _profile_id: data.customerId }),
+    ]);
+    if (error) throw new Error(error.message);
+    if (!profile || profile.customer_type !== "trade" || !profile.trade_approved_at) return null;
+    return { id: String(profile.id), name: String(profile.full_name ?? profile.email ?? "Wholesale customer"), email: String(profile.email ?? ""), phone: String(profile.phone ?? ""), priceTier: profile.price_tier === "distributor" ? "distributor" : "trade", creditLimit: Number(profile.credit_limit ?? 0), paymentTermsDays: Number(profile.payment_terms_days ?? 0), balance: Number(balance ?? 0), overdue: Boolean(overdue), address: address ? Object.fromEntries(Object.entries(address).filter(([, value]) => value != null)) as Record<string, string> : null };
+  });
 
 export const searchCounterProducts = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string; customerId?: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 120), customerId: String(data?.customerId ?? "") }))
@@ -140,14 +135,16 @@ export const searchCounterProducts = createServerFn({ method: "POST" })
   });
 
 export const listCounterSales = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase().slice(0, 120) }))
-  .handler(async ({ data }): Promise<CounterSale[]> => {
+  .inputValidator((data: { q?: string; page?: number } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: CounterSale[]; total: number }> => {
     const { sb } = await counterAdmin();
-    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at").order("created_at", { ascending: false }).limit(300);
+    let query = sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at, orders!inner(human_id), profiles!inner(full_name, phone)", { count: "exact" }).order("created_at", { ascending: false });
+    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`human_id.ilike.%${term}%`, { referencedTable: "orders" }).or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`, { referencedTable: "profiles" }); }
+    const { data: rows, error, count } = await query.range(data.page * 8, data.page * 8 + 7);
     if (error) throw new Error(error.message);
     const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
     const profileIds = [...new Set(((rows ?? []) as Row[]).map((row) => String(row['profile_id'])))];
-    if (orderIds.length === 0) return [];
+    if (orderIds.length === 0) return { items: [], total: count ?? 0 };
     const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
       sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
@@ -173,7 +170,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null })),
       };
     });
-    return data.q ? mapped.filter((sale) => `${sale.humanId} ${sale.customerName} ${sale.customerPhone}`.toLowerCase().includes(data.q)) : mapped;
+    return { items: mapped, total: count ?? 0 };
   });
 
 export const createCounterSale = createServerFn({ method: "POST" })

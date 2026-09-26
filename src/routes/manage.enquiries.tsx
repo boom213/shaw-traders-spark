@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { listEnquiries, replyToEnquiry, setEnquiryStatus } from "@/lib/enquiries.functions";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 
 export const Route = createFileRoute("/manage/enquiries")({
@@ -21,11 +23,14 @@ const TABS = [
 
 function EnquiriesPage() {
   const [tab, setTab] = useState<string>("new");
+  const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
 
   const { data, isPending } = useQuery({
-    queryKey: ["manage-enquiries", tab],
-    queryFn: () => listEnquiries({ data: { status: tab } }),
+    queryKey: ["manage-enquiries", tab, page],
+    queryFn: () => listEnquiries({ data: { status: tab, page } }),
+    placeholderData: (previous) => previous,
+    ...MANAGE_QUERY_OPTIONS,
   });
 
   const move = async (id: string, status: string): Promise<void> => {
@@ -39,7 +44,7 @@ function EnquiriesPage() {
     void queryClient.invalidateQueries({ queryKey: ["manage-enquiries"] });
   };
 
-  const items = data ?? [];
+  const items = data?.items ?? [];
 
   return (
     <div className="space-y-4">
@@ -47,7 +52,7 @@ function EnquiriesPage() {
         {TABS.map((t) => (
           <button
             key={t.value}
-            onClick={() => setTab(t.value)}
+            onClick={() => { setTab(t.value); setPage(0); }}
             className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold ${
               tab === t.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
             }`}
@@ -68,11 +73,12 @@ function EnquiriesPage() {
       {items.map((e) => (
         <EnquiryCard key={e.id} enquiry={e} onMove={move} />
       ))}
+      <ListPager page={page} total={data?.total ?? 0} onPage={setPage} />
     </div>
   );
 }
 
-type Item = Awaited<ReturnType<typeof listEnquiries>>[number];
+type Item = Awaited<ReturnType<typeof listEnquiries>>["items"][number];
 
 function EnquiryCard({ enquiry: e, onMove }: { enquiry: Item; onMove: (id: string, status: string) => Promise<void> }) {
   const queryClient = useQueryClient();

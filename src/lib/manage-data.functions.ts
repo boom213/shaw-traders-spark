@@ -128,7 +128,7 @@ export const manageCustomers = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string; page?: number; pageSize?: number } | undefined) => ({
     q: String(data?.q ?? "").trim(),
     page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
-    pageSize: Math.min(100, Math.max(10, Math.floor(Number(data?.pageSize ?? 25)))),
+    pageSize: Math.min(100, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
   }))
   .handler(async ({ data }): Promise<{ items: ManageCustomer[]; total: number }> => {
     const sb = await admin();
@@ -174,29 +174,33 @@ export type ManageCustomerDetail = {
   creditLimit: number;
   paymentTermsDays: number;
   addresses: ManageCustomerAddress[];
-  orders: Array<{
-    id: string;
-    humanId: string;
-    token: string;
-    total: number;
-    status: string;
-    placedAt: string;
-    items: Array<{ productId: string | null; name: string; qty: number; price: number | null }>;
-  }>;
+  orderCount: number;
+  lifetimeValue: number;
+  purchasedProductIds: string[];
+};
+
+export type ManageCustomerOrder = {
+  id: string;
+  humanId: string;
+  token: string;
+  total: number;
+  status: string;
+  placedAt: string;
+  items: Array<{ productId: string | null; name: string; qty: number; price: number | null }>;
 };
 
 export const manageCustomerDetail = createServerFn({ method: "POST" })
   .inputValidator((data: { customerId: string }) => ({ customerId: String(data?.customerId ?? "") }))
   .handler(async ({ data }): Promise<ManageCustomerDetail | null> => {
     const sb = await admin();
-    const [{ data: profile, error: profileError }, { data: addresses, error: addressError }, { data: orders, error: orderError }] = await Promise.all([
+    const [{ data: profile, error: profileError }, { data: addresses, error: addressError }, { data: summary, error: summaryError }] = await Promise.all([
       sb.from("profiles").select("id, full_name, email, phone, customer_type, price_tier, credit_limit, payment_terms_days").eq("id", data.customerId).maybeSingle(),
       sb.from("addresses").select("id, name, phone, line1, landmark, city, state, pincode, is_default").eq("profile_id", data.customerId).order("is_default", { ascending: false }).order("created_at", { ascending: false }),
-      sb.from("orders").select("id, human_id, public_token, total, status, placed_at, order_items(product_id, name_snapshot, qty, price_snapshot)").eq("profile_id", data.customerId).order("placed_at", { ascending: false }).limit(200),
+      sb.rpc("manager_customer_order_summary", { p_profile_id: data.customerId }),
     ]);
     if (profileError) throw new Error(profileError.message);
     if (addressError) throw new Error(addressError.message);
-    if (orderError) throw new Error(orderError.message);
+    if (summaryError) throw new Error(summaryError.message);
     if (!profile) return null;
     return {
       id: String(profile.id),
@@ -218,7 +222,20 @@ export const manageCustomerDetail = createServerFn({ method: "POST" })
         pincode: String(address['pincode'] ?? ""),
         isDefault: Boolean(address['is_default']),
       })),
-      orders: ((orders ?? []) as Row[]).map((order) => ({
+      orderCount: Number((summary as Row | null)?.['orderCount'] ?? 0),
+      lifetimeValue: Number((summary as Row | null)?.['lifetimeValue'] ?? 0),
+      purchasedProductIds: (((summary as Row | null)?.['productIds'] ?? []) as unknown[]).map(String),
+    };
+  });
+
+export const manageCustomerOrders = createServerFn({ method: "POST" })
+  .inputValidator((data: { customerId: string; page?: number }) => ({ customerId: String(data?.customerId ?? ""), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: ManageCustomerOrder[]; total: number }> => {
+    const sb = await admin();
+    const from = data.page * 8;
+    const { data: orders, error, count } = await sb.from("orders").select("id, human_id, public_token, total, status, placed_at, order_items(product_id, name_snapshot, qty, price_snapshot)", { count: "exact" }).eq("profile_id", data.customerId).order("placed_at", { ascending: false }).range(from, from + 7);
+    if (error) throw new Error(error.message);
+    return { items: ((orders ?? []) as Row[]).map((order) => ({
         id: String(order['id']),
         humanId: String(order['human_id']),
         token: String(order['public_token']),
@@ -231,8 +248,7 @@ export const manageCustomerDetail = createServerFn({ method: "POST" })
           qty: Number(item['qty']),
           price: item['price_snapshot'] === null ? null : Number(item['price_snapshot']),
         })),
-      })),
-    };
+      })), total: count ?? 0 };
   });
 
 export const updateManagedCustomer = createServerFn({ method: "POST" })

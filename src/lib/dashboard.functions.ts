@@ -36,13 +36,8 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
   const sb = await admin();
   const monthStart = istMidnight(30);
 
-  const [ordersRes, productsRes, missesRes, errorsRes] = await Promise.all([
-    sb
-      .from("orders")
-      .select("id, total, status, placed_at, order_items(name_snapshot, qty, price_snapshot)")
-      .gte("placed_at", monthStart)
-      .limit(2000),
-    sb.from("products").select("id, name, price, stock, reorder_threshold, product_images(url)").eq("status", "visible").limit(3000),
+  const [summaryRes, missesRes, errorsRes] = await Promise.all([
+    sb.rpc("manager_dashboard_summary", { p_today_from: istMidnight(0), p_week_from: istMidnight(7), p_month_from: monthStart }),
     sb.from("search_misses").select("term, hits").order("hits", { ascending: false }).limit(12),
     sb
       .from("error_log")
@@ -52,52 +47,19 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
       .limit(200),
   ]);
 
-  const orders = (ordersRes.data ?? []) as Row[];
-  const products = (productsRes.data ?? []) as Row[];
-
-  const todayFrom = istMidnight(0);
-  const weekFrom = istMidnight(7);
-  const live = orders.filter((o) => o['status'] !== "cancelled" && o['status'] !== "returned");
-  const sum = (rows: Row[]) => rows.reduce((n, o) => n + Number(o['total'] ?? 0), 0);
-
-  const today = live.filter((o) => String(o['placed_at']) >= todayFrom);
-  const week = live.filter((o) => String(o['placed_at']) >= weekFrom);
-
-  const sellers = new Map<string, { qty: number; revenue: number }>();
-  for (const o of live) {
-    for (const i of (o['order_items'] ?? []) as Row[]) {
-      const key = String(i['name_snapshot']);
-      const prev = sellers.get(key) ?? { qty: 0, revenue: 0 };
-      prev.qty += Number(i['qty'] ?? 0);
-      prev.revenue += Number(i['price_snapshot'] ?? 0) * Number(i['qty'] ?? 0);
-      sellers.set(key, prev);
-    }
-  }
-
-  const lowStock = products
-    .map((p) => ({
-      id: String(p['id']),
-      name: String(p['name']),
-      stock: Number(p['stock'] ?? 0),
-      threshold: Number(p['reorder_threshold'] ?? 3),
-    }))
-    .filter((p) => p.stock <= p.threshold)
-    .sort((a, b) => a.stock - b.stock)
-    .slice(0, 20);
+  if (summaryRes.error) throw new Error(summaryRes.error.message);
+  const summary = (summaryRes.data ?? {}) as Row;
 
   return {
-    todayOrders: today.length,
-    todayRevenue: sum(today),
-    weekRevenue: sum(week),
-    monthRevenue: sum(live),
-    pendingOrders: live.filter((o) => o['status'] === "order_confirmed" || o['status'] === "processing").length,
-    bestSellers: [...sellers.entries()]
-      .map(([name, v]) => ({ name, ...v }))
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 6),
-    noPhoto: products.filter((p) => ((p['product_images'] ?? []) as Row[]).length === 0).length,
-    noPrice: products.filter((p) => p['price'] === null).length,
-    lowStock,
+    todayOrders: Number(summary['todayOrders'] ?? 0),
+    todayRevenue: Number(summary['todayRevenue'] ?? 0),
+    weekRevenue: Number(summary['weekRevenue'] ?? 0),
+    monthRevenue: Number(summary['monthRevenue'] ?? 0),
+    pendingOrders: Number(summary['pendingOrders'] ?? 0),
+    bestSellers: ((summary['bestSellers'] ?? []) as Row[]).map((item) => ({ name: String(item['name']), qty: Number(item['qty']), revenue: Number(item['revenue']) })),
+    noPhoto: Number(summary['noPhoto'] ?? 0),
+    noPrice: Number(summary['noPrice'] ?? 0),
+    lowStock: ((summary['lowStock'] ?? []) as Row[]).map((item) => ({ id: String(item['id']), name: String(item['name']), stock: Number(item['stock']), threshold: Number(item['threshold']) })),
     emptySearches: ((missesRes.data ?? []) as Row[]).map((m) => ({ term: String(m['term']), hits: Number(m['hits']) })),
     errorsToday: ((errorsRes.data ?? []) as Row[]).length,
     recentErrors: ((errorsRes.data ?? []) as Row[]).slice(0, 5).map((e) => ({

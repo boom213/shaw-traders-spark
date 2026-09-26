@@ -5,10 +5,12 @@ import { AlertTriangle, Banknote, Download, Minus, PackagePlus, Plus, QrCode, Re
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { cancelCounterSale, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterProducts, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
+import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
 import { placeholderFor } from "@/lib/placeholders";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 export const Route = createFileRoute("/manage/counter-sales")({
   head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { name: "robots", content: "noindex" }] }),
@@ -22,6 +24,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 function CounterSalesPage() {
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerTerm, setCustomerTerm] = useState("");
   const [productQuery, setProductQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -29,15 +33,19 @@ function CounterSalesPage() {
   const [overrideReason, setOverrideReason] = useState("");
   const [note, setNote] = useState("");
   const [saleSearch, setSaleSearch] = useState("");
+  const [saleTerm, setSaleTerm] = useState("");
+  const [salePage, setSalePage] = useState(0);
   const [selectedSale, setSelectedSale] = useState<CounterSale | null>(null);
   const [paymentSale, setPaymentSale] = useState<CounterSale | null>(null);
   const [cancelSale, setCancelSale] = useState<CounterSale | null>(null);
   const [payment, setPayment] = useState({ amount: "", method: "Cash", reference: "", note: "", receivedOn: today(), vendorId: "" });
   const [cancelReason, setCancelReason] = useState("");
   const { data: setup, isPending: setupPending } = useQuery({ queryKey: ["counter-sale-setup"], queryFn: () => counterSaleSetup() });
+  const { data: customers = [], isFetching: customersFetching } = useQuery({ queryKey: ["counter-customers", customerTerm], queryFn: () => searchCounterCustomers({ data: { q: customerTerm } }), ...MANAGE_QUERY_OPTIONS });
+  const { data: customer } = useQuery({ queryKey: ["counter-customer", customerId], queryFn: () => counterCustomerDetail({ data: { customerId } }), enabled: Boolean(customerId), ...MANAGE_QUERY_OPTIONS });
   const { data: products = [], isFetching: searching } = useQuery({ queryKey: ["counter-products", customerId, searchTerm], queryFn: () => searchCounterProducts({ data: { customerId, q: searchTerm } }), enabled: Boolean(customerId), staleTime: 15_000 });
-  const { data: sales = [], isPending: salesPending } = useQuery({ queryKey: ["counter-sales", saleSearch], queryFn: () => listCounterSales({ data: { q: saleSearch } }) });
-  const customer = setup?.customers.find((item) => item.id === customerId);
+  const { data: salesData, isPending: salesPending, isFetching: salesFetching } = useQuery({ queryKey: ["counter-sales", saleTerm, salePage], queryFn: () => listCounterSales({ data: { q: saleTerm, page: salePage } }), placeholderData: (previous) => previous, ...MANAGE_QUERY_OPTIONS });
+  const sales = salesData?.items ?? [];
   const subtotal = cart.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
   const tax = invoiceKind === "gst" && setup?.gst.enabled ? (setup.gst.included ? subtotal * setup.gst.rate / (100 + setup.gst.rate) : subtotal * setup.gst.rate / 100) : 0;
   const total = setup?.gst.included || invoiceKind === "non_gst" ? subtotal : subtotal + tax;
@@ -54,7 +62,7 @@ function CounterSalesPage() {
 
   const refresh = () => Promise.all([
     queryClient.invalidateQueries({ queryKey: ["counter-sales"] }),
-    queryClient.invalidateQueries({ queryKey: ["counter-sale-setup"] }),
+     queryClient.invalidateQueries({ queryKey: ["counter-customer"] }),
     queryClient.invalidateQueries({ queryKey: ["counter-products"] }),
     queryClient.invalidateQueries({ queryKey: ["vendor-dashboard"] }),
   ]);
@@ -100,9 +108,10 @@ function CounterSalesPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,.75fr)]">
         <div className="space-y-5">
           <Card title="1. Wholesale customer" icon={<UserRound className="size-4" />}>
-            <select aria-label="Wholesale customer" value={customerId} onChange={(event) => setCustomerId(event.target.value)} disabled={setupPending} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <form className="mb-2 flex gap-2" onSubmit={(event) => { event.preventDefault(); setCustomerTerm(customerQuery.trim()); }}><Input aria-label="Search wholesale customers" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} placeholder="Search name, phone or email" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form>
+            <select aria-label="Wholesale customer" value={customerId} onChange={(event) => setCustomerId(event.target.value)} disabled={setupPending || customersFetching} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Select approved wholesale customer</option>
-              {(setup?.customers ?? []).map((item) => <option key={item.id} value={item.id}>{item.name} · {item.phone || item.email}</option>)}
+              {customers.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.phone || item.email}</option>)}
             </select>
             {customer && <div className="mt-3 grid gap-3 rounded-lg bg-muted/60 p-3 text-sm sm:grid-cols-3"><Stat label="Tier" value={customer.priceTier} /><Stat label="Outstanding" value={money(customer.balance)} /><Stat label="Terms" value={`${customer.paymentTermsDays} days`} />{customer.address && <p className="sm:col-span-3 text-xs text-muted-foreground">{[customer.address.line1, customer.address.landmark, customer.address.city, customer.address.state, customer.address.pincode].filter(Boolean).join(", ")}</p>}</div>}
             {customer?.overdue && <Warning>Customer has overdue invoices. Continue only after offline approval.</Warning>}
@@ -137,8 +146,9 @@ function CounterSalesPage() {
       </div>
 
       <div className="space-y-3 border-t pt-6">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-display text-lg font-bold">Recent counter sales</h3><p className="text-sm text-muted-foreground">Invoices, outstanding balances, and offline payment records.</p></div><Input aria-label="Search counter sales" className="w-full sm:w-72" value={saleSearch} onChange={(event) => setSaleSearch(event.target.value)} placeholder="Search invoice or customer" /></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-display text-lg font-bold">Recent counter sales</h3><p className="text-sm text-muted-foreground">Invoices, outstanding balances, and offline payment records.</p></div><form className="flex w-full gap-2 sm:w-auto" onSubmit={(event) => { event.preventDefault(); setSaleTerm(saleSearch.trim()); setSalePage(0); }}><Input aria-label="Search counter sales" className="w-full sm:w-72" value={saleSearch} onChange={(event) => setSaleSearch(event.target.value)} placeholder="Search invoice or customer" /><Button type="submit" variant="outline"><Search className="size-4" /></Button></form></div>
         <div className="overflow-hidden rounded-lg border bg-card">{salesPending ? <p className="p-6 text-sm text-muted-foreground">Loading sales…</p> : sales.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No counter sales found.</p> : sales.map((sale) => <SaleRow key={sale.orderId} sale={sale} onView={() => setSelectedSale(sale)} onPay={() => { setPaymentSale(sale); setPayment((value) => ({ ...value, amount: sale.balance.toFixed(2) })); }} onInvoice={() => downloadInvoice(sale)} onStaffInvoice={() => downloadInvoice(sale, true)} onCancel={() => setCancelSale(sale)} />)}</div>
+        <ListPager page={salePage} total={salesData?.total ?? 0} busy={salesFetching} onPage={setSalePage} />
       </div>
 
       <AlertDialog open={Boolean(selectedSale)} onOpenChange={(open) => !open && setSelectedSale(null)}><AlertDialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto"><AlertDialogHeader><AlertDialogTitle>{selectedSale?.humanId} · {selectedSale?.customerName}</AlertDialogTitle><AlertDialogDescription>{selectedSale?.invoiceKind === "gst" ? "GST tax invoice" : "Non-GST bill"} created by {selectedSale?.createdBy}{selectedSale?.createdByEmail ? ` · ${selectedSale.createdByEmail}` : ""}</AlertDialogDescription></AlertDialogHeader>{selectedSale && <SaleDetails sale={selectedSale} />}<AlertDialogFooter><AlertDialogCancel>Close</AlertDialogCancel><Button variant="outline" onClick={() => selectedSale && downloadInvoice(selectedSale, true)}><Download className="size-4" /> Staff Invoice</Button><Button onClick={() => selectedSale && downloadInvoice(selectedSale)}><Download className="size-4" /> Invoice PDF</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>

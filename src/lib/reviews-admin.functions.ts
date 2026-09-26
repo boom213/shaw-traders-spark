@@ -43,22 +43,24 @@ const map = (r: Row): ManageReview => ({
 
 /** Reviews waiting for the owner, or everything already decided. */
 export const manageReviews = createServerFn({ method: "POST" })
-  .inputValidator((data: { status?: string } | undefined) => ({
+  .inputValidator((data: { status?: string; page?: number } | undefined) => ({
     status: String(data?.status ?? "pending"),
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
   }))
-  .handler(async ({ data }): Promise<ManageReview[]> => {
+  .handler(async ({ data }): Promise<{ items: ManageReview[]; total: number }> => {
     const { sb } = await adminAs();
     let q = sb
       .from("reviews")
       .select(
         "id, product_id, rating, title, body, photos, status, is_verified_purchase, staff_reply, created_at, products(name, slug), profiles(full_name, phone)",
+        { count: "exact" },
       )
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(data.page * 8, data.page * 8 + 7);
     if (data.status !== "all") q = q.eq("status", data.status as "pending" | "approved" | "rejected");
-    const { data: rows, error } = await q;
+    const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(map);
+    return { items: (rows ?? []).map(map), total: count ?? 0 };
   });
 
 /** Publish or hide a customer review. */

@@ -274,6 +274,13 @@
       "when": 1790446615266,
       "tag": "0038_align_online_payment_report_to_period_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1790452572052,
+      "tag": "0039_manager_paging_and_aggregate_summaries",
+      "breakpoints": true
     }
   ]
 }

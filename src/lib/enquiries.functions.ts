@@ -95,8 +95,8 @@ export const createGeneralEnquiry = createServerFn({ method: "POST" })
 
 /** Availability requests waiting for the shop. */
 export const listEnquiries = createServerFn({ method: "POST" })
-  .inputValidator((data: { status?: string } | undefined) => ({ status: String(data?.status ?? "new") }))
-  .handler(async ({ data }): Promise<Enquiry[]> => {
+  .inputValidator((data: { status?: string; page?: number } | undefined) => ({ status: String(data?.status ?? "new"), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: Enquiry[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -104,12 +104,13 @@ export const listEnquiries = createServerFn({ method: "POST" })
       .from("product_enquiries")
       .select(
         "id, product_id, product_name, name, phone, alternate_phone, qty, note, status, created_at, vehicle, source, photo_url, reply, replied_at, expected_date, quoted_price, quote_token",
+        { count: "exact" },
       )
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(data.page * 8, data.page * 8 + 7);
     if (data.status !== "all") query = query.eq("status", data.status);
-    const { data: rows } = await query;
-    return (rows ?? []).map((r) => ({
+    const { data: rows, count } = await query;
+    return { items: (rows ?? []).map((r) => ({
       id: String(r.id),
       productId: r.product_id,
       productName: String(r.product_name ?? "Photo from WhatsApp"),
@@ -128,7 +129,7 @@ export const listEnquiries = createServerFn({ method: "POST" })
       quoteLink: r.quote_token ? `${siteOrigin()}/quote/${r.quote_token}` : null,
       status: String(r.status),
       createdAt: String(r.created_at),
-    }));
+    })), total: count ?? 0 };
   });
 
 /** Mark an availability request as handled or closed. */

@@ -5,9 +5,11 @@ import { Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ListPager } from "@/components/manage/ListPager";
 import { Textarea } from "@/components/ui/textarea";
 import { manageReviews, moderateReview, replyToReview, type ManageReview } from "@/lib/reviews-admin.functions";
 import { cn } from "@/lib/utils";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 export const Route = createFileRoute("/manage/reviews")({
   head: () => ({
@@ -33,11 +35,14 @@ const TABS = [
 
 function ReviewsPage() {
   const [tab, setTab] = useState("pending");
+  const [page, setPage] = useState(0);
   const list = useServerFn(manageReviews);
   const qc = useQueryClient();
   const { data, isPending } = useQuery({
-    queryKey: ["manage-reviews", tab],
-    queryFn: () => list({ data: { status: tab } }),
+    queryKey: ["manage-reviews", tab, page],
+    queryFn: () => list({ data: { status: tab, page } }),
+    placeholderData: (previous) => previous,
+    ...MANAGE_QUERY_OPTIONS,
   });
 
   const decide = useServerFn(moderateReview);
@@ -56,7 +61,7 @@ function ReviewsPage() {
         {TABS.map((t) => (
           <button
             key={t.id}
-            onClick={() => setTab(t.id)}
+            onClick={() => { setTab(t.id); setPage(0); }}
             className={cn(
               "shrink-0 rounded-full border px-4 py-2 text-sm font-medium",
               tab === t.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card",
@@ -71,17 +76,18 @@ function ReviewsPage() {
         <div className="grid gap-3">
           {[0, 1, 2].map((i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-muted" />)}
         </div>
-      ) : (data ?? []).length === 0 ? (
+      ) : (data?.items ?? []).length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-surface px-5 py-12 text-center text-sm text-muted-foreground">
           Nothing here right now.
         </p>
       ) : (
         <div className="grid gap-3">
-          {(data ?? []).map((r) => (
+          {(data?.items ?? []).map((r) => (
             <ReviewCard key={r.id} review={r} onDecide={(status) => act.mutate({ id: r.id, status })} />
           ))}
         </div>
       )}
+      <ListPager page={page} total={data?.total ?? 0} onPage={setPage} />
     </div>
   );
 }

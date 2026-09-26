@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, Phone } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ListPager, MANAGE_PAGE_SIZE } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { manageCustomers } from "@/lib/manage-data.functions";
 import { BUSINESS, formatINR, whatsappLink } from "@/lib/catalog";
@@ -27,7 +28,7 @@ function ManageCustomers() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
-  const pageSize = 25;
+  const pageSize = MANAGE_PAGE_SIZE;
 
   const { data, isPending, isFetching } = useQuery({
     queryKey: ["manage-customers", term, page, pageSize],
@@ -37,7 +38,6 @@ function ManageCustomers() {
   });
   const customers = data?.items ?? [];
   const total = data?.total ?? 0;
-  const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-4">
@@ -109,19 +109,7 @@ function ManageCustomers() {
           </table>
         </div>
       )}
-      {!isPending && total > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-          <span>
-            {page * pageSize + 1}–{Math.min(total, (page + 1) * pageSize)} of {total}
-            {isFetching ? " · Updating…" : ""}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button type="button" size="sm" variant="outline" disabled={page === 0 || isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
-            <span>Page {page + 1} of {pages}</span>
-            <Button type="button" size="sm" variant="outline" disabled={page + 1 >= pages || isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
-          </div>
-        </div>
-      )}
+      {!isPending && <ListPager page={page} total={total} busy={isFetching} onPage={setPage} />}
     </div>
   );
 }

@@ -42,27 +42,32 @@ async function qrUrl(path: string | null): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
-export const vendorDashboard = createServerFn({ method: "POST" }).handler(async () => {
+export const vendorDashboard = createServerFn({ method: "POST" })
+  .inputValidator((data: { page?: number } | undefined) => ({ page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }) => {
   const { sb, actor } = await vendorAdmin();
   const monthStart = new Date();
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthDate = monthStart.toISOString().slice(0, 10);
-  const [{ data: vendors, error: vendorError }, { data: payments, error: paymentError }, { data: cashRows }] = await Promise.all([
+  const [{ data: vendors, error: vendorError }, { data: payments, error: paymentError, count }, { data: cashRows }, { data: totalRows, error: totalError }] = await Promise.all([
     sb.from("qr_vendors").select("id, name, qr_image_path, upi_id, active, created_at").order("active", { ascending: false }).order("name"),
-    sb.from("vendor_payments").select("id, vendor_id, amount, paid_on, reference, note, linked_ledger_id, created_by_name, created_by_email, created_at, qr_vendors(name)").order("paid_on", { ascending: false }).order("created_at", { ascending: false }).limit(500),
+    sb.from("vendor_payments").select("id, vendor_id, amount, paid_on, reference, note, linked_ledger_id, created_by_name, created_by_email, created_at, qr_vendors(name)", { count: "exact" }).order("paid_on", { ascending: false }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7),
     sb.from("trade_ledger").select("amount").eq("kind", "payment").eq("method", "cash").gte("received_on", monthDate),
+    sb.rpc("manager_vendor_payment_totals", { p_month_from: monthDate }),
   ]);
   if (vendorError) throw new Error(vendorError.message);
   if (paymentError) throw new Error(paymentError.message);
+  if (totalError) throw new Error(totalError.message);
   const paymentRows = (payments ?? []) as Row[];
+  const totals = new Map(((totalRows ?? []) as Row[]).map((row) => [String(row["vendor_id"]), row]));
   const summaries = await Promise.all(((vendors ?? []) as Row[]).map(async (vendor): Promise<VendorSummary> => {
-    const rows = paymentRows.filter((payment) => payment["vendor_id"] === vendor["id"]);
+    const total = totals.get(String(vendor["id"]));
     return {
       id: String(vendor["id"]), name: String(vendor["name"]), upiId: vendor["upi_id"] ? String(vendor["upi_id"]) : null,
       active: Boolean(vendor["active"]), qrUrl: await qrUrl(vendor["qr_image_path"] ? String(vendor["qr_image_path"]) : null),
-      allTime: rows.reduce((sum, row) => sum + Number(row["amount"] ?? 0), 0),
-      thisMonth: rows.filter((row) => String(row["paid_on"]) >= monthDate).reduce((sum, row) => sum + Number(row["amount"] ?? 0), 0),
+      allTime: Number(total?.["all_time"] ?? 0),
+      thisMonth: Number(total?.["this_month"] ?? 0),
     };
   }));
   return {
@@ -74,6 +79,7 @@ export const vendorDashboard = createServerFn({ method: "POST" }).handler(async 
       note: payment["note"] ? String(payment["note"]) : null, linked: Boolean(payment["linked_ledger_id"]),
       recordedBy: String(payment["created_by_name"]), recordedByEmail: String(payment["created_by_email"]), createdAt: String(payment["created_at"]),
     })),
+    paymentTotal: count ?? 0,
     cashThisMonth: (cashRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
     canManageVendors: actor.role === "super_admin",
   };
