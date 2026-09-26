@@ -197,6 +197,27 @@
       "when": 1790431616217,
       "tag": "0027_add_alternate_phone_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790436194932,
+      "tag": "0028_reliable_payments_vendor_qr_accounting",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790436328216,
+      "tag": "0029_harden_ledger_writes_and_enable_scheduler",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790436511765,
+      "tag": "0030_preserve_counter_payment_metadata",
+      "breakpoints": true
     }
   ]
 }

@@ -31,3 +31,5 @@
 - [x] Fix post-order cart clearing, account booking tracking, trade-decision timing, address, Find Parts access, and vehicle-filter cleanup.
 - [x] Equalize product card heights and guard trade terms and repeat decisions.
 - [x] Require customer sign-in before checkout while keeping browsing and carts guest-friendly.
+- [x] Add reliable wholesale/vendor payment records and late-payment protection.
+- [x] Auto-release abandoned online-payment stock and notify customers.

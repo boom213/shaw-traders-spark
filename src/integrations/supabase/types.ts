@@ -273,6 +273,7 @@ export type Database = {
           cancelled_by: string | null
           created_at: string
           created_by: string
+          created_by_email: string | null
           created_by_name: string
           invoice_kind: string
           note: string | null
@@ -286,6 +287,7 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string
           created_by: string
+          created_by_email?: string | null
           created_by_name: string
           invoice_kind: string
           note?: string | null
@@ -299,6 +301,7 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string
           created_by?: string
+          created_by_email?: string | null
           created_by_name?: string
           invoice_kind?: string
           note?: string | null
@@ -1287,6 +1290,36 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_vendors: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          qr_image_path: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          qr_image_path: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          qr_image_path?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
       refunds: {
         Row: {
           amount: number
@@ -1945,9 +1978,12 @@ export type Database = {
           due_date: string | null
           id: string
           kind: Database["public"]["Enums"]["ledger_kind"]
+          method: Database["public"]["Enums"]["trade_payment_method"]
           note: string | null
           order_id: string | null
           profile_id: string
+          received_on: string
+          reference: string | null
           settled: boolean
         }
         Insert: {
@@ -1957,9 +1993,12 @@ export type Database = {
           due_date?: string | null
           id?: string
           kind: Database["public"]["Enums"]["ledger_kind"]
+          method?: Database["public"]["Enums"]["trade_payment_method"]
           note?: string | null
           order_id?: string | null
           profile_id: string
+          received_on?: string
+          reference?: string | null
           settled?: boolean
         }
         Update: {
@@ -1969,9 +2008,12 @@ export type Database = {
           due_date?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["ledger_kind"]
+          method?: Database["public"]["Enums"]["trade_payment_method"]
           note?: string | null
           order_id?: string | null
           profile_id?: string
+          received_on?: string
+          reference?: string | null
           settled?: boolean
         }
         Relationships: [
@@ -2310,6 +2352,63 @@ export type Database = {
           },
         ]
       }
+      vendor_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          created_by_email: string
+          created_by_name: string
+          id: string
+          linked_ledger_id: string | null
+          note: string | null
+          paid_on: string
+          reference: string | null
+          vendor_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          created_by_email: string
+          created_by_name: string
+          id?: string
+          linked_ledger_id?: string | null
+          note?: string | null
+          paid_on?: string
+          reference?: string | null
+          vendor_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          created_by_email?: string
+          created_by_name?: string
+          id?: string
+          linked_ledger_id?: string | null
+          note?: string | null
+          paid_on?: string
+          reference?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_payments_linked_ledger_id_fkey"
+            columns: ["linked_ledger_id"]
+            isOneToOne: true
+            referencedRelation: "trade_ledger"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_payments_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "qr_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_pending_statuses: {
         Row: {
           created_at: string
@@ -2411,23 +2510,42 @@ export type Database = {
         }
         Returns: boolean
       }
-      create_counter_sale: {
-        Args: {
-          p_actor_id: string
-          p_actor_name: string
-          p_invoice_kind: string
-          p_items: Json
-          p_note: string
-          p_override_reason: string
-          p_profile_id: string
-        }
-        Returns: {
-          human_id: string
-          order_id: string
-          public_token: string
-          total: number
-        }[]
-      }
+      create_counter_sale:
+        | {
+            Args: {
+              p_actor_id: string
+              p_actor_name: string
+              p_invoice_kind: string
+              p_items: Json
+              p_note: string
+              p_override_reason: string
+              p_profile_id: string
+            }
+            Returns: {
+              human_id: string
+              order_id: string
+              public_token: string
+              total: number
+            }[]
+          }
+        | {
+            Args: {
+              p_actor_email: string
+              p_actor_id: string
+              p_actor_name: string
+              p_invoice_kind: string
+              p_items: Json
+              p_note: string
+              p_override_reason: string
+              p_profile_id: string
+            }
+            Returns: {
+              human_id: string
+              order_id: string
+              public_token: string
+              total: number
+            }[]
+          }
       create_order: {
         Args: {
           p_address: Json
@@ -2509,6 +2627,39 @@ export type Database = {
         }
         Returns: number
       }
+      record_trade_ledger_entry: {
+        Args: {
+          p_actor_email: string
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_due_date: string
+          p_kind: Database["public"]["Enums"]["ledger_kind"]
+          p_method: Database["public"]["Enums"]["trade_payment_method"]
+          p_note: string
+          p_profile_id: string
+          p_received_on: string
+          p_reference: string
+          p_vendor_id?: string
+        }
+        Returns: {
+          ledger_id: string
+          vendor_payment_id: string
+        }[]
+      }
+      record_vendor_payment: {
+        Args: {
+          p_actor_email: string
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_note: string
+          p_paid_on: string
+          p_reference: string
+          p_vendor_id: string
+        }
+        Returns: string
+      }
       release_order: {
         Args: { p_order_id: string; p_reason?: string }
         Returns: boolean
@@ -2574,6 +2725,12 @@ export type Database = {
         | "approved"
         | "rejected"
         | "more_info_needed"
+      trade_payment_method:
+        | "cash"
+        | "upi_qr"
+        | "bank_transfer"
+        | "wholesaler_adjustment"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2734,6 +2891,13 @@ export const Constants = {
         "approved",
         "rejected",
         "more_info_needed",
+      ],
+      trade_payment_method: [
+        "cash",
+        "upi_qr",
+        "bank_transfer",
+        "wholesaler_adjustment",
+        "other",
       ],
     },
   },

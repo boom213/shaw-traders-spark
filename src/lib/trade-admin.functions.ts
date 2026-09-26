@@ -294,50 +294,41 @@ export const setTradeTerms = createServerFn({ method: "POST" })
 
 /** Record an invoice, a payment received or an adjustment. */
 export const addLedgerEntry = createServerFn({ method: "POST" })
-  .inputValidator((data: { profileId: string; kind: "invoice" | "payment" | "adjustment"; amount: number; note?: string; dueDate?: string }) => ({
+  .inputValidator((data: { profileId: string; kind: "invoice" | "payment" | "adjustment"; amount: number; note?: string; dueDate?: string; method?: string; reference?: string; receivedOn?: string; vendorId?: string }) => ({
     profileId: text(data?.profileId, 40),
     kind: (["invoice", "payment", "adjustment"] as const).includes(data?.kind as never) ? data.kind : "payment",
     amount: Math.round((Number(data?.amount) || 0) * 100) / 100,
     note: text(data?.note, 200),
     dueDate: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.dueDate)) ? String(data?.dueDate) : null,
+    method: (["cash", "upi_qr", "bank_transfer", "wholesaler_adjustment", "other"] as const).includes(data?.method as never) ? data.method as "cash" | "upi_qr" | "bank_transfer" | "wholesaler_adjustment" | "other" : "other",
+    reference: text(data?.reference, 160),
+    receivedOn: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.receivedOn)) ? String(data?.receivedOn) : new Date().toISOString().slice(0, 10),
+    vendorId: text(data?.vendorId, 40) || null,
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const actor = await requireStaff({ capability: "trade" });
-    if (data.amount <= 0) return { ok: false as const, error: "Enter an amount." };
+    if (data.kind !== "adjustment" && data.amount <= 0) return { ok: false as const, error: "Enter an amount." };
+    if (data.kind === "adjustment" && data.amount === 0) return { ok: false as const, error: "Adjustment cannot be zero." };
+    if (["upi_qr", "bank_transfer", "wholesaler_adjustment"].includes(data.method) && !data.reference && !data.note) return { ok: false as const, error: "Add a reference or explanation." };
+    if (data.vendorId && (data.kind !== "payment" || data.method !== "upi_qr")) return { ok: false as const, error: "Vendor linking is only available for UPI QR payments." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("trade_ledger").insert({
-      profile_id: data.profileId,
-      kind: data.kind,
-      amount: data.amount,
-      note: data.note || null,
-      due_date: data.dueDate,
-      created_by: actor.name,
+    const { data: inserted, error } = await supabaseAdmin.rpc("record_trade_ledger_entry", {
+      p_profile_id: data.profileId, p_kind: data.kind, p_amount: data.amount, p_method: data.method,
+      p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_due_date: data.dueDate,
+      p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email, p_vendor_id: data.vendorId,
     } as never);
     if (error) return { ok: false as const, error: error.message };
 
-    // A payment settles the oldest unsettled invoices first.
-    if (data.kind === "payment") {
-      let left = data.amount;
-      const { data: invoices } = await supabaseAdmin
-        .from("trade_ledger")
-        .select("id, amount")
-        .eq("profile_id", data.profileId)
-        .eq("kind", "invoice")
-        .eq("settled", false)
-        .order("created_at", { ascending: true });
-      for (const inv of invoices ?? []) {
-        if (left < Number(inv.amount)) break;
-        left -= Number(inv.amount);
-        await supabaseAdmin.from("trade_ledger").update({ settled: true } as never).eq("id", inv.id);
-      }
-    }
-
     await logAudit(supabaseAdmin as never, actor, `trade.ledger.${data.kind}`, "trade_ledger", data.profileId, {
       amount: data.amount,
+      method: data.method,
+      reference: data.reference,
+      receivedOn: data.receivedOn,
+      vendorId: data.vendorId,
       note: data.note,
     });
-    return { ok: true as const };
+    return { ok: true as const, ledgerId: Array.isArray(inserted) ? inserted[0]?.ledger_id : null };
   });
 
 export type OutstandingRow = {
