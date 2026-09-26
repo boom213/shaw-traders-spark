@@ -12,7 +12,7 @@
 - All Products is Staff-read-only; Manager+ edits products/brands through catalogue-protected routes.
 - Keep wholesale receipts auditable and reporting totals non-overlapping.
 - Counter-sale Vendor QR is optional; selecting one atomically links its vendor payment.
-- Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
+- Keep saved addresses customer-controlled; checkout snapshots the chosen address and never silently overwrites the address book.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
 - Keep one A4 invoice; use snapshot then catalogue photos, 5s fetch timeouts, and bundled WebP conversion.
