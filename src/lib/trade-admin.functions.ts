@@ -343,46 +343,31 @@ export type OutstandingRow = {
 };
 
 /** Who owes money, oldest unpaid invoice first. */
-export const outstandingReport = createServerFn({ method: "POST" }).handler(async (): Promise<OutstandingRow[]> => {
-  const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff({ capability: "trade" });
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { tradeBalance } = await import("@/lib/trade.server");
-
-  const { data: profiles } = await supabaseAdmin
-    .from("profiles")
-    .select("id, full_name, phone, credit_limit")
-    .eq("customer_type", "trade")
-    .limit(500);
-
-  const rows = await Promise.all(
-    (profiles ?? []).map(async (p) => {
-      const credit = await tradeBalance(p.id);
-      const { data: oldest } = await supabaseAdmin
-        .from("trade_ledger")
-        .select("due_date")
-        .eq("profile_id", p.id)
-        .eq("kind", "invoice")
-        .eq("settled", false)
-        .order("due_date", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      return {
-        profileId: p.id,
-        name: String(p.full_name ?? "Trade customer"),
-        phone: p.phone,
-        balance: credit.balance,
-        creditLimit: Number(p.credit_limit ?? 0),
-        oldestDue: oldest?.due_date ?? null,
-        overdue: credit.overdue,
-      };
-    }),
-  );
-
-  return rows
-    .filter((r) => r.balance > 0)
-    .sort((a, b) => (a.oldestDue ?? "9999").localeCompare(b.oldestDue ?? "9999"));
-});
+export const outstandingReport = createServerFn({ method: "POST" })
+  .inputValidator((data: { page?: number; pageSize?: number } | undefined) => ({
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: Math.min(100, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
+  }))
+  .handler(async ({ data }): Promise<{ items: OutstandingRow[]; total: number }> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "trade" });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows, error } = await supabaseAdmin.rpc("manager_trade_outstanding_page", {
+      p_offset: data.page * data.pageSize,
+      p_limit: data.pageSize,
+    });
+    if (error) throw new Error(error.message);
+    const items = (rows ?? []).map((row): OutstandingRow => ({
+      profileId: String(row.profile_id),
+      name: String(row.name ?? "Trade customer"),
+      phone: row.phone,
+      balance: Number(row.balance ?? 0),
+      creditLimit: Number(row.credit_limit ?? 0),
+      oldestDue: row.oldest_due,
+      overdue: Boolean(row.overdue),
+    }));
+    return { items, total: Number(rows?.[0]?.total_count ?? 0) };
+  });
 
 /** Set a tier as a percentage off retail for a whole category, in one go. */
 export const applyCategoryDiscount = createServerFn({ method: "POST" })

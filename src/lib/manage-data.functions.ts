@@ -72,23 +72,32 @@ async function adminAs(capability: "operations" | "catalogue" | "reports" | "set
 }
 
 export const manageOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim() }))
-  .handler(async ({ data }): Promise<ManageOrder[]> => {
+  .inputValidator((data: { q?: string; page?: number; pageSize?: number } | undefined) => ({
+    q: String(data?.q ?? "").trim(),
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: Math.min(100, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
+  }))
+  .handler(async ({ data }): Promise<{ items: ManageOrder[]; total: number }> => {
     const sb = await admin();
-    let query = sb
+    const { data: pageRows, error: pageError } = await sb.rpc("manage_order_page", {
+      p_query: data.q,
+      p_offset: data.page * data.pageSize,
+      p_limit: data.pageSize,
+    });
+    if (pageError) throw new Error(pageError.message);
+    const ids = (pageRows ?? []).map((row) => String(row.order_id));
+    if (ids.length === 0) return { items: [], total: 0 };
+    const { data: rows, error } = await sb
       .from("orders")
-      .select(
-        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)",
-      )
-      .order("placed_at", { ascending: false })
-      .limit(300);
-    if (data.q) {
-      const t = data.q.replace(/[%,()]/g, " ");
-      query = query.or(`human_id.ilike.%${t}%,contact_phone.ilike.%${t}%,address->>name.ilike.%${t}%`);
-    }
-    const { data: rows, error } = await query;
+      .select("id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)")
+      .in("id", ids);
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(mapManageOrder);
+    const byId = new Map((rows ?? []).map((row) => [String(row.id), row]));
+    const items = ids.flatMap((id) => {
+      const row = byId.get(id);
+      return row ? [mapManageOrder(row)] : [];
+    });
+    return { items, total: Number(pageRows?.[0]?.total_count ?? 0) };
   });
 
 export const setOrderStatus = createServerFn({ method: "POST" })

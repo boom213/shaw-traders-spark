@@ -173,7 +173,7 @@ export const searchSuggest = createServerFn({ method: "GET" })
 export const vehicleTree = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ brand: string; models: string[] }[]> => {
     const sb = publicClient();
-    const { data } = await sb.from("product_compatibility").select("vehicle_model").limit(5000);
+    const { data } = await sb.from("product_compatibility").select("vehicle_model").order("id", { ascending: true }).limit(5000);
     const tree = new Map<string, Set<string>>();
     for (const row of (data ?? []) as { vehicle_model: string }[]) {
       const model = String(row.vehicle_model ?? "").trim();
@@ -193,8 +193,8 @@ export const listFacets = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ brands: string[]; voltages: string[]; ahs: string[]; models: string[] }> => {
     const sb = publicClient();
     const [{ data: prods }, { data: compat }] = await Promise.all([
-      sb.from("products").select("brand, voltage, ah").eq("status", "visible").eq("product_kind", "part").limit(3000),
-      sb.from("product_compatibility").select("vehicle_model").limit(3000),
+      sb.from("products").select("brand, voltage, ah").eq("status", "visible").eq("product_kind", "part").order("id", { ascending: true }).limit(3000),
+      sb.from("product_compatibility").select("vehicle_model").order("id", { ascending: true }).limit(3000),
     ]);
     const brands = new Set<string>();
     const voltages = new Set<string>();
