@@ -48,6 +48,7 @@ import { Route as ManageEnquiriesRouteImport } from './routes/manage.enquiries'
 import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
+import { Route as ManagePaymentReportsRouteImport } from './routes/manage.payment-reports'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
@@ -270,6 +271,11 @@ const ManageOrdersRoute = ManageOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManagePaymentReportsRoute = ManagePaymentReportsRouteImport.update({
+  id: '/payment-reports',
+  path: '/payment-reports',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageReviewsRoute = ManageReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
@@ -447,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -512,6 +519,7 @@ export interface FileRoutesByTo {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -580,6 +588,7 @@ export interface FileRoutesById {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRoute
+  '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -649,6 +658,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -714,6 +724,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -781,6 +792,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -1129,6 +1141,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageOrdersRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/payment-reports': {
+      id: '/manage/payment-reports'
+      path: '/payment-reports'
+      fullPath: '/manage/payment-reports'
+      preLoaderRoute: typeof ManagePaymentReportsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/reviews': {
       id: '/manage/reviews'
       path: '/reviews'
@@ -1341,6 +1360,7 @@ interface ManageRouteChildren {
   ManageHomeRoute: typeof ManageHomeRoute
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRoute
+  ManagePaymentReportsRoute: typeof ManagePaymentReportsRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
   ManageScootersRoute: typeof ManageScootersRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
@@ -1365,6 +1385,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageHomeRoute: ManageHomeRoute,
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRoute,
+  ManagePaymentReportsRoute: ManagePaymentReportsRoute,
   ManageReviewsRoute: ManageReviewsRoute,
   ManageScootersRoute: ManageScootersRoute,
   ManageSettingsRoute: ManageSettingsRoute,
