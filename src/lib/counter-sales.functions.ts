@@ -139,7 +139,18 @@ export const listCounterSales = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ items: CounterSale[]; total: number }> => {
     const { sb } = await counterAdmin();
     let query = sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at, orders!inner(human_id), profiles!inner(full_name, phone)", { count: "exact" }).order("created_at", { ascending: false });
-    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`human_id.ilike.%${term}%`, { referencedTable: "orders" }).or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`, { referencedTable: "profiles" }); }
+    if (data.q) {
+      const term = data.q.replace(/[%,()]/g, " ");
+      const [{ data: matchingOrders }, { data: matchingProfiles }] = await Promise.all([
+        sb.from("orders").select("id").ilike("human_id", `%${term}%`).limit(100),
+        sb.from("profiles").select("id").or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100),
+      ]);
+      const orderIds = (matchingOrders ?? []).map((row) => String(row.id));
+      const profileIds = (matchingProfiles ?? []).map((row) => String(row.id));
+      const filters = [...(orderIds.length ? [`order_id.in.(${orderIds.join(",")})`] : []), ...(profileIds.length ? [`profile_id.in.(${profileIds.join(",")})`] : [])];
+      if (filters.length === 0) return { items: [], total: 0 };
+      query = query.or(filters.join(","));
+    }
     const { data: rows, error, count } = await query.range(data.page * 8, data.page * 8 + 7);
     if (error) throw new Error(error.message);
     const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
