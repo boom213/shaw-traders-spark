@@ -11,7 +11,7 @@ Implement all four items from the accounting brief: automatically release abando
 - Harden payment confirmation in the database: lock the order, refuse to turn a cancelled or stock-released order back into a paid order, and append the manual-review event exactly once when a late payment arrives.
 - Update both Razorpay confirmation paths to respect the database result, avoid sending a normal order-confirmed notification for a released order, and give the checkout flow an honest manual-review response.
 - Notify customers when an unpaid reservation is auto-cancelled and stock is released, using the existing notification system with duplicate protection.
-- Register one production schedule at `*/15 * * * *`, using the stable app URL and the existing secured cron authentication. This is 96 checks per day and keeps the effective release window near 30–45 minutes.
+- Enable the database scheduling/network extensions, then register one production schedule at `*/15 * * * *`, using the stable app URL and the existing secured cron authentication. These extensions are not currently enabled. This is 96 checks per day and keeps the effective release window near 30–45 minutes.
 
 ### 2. Make wholesale payment entries auditable
 - Add a constrained payment-method field to `trade_ledger`: cash, UPI QR, bank transfer, wholesaler adjustment, or other; existing rows become `other`.
