@@ -16,7 +16,7 @@ import {
   type UpdateCatalogueProductInput,
 } from "@/lib/catalogue-admin.functions";
 import { uploadProductPhoto } from "@/lib/photo-upload";
-import { categoriesQuery } from "@/lib/queries";
+import { categoriesQuery, productBrandsQuery } from "@/lib/queries";
 
 export const Route = createFileRoute("/manage/products/$productId")({
   head: () => ({
@@ -83,6 +83,7 @@ function initialForm(product: CatalogueProductDetail): FormState {
 function ProductEditorPage() {
   const { productId } = Route.useParams();
   const { data: categories } = useQuery(categoriesQuery());
+  const { data: brands = [] } = useQuery(productBrandsQuery());
   const { data, isPending } = useQuery({
     queryKey: ["catalogue-product", productId],
     queryFn: () => getCatalogueProduct({ data: { id: productId } }),
@@ -90,10 +91,10 @@ function ProductEditorPage() {
 
   if (isPending) return <div className="h-96 animate-pulse rounded-lg bg-muted" />;
   if (!data?.ok) return <div className="rounded-lg border border-border p-8 text-center"><p className="text-sm text-muted-foreground">{data?.error ?? "Product not found."}</p><Button asChild variant="outline" className="mt-4"><Link to="/manage/all-products">Back to All Products</Link></Button></div>;
-  return <ProductEditor key={data.product.id} product={data.product} categories={categories ?? []} />;
+  return <ProductEditor key={data.product.id} product={data.product} categories={categories ?? []} brands={brands} />;
 }
 
-function ProductEditor({ product, categories }: { product: CatalogueProductDetail; categories: { slug: string; name: string }[] }) {
+function ProductEditor({ product, categories, brands }: { product: CatalogueProductDetail; categories: { slug: string; name: string }[]; brands: { id: string; name: string }[] }) {
   const queryClient = useQueryClient();
   const saveProduct = useServerFn(updateCatalogueProduct);
   const saveImages = useServerFn(setProductImages);
@@ -191,7 +192,7 @@ function ProductEditor({ product, categories }: { product: CatalogueProductDetai
         <Field label="Product URL"><Input required value={form.slug} onChange={(event) => set("slug", event.target.value)} /></Field>
         <Field label="Category"><select required value={form.category} onChange={(event) => set("category", event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">Choose category</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></Field>
         <Field label="Subcategory"><Input value={form.subcategory} onChange={(event) => set("subcategory", event.target.value)} /></Field>
-        <Field label="Brand"><Input value={form.brand} onChange={(event) => set("brand", event.target.value)} /></Field>
+        <Field label="Brand"><select value={form.brand} onChange={(event) => set("brand", event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">No brand</option>{brands.map((brand) => <option key={brand.id} value={brand.name}>{brand.name}</option>)}</select></Field>
         <Field label="Model"><Input value={form.model} onChange={(event) => set("model", event.target.value)} /></Field>
         <Field label="HSN code"><Input value={form.hsnCode} onChange={(event) => set("hsnCode", event.target.value)} /></Field>
       </Section>

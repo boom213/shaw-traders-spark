@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep All Products read-only for Staff; Manager and higher may open its dedicated full editor through catalogue-protected routes.
+- Keep All Products read-only for Staff; Manager+ may edit products and managed brand dropdown values through catalogue-protected routes.
 - Model wholesale sales and vendor payouts as atomic, auditable records with immutable prices and staff attribution.
 - Treat counter-sale Vendor QR selection as display-only; vendor payouts are recorded separately to avoid accidental accounting links.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
