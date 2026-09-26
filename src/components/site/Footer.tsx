@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Phone } from "lucide-react";
-import { BUSINESS } from "@/lib/catalog";
+import { MapPin, MessageCircle, Phone } from "lucide-react";
+import { BUSINESS, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 import { reopenConsent } from "@/components/site/CookieConsent";
@@ -27,6 +27,15 @@ export function Footer() {
           </p>
           <a href={`tel:${BUSINESS.phone}`} className="mt-2 flex items-center gap-2 text-sm font-medium hover:text-primary">
             <Phone className="size-4" /> {BUSINESS.phone}
+          </a>
+          <a
+            href={whatsappLink(`Hello ${BUSINESS.name}, I would like to enquire about EV parts.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-2 rounded-md bg-whatsapp px-3 py-2 text-sm font-semibold text-whatsapp-foreground transition-opacity hover:opacity-90"
+          >
+            <MessageCircle className="size-4" />
+            Contact us on WhatsApp
           </a>
           {settings?.supportEmail && (
             <a href={`mailto:${settings.supportEmail}`} className="mt-2 block text-sm text-muted-foreground hover:text-foreground">
