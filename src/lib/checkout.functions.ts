@@ -90,6 +90,10 @@ export const startCheckout = createServerFn({ method: "POST" })
       return { error: "Enter a valid 10-digit alternate mobile number." };
     }
 
+    const { currentUserId } = await import("@/lib/auth.server");
+    const userId = await currentUserId();
+    if (!userId) return { error: "Please sign in to place an order." };
+
     const { publicClient } = await import("@/lib/supabase-public.server");
 
     // The shop may have switched off online ordering — never trust the browser for this.
@@ -118,11 +122,6 @@ export const startCheckout = createServerFn({ method: "POST" })
     }
 
 
-    // The signed-in customer is resolved here; their price tier is read from the
-    // database inside create_order, never taken from the browser.
-    const { currentUserId } = await import("@/lib/auth.server");
-    const userId = await currentUserId();
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin.rpc("create_order", {
       p_items: data.items as never,
@@ -130,7 +129,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       p_payment_method: data.paymentMethod,
       p_shipping_code: data.shippingCode,
       p_coupon_code: data.coupon ?? undefined,
-      p_profile_id: userId ?? undefined,
+      p_profile_id: userId,
       p_transport_name: data.transportName || undefined,
       p_lr_number: data.lrNumber || undefined,
       p_quote_token: data.quoteToken ?? undefined,
@@ -147,28 +146,26 @@ export const startCheckout = createServerFn({ method: "POST" })
       .from("orders")
       .update({ alternate_phone: data.address.alternatePhone || null })
       .eq("id", row.order_id);
-    if (userId) {
-      const { data: savedAddress } = await supabaseAdmin
-        .from("addresses")
-        .select("id")
-        .eq("profile_id", userId)
-        .eq("is_default", true)
-        .maybeSingle();
-      const addressRow = {
-        profile_id: userId,
-        name: data.address.name,
-        phone: data.address.phone,
-        alternate_phone: data.address.alternatePhone || null,
-        line1: data.address.line1,
-        landmark: data.address.landmark || null,
-        city: data.address.city,
-        state: data.address.state,
-        pincode: data.address.pincode,
-        is_default: true,
-      };
-      if (savedAddress) await supabaseAdmin.from("addresses").update(addressRow).eq("id", savedAddress.id);
-      else await supabaseAdmin.from("addresses").insert(addressRow);
-    }
+    const { data: savedAddress } = await supabaseAdmin
+      .from("addresses")
+      .select("id")
+      .eq("profile_id", userId)
+      .eq("is_default", true)
+      .maybeSingle();
+    const addressRow = {
+      profile_id: userId,
+      name: data.address.name,
+      phone: data.address.phone,
+      alternate_phone: data.address.alternatePhone || null,
+      line1: data.address.line1,
+      landmark: data.address.landmark || null,
+      city: data.address.city,
+      state: data.address.state,
+      pincode: data.address.pincode,
+      is_default: true,
+    };
+    if (savedAddress) await supabaseAdmin.from("addresses").update(addressRow).eq("id", savedAddress.id);
+    else await supabaseAdmin.from("addresses").insert(addressRow);
 
     const payLater = data.paymentMethod === "Cash on Delivery" || data.paymentMethod === "Credit (account)";
     if (payLater) {
