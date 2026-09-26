@@ -289,6 +289,10 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
+    const specificationNames = Object.keys(data.specs).map((name) => name.toLocaleLowerCase());
+    if (new Set(specificationNames).size !== specificationNames.length) {
+      return { ok: false as const, error: "Each specification name must be unique." };
+    }
     if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
     if (!data.sku) return { ok: false as const, error: "Enter a product code (SKU)." };
     if (!data.slug) return { ok: false as const, error: "Enter a valid product URL slug." };
