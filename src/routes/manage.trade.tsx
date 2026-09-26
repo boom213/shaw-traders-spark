@@ -38,13 +38,19 @@ function TradeAdmin() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string>("pending");
   const [page, setPage] = useState(0);
+  const [outstandingPage, setOutstandingPage] = useState(0);
   const { data: applications, isPending, isFetching } = useQuery({
     queryKey: ["trade-applications", filter, page],
     queryFn: () => listTradeApplications({ data: { status: filter, page } }),
     placeholderData: (previous) => previous,
     ...MANAGE_QUERY_OPTIONS,
   });
-  const { data: outstanding } = useQuery({ queryKey: ["trade-outstanding"], queryFn: () => outstandingReport() });
+  const { data: outstanding, isFetching: outstandingFetching } = useQuery({
+    queryKey: ["trade-outstanding", outstandingPage],
+    queryFn: () => outstandingReport({ data: { page: outstandingPage } }),
+    placeholderData: (previous) => previous,
+    ...MANAGE_QUERY_OPTIONS,
+  });
 
   const refresh = async () => {
     await qc.invalidateQueries({ queryKey: ["trade-applications"] });
@@ -81,7 +87,7 @@ function TradeAdmin() {
 
       <section className="space-y-3">
         <h2 className="font-display text-xl font-semibold">Money owed</h2>
-        {(outstanding ?? []).length === 0 ? (
+        {(outstanding?.items ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nobody owes anything at the moment.
           </p>
@@ -99,7 +105,7 @@ function TradeAdmin() {
                 </tr>
               </thead>
               <tbody>
-                {(outstanding ?? []).map((r) => (
+                {(outstanding?.items ?? []).map((r) => (
                   <tr key={r.profileId} className={`border-t border-border ${r.overdue ? "bg-destructive/5" : ""}`}>
                     <td className="px-3 py-2">
                       {r.name}
@@ -115,6 +121,7 @@ function TradeAdmin() {
             </table>
           </div>
         )}
+        <ListPager page={outstandingPage} total={outstanding?.total ?? 0} busy={outstandingFetching} onPage={setOutstandingPage} />
       </section>
     </div>
   );
