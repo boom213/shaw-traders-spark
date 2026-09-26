@@ -52,3 +52,4 @@
 - [x] Paginate manager orders and trade balances, stabilize capped catalogue reads, and consolidate Owner-only Site Settings.
 - [x] Hide Find Parts from the public storefront while retaining direct staff access.
 - [x] Add current-password-verified password changes for email-based customer accounts.
+- [x] Add customer-managed saved addresses and an explicit saved-address checkout picker.
