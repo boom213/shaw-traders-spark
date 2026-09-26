@@ -14,6 +14,7 @@ export type InvoiceItem = {
   price: number;
   productId?: string | null;
   image?: string | null;
+  fallbackImage?: string | null;
   rackLocation?: string | null;
 };
 
@@ -146,18 +147,21 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   const bold = await pdf.embedFont(bytesFromDataUrl(boldFontUrl), { subset: true });
   const logo = await pdf.embedPng(bytesFromDataUrl(invoiceLogoUrl));
   const thumbnails = await Promise.all(document.items.map(async (item) => {
-    if (!document.staffCopy || !item.image) return null;
-    try {
-      const payload = await loadImagePayload(item.image);
-      if (!payload) return null;
-      const type = imageType(payload.bytes, payload.type);
-      if (type === "png") return await pdf.embedPng(payload.bytes);
-      if (type === "jpeg") return await pdf.embedJpg(payload.bytes);
-      if (type === "webp") return await pdf.embedPng(await pngBytesFromWebp(payload.bytes));
-      return null;
-    } catch {
-      return null;
+    if (!document.staffCopy) return null;
+    const candidates = [...new Set([item.image, item.fallbackImage].filter((source): source is string => Boolean(source)))];
+    for (const source of candidates) {
+      try {
+        const payload = await loadImagePayload(source);
+        if (!payload) continue;
+        const type = imageType(payload.bytes, payload.type);
+        if (type === "png") return await pdf.embedPng(payload.bytes);
+        if (type === "jpeg") return await pdf.embedJpg(payload.bytes);
+        if (type === "webp") return await pdf.embedPng(await pngBytesFromWebp(payload.bytes));
+      } catch {
+        // An old order snapshot may have expired; try the current catalogue photo.
+      }
     }
+    return null;
   }));
   const dateText = new Date(document.placedAt).toLocaleString("en-IN");
   const gstin = clean(document.business.gstin) || clean(document.gstin);
@@ -383,6 +387,7 @@ export async function invoicePdfBase64(orderId: string, staffCopy = false): Prom
         price: Number(item["price_snapshot"] ?? 0),
         productId: clean(item["product_id"]) || null,
         image: staffCopy ? clean(item["image_snapshot"]) || clean(images[0]?.["url"]) || null : null,
+        fallbackImage: staffCopy && clean(item["image_snapshot"]) ? clean(images[0]?.["url"]) || null : null,
         rackLocation: staffCopy ? clean(product?.["rack_location"]) || null : null,
       };
     }),
