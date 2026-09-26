@@ -84,7 +84,7 @@ export const renameProductBrand = createServerFn({ method: "POST" })
 async function validManagedBrand(sb: Awaited<ReturnType<typeof adminAs>>["sb"], name: string): Promise<string | null | false> {
   const value = name.trim();
   if (!value) return null;
-  const { data } = await sb.from("product_brands").select("name").ilike("name", value).maybeSingle();
+  const { data } = await sb.from("product_brands").select("name").eq("name", value).maybeSingle();
   return data?.name ?? false;
 }
 
