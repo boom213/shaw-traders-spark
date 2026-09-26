@@ -106,6 +106,7 @@ function EnquiryCard({ enquiry: e, onMove }: { enquiry: Item; onMove: (id: strin
       </p>
       <p className="mt-2 text-sm">
         {e.name} · {e.phone}
+        {e.alternatePhone ? ` · Alt: ${e.alternatePhone}` : ""}
         {e.vehicle ? ` · ${e.vehicle}` : ""}
       </p>
       {e.note && <p className="mt-1 text-sm text-muted-foreground">“{e.note}”</p>}

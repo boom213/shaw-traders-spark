@@ -185,7 +185,7 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
             )}
           </h3>
           <p className="text-sm text-muted-foreground">
-            {app.contactPerson} · {app.phone} · {app.status}
+            {app.contactPerson} · {app.phone}{app.alternatePhone ? ` · Alt: ${app.alternatePhone}` : ""} · {app.status}
           </p>
           <p className="text-sm text-muted-foreground">{app.shopAddress}</p>
           <p className="text-xs text-muted-foreground">GSTIN {app.gstin ?? "—"} · PAN {app.pan ?? "—"}</p>

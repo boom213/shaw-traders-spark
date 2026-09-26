@@ -85,7 +85,7 @@ function ManageBookings() {
                 <div>
                   <p className="font-semibold">{b.humanId} · {b.modelName}{b.colour ? ` · ${b.colour}` : ""}</p>
                   <p className="text-xs text-muted-foreground">
-                    {b.customerName} · {b.phone} · token {formatINR(b.tokenAmount)} {b.paymentStatus === "paid" ? "paid" : "unpaid"} · balance {formatINR(b.balanceDue)}
+                    {b.customerName} · {b.phone}{b.alternatePhone ? ` · Alt: ${b.alternatePhone}` : ""} · token {formatINR(b.tokenAmount)} {b.paymentStatus === "paid" ? "paid" : "unpaid"} · balance {formatINR(b.balanceDue)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ function ManageBookings() {
           {(leads ?? []).map((l) => (
             <div key={l.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
               <div>
-                <p className="font-semibold">{l.name} · {l.phone}{l.model ? ` · ${l.model}` : ""}</p>
+                <p className="font-semibold">{l.name} · {l.phone}{l.alternatePhone ? ` · Alt: ${l.alternatePhone}` : ""}{l.model ? ` · ${l.model}` : ""}</p>
                 <p className="text-xs text-muted-foreground">{l.detail}</p>
               </div>
               <div className="flex items-center gap-2">

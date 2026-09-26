@@ -173,7 +173,8 @@ function ManageOrders() {
             <div>
               <p className="font-display text-lg font-bold">{o.humanId}</p>
               <p className="text-sm text-muted-foreground">
-                {new Date(o.placedAt).toLocaleString("en-IN")} · {o.address['name']} · {o.address['phone']}
+                 {new Date(o.placedAt).toLocaleString("en-IN")} · {o.address['name']} · {o.address['phone']}
+                 {o.alternatePhone ? ` · Alt: ${o.alternatePhone}` : ""}
               </p>
               <p className="text-sm text-muted-foreground">
                 {o.address['line1']}, {o.address['city']}, {o.address['state']} – {o.address['pincode']}

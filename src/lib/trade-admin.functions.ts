@@ -9,6 +9,7 @@ export type TradeApplicationRow = {
   shopAddress: string;
   contactPerson: string;
   phone: string;
+  alternatePhone: string | null;
   status: string;
   decisionNote: string | null;
   reviewer: string | null;
@@ -74,6 +75,7 @@ export const listTradeApplications = createServerFn({ method: "POST" })
           shopAddress: String(r.shop_address),
           contactPerson: String(r.contact_person),
           phone: String(r.phone),
+          alternatePhone: r.alternate_phone,
           status: String(r.status),
           decisionNote: r.decision_note,
           reviewer: r.reviewer,

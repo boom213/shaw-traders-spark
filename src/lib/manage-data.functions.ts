@@ -13,6 +13,7 @@ export type ManageOrder = {
   paymentStatus: string;
   shippingMethod: string | null;
   address: Record<string, string>;
+  alternatePhone: string | null;
   placedAt: string;
   items: { name: string; qty: number; price: number | null; rackLocation: string | null; image: string | null }[];
   courierName: string | null;
@@ -32,6 +33,7 @@ const mapManageOrder = (row: Row): ManageOrder => ({
   paymentStatus: String(row['payment_status']),
   shippingMethod: row['shipping_method'] ?? null,
   address: (row['address'] ?? {}) as Record<string, string>,
+  alternatePhone: row['alternate_phone'] ?? null,
   placedAt: String(row['placed_at']),
   items: ((row['order_items'] ?? []) as Row[]).map((i) => ({
     name: String(i['name_snapshot']),
@@ -76,7 +78,7 @@ export const manageOrders = createServerFn({ method: "POST" })
     let query = sb
       .from("orders")
       .select(
-        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)",
+        "id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)",
       )
       .order("placed_at", { ascending: false })
       .limit(300);
