@@ -76,6 +76,7 @@ function CheckoutPage() {
   const [addr, setAddr] = useState({
     name: "",
     phone: "",
+    alternatePhone: "",
     line1: "",
     landmark: "",
     city: "",
@@ -282,7 +283,10 @@ function CheckoutPage() {
               <h3 className="font-display text-base font-bold">Delivery address</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 <F label="Full name" v={addr.name} on={(v) => setAddr({ ...addr, name: v })} />
-                <F label="Phone number" v={addr.phone} on={(v) => setAddr({ ...addr, phone: v })} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <F label="Phone number" v={addr.phone} on={(v) => setAddr({ ...addr, phone: v })} numeric />
+                <F label="Alternate Number (optional)" v={addr.alternatePhone} on={(v) => setAddr({ ...addr, alternatePhone: v })} numeric />
               </div>
               <F label="House no., street, area" v={addr.line1} on={(v) => setAddr({ ...addr, line1: v })} />
               <div className="grid gap-3 sm:grid-cols-2">
@@ -299,6 +303,7 @@ function CheckoutPage() {
                   if (!addr.name.trim() || !/^\d{10}$/.test(addr.phone.trim()) || !addr.line1.trim() || !/^\d{6}$/.test(addr.pincode.trim())) {
                     return toast.error("Please add name, a 10-digit phone, address and a 6-digit PIN code");
                   }
+                  if (addr.alternatePhone && !/^[6-9]\d{9}$/.test(addr.alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
                   setStep(2);
                 }}
               >
@@ -492,12 +497,12 @@ function CheckoutPage() {
   );
 }
 
-function F({ label, v, on }: { label: string; v: string; on: (s: string) => void }) {
+function F({ label, v, on, numeric = false }: { label: string; v: string; on: (s: string) => void; numeric?: boolean }) {
   const id = useId();
   return (
     <div className="grid gap-1.5">
       <Label htmlFor={id} className="text-xs">{label}</Label>
-      <Input id={id} value={v} onChange={(e) => on(e.target.value)} />
+      <Input id={id} inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 10 : undefined} value={v} onChange={(e) => on(numeric ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value)} />
     </div>
   );
 }

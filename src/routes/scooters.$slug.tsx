@@ -86,7 +86,7 @@ function localDateInputValue(date = new Date()) {
 }
 
 function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; colours: string[]; tokenAmount: number; modelName: string }) {
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "", colour: colours[0] ?? "" });
+  const [form, setForm] = useState({ name: "", phone: "", alternatePhone: "", email: "", address: "", colour: colours[0] ?? "" });
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
@@ -141,7 +141,11 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
       </div>
       <div className="grid gap-2">
         <Label htmlFor="bk-phone">Mobile number</Label>
-        <Input id="bk-phone" inputMode="numeric" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <Input id="bk-phone" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="bk-alt-phone">Alternate Number (optional)</Label>
+        <Input id="bk-alt-phone" inputMode="numeric" maxLength={10} value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="bk-email">Email (for the receipt, optional)</Label>
@@ -174,7 +178,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
 }
 
 function TestRideForm({ slug }: { slug: string }) {
-  const [f, setF] = useState({ name: "", phone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, note: "" });
+  const [f, setF] = useState({ name: "", phone: "", alternatePhone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, note: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [minimumDate, setMinimumDate] = useState("");
   useEffect(() => setMinimumDate(localDateInputValue()), []);
@@ -182,7 +186,10 @@ function TestRideForm({ slug }: { slug: string }) {
     <div className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
       <h3 className="font-display text-lg font-bold">Book a test ride</h3>
       <Input placeholder="Your name" aria-label="Your name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-      <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+        <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={f.alternatePhone} onChange={(e) => setF({ ...f, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+      </div>
       <Input
         type="date"
         aria-label="Preferred date"
@@ -208,7 +215,7 @@ function TestRideForm({ slug }: { slug: string }) {
 }
 
 function FinanceForm({ slug, onRoad }: { slug: string; onRoad: number }) {
-  const [f, setF] = useState({ name: "", phone: "", downPayment: "", tenureMonths: "24", monthlyIncome: "", employment: "" });
+  const [f, setF] = useState({ name: "", phone: "", alternatePhone: "", downPayment: "", tenureMonths: "24", monthlyIncome: "", employment: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const principal = Math.max(0, onRoad - (Number(f.downPayment) || 0));
   const monthly = emi(principal, 12, Number(f.tenureMonths) || 24);
@@ -220,7 +227,10 @@ function FinanceForm({ slug, onRoad }: { slug: string; onRoad: number }) {
         The lender decides the final rate.
       </p>
       <Input placeholder="Your name" aria-label="Your name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-      <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+        <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={f.alternatePhone} onChange={(e) => setF({ ...f, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+      </div>
       <Input placeholder="Down payment (₹)" aria-label="Down payment" inputMode="numeric" value={f.downPayment} onChange={(e) => setF({ ...f, downPayment: e.target.value })} />
       <Select value={f.tenureMonths} onValueChange={(v) => setF({ ...f, tenureMonths: v })}>
         <SelectTrigger aria-label="Tenure"><SelectValue /></SelectTrigger>
@@ -235,6 +245,7 @@ function FinanceForm({ slug, onRoad }: { slug: string; onRoad: number }) {
               slug,
               name: f.name,
               phone: f.phone,
+              alternatePhone: f.alternatePhone,
               downPayment: Number(f.downPayment) || 0,
               tenureMonths: Number(f.tenureMonths) || 24,
               monthlyIncome: Number(f.monthlyIncome) || 0,

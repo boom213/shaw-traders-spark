@@ -24,6 +24,7 @@ export function EnquiryDialog({
 }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [alternatePhone, setAlternatePhone] = useState("");
   const [qty, setQty] = useState("1");
   const { vehicle: saved } = useVehicle();
   const [vehicle, setVehicle] = useState("");
@@ -32,15 +33,17 @@ export function EnquiryDialog({
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (alternatePhone && !/^[6-9]\d{9}$/.test(alternatePhone.replace(/\D/g, ""))) return toast.error("Enter a valid 10-digit alternate mobile number.");
     setBusy(true);
     const res = await createEnquiry({
-      data: { productId: product.id, name, phone, qty: Number(qty) || 1, note, vehicle: vehicle || saved?.model || "" },
+      data: { productId: product.id, name, phone, alternatePhone, qty: Number(qty) || 1, note, vehicle: vehicle || saved?.model || "" },
     });
     setBusy(false);
     if (!res.ok) return toast.error(res.message);
     toast.success(res.message);
     setName("");
     setPhone("");
+    setAlternatePhone("");
     setQty("1");
     setNote("");
     onOpenChange(false);
@@ -61,6 +64,10 @@ export function EnquiryDialog({
           <div className="grid gap-1.5">
             <Label htmlFor="enq-phone">Mobile number</Label>
             <Input id="enq-phone" inputMode="numeric" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="enq-alt-phone">Alternate Number (optional)</Label>
+            <Input id="enq-alt-phone" inputMode="numeric" maxLength={10} value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value.replace(/\D/g, "").slice(0, 10))} />
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="enq-qty">How many</Label>
