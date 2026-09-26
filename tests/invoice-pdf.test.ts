@@ -92,4 +92,16 @@ describe("invoice PDF", () => {
     expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
     expect(pdf.getPageCount()).toBeGreaterThan(1);
   });
+
+  it("converts WebP product photos for a staff copy", async () => {
+    const webp = "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAAAwAgCdASoIAAYAAUAmJaACdLoB+AH4AAToAAD+rhf/TRRhTH3Jv/uDfZFz/zQAAAA=";
+    const bytes = await createInvoicePdf(invoice({
+      staffCopy: true,
+      items: [{ name: "Uploaded WebP product", qty: 1, price: 12000, productId: "battery", image: webp, rackLocation: "Rack A-1" }],
+    }));
+    await saveQaPdf("staff-invoice-webp.pdf", bytes);
+    const pdf = await PDFDocument.load(bytes);
+    expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
+    expect(pdf.getPageCount()).toBe(1);
+  });
 });

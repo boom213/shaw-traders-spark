@@ -69,6 +69,54 @@ const bytesFromDataUrl = (dataUrl: string) => {
 
 const clean = (value: unknown) => String(value ?? "").trim();
 
+type ImagePayload = { bytes: Uint8Array; type: string };
+
+function imageType(bytes: Uint8Array, suppliedType = "") {
+  const type = suppliedType.toLowerCase();
+  if (type.includes("png") || (bytes[0] === 0x89 && bytes[1] === 0x50)) return "png";
+  if (type.includes("jpeg") || type.includes("jpg") || (bytes[0] === 0xff && bytes[1] === 0xd8)) return "jpeg";
+  if (type.includes("webp") || (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57 && bytes[9] === 0x45)) return "webp";
+  return "";
+}
+
+async function loadImagePayload(source: string): Promise<ImagePayload | null> {
+  if (source.startsWith("data:")) {
+    const match = /^data:([^;,]+)?(?:;base64)?,(.*)$/s.exec(source);
+    if (!match) return null;
+    const encoded = match[2] ?? "";
+    const bytes = source.slice(0, source.indexOf(",")).includes(";base64")
+      ? Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0))
+      : new TextEncoder().encode(decodeURIComponent(encoded));
+    return { bytes, type: match[1] ?? "" };
+  }
+
+  if (source.startsWith("/api/public/photo/")) {
+    const path = source.slice("/api/public/photo/".length).replace(/^\/+/, "");
+    if (!path || path.includes("..") || path.startsWith("review-photos/")) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.storage.from("product-photos").download(path);
+    if (error || !data) return null;
+    return { bytes: new Uint8Array(await data.arrayBuffer()), type: data.type };
+  }
+
+  const origin = String(process.env['PUBLIC_SITE_URL'] ?? "https://shawtradersev.com").replace(/\/+$/, "");
+  const url = source.startsWith("/") ? `${origin}${source}` : source;
+  if (!/^https?:\/\//i.test(url)) return null;
+  const response = await fetch(url);
+  if (!response.ok) return null;
+  return { bytes: new Uint8Array(await response.arrayBuffer()), type: response.headers.get("content-type") ?? "" };
+}
+
+async function pngBytesFromWebp(bytes: Uint8Array) {
+  const { PhotonImage } = await import("@cf-wasm/photon");
+  const image = PhotonImage.new_from_byteslice(bytes);
+  try {
+    return image.get_bytes();
+  } finally {
+    image.free();
+  }
+}
+
 export function billToLines(address: Record<string, unknown>, contactPhone?: string | null) {
   const locality = [clean(address["city"]), clean(address["state"])].filter(Boolean).join(", ");
   const localityWithPin = [locality, clean(address["pincode"])].filter(Boolean).join(" - ");
@@ -100,12 +148,12 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   const thumbnails = await Promise.all(document.items.map(async (item) => {
     if (!document.staffCopy || !item.image) return null;
     try {
-      const response = await fetch(item.image);
-      if (!response.ok) return null;
-      const bytes = new Uint8Array(await response.arrayBuffer());
-      const type = response.headers.get("content-type")?.toLowerCase() ?? "";
-      if (type.includes("png") || (bytes[0] === 0x89 && bytes[1] === 0x50)) return await pdf.embedPng(bytes);
-      if (type.includes("jpeg") || type.includes("jpg") || (bytes[0] === 0xff && bytes[1] === 0xd8)) return await pdf.embedJpg(bytes);
+      const payload = await loadImagePayload(item.image);
+      if (!payload) return null;
+      const type = imageType(payload.bytes, payload.type);
+      if (type === "png") return await pdf.embedPng(payload.bytes);
+      if (type === "jpeg") return await pdf.embedJpg(payload.bytes);
+      if (type === "webp") return await pdf.embedPng(await pngBytesFromWebp(payload.bytes));
       return null;
     } catch {
       return null;
@@ -221,6 +269,9 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
         const width = thumbnail.width * scale;
         const height = thumbnail.height * scale;
         page.drawImage(thumbnail, { x: MARGIN + 7 + (26 - width) / 2, y: rowTop - 31 + (26 - height) / 2, width, height });
+      } else {
+        y = rowTop - 22;
+        text("No photo", MARGIN + 7, 6.5, font, MUTED);
       }
     }
     text(fitText(item.name, font, 8.5, document.staffCopy ? 178 : 260), document.staffCopy ? 86 : MARGIN + 7, 8.5);
@@ -285,7 +336,7 @@ export async function invoicePdfBase64(orderId: string, staffCopy = false): Prom
   const { data: order } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, human_id, placed_at, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, contact_phone, order_items(name_snapshot, qty, price_snapshot, image_snapshot, product_id, products(rack_location))",
+      "id, human_id, placed_at, subtotal, shipping_fee, discount, total, tax_amount, gst_rate, gst_included, gstin, payment_method, payment_status, shipping_method, address, contact_phone, order_items(name_snapshot, qty, price_snapshot, image_snapshot, product_id, products(rack_location, product_images(url, sort_order)))",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -322,14 +373,18 @@ export async function invoicePdfBase64(orderId: string, staffCopy = false): Prom
     address: (source["address"] ?? {}) as Record<string, unknown>,
     contactPhone: clean(source["contact_phone"]) || null,
     staffCopy,
-    items: sourceItems.map((item) => ({
-      name: clean(item["name_snapshot"]),
-      qty: Number(item["qty"] ?? 1),
-      price: Number(item["price_snapshot"] ?? 0),
-      productId: clean(item["product_id"]) || null,
-      image: staffCopy ? clean(item["image_snapshot"]) || null : null,
-      rackLocation: staffCopy ? clean((item["products"] as Row | null)?.["rack_location"]) || null : null,
-    })),
+    items: sourceItems.map((item) => {
+      const product = item["products"] as Row | null;
+      const images = ((product?.["product_images"] ?? []) as Row[]).sort((a, b) => Number(a["sort_order"] ?? 0) - Number(b["sort_order"] ?? 0));
+      return {
+        name: clean(item["name_snapshot"]),
+        qty: Number(item["qty"] ?? 1),
+        price: Number(item["price_snapshot"] ?? 0),
+        productId: clean(item["product_id"]) || null,
+        image: staffCopy ? clean(item["image_snapshot"]) || clean(images[0]?.["url"]) || null : null,
+        rackLocation: staffCopy ? clean(product?.["rack_location"]) || null : null,
+      };
+    }),
     hsnById,
     defaultHsn: String(settings?.default_hsn ?? "8507"),
     business: {
