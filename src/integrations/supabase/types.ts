@@ -1574,6 +1574,7 @@ export type Database = {
           owner_whatsapp: string
           policy_updated_at: string | null
           prices_include_gst: boolean
+          show_showroom_section: boolean
           support_email: string | null
           updated_at: string
         }
@@ -1599,6 +1600,7 @@ export type Database = {
           owner_whatsapp?: string
           policy_updated_at?: string | null
           prices_include_gst?: boolean
+          show_showroom_section?: boolean
           support_email?: string | null
           updated_at?: string
         }
@@ -1624,6 +1626,7 @@ export type Database = {
           owner_whatsapp?: string
           policy_updated_at?: string | null
           prices_include_gst?: boolean
+          show_showroom_section?: boolean
           support_email?: string | null
           updated_at?: string
         }
