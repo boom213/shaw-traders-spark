@@ -271,6 +271,12 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
     slug: String(input?.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 180),
     category: String(input?.category ?? "").trim(),
     brand: String(input?.brand ?? "").trim().slice(0, 120),
+    specs: Object.fromEntries(
+      Object.entries(input?.specs ?? {})
+        .slice(0, 50)
+        .map(([name, value]) => [String(name).trim().slice(0, 120), String(value).trim().slice(0, 500)])
+        .filter(([name, value]) => name && value),
+    ),
     status: ["visible", "draft", "hidden"].includes(String(input?.status)) ? String(input.status) : "draft",
     orderingMode: ["full", "enquiry", "browse"].includes(String(input?.orderingMode)) ? String(input.orderingMode) : "",
     stock: Math.max(0, Math.floor(Number(input?.stock ?? 0))),
