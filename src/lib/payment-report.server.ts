@@ -74,7 +74,9 @@ export async function createPaymentReportPdf(document: PaymentReportDocument) {
     ["Online net", money(document.summary.onlineNet)],
   ];
   const metricWidth = (PAGE_WIDTH - MARGIN * 2 - 16) / 3;
-  metrics.forEach(([label, value], index) => {
+  metrics.forEach((metric, index) => {
+    const label = metric[0] ?? "";
+    const value = metric[1] ?? "";
     const row = Math.floor(index / 3);
     const col = index % 3;
     const top = y - row * 58;
