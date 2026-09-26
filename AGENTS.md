@@ -11,7 +11,7 @@
 
 - Keep All Products read-only for Staff; Manager and higher may open its dedicated full editor through catalogue-protected routes.
 - Model wholesale sales and vendor payouts as atomic, auditable records with immutable prices and staff attribution.
-- Link Vendor QR counter-sale receipts to vendor payouts in one database transaction so neither accounting side can be saved alone.
+- Treat counter-sale Vendor QR selection as display-only; vendor payouts are recorded separately to avoid accidental accounting links.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
