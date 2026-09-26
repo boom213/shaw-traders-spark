@@ -317,7 +317,7 @@ export const addLedgerEntry = createServerFn({ method: "POST" })
       p_profile_id: data.profileId, p_kind: data.kind, p_amount: data.amount, p_method: data.method,
       p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_due_date: data.dueDate,
       p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email, p_vendor_id: data.vendorId,
-    });
+    } as never);
     if (error) return { ok: false as const, error: error.message };
 
     await logAudit(supabaseAdmin as never, actor, `trade.ledger.${data.kind}`, "trade_ledger", data.profileId, {
