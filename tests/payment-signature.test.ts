@@ -1,6 +1,6 @@
 import { createHmac } from "crypto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { verifyCheckoutSignature, verifyWebhookSignature, razorpayKeys } from "@/lib/razorpay.server";
+import { createRazorpayOrder, verifyCheckoutSignature, verifyWebhookSignature, razorpayKeys } from "@/lib/razorpay.server";
 
 const KEY_ID = "rzp_test_keyid123";
 const KEY_SECRET = "test_secret_value_123";
@@ -19,6 +19,12 @@ describe("razorpay key configuration", () => {
     expect(razorpayKeys().configured).toBe(true);
     process.env['RAZORPAY_KEY_SECRET'] = "";
     expect(razorpayKeys().configured).toBe(false);
+  });
+
+  it("rejects orders below Razorpay's minimum before making a request", async () => {
+    await expect(createRazorpayOrder({ amountRupees: 0.99, receipt: "TEST-1" })).resolves.toEqual({
+      error: "Online payment requires a minimum order total of ₹1.",
+    });
   });
 });
 
