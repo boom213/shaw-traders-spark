@@ -49,7 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <article className="card-lift group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <article className="card-lift group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card">
       {user && wishlistReady && (
         <Button
           type="button"

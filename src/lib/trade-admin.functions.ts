@@ -126,12 +126,16 @@ async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext
     const { logAudit } = await import("@/lib/staff.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: app } = await supabaseAdmin
+    const { data: app, error: appError } = await supabaseAdmin
       .from("trade_applications")
-      .select("id, profile_id, business_name")
+      .select("id, profile_id, business_name, status")
       .eq("id", data.id)
       .maybeSingle();
+    if (appError) return { ok: false as const, error: appError.message };
     if (!app) return { ok: false as const, error: "Application not found." };
+    if ((app.status === "approved" || app.status === "rejected") && app.status === data.decision) {
+      return { ok: true as const, alreadyDecided: true as const };
+    }
     if (data.decision !== "approved" && data.note.length < 4) {
       return { ok: false as const, error: "Please say what is missing or why." };
     }
@@ -266,6 +270,17 @@ export const setTradeTerms = createServerFn({ method: "POST" })
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const actor = await requireStaff({ superAdmin: true });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: latestApplication, error: applicationError } = await supabaseAdmin
+      .from("trade_applications")
+      .select("status")
+      .eq("profile_id", data.profileId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (applicationError) return { ok: false as const, error: applicationError.message };
+    if (latestApplication?.status !== "approved") {
+      return { ok: false as const, error: "This account has no approved trade application" };
+    }
     const patch: Record<string, unknown> = {
       credit_limit: data.creditLimit,
       payment_terms_days: data.paymentTermsDays,
