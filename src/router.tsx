@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
+import { RouteError, reportRouteError } from "@/components/site/RouteError";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
@@ -21,7 +22,11 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 30_000,
+    // TanStack Query owns catalogue freshness; router preloads should not add
+    // a second freshness window around the same loader promise.
+    defaultPreloadStaleTime: 0,
+    defaultErrorComponent: RouteError,
+    defaultOnCatch: (error) => reportRouteError(error, "default_on_catch"),
   });
 
   return router;

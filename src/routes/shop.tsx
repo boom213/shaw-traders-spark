@@ -14,7 +14,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { SearchBox } from "@/components/site/SearchBox";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
-import { useVehicle } from "@/hooks/useVehicle";
+import { clearSavedVehicle, useVehicle } from "@/hooks/useVehicle";
 
 type ShopSearch = {
   q?: string;
@@ -179,20 +179,19 @@ function Shop() {
   const navigate = useNavigate({ from: "/shop" });
   const [sheet, setSheet] = useState(false);
   const router = useRouter();
-  const { vehicle, setVehicle } = useVehicle();
+  const { vehicle } = useVehicle();
 
   // The finder passes model/category explicitly. Clear that temporary choice
   // when leaving the shop so it cannot silently return on a later visit.
+  // Keep this cleanup silent while the old product grid is still mounted.
+  // Broadcasting the vehicle change here synchronously updates every card
+  // during React's route transition and can prevent the new route committing.
   useEffect(() => {
     return router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
       if (fromLocation?.pathname !== "/shop" || toLocation.pathname === "/shop") return;
-      setVehicle(null);
-      const previous = new URL(fromLocation.href, window.location.origin);
-      previous.searchParams.delete("model");
-      previous.searchParams.delete("all");
-      window.history.replaceState(window.history.state, "", `${previous.pathname}${previous.search}${previous.hash}`);
+      clearSavedVehicle();
     });
-  }, [router, setVehicle]);
+  }, [router]);
 
   const apply = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch, page: undefined }) });
