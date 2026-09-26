@@ -2646,6 +2646,19 @@ export type Database = {
           total_count: number
         }[]
       }
+      manager_customer_order_summary: {
+        Args: { p_profile_id: string }
+        Returns: Json
+      }
+      manager_dashboard_summary: {
+        Args: {
+          p_month_from: string
+          p_today_from: string
+          p_week_from: string
+        }
+        Returns: Json
+      }
+      manager_product_attention_counts: { Args: never; Returns: Json }
       manager_stats: {
         Args: never
         Returns: {
@@ -2658,6 +2671,14 @@ export type Database = {
           out_of_stock: number
           products: number
           revenue: number
+        }[]
+      }
+      manager_vendor_payment_totals: {
+        Args: { p_month_from: string }
+        Returns: {
+          all_time: number
+          this_month: number
+          vendor_id: string
         }[]
       }
       mark_order_paid: {
