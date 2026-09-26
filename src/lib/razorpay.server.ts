@@ -18,6 +18,11 @@ export async function createRazorpayOrder(input: {
   const { keyId, keySecret, configured } = razorpayKeys();
   if (!configured) return { error: "Online payment is not switched on yet." };
 
+  const amountPaise = Math.round(input.amountRupees * 100);
+  if (!Number.isFinite(amountPaise) || amountPaise < 100) {
+    return { error: "Online payment requires a minimum order total of ₹1." };
+  }
+
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
     headers: {
@@ -25,7 +30,7 @@ export async function createRazorpayOrder(input: {
       authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
     },
     body: JSON.stringify({
-      amount: Math.round(input.amountRupees * 100),
+      amount: amountPaise,
       currency: "INR",
       receipt: input.receipt.slice(0, 40),
       notes: input.notes ?? {},
