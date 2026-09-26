@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Home, SearchCheck, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { useT, type TranslationKey } from "@/lib/i18n";
@@ -8,7 +8,6 @@ import { AccountMenu } from "@/components/site/AccountMenu";
 const base = [
   { to: "/", key: "nav.home" as TranslationKey, icon: Home },
   { to: "/shop", key: "nav.shop" as TranslationKey, shortLabel: "Products", icon: ShoppingBag },
-  { to: "/find-parts", key: "nav.findParts" as TranslationKey, shortLabel: "Find Parts", icon: SearchCheck },
 ] as const;
 
 const cartItem = { to: "/cart", key: "nav.cart" as TranslationKey, icon: ShoppingCart } as const;
@@ -23,7 +22,7 @@ export function MobileTabBar() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Mobile navigation">
-      <ul className={mode === "full" ? "grid grid-cols-5" : "grid grid-cols-4"}>
+      <ul className={mode === "full" ? "grid grid-cols-4" : "grid grid-cols-3"}>
         {items.map((item) => {
           const { to, key, icon: Icon } = item;
           const label = "shortLabel" in item ? item.shortLabel : t(key);

@@ -54,7 +54,6 @@ export function Header() {
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
-                { to: "/find-parts", label: t("nav.findParts") },
                 { to: "/trade", label: "Trade Account" },
                 { to: "/bulk", label: t("nav.bulk") },
                 { to: "/service", label: "Service" },
@@ -152,7 +151,6 @@ export function Header() {
         <div className="container-page flex h-11 items-center justify-center gap-4">
           {[
             { to: "/shop", label: "Shop" },
-            { to: "/find-parts", label: "Find Parts" },
             { to: "/trade", label: "Trade" },
             { to: "/bulk", label: "Bulk Orders" },
             { to: "/service", label: "Service" },

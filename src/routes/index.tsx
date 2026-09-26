@@ -4,7 +4,6 @@ import { ArrowRight, BadgeCheck, Handshake, IndianRupee, MessageCircle, Tags, Tr
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
-import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { LazySection } from "@/components/site/LazySection";
 import { CategoryCarousel } from "@/components/home/CategoryCarousel";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
@@ -262,13 +261,6 @@ function Home() {
         </LazySection>
       )}
 
-
-      <LazySection minHeight="18rem">
-        <section className="container-page py-12 lg:py-16">
-          <SectionHeading title="Find Parts for Your EV" subtitle="Pick your vehicle model and the part category you need." />
-          <FindPartsWidget />
-        </section>
-      </LazySection>
 
       <LazySection minHeight="40rem">
         <SocialProofSection />
