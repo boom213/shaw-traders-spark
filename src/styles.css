@@ -160,6 +160,64 @@
   }
 }
 
+@keyframes spark-ring-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spark-bolt-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@keyframes spark-charge-rise {
+  0% { height: 12%; opacity: 0.65; }
+  55% { height: calc(100% - 0.5rem); opacity: 1; }
+  100% { height: 12%; opacity: 0.65; }
+}
+
+@keyframes spark-charge-drift {
+  0% { opacity: 0; transform: translateY(0) scale(0.65); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-1.25rem) scale(1.15); }
+}
+
+@layer components {
+  .spark-ring > svg:first-child {
+    animation: spark-ring-turn 850ms linear infinite;
+  }
+  .spark-ring-track {
+    stroke: color-mix(in oklch, var(--primary) 20%, var(--muted));
+  }
+  .spark-ring-arc {
+    stroke: var(--primary);
+  }
+  .spark-ring-bolt {
+    color: var(--primary);
+    animation: spark-bolt-pulse 1.2s ease-in-out infinite;
+  }
+  .spark-charge-fill {
+    height: 12%;
+    box-shadow: 0 0 1rem color-mix(in oklch, var(--primary) 38%, transparent);
+    animation: spark-charge-rise 2.1s ease-in-out infinite;
+  }
+  .spark-charge-particle {
+    box-shadow: 0 0 0.5rem color-mix(in oklch, var(--primary) 55%, transparent);
+    animation: spark-charge-drift 1.8s ease-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark-ring > svg:first-child,
+  .spark-ring-bolt,
+  .spark-charge-fill,
+  .spark-charge-particle,
+  .motion-safe-spin {
+    animation: none !important;
+  }
+  .spark-charge-fill { height: 68%; }
+  .spark-charge-particle { opacity: 0.7; }
+}
+
 @layer base {
   body {
     font-family: var(--font-sans);

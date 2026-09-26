@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { useStore } from "@/hooks/useStore";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
@@ -80,7 +81,7 @@ function PadPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={check} disabled={busy || !text.trim()}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : null} Check availability
+          {busy ? <SparkRing /> : null} Check availability
         </Button>
         <label className="text-sm text-muted-foreground">
           <span className="cursor-pointer underline">or upload a CSV / text file</span>
