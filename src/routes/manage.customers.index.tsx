@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, MessageCircle, Phone } from "lucide-react";
+import { MessageCircle, Phone } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,13 +52,12 @@ function ManageCustomers() {
         </p>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-surface text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="p-3">Customer</th>
                 <th className="p-3">Phone</th>
                 <th className="p-3">Account</th>
-                <th className="p-3">Orders</th>
                 <th className="p-3">Total value</th>
                 <th className="p-3">Last order</th>
                 <th className="w-[17rem] p-3 text-right">Actions</th>
@@ -68,25 +67,21 @@ function ManageCustomers() {
               {(customers ?? []).map((c) => (
                 <tr key={c.id} className="border-t border-border">
                   <td className="p-3 font-medium">
-                    {c.name}
+                    <Link
+                      to="/manage/customers/$customerId"
+                      params={{ customerId: c.id }}
+                      className="underline decoration-border underline-offset-4 transition-colors hover:text-primary hover:decoration-primary"
+                    >
+                      {c.name}
+                    </Link>
                     {c.email && <span className="block text-xs text-muted-foreground">{c.email}</span>}
                   </td>
                   <td className="p-3">{c.phone}</td>
                   <td className="p-3 capitalize">{c.customerType} · {c.priceTier}</td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {c.orders.map((o) => (
-                        <span key={o.humanId} className="rounded-md bg-surface px-2 py-0.5 text-xs">{o.humanId}</span>
-                      ))}
-                    </div>
-                  </td>
                   <td className="p-3">{formatINR(c.spend)}</td>
                   <td className="p-3 text-muted-foreground">{c.last ? new Date(c.last).toLocaleDateString("en-IN") : "—"}</td>
                   <td className="p-3 align-middle">
                     <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                      <Button size="sm" variant="outline" className="h-8 gap-1.5 px-2.5" asChild>
-                        <Link to="/manage/customers/$customerId" params={{ customerId: c.id }}><Eye className="size-3.5" /> View</Link>
-                      </Button>
                       {c.phone && (
                         <Button size="sm" variant="ghost" className="h-8 gap-1.5 px-2.5" asChild>
                           <a href={`tel:${c.phone}`}><Phone className="size-3.5" /> Call</a>
