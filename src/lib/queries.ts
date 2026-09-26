@@ -12,9 +12,13 @@ import {
   type ProductFilters,
 } from "@/lib/catalog.functions";
 import { listVehicles } from "@/lib/vehicles.functions";
+import { productBrands } from "@/lib/catalogue-admin.functions";
 
 export const categoriesQuery = () =>
   queryOptions({ queryKey: ["categories"], queryFn: () => listCategories(), staleTime: 5 * 60_000 });
+
+export const productBrandsQuery = () =>
+  queryOptions({ queryKey: ["product-brands"], queryFn: () => productBrands(), staleTime: 5 * 60_000 });
 
 export const categoryQuery = (slug: string) =>
   queryOptions({ queryKey: ["category", slug], queryFn: () => getCategory({ data: { slug } }), staleTime: 5 * 60_000 });

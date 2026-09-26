@@ -994,6 +994,27 @@ export type Database = {
           },
         ]
       }
+      product_brands: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_compatibility: {
         Row: {
           id: string
@@ -2720,6 +2741,10 @@ export type Database = {
       release_order: {
         Args: { p_order_id: string; p_reason?: string }
         Returns: boolean
+      }
+      rename_product_brand: {
+        Args: { p_brand_id: string; p_new_name: string }
+        Returns: string
       }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }

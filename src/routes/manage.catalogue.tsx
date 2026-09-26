@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, GripVertical, Loader2, Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +19,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { catalogueList, createCatalogueProduct, deleteCatalogueProduct, quickSaveProduct, setProductImages, type CatalogueRow } from "@/lib/catalogue-admin.functions";
+import { catalogueList, createCatalogueProduct, createProductBrand, deleteCatalogueProduct, quickSaveProduct, renameProductBrand, setProductImages, type CatalogueRow, type ProductBrand } from "@/lib/catalogue-admin.functions";
 import { uploadProductPhoto } from "@/lib/photo-upload";
-import { categoriesQuery } from "@/lib/queries";
+import { categoriesQuery, productBrandsQuery } from "@/lib/queries";
 import { placeholderFor } from "@/lib/placeholders";
 import { STATUS_CHIP, isProductStatus, type ProductStatus } from "@/lib/ordering";
 
@@ -63,6 +63,7 @@ function CataloguePage() {
   const [pageSize, setPageSize] = useState<number>(20);
 
   const { data: categories } = useQuery(categoriesQuery());
+  const { data: brands = [] } = useQuery(productBrandsQuery());
   const { data, isPending } = useQuery({
     queryKey: ["catalogue-admin", term, cat, filter, page, pageSize],
     queryFn: () => catalogueList({ data: { q: term, category: cat, filter, page, pageSize } }),
@@ -80,7 +81,10 @@ function CataloguePage() {
       <div className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div><h2 className="font-display text-lg font-bold">Products & stock</h2><p className="text-sm text-muted-foreground">Products are assigned to the same categories shown on the homepage.</p></div>
-          {staff.role === "super_admin" && <AddProductDialog categories={categories ?? []} />}
+          <div className="flex flex-wrap gap-2">
+            <ManageBrandsDialog brands={brands} />
+            {staff.role === "super_admin" && <AddProductDialog categories={categories ?? []} brands={brands} />}
+          </div>
         </div>
         <form
           className="flex gap-2"
@@ -163,7 +167,7 @@ function CataloguePage() {
 
 type CategoryOption = { slug: string; name: string };
 
-function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
+function AddProductDialog({ categories, brands }: { categories: CategoryOption[]; brands: ProductBrand[] }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -221,7 +225,7 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
         <Cell label="Product name"><Input required minLength={2} value={form.name} onChange={(e) => set("name", e.target.value)} /></Cell>
         <Cell label="Product code (SKU) — optional"><Input value={form.sku} placeholder="Generated automatically if blank" onChange={(e) => set("sku", e.target.value.toUpperCase())} /></Cell>
         <Cell label="Homepage category"><select required value={form.category} onChange={(e) => set("category", e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">Choose category</option>{categories.map((category) => <option key={category.slug} value={category.slug}>{category.name}</option>)}</select></Cell>
-        <Cell label="Brand"><Input value={form.brand} onChange={(e) => set("brand", e.target.value)} /></Cell>
+        <Cell label="Brand"><BrandSelect value={form.brand} brands={brands} onChange={(value) => set("brand", value)} /></Cell>
         <Cell label="Price ₹"><Input min="0" step="0.01" type="number" value={form.price} onChange={(e) => set("price", e.target.value)} /></Cell>
         <Cell label="Wholesale price ₹"><Input min="0" step="0.01" type="number" value={form.wholesalePrice} onChange={(e) => set("wholesalePrice", e.target.value)} /></Cell>
         <Cell label="MRP ₹"><Input min="0" step="0.01" type="number" value={form.mrp} onChange={(e) => set("mrp", e.target.value)} /></Cell>
@@ -242,6 +246,74 @@ function AddProductDialog({ categories }: { categories: CategoryOption[] }) {
         <div className="grid gap-1 sm:col-span-2"><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>
         <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={saving || categories.length === 0}>{saving ? "Adding…" : "Add product"}</Button></div>
       </form>
+    </DialogContent>
+  </Dialog>;
+}
+
+function BrandSelect({ value, brands, onChange }: { value: string; brands: ProductBrand[]; onChange: (value: string) => void }) {
+  return <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+    <option value="">No brand</option>
+    {brands.map((brand) => <option key={brand.id} value={brand.name}>{brand.name}</option>)}
+  </select>;
+}
+
+function ManageBrandsDialog({ brands }: { brands: ProductBrand[] }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["product-brands"] }),
+      queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
+      queryClient.invalidateQueries({ queryKey: ["all-products-admin"] }),
+      queryClient.invalidateQueries({ queryKey: ["products"] }),
+      queryClient.invalidateQueries({ queryKey: ["home"] }),
+    ]);
+  };
+  const add = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    const result = await createProductBrand({ data: { name } });
+    setSaving(false);
+    if (!result.ok) return toast.error(result.error);
+    setName("");
+    toast.success("Brand added");
+    await refresh();
+  };
+  const rename = async (brand: ProductBrand) => {
+    setSaving(true);
+    const result = await renameProductBrand({ data: { id: brand.id, name: editName } });
+    setSaving(false);
+    if (!result.ok) return toast.error(result.error);
+    setEditing(null);
+    setEditName("");
+    toast.success("Brand renamed");
+    await refresh();
+  };
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button variant="outline"><Tags className="size-4" /> Manage brands</Button></DialogTrigger>
+    <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      <DialogHeader><DialogTitle>Manage brands</DialogTitle><DialogDescription>Add or rename the values shown in product brand dropdowns.</DialogDescription></DialogHeader>
+      <form className="flex gap-2" onSubmit={(event) => void add(event)}>
+        <Input aria-label="New brand name" placeholder="New brand name" value={name} onChange={(event) => setName(event.target.value)} maxLength={120} />
+        <Button type="submit" disabled={saving || !name.trim()}><Plus /> Add</Button>
+      </form>
+      <div className="divide-y divide-border border-y border-border">
+        {brands.length === 0 && <p className="py-5 text-center text-sm text-muted-foreground">No brands added yet.</p>}
+        {brands.map((brand) => <div key={brand.id} className="flex min-h-12 items-center gap-2 py-2">
+          {editing === brand.id ? <>
+            <Input aria-label={`Rename ${brand.name}`} value={editName} onChange={(event) => setEditName(event.target.value)} maxLength={120} autoFocus />
+            <Button size="sm" disabled={saving || !editName.trim()} onClick={() => void rename(brand)}>Save</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+          </> : <>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">{brand.name}</span>
+            <Button type="button" size="icon" variant="ghost" aria-label={`Edit ${brand.name}`} onClick={() => { setEditing(brand.id); setEditName(brand.name); }}><Pencil className="size-4" /></Button>
+          </>}
+        </div>)}
+      </div>
     </DialogContent>
   </Dialog>;
 }

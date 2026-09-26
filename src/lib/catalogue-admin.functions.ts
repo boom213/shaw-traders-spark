@@ -46,6 +46,48 @@ export type CatalogueProductDetail = CatalogueRow & {
   compatibility: { vehicleModel: string; yearFrom: number | null; yearTo: number | null; variant: string | null }[];
 };
 
+export type ProductBrand = { id: string; name: string };
+
+/** Shared managed brand list for product creation and editing. */
+export const productBrands = createServerFn({ method: "POST" }).handler(async (): Promise<ProductBrand[]> => {
+  const { sb } = await adminAs();
+  const { data, error } = await sb.from("product_brands").select("id, name").order("name");
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((brand) => ({ id: brand.id, name: brand.name }));
+});
+
+export const createProductBrand = createServerFn({ method: "POST" })
+  .inputValidator((data: { name: string }) => ({ name: String(data?.name ?? "").trim().slice(0, 120) }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (!data.name) return { ok: false as const, error: "Enter a brand name." };
+    const { data: brand, error } = await sb.from("product_brands").insert({ name: data.name }).select("id, name").single();
+    if (error) return { ok: false as const, error: error.code === "23505" ? "That brand already exists." : error.message };
+    await logAudit(sb as never, actor, "product_brands.created", "product_brands", brand.id, { name: brand.name });
+    return { ok: true as const, brand: { id: brand.id, name: brand.name } };
+  });
+
+export const renameProductBrand = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string; name: string }) => ({ id: String(data?.id ?? "").trim(), name: String(data?.name ?? "").trim().slice(0, 120) }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (!data.id || !data.name) return { ok: false as const, error: "Enter a brand name." };
+    const { data: oldName, error } = await sb.rpc("rename_product_brand", { p_brand_id: data.id, p_new_name: data.name });
+    if (error) {
+      const duplicate = error.code === "23505" || error.message.includes("already exists");
+      return { ok: false as const, error: duplicate ? "That brand already exists." : error.message };
+    }
+    await logAudit(sb as never, actor, "product_brands.renamed", "product_brands", data.id, { from: oldName, to: data.name });
+    return { ok: true as const };
+  });
+
+async function validManagedBrand(sb: Awaited<ReturnType<typeof adminAs>>["sb"], name: string): Promise<string | null | false> {
+  const value = name.trim();
+  if (!value) return null;
+  const { data } = await sb.from("product_brands").select("name").ilike("name", value).maybeSingle();
+  return data?.name ?? false;
+}
+
 const SELECT =
   "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, product_kind, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
 
@@ -228,6 +270,7 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
     sku: String(input?.sku ?? "").trim().toUpperCase().slice(0, 80),
     slug: String(input?.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 180),
     category: String(input?.category ?? "").trim(),
+    brand: String(input?.brand ?? "").trim().slice(0, 120),
     status: ["visible", "draft", "hidden"].includes(String(input?.status)) ? String(input.status) : "draft",
     orderingMode: ["full", "enquiry", "browse"].includes(String(input?.orderingMode)) ? String(input.orderingMode) : "",
     stock: Math.max(0, Math.floor(Number(input?.stock ?? 0))),
@@ -248,12 +291,14 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
     }
     const { data: category } = await sb.from("categories").select("id").eq("slug", data.category).maybeSingle();
     if (!category) return { ok: false as const, error: "Choose a valid category." };
+    const managedBrand = await validManagedBrand(sb, data.brand);
+    if (managedBrand === false) return { ok: false as const, error: "Choose a brand from the managed list." };
     const { data: before } = await sb.from("products").select("*").eq("id", data.id).eq("product_kind", "part").maybeSingle();
     if (!before) return { ok: false as const, error: "Product not found." };
     const optional = (value: string) => String(value ?? "").trim() || null;
     const patch = {
       name: data.name, sku: data.sku, slug: data.slug, category_id: category.id,
-      subcategory: optional(data.subcategory), brand: optional(data.brand), model: optional(data.model),
+      subcategory: optional(data.subcategory), brand: managedBrand, model: optional(data.model),
       price: data.price, mrp: data.mrp, stock: data.stock, reorder_threshold: data.reorderThreshold,
       rack_location: optional(data.rackLocation), status: data.status, ordering_mode: data.orderingMode || null,
       description: optional(data.description), specs: data.specs ?? {}, voltage: optional(data.voltage), ah: optional(data.ah),
@@ -322,6 +367,8 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
     if (data.mrp !== null && (!Number.isFinite(data.mrp) || data.mrp < 0)) return { ok: false as const, error: "MRP must be zero or more." };
     const { data: category } = await sb.from("categories").select("id, name").eq("slug", data.category).maybeSingle();
     if (!category) return { ok: false as const, error: "Choose a valid homepage category." };
+    const managedBrand = await validManagedBrand(sb, data.brand);
+    if (managedBrand === false) return { ok: false as const, error: "Choose a brand from the managed list." };
 
     const slugBase = data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
     let slug = slugBase;
@@ -340,7 +387,7 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
       sku,
       slug,
       category_id: category.id,
-      brand: data.brand || null,
+      brand: managedBrand,
       price: data.price,
       mrp: data.mrp,
       stock: data.stock,
