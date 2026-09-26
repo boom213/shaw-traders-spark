@@ -288,6 +288,13 @@
       "when": 1790452820510,
       "tag": "0040_correct_customer_lifetime_value_aggregate",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1790453874099,
+      "tag": "0041_optimize_manager_customer_page",
+      "breakpoints": true
     }
   ]
 }
