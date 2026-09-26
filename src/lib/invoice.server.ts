@@ -108,13 +108,13 @@ async function loadImagePayload(source: string): Promise<ImagePayload | null> {
 }
 
 async function pngBytesFromWebp(bytes: Uint8Array) {
-  const { PhotonImage } = await import("@cf-wasm/photon");
-  const image = PhotonImage.new_from_byteslice(bytes);
-  try {
-    return image.get_bytes();
-  } finally {
-    image.free();
-  }
+  const [{ decode }, { encode }] = await Promise.all([
+    import("@stacksjs/ts-webp"),
+    import("upng-js"),
+  ]);
+  const image = decode(bytes);
+  const rgba = image.data.buffer.slice(image.data.byteOffset, image.data.byteOffset + image.data.byteLength) as ArrayBuffer;
+  return new Uint8Array(encode([rgba], image.width, image.height, 0));
 }
 
 export function billToLines(address: Record<string, unknown>, contactPhone?: string | null) {
