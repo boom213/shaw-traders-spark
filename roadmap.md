@@ -45,4 +45,4 @@
 - [x] Fix relative and WebP product photos in staff invoices, with catalogue and no-photo fallbacks.
 - [x] Restore the published site after the invoice WebP runtime-file failure and verify production.
 
-- [ ] Paginate remaining manager lists to 8 rows, move counter-sale lookups on demand, aggregate overview metrics, and constrain growing panels.
+- [x] Paginate remaining manager lists to 8 rows, move counter-sale lookups on demand, aggregate overview metrics, and constrain growing panels.

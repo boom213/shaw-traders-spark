@@ -20,6 +20,7 @@ import {
 } from "@/lib/manage-data.functions";
 import { formatINR, statusLabel, type Product } from "@/lib/catalog";
 import { productsByIdsQuery, productsQuery } from "@/lib/queries";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 export const Route = createFileRoute("/manage/customers/$customerId")({
   head: () => ({
@@ -69,7 +70,7 @@ function ManageCustomerPage() {
     queryFn: () => manageCustomerDetail({ data: { customerId } }),
   });
   const customer = detailQuery.data;
-  const ordersQuery = useQuery({ queryKey: ["manage-customer-orders", customerId, orderPage], queryFn: () => manageCustomerOrders({ data: { customerId, page: orderPage } }), placeholderData: (previous) => previous });
+  const ordersQuery = useQuery({ queryKey: ["manage-customer-orders", customerId, orderPage], queryFn: () => manageCustomerOrders({ data: { customerId, page: orderPage } }), placeholderData: (previous) => previous, ...MANAGE_QUERY_OPTIONS });
 
   useEffect(() => {
     if (!customer) return;
