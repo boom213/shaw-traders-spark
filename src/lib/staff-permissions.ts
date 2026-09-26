@@ -5,6 +5,7 @@ export type StaffCapability =
   | "catalogue"
   | "trade"
   | "counter-sales"
+  | "vendor-finance"
   | "content"
   | "reports"
   | "settings"
@@ -24,6 +25,7 @@ export const CAPABILITY_ROLE: Record<StaffCapability, StaffRole> = {
   catalogue: "manager",
   trade: "manager",
   "counter-sales": "manager",
+  "vendor-finance": "manager",
   content: "manager",
   reports: "manager",
   settings: "owner",
@@ -47,6 +49,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/customers": "operations",
   "/manage/all-products": "operations",
   "/manage/counter-sales": "counter-sales",
+  "/manage/vendors": "vendor-finance",
   "/manage/catalogue": "catalogue",
   "/manage/import": "catalogue",
   "/manage/scooters": "catalogue",

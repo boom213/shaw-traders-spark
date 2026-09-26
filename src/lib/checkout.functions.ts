@@ -233,7 +233,9 @@ export const verifyPayment = createServerFn({ method: "POST" })
       return { paid: false, error: "We could not verify this payment. If money was taken it will be confirmed shortly." };
     }
 
-    await supabaseAdmin.rpc("mark_order_paid", { p_order_id: data.orderId, p_payment_id: data.paymentId });
+    const { data: markedPaid, error: markError } = await supabaseAdmin.rpc("mark_order_paid", { p_order_id: data.orderId, p_payment_id: data.paymentId });
+    if (markError) return { paid: false, error: "Payment was confirmed, but the order needs staff review." };
+    if (!markedPaid) return { paid: false, error: "This order reservation expired. Your payment needs staff review; please do not pay again." };
     const { notifyOrderPlaced } = await import("@/lib/notify.server");
     await notifyOrderPlaced(data.orderId);
     return { paid: true };

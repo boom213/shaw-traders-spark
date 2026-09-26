@@ -69,9 +69,15 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         if (!inserted) return new Response("Could not record event", { status: 500 });
 
         if ((body.event === "payment.captured" || body.event === "order.paid") && orderId && paymentId) {
-          await supabaseAdmin.rpc("mark_order_paid", { p_order_id: orderId, p_payment_id: paymentId });
-          const { notifyOrderPlaced } = await import("@/lib/notify.server");
-          await notifyOrderPlaced(orderId);
+          const { data: markedPaid, error: markError } = await supabaseAdmin.rpc("mark_order_paid", { p_order_id: orderId, p_payment_id: paymentId });
+          if (markError) {
+            console.error("razorpay webhook: payment update failed", markError);
+            return new Response("Could not update payment", { status: 500 });
+          }
+          if (markedPaid) {
+            const { notifyOrderPlaced } = await import("@/lib/notify.server");
+            await notifyOrderPlaced(orderId);
+          }
         }
 
         return new Response("ok", { status: 200 });

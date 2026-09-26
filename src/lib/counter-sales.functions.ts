@@ -41,6 +41,7 @@ export type CounterSale = {
   paymentStatus: string;
   createdAt: string;
   createdBy: string;
+  createdByEmail: string;
   dueDate: string | null;
   cancelledAt: string | null;
   cancelReason: string | null;
@@ -126,7 +127,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase().slice(0, 120) }))
   .handler(async ({ data }): Promise<CounterSale[]> => {
     const { sb } = await counterAdmin();
-    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, cancelled_at, cancel_reason, created_at").order("created_at", { ascending: false }).limit(300);
+    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at").order("created_at", { ascending: false }).limit(300);
     if (error) throw new Error(error.message);
     const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
     const profileIds = [...new Set(((rows ?? []) as Row[]).map((row) => String(row['profile_id'])))];
@@ -151,7 +152,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
       const total = Number(order?.['total'] ?? 0);
       const paid = payments.reduce((sum, payment) => sum + Number(payment['amount'] ?? 0), 0);
       return {
-        orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
+        orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), createdByEmail: String(row['created_by_email'] ?? ""), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
         items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null })),
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']) })),
       };
@@ -163,7 +164,7 @@ export const createCounterSale = createServerFn({ method: "POST" })
   .inputValidator((data: { customerId: string; invoiceKind: string; overrideReason?: string; note?: string; items: Array<{ productId: string; qty: number; unitPrice: number }> }) => ({ customerId: String(data?.customerId ?? ""), invoiceKind: data?.invoiceKind === "gst" ? "gst" : "non_gst", overrideReason: String(data?.overrideReason ?? "").trim().slice(0, 300), note: String(data?.note ?? "").trim().slice(0, 500), items: (data?.items ?? []).slice(0, 100).map((item) => ({ product_id: String(item.productId), qty: Math.max(1, Math.floor(Number(item.qty) || 1)), unit_price: Math.round((Number(item.unitPrice) || 0) * 100) / 100 })) }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await counterAdmin();
-    const { data: created, error } = await sb.rpc("create_counter_sale", { p_profile_id: data.customerId, p_items: data.items, p_invoice_kind: data.invoiceKind, p_override_reason: data.overrideReason, p_note: data.note, p_actor_id: actor.userId, p_actor_name: actor.name });
+    const { data: created, error } = await sb.rpc("create_counter_sale", { p_profile_id: data.customerId, p_items: data.items, p_invoice_kind: data.invoiceKind, p_override_reason: data.overrideReason, p_note: data.note, p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email });
     if (error) return { ok: false as const, error: error.message };
     const sale = Array.isArray(created) ? created[0] : created;
     if (!sale) return { ok: false as const, error: "The sale could not be created." };

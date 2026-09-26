@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - Keep the all-staff product directory separate from catalogue editing so operational roles receive read-only access without catalogue write permissions.
-- Model in-house wholesale sales as dedicated counter-sale records linked to orders, with immutable price snapshots and separate payment entries, so online checkout behavior stays unchanged and partial payments remain auditable.
+- Model wholesale sales and vendor payouts as atomic, auditable records with immutable prices and staff attribution.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
@@ -20,4 +20,4 @@
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
 - Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
 - Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.
-- Require a validated signed-in customer inside order creation; keep browsing and cart storage available to guests.
+- Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
