@@ -295,7 +295,7 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
         <Button type="button" variant="outline" onClick={() => set("compatibility", [...form.compatibility, { vehicleModel: "", yearFrom: "", yearTo: "", variant: "" }])}><Plus /> Add vehicle</Button>
       </Section>
 
-      <div className="flex justify-end border-t border-border pt-5"><Button type="submit" size="lg" disabled={saving || uploading}><Save /> {saving ? "Saving…" : "Save all changes"}</Button></div>
+      <div className="flex justify-end border-t border-border pt-5"><Button type="submit" size="lg" disabled={saving || uploading}>{saving ? <SparkRing /> : <Save />} {saving ? "Saving…" : "Save all changes"}</Button></div>
     </form>
   );
 }
