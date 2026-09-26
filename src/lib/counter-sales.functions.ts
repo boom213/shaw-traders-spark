@@ -140,14 +140,16 @@ export const searchCounterProducts = createServerFn({ method: "POST" })
   });
 
 export const listCounterSales = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase().slice(0, 120) }))
-  .handler(async ({ data }): Promise<CounterSale[]> => {
+  .inputValidator((data: { q?: string; page?: number } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: CounterSale[]; total: number }> => {
     const { sb } = await counterAdmin();
-    const { data: rows, error } = await sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at").order("created_at", { ascending: false }).limit(300);
+    let query = sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at, orders!inner(human_id), profiles!inner(full_name, phone)", { count: "exact" }).order("created_at", { ascending: false });
+    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`human_id.ilike.%${term}%`, { referencedTable: "orders" }).or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`, { referencedTable: "profiles" }); }
+    const { data: rows, error, count } = await query.range(data.page * 8, data.page * 8 + 7);
     if (error) throw new Error(error.message);
     const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
     const profileIds = [...new Set(((rows ?? []) as Row[]).map((row) => String(row['profile_id'])))];
-    if (orderIds.length === 0) return [];
+    if (orderIds.length === 0) return { items: [], total: count ?? 0 };
     const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
       sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
@@ -173,7 +175,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null })),
       };
     });
-    return data.q ? mapped.filter((sale) => `${sale.humanId} ${sale.customerName} ${sale.customerPhone}`.toLowerCase().includes(data.q)) : mapped;
+    return { items: mapped, total: count ?? 0 };
   });
 
 export const createCounterSale = createServerFn({ method: "POST" })

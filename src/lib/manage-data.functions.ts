@@ -180,14 +180,13 @@ export type ManageCustomerDetail = {
 };
 
 export type ManageCustomerOrder = {
-    id: string;
-    humanId: string;
-    token: string;
-    total: number;
-    status: string;
-    placedAt: string;
-    items: Array<{ productId: string | null; name: string; qty: number; price: number | null }>;
-};
+  id: string;
+  humanId: string;
+  token: string;
+  total: number;
+  status: string;
+  placedAt: string;
+  items: Array<{ productId: string | null; name: string; qty: number; price: number | null }>;
 };
 
 export const manageCustomerDetail = createServerFn({ method: "POST" })
