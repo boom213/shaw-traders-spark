@@ -29,3 +29,4 @@
 - [x] Add a Manager/Owner/Super Admin action to create wholesaler accounts.
 - [x] Add optional alternate phone capture, persistence, and staff display across customer forms.
 - [x] Fix post-order cart clearing, account booking tracking, trade-decision timing, address, Find Parts access, and vehicle-filter cleanup.
+- [x] Equalize product card heights and guard trade terms and repeat decisions.
