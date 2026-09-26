@@ -42,13 +42,13 @@ export default defineConfig({
               handler: "NetworkFirst",
               options: {
                 cacheName: "pages",
-                networkTimeoutSeconds: 4,
+                networkTimeoutSeconds: 2,
                 expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
               },
             },
             {
               urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/api/public/photo/"),
-              handler: "CacheFirst",
+              handler: "StaleWhileRevalidate",
               options: {
                 cacheName: "product-photos",
                 expiration: { maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30 },

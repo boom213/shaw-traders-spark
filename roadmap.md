@@ -37,3 +37,4 @@
 - [x] Add vendor QR selection and atomic linked accounting to counter-sale offline payments.
 - [x] Move customer order details out of the customer list and link underlined names to dedicated detail pages.
 - [x] Make counter-sale Vendor QR selection optional and display-only.
+- [x] Fix manager tab freshness, database-side customer pagination/statistics, and stale offline cache behavior.
