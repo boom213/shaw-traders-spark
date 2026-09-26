@@ -1,9 +1,10 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
-import { useEffect } from "react";
+import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
 import { can, capabilityForManagePath, ROLE_LABEL, type StaffCapability, type StaffRole } from "@/lib/staff-permissions";
@@ -71,6 +72,8 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "System" },
 ] as const;
 
+const MANAGER_SIDEBAR_COLLAPSED_KEY = "shaw-ev-manager-sidebar-collapsed";
+
 function ManageLayout() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -78,9 +81,14 @@ function ManageLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const denied = useRouterState({ select: (s) => new URLSearchParams(s.location.searchStr).get("denied") === "1" });
   const role = staff.role as StaffRole;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const visibleNav = NAV.filter((item) => can(role, item.capability));
   const active = visibleNav.find((item) => item.exact ? pathname === item.to : pathname.startsWith(item.to)) ?? visibleNav[0];
   const groups = [...new Set(visibleNav.map((item) => item.group))];
+
+  useEffect(() => {
+    setSidebarCollapsed(window.localStorage.getItem(MANAGER_SIDEBAR_COLLAPSED_KEY) === "true");
+  }, []);
 
   useEffect(() => {
     const refreshOperationalData = () => {
@@ -96,6 +104,14 @@ function ManageLayout() {
     };
   }, [queryClient]);
 
+  function toggleSidebar() {
+    setSidebarCollapsed((collapsed) => {
+      const next = !collapsed;
+      window.localStorage.setItem(MANAGER_SIDEBAR_COLLAPSED_KEY, String(next));
+      return next;
+    });
+  }
+
   return (
     <div className="container-page py-6 lg:py-8">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5">
@@ -105,22 +121,35 @@ function ManageLayout() {
             Shaw Traders EV · {staff.signedIn ? staff.name : "Staff"}
           </p>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button variant="outline" size="sm">{ROLE_LABEL[role]} <ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>{staff.signedIn ? staff.email : "Staff account"}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link to="/"><Store className="size-4" /> View storefront</Link></DropdownMenuItem>
-            <DropdownMenuItem onSelect={async () => { await supabase.auth.signOut(); await router.navigate({ to: "/manage-login", replace: true }); }}><LogOut className="size-4" /> Sign out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="outline" size="icon" className="hidden lg:inline-flex" onClick={toggleSidebar} aria-label={sidebarCollapsed ? "Expand manager sidebar" : "Collapse manager sidebar"} title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+            {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="outline" size="sm">{ROLE_LABEL[role]} <ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>{staff.signedIn ? staff.email : "Staff account"}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild><Link to="/"><Store className="size-4" /> View storefront</Link></DropdownMenuItem>
+              <DropdownMenuItem onSelect={async () => { await supabase.auth.signOut(); await router.navigate({ to: "/manage-login", replace: true }); }}><LogOut className="size-4" /> Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
-      <div className="grid gap-6 pt-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside>
-          <nav className="hidden space-y-5 lg:block" aria-label="Manager navigation">
-            {groups.map((group) => <div key={group}><p className="mb-1.5 px-3 text-xs font-semibold uppercase text-muted-foreground">{group}</p><div className="grid gap-1">{visibleNav.filter((n) => n.group === group).map((n) => <Link key={n.to} to={n.to} activeOptions={{ exact: n.exact }} activeProps={{ className: "bg-muted text-foreground" }} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"><n.icon className="size-4" />{n.label}</Link>)}</div></div>)}
-          </nav>
+      <div className={`grid gap-6 pt-5 transition-[grid-template-columns] duration-200 ${sidebarCollapsed ? "lg:grid-cols-[3.5rem_minmax(0,1fr)]" : "lg:grid-cols-[15rem_minmax(0,1fr)]"}`}>
+        <aside className="min-w-0">
+          <TooltipProvider delayDuration={250}>
+            <nav className={`hidden lg:block ${sidebarCollapsed ? "space-y-2" : "space-y-5"}`} aria-label="Manager navigation">
+              {groups.map((group) => <div key={group}>
+                {!sidebarCollapsed && <p className="mb-1.5 px-3 text-xs font-semibold uppercase text-muted-foreground">{group}</p>}
+                <div className="grid gap-1">{visibleNav.filter((n) => n.group === group).map((n) => {
+                  const link = <Link key={n.to} to={n.to} activeOptions={{ exact: n.exact }} activeProps={{ className: "bg-muted text-foreground" }} aria-label={sidebarCollapsed ? n.label : undefined} className={`flex min-h-9 items-center rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground ${sidebarCollapsed ? "justify-center px-0" : "gap-2 px-3 py-2"}`}><n.icon className="size-4 shrink-0" />{!sidebarCollapsed && <span>{n.label}</span>}</Link>;
+                  return sidebarCollapsed ? <Tooltip key={n.to}><TooltipTrigger asChild>{link}</TooltipTrigger><TooltipContent side="right">{n.label}</TooltipContent></Tooltip> : link;
+                })}</div>
+              </div>)}
+            </nav>
+          </TooltipProvider>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="outline" className="w-full justify-between lg:hidden">{active?.label ?? "Manager menu"}<ChevronDown className="size-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[min(22rem,calc(100vw-2rem))]">{visibleNav.map((n) => <DropdownMenuItem key={n.to} asChild><Link to={n.to}><n.icon className="size-4" />{n.label}</Link></DropdownMenuItem>)}</DropdownMenuContent>
