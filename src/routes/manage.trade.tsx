@@ -167,7 +167,7 @@ function PaymentBox({ profileId, onDone }: { profileId: string; onDone: () => Pr
   );
 }
 
-type App = Awaited<ReturnType<typeof listTradeApplications>>[number];
+type App = Awaited<ReturnType<typeof listTradeApplications>>["items"][number];
 
 function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void> }) {
   const [note, setNote] = useState("");
