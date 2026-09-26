@@ -48,6 +48,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/bookings": "operations",
   "/manage/customers": "operations",
   "/manage/all-products": "operations",
+  "/manage/products/$productId": "catalogue",
   "/manage/counter-sales": "counter-sales",
   "/manage/vendors": "vendor-finance",
   "/manage/catalogue": "catalogue",
@@ -66,5 +67,6 @@ export const MANAGE_ROUTE_CAPABILITY = {
 export function capabilityForManagePath(pathname: string): StaffCapability {
   const path = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
   if (path.startsWith("/manage/customers/")) return "operations";
+  if (path.startsWith("/manage/products/")) return "catalogue";
   return MANAGE_ROUTE_CAPABILITY[path as keyof typeof MANAGE_ROUTE_CAPABILITY] ?? "operations";
 }

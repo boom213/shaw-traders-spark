@@ -67,6 +67,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ManageCustomersIndexRouteImport } from './routes/manage.customers.index'
 import { Route as ManageCustomersCustomerIdRouteImport } from './routes/manage.customers.$customerId'
+import { Route as ManageProductsProductIdRouteImport } from './routes/manage.products.$productId'
 import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
 import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
 import { Route as ApiPublicCronReleaseStaleOrdersRouteImport } from './routes/api/public/cron/release-stale-orders'
@@ -366,6 +367,11 @@ const ManageCustomersCustomerIdRoute =
     path: '/$customerId',
     getParentRoute: () => ManageCustomersRoute,
   } as any)
+const ManageProductsProductIdRoute = ManageProductsProductIdRouteImport.update({
+  id: '/products/$productId',
+  path: '/products/$productId',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ApiPublicCronCartRemindersRoute =
   ApiPublicCronCartRemindersRouteImport.update({
     id: '/api/public/cron/cart-reminders',
@@ -460,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
+  '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers/': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
@@ -524,6 +531,7 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
+  '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
@@ -591,6 +599,7 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
+  '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers/': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
@@ -659,6 +668,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
+    | '/manage/products/$productId'
     | '/manage/customers/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
@@ -723,6 +733,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
+    | '/manage/products/$productId'
     | '/manage/customers'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
@@ -789,6 +800,7 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
+    | '/manage/products/$productId'
     | '/manage/customers/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
@@ -1250,6 +1262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageCustomersCustomerIdRouteImport
       parentRoute: typeof ManageCustomersRoute
     }
+    '/manage/products/$productId': {
+      id: '/manage/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/manage/products/$productId'
+      preLoaderRoute: typeof ManageProductsProductIdRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/api/public/cron/cart-reminders': {
       id: '/api/public/cron/cart-reminders'
       path: '/api/public/cron/cart-reminders'
@@ -1330,6 +1349,7 @@ interface ManageRouteChildren {
   ManageTradeRoute: typeof ManageTradeRoute
   ManageVendorsRoute: typeof ManageVendorsRoute
   ManageIndexRoute: typeof ManageIndexRoute
+  ManageProductsProductIdRoute: typeof ManageProductsProductIdRoute
 }
 
 const ManageRouteChildren: ManageRouteChildren = {
@@ -1353,6 +1373,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageTradeRoute: ManageTradeRoute,
   ManageVendorsRoute: ManageVendorsRoute,
   ManageIndexRoute: ManageIndexRoute,
+  ManageProductsProductIdRoute: ManageProductsProductIdRoute,
 }
 
 const ManageRouteWithChildren =

@@ -9,7 +9,7 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the all-staff product directory separate from catalogue editing so operational roles receive read-only access without catalogue write permissions.
+- Keep All Products read-only for Staff; Manager and higher may open its dedicated full editor through catalogue-protected routes.
 - Model wholesale sales and vendor payouts as atomic, auditable records with immutable prices and staff attribution.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.

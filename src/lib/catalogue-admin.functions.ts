@@ -24,10 +24,30 @@ export type CatalogueRow = {
   images: string[];
   status: string;
   rackLocation: string | null;
+  productKind: "part" | "vehicle";
+};
+
+export type CatalogueProductDetail = CatalogueRow & {
+  slug: string;
+  subcategory: string | null;
+  model: string | null;
+  description: string | null;
+  specs: Record<string, string>;
+  voltage: string | null;
+  ah: string | null;
+  wattage: string | null;
+  warranty: string | null;
+  weight: string | null;
+  dimensions: string | null;
+  shippingInfo: string | null;
+  boxContents: string | null;
+  hsnCode: string | null;
+  orderingMode: "full" | "enquiry" | "browse" | null;
+  compatibility: { vehicleModel: string; yearFrom: number | null; yearTo: number | null; variant: string | null }[];
 };
 
 const SELECT =
-  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
+  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, product_kind, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
 
 const mapRow = (r: Row): CatalogueRow => ({
   id: String(r['id']),
@@ -48,6 +68,7 @@ const mapRow = (r: Row): CatalogueRow => ({
   reorderThreshold: r['reorder_threshold'] === null || r['reorder_threshold'] === undefined ? null : Number(r['reorder_threshold']),
   status: String(r['status'] ?? "visible"),
   rackLocation: r['rack_location'] ?? null,
+  productKind: r['product_kind'] === "vehicle" ? "vehicle" : "part",
   images: ((r['product_images'] ?? []) as Row[])
     .slice()
     .sort((a, b) => Number(a['sort_order'] ?? 0) - Number(b['sort_order'] ?? 0))
@@ -145,6 +166,122 @@ export const allProductsList = createServerFn({ method: "POST" })
       .range(from, from + data.pageSize - 1);
     if (error) throw new Error(error.message);
     return { items: (rows ?? []).map(mapRow), total: count ?? 0 };
+  });
+
+/** Load every editable field for one parts product. */
+export const getCatalogueProduct = createServerFn({ method: "POST" })
+  .inputValidator((data: { id: string }) => ({ id: String(data?.id ?? "").trim() }))
+  .handler(async ({ data }): Promise<{ ok: true; product: CatalogueProductDetail } | { ok: false; error: string }> => {
+    const { sb } = await adminAs();
+    const { data: row, error } = await sb
+      .from("products")
+      .select("id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, reorder_threshold, rack_location, product_kind, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty), product_compatibility(vehicle_model, year_from, year_to, variant)")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) return { ok: false, error: error.message };
+    if (!row || row.product_kind !== "part") return { ok: false, error: "Product not found." };
+    const base = mapRow(row as Row);
+    return {
+      ok: true,
+      product: {
+        ...base,
+        slug: String(row.slug ?? ""),
+        subcategory: row.subcategory ?? null,
+        model: row.model ?? null,
+        description: row.description ?? null,
+        specs: (row.specs ?? {}) as Record<string, string>,
+        voltage: row.voltage ?? null,
+        ah: row.ah ?? null,
+        wattage: row.wattage ?? null,
+        warranty: row.warranty ?? null,
+        weight: row.weight ?? null,
+        dimensions: row.dimensions ?? null,
+        shippingInfo: row.shipping_info ?? null,
+        boxContents: row.box_contents ?? null,
+        hsnCode: row.hsn_code ?? null,
+        orderingMode: row.ordering_mode ?? null,
+        compatibility: ((row.product_compatibility ?? []) as Row[]).map((item) => ({
+          vehicleModel: String(item['vehicle_model'] ?? ""),
+          yearFrom: item['year_from'] === null ? null : Number(item['year_from']),
+          yearTo: item['year_to'] === null ? null : Number(item['year_to']),
+          variant: item['variant'] ?? null,
+        })),
+      },
+    };
+  });
+
+export type UpdateCatalogueProductInput = {
+  id: string; name: string; sku: string; slug: string; category: string; subcategory: string; brand: string; model: string;
+  price: number | null; wholesalePrice: number | null; mrp: number | null; stock: number; reorderThreshold: number | null;
+  rackLocation: string; status: string; orderingMode: string; description: string; specs: Record<string, string>;
+  voltage: string; ah: string; wattage: string; warranty: string; weight: string; dimensions: string; shippingInfo: string;
+  boxContents: string; hsnCode: string;
+  compatibility: { vehicleModel: string; yearFrom: number | null; yearTo: number | null; variant: string }[];
+};
+
+/** Save the complete parts-product record from the dedicated editor. */
+export const updateCatalogueProduct = createServerFn({ method: "POST" })
+  .inputValidator((input: UpdateCatalogueProductInput) => ({
+    ...input,
+    id: String(input?.id ?? "").trim(),
+    name: String(input?.name ?? "").trim().slice(0, 180),
+    sku: String(input?.sku ?? "").trim().toUpperCase().slice(0, 80),
+    slug: String(input?.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 180),
+    category: String(input?.category ?? "").trim(),
+    status: ["visible", "draft", "hidden"].includes(String(input?.status)) ? String(input.status) : "draft",
+    orderingMode: ["full", "enquiry", "browse"].includes(String(input?.orderingMode)) ? String(input.orderingMode) : "",
+    stock: Math.max(0, Math.floor(Number(input?.stock ?? 0))),
+    compatibility: (Array.isArray(input?.compatibility) ? input.compatibility : []).slice(0, 50).map((item) => ({
+      vehicleModel: String(item?.vehicleModel ?? "").trim().slice(0, 160),
+      yearFrom: item?.yearFrom === null ? null : Math.floor(Number(item.yearFrom)),
+      yearTo: item?.yearTo === null ? null : Math.floor(Number(item.yearTo)),
+      variant: String(item?.variant ?? "").trim().slice(0, 120),
+    })).filter((item) => item.vehicleModel),
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
+    if (!data.sku) return { ok: false as const, error: "Enter a product code (SKU)." };
+    if (!data.slug) return { ok: false as const, error: "Enter a valid product URL slug." };
+    for (const [label, value] of [["Price", data.price], ["Wholesale price", data.wholesalePrice], ["MRP", data.mrp], ["Reorder warning", data.reorderThreshold]] as const) {
+      if (value !== null && (!Number.isFinite(Number(value)) || Number(value) < 0)) return { ok: false as const, error: `${label} must be zero or more.` };
+    }
+    const { data: category } = await sb.from("categories").select("id").eq("slug", data.category).maybeSingle();
+    if (!category) return { ok: false as const, error: "Choose a valid category." };
+    const { data: before } = await sb.from("products").select("*").eq("id", data.id).eq("product_kind", "part").maybeSingle();
+    if (!before) return { ok: false as const, error: "Product not found." };
+    const optional = (value: string) => String(value ?? "").trim() || null;
+    const patch = {
+      name: data.name, sku: data.sku, slug: data.slug, category_id: category.id,
+      subcategory: optional(data.subcategory), brand: optional(data.brand), model: optional(data.model),
+      price: data.price, mrp: data.mrp, stock: data.stock, reorder_threshold: data.reorderThreshold,
+      rack_location: optional(data.rackLocation), status: data.status, ordering_mode: data.orderingMode || null,
+      description: optional(data.description), specs: data.specs ?? {}, voltage: optional(data.voltage), ah: optional(data.ah),
+      wattage: optional(data.wattage), warranty: optional(data.warranty), weight: optional(data.weight), dimensions: optional(data.dimensions),
+      shipping_info: optional(data.shippingInfo), box_contents: optional(data.boxContents), hsn_code: optional(data.hsnCode),
+    };
+    const { error } = await sb.from("products").update(patch as never).eq("id", data.id).eq("product_kind", "part");
+    if (error) return { ok: false as const, error: error.code === "23505" ? "That SKU or product URL is already in use." : error.message };
+    const { error: clearTierError } = await sb.from("price_tiers").delete().eq("product_id", data.id).eq("tier", "trade").eq("min_qty", 1);
+    if (clearTierError) return { ok: false as const, error: clearTierError.message };
+    if (data.wholesalePrice !== null) {
+      const { error: tierError } = await sb.from("price_tiers").insert({ product_id: data.id, tier: "trade", price: data.wholesalePrice, min_qty: 1 } as never);
+      if (tierError) return { ok: false as const, error: tierError.message };
+    }
+    const { error: clearCompatibilityError } = await sb.from("product_compatibility").delete().eq("product_id", data.id);
+    if (clearCompatibilityError) return { ok: false as const, error: clearCompatibilityError.message };
+    if (data.compatibility.length > 0) {
+      const { error: compatibilityError } = await sb.from("product_compatibility").insert(data.compatibility.map((item) => ({
+        product_id: data.id, vehicle_model: item.vehicleModel, year_from: item.yearFrom, year_to: item.yearTo, variant: item.variant || null,
+      })) as never);
+      if (compatibilityError) return { ok: false as const, error: compatibilityError.message };
+    }
+    if (Number(before.stock ?? 0) <= 0 && data.stock > 0) {
+      const { notifyBackInStock } = await import("@/lib/reminders.server");
+      await notifyBackInStock(data.id);
+    }
+    await logAudit(sb as never, actor, "products.full_update", "products", data.id, { product: data.name, from: before, to: patch });
+    return { ok: true as const };
   });
 
 export const createCatalogueProduct = createServerFn({ method: "POST" })
