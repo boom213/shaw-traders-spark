@@ -195,7 +195,7 @@ export const recordCounterPayment = createServerFn({ method: "POST" })
     if (!data.method) return { ok: false as const, error: "Choose a payment method." };
     if (data.method === "Vendor QR" && !data.vendorId) return { ok: false as const, error: "Choose a vendor QR code." };
     if (data.method !== "Vendor QR" && data.vendorId) return { ok: false as const, error: "A vendor can only be linked to a Vendor QR payment." };
-    const { data: balance, error } = await sb.rpc("record_counter_sale_payment_with_vendor", { p_order_id: data.orderId, p_amount: data.amount, p_method: data.method, p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email, p_vendor_id: data.vendorId });
+    const { data: balance, error } = await sb.rpc("record_counter_sale_payment_with_vendor", { p_order_id: data.orderId, p_amount: data.amount, p_method: data.method, p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email, p_vendor_id: data.vendorId } as never);
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb as never, actor, "counter_sale.payment_recorded", "orders", data.orderId, { amount: data.amount, method: data.method, reference: data.reference, receivedOn: data.receivedOn, vendorId: data.vendorId, balance });
     return { ok: true as const, balance: Number(balance ?? 0) };
