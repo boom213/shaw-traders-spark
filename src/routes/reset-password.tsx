@@ -80,8 +80,8 @@ function ResetPasswordPage() {
   return (
     <section className="container-page grid min-h-[64vh] place-items-center py-12 sm:py-16">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-lift)] sm:p-8">
-        <span className="grid size-11 place-items-center rounded-lg bg-accent text-accent-foreground">
-          {complete ? <CheckCircle2 className="size-5" /> : <KeyRound className="size-5" />}
+        <span className={`grid size-11 place-items-center rounded-lg ${status === "error" ? "bg-destructive/10 text-destructive" : "bg-accent text-accent-foreground"}`}>
+          {complete ? <CheckCircle2 className="size-5" /> : status === "error" ? <AlertCircle className="size-5" /> : <KeyRound className="size-5" />}
         </span>
         {complete ? (
           <>
@@ -112,9 +112,6 @@ function ResetPasswordPage() {
           </div>
         ) : status === "error" ? (
           <>
-            <span className="mt-4 grid size-11 place-items-center rounded-lg bg-destructive/10 text-destructive">
-              <AlertCircle className="size-5" />
-            </span>
             <h1 className="mt-4 font-display text-2xl font-semibold">Reset link unavailable</h1>
             <p className="mt-2 text-sm text-muted-foreground">{linkError}</p>
             <Button className="mt-6 w-full" variant="outline" asChild><Link to="/account">Request a new link</Link></Button>
