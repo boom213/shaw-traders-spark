@@ -35,3 +35,4 @@
 - [x] Auto-release abandoned online-payment stock and notify customers.
 - [x] Add a full product editor opened from All Products for catalogue-authorized admins.
 - [x] Add vendor QR selection and atomic linked accounting to counter-sale offline payments.
+- [x] Move customer order details out of the customer list and link underlined names to dedicated detail pages.
