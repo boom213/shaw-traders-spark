@@ -46,6 +46,7 @@ export type Database = {
       }
       addresses: {
         Row: {
+          alternate_phone: string | null
           city: string | null
           created_at: string
           id: string
@@ -59,6 +60,7 @@ export type Database = {
           state: string | null
         }
         Insert: {
+          alternate_phone?: string | null
           city?: string | null
           created_at?: string
           id?: string
@@ -72,6 +74,7 @@ export type Database = {
           state?: string | null
         }
         Update: {
+          alternate_phone?: string | null
           city?: string | null
           created_at?: string
           id?: string
@@ -486,6 +489,7 @@ export type Database = {
       }
       finance_enquiries: {
         Row: {
+          alternate_phone: string | null
           created_at: string
           down_payment: number | null
           employment: string | null
@@ -500,6 +504,7 @@ export type Database = {
           tenure_months: number | null
         }
         Insert: {
+          alternate_phone?: string | null
           created_at?: string
           down_payment?: number | null
           employment?: string | null
@@ -514,6 +519,7 @@ export type Database = {
           tenure_months?: number | null
         }
         Update: {
+          alternate_phone?: string | null
           created_at?: string
           down_payment?: number | null
           employment?: string | null
@@ -777,6 +783,7 @@ export type Database = {
       orders: {
         Row: {
           address: Json
+          alternate_phone: string | null
           cancel_reason: string | null
           contact_phone: string | null
           courier_name: string | null
@@ -814,6 +821,7 @@ export type Database = {
         }
         Insert: {
           address?: Json
+          alternate_phone?: string | null
           cancel_reason?: string | null
           contact_phone?: string | null
           courier_name?: string | null
@@ -851,6 +859,7 @@ export type Database = {
         }
         Update: {
           address?: Json
+          alternate_phone?: string | null
           cancel_reason?: string | null
           contact_phone?: string | null
           courier_name?: string | null
@@ -1006,6 +1015,7 @@ export type Database = {
       }
       product_enquiries: {
         Row: {
+          alternate_phone: string | null
           alternative_product_id: string | null
           created_at: string
           expected_date: string | null
@@ -1028,6 +1038,7 @@ export type Database = {
           vehicle: string | null
         }
         Insert: {
+          alternate_phone?: string | null
           alternative_product_id?: string | null
           created_at?: string
           expected_date?: string | null
@@ -1050,6 +1061,7 @@ export type Database = {
           vehicle?: string | null
         }
         Update: {
+          alternate_phone?: string | null
           alternative_product_id?: string | null
           created_at?: string
           expected_date?: string | null
@@ -1402,6 +1414,7 @@ export type Database = {
       }
       service_bookings: {
         Row: {
+          alternate_phone: string | null
           created_at: string
           handled_by: string | null
           id: string
@@ -1416,6 +1429,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          alternate_phone?: string | null
           created_at?: string
           handled_by?: string | null
           id?: string
@@ -1430,6 +1444,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          alternate_phone?: string | null
           created_at?: string
           handled_by?: string | null
           id?: string
@@ -1708,6 +1723,7 @@ export type Database = {
       }
       test_ride_requests: {
         Row: {
+          alternate_phone: string | null
           created_at: string
           handled_by: string | null
           id: string
@@ -1720,6 +1736,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          alternate_phone?: string | null
           created_at?: string
           handled_by?: string | null
           id?: string
@@ -1732,6 +1749,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          alternate_phone?: string | null
           created_at?: string
           handled_by?: string | null
           id?: string
@@ -1756,6 +1774,7 @@ export type Database = {
       trade_applications: {
         Row: {
           address_proof_path: string | null
+          alternate_phone: string | null
           brands: string[]
           business_name: string
           business_type: string | null
@@ -1784,6 +1803,7 @@ export type Database = {
         }
         Insert: {
           address_proof_path?: string | null
+          alternate_phone?: string | null
           brands?: string[]
           business_name: string
           business_type?: string | null
@@ -1812,6 +1832,7 @@ export type Database = {
         }
         Update: {
           address_proof_path?: string | null
+          alternate_phone?: string | null
           brands?: string[]
           business_name?: string
           business_type?: string | null
@@ -2011,6 +2032,7 @@ export type Database = {
       vehicle_bookings: {
         Row: {
           address: string | null
+          alternate_phone: string | null
           balance_due: number
           colour: string | null
           created_at: string
@@ -2037,6 +2059,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          alternate_phone?: string | null
           balance_due?: number
           colour?: string | null
           created_at?: string
@@ -2063,6 +2086,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          alternate_phone?: string | null
           balance_due?: number
           colour?: string | null
           created_at?: string

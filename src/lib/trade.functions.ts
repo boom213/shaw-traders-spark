@@ -30,6 +30,7 @@ export type MyTradeAccount = {
     shopAddress: string;
     contactPerson: string;
     phone: string;
+    alternatePhone: string | null;
     decisionNote: string | null;
     businessType: string;
     yearsInBusiness: string;
@@ -81,6 +82,7 @@ export const myTradeAccount = createServerFn({ method: "POST" }).handler(async (
           shopAddress: String(app.shop_address),
           contactPerson: String(app.contact_person),
           phone: String(app.phone),
+          alternatePhone: app.alternate_phone,
           decisionNote: app.decision_note,
           businessType: app.business_type ?? "",
           yearsInBusiness: app.years_in_business ?? "",
@@ -104,6 +106,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     shopAddress: string;
     contactPerson: string;
     phone: string;
+    alternatePhone?: string;
     documents?: Partial<Record<TradeDocField, string>>;
     businessType?: string;
     yearsInBusiness?: string;
@@ -118,6 +121,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     shopAddress: text(data?.shopAddress, 400),
     contactPerson: text(data?.contactPerson, 120),
     phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
+    alternatePhone: String(data?.alternatePhone ?? "").replace(/\D/g, "").slice(-10),
     documents: (data?.documents ?? {}) as Partial<Record<TradeDocField, string>>,
     businessType: pickOne(data?.businessType, BUSINESS_TYPES),
     yearsInBusiness: pickOne(data?.yearsInBusiness, YEARS_OPTIONS),
@@ -133,6 +137,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     if (data.businessName.length < 3) return { ok: false as const, message: "Please give your business name." };
     if (data.shopAddress.length < 8) return { ok: false as const, message: "Please give your shop address." };
     if (data.phone.length !== 10) return { ok: false as const, message: "Enter a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false as const, message: "Enter a valid 10-digit alternate mobile number." };
     if (!data.businessType) return { ok: false as const, message: "Please choose your business type." };
     if (!data.monthlyVolume) return { ok: false as const, message: "Please choose your monthly purchase estimate." };
     const taxErr = taxIdError(data.gstin, data.pan);
@@ -162,6 +167,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
       shop_address: data.shopAddress,
       contact_person: data.contactPerson || data.businessName,
       phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
       business_type: data.businessType,
       years_in_business: data.yearsInBusiness || null,
       staff_count: data.staffCount || null,
@@ -191,7 +197,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     await supabaseAdmin.from("profiles").update({ customer_type: "trade" } as never).eq("id", account.userId);
 
     const { notifyTradeApplication } = await import("@/lib/trade-notify.server");
-    await notifyTradeApplication(account.userId, data.businessName, { type: data.businessType, volume: data.monthlyVolume });
+    await notifyTradeApplication(account.userId, data.businessName, { type: data.businessType, volume: data.monthlyVolume, alternatePhone: data.alternatePhone });
     return { ok: true as const, message: "Thank you — we will check your documents and call you." };
   });
 

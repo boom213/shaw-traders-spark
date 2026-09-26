@@ -10,6 +10,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { shopSettingsQuery } from "@/lib/shop-settings";
+import { createGeneralEnquiry } from "@/lib/enquiries.functions";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -33,12 +34,20 @@ const MAPS_QUERY = encodeURIComponent(BUSINESS.address);
 
 function ContactPage() {
   const { data: settings } = useQuery(shopSettingsQuery());
-  const [f, setF] = useState({ name: "", phone: "", email: "", product: "", message: "" });
+  const [f, setF] = useState({ name: "", phone: "", alternatePhone: "", email: "", product: "", message: "" });
+  const [sending, setSending] = useState(false);
 
-  const send = () => {
-    if (!f.name.trim() || !f.phone.trim()) return toast.error("Please add your name and phone number");
-    const text = `Hello ${BUSINESS.name},%0AName: ${f.name}%0APhone: ${f.phone}${f.email ? `%0AEmail: ${f.email}` : ""}${f.product ? `%0APart needed: ${f.product}` : ""}${f.message ? `%0A${f.message}` : ""}`;
-    window.open(`https://wa.me/${BUSINESS.phoneIntl}?text=${text}`, "_blank", "noreferrer");
+  const send = async () => {
+    const phone = f.phone.replace(/\D/g, "");
+    const alternatePhone = f.alternatePhone.replace(/\D/g, "");
+    if (!f.name.trim() || !/^[6-9]\d{9}$/.test(phone)) return toast.error("Please add your name and a valid 10-digit phone number");
+    if (alternatePhone && !/^[6-9]\d{9}$/.test(alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
+    setSending(true);
+    const res = await createGeneralEnquiry({ data: { source: "contact", name: f.name, phone, alternatePhone, subject: f.product || "Contact enquiry", note: [f.email ? `Email: ${f.email}` : "", f.message].filter(Boolean).join(" — ") } });
+    setSending(false);
+    if (!res.ok) return toast.error(res.message);
+    const text = [`Hello ${BUSINESS.name}`, `Name: ${f.name}`, `Phone: ${phone}`, alternatePhone ? `Alternate Number: ${alternatePhone}` : "", f.email ? `Email: ${f.email}` : "", f.product ? `Part needed: ${f.product}` : "", f.message].filter(Boolean).join("\n");
+    window.open(whatsappLink(text), "_blank", "noreferrer");
   };
 
   return (
@@ -129,14 +138,17 @@ function ContactPage() {
           <h3 className="font-display text-base font-bold">Send an enquiry</h3>
           <div className="mt-4 grid gap-3">
             <Row label="Your name" v={f.name} on={(v) => setF({ ...f, name: v })} />
-            <Row label="Phone number" v={f.phone} on={(v) => setF({ ...f, phone: v })} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Row label="Phone number" v={f.phone} on={(v) => setF({ ...f, phone: v })} numeric />
+              <Row label="Alternate Number (optional)" v={f.alternatePhone} on={(v) => setF({ ...f, alternatePhone: v })} numeric />
+            </div>
             <Row label="Email (optional)" v={f.email} on={(v) => setF({ ...f, email: v })} />
             <Row label="Part / product enquiry" v={f.product} on={(v) => setF({ ...f, product: v })} />
             <div className="grid gap-1.5">
               <Label className="text-xs">Message</Label>
               <Textarea rows={4} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
             </div>
-            <Button onClick={send}>Send on WhatsApp</Button>
+            <Button disabled={sending} onClick={() => void send()}>{sending ? "Saving…" : "Send on WhatsApp"}</Button>
             <p className="text-xs text-muted-foreground">Your enquiry opens in WhatsApp so we can reply quickly.</p>
           </div>
         </div>
@@ -145,11 +157,11 @@ function ContactPage() {
   );
 }
 
-function Row({ label, v, on }: { label: string; v: string; on: (v: string) => void }) {
+function Row({ label, v, on, numeric = false }: { label: string; v: string; on: (v: string) => void; numeric?: boolean }) {
   return (
     <div className="grid gap-1.5">
       <Label className="text-xs">{label}</Label>
-      <Input value={v} onChange={(e) => on(e.target.value)} />
+      <Input inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 10 : undefined} value={v} onChange={(e) => on(numeric ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value)} />
     </div>
   );
 }

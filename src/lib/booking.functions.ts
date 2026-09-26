@@ -25,16 +25,18 @@ function bookingHumanId(): string {
  * database, never from the browser.
  */
 export const startBooking = createServerFn({ method: "POST" })
-  .inputValidator((data: { slug: string; name: string; phone: string; email?: string; address?: string; colour?: string }) => ({
+  .inputValidator((data: { slug: string; name: string; phone: string; alternatePhone?: string; email?: string; address?: string; colour?: string }) => ({
     slug: text(data?.slug, 160),
     name: text(data?.name, 120),
     phone: phone10(data?.phone),
+    alternatePhone: phone10(data?.alternatePhone),
     email: text(data?.email, 160),
     address: text(data?.address, 400),
     colour: text(data?.colour, 60),
   }))
   .handler(async ({ data }): Promise<StartBookingResult> => {
     if (!data.name || data.phone.length !== 10) return { error: "Please give your name and a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { error: "Enter a valid 10-digit alternate mobile number." };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: product } = await supabaseAdmin
@@ -68,6 +70,7 @@ export const startBooking = createServerFn({ method: "POST" })
         profile_id: userId ?? null,
         customer_name: data.name,
         phone: data.phone,
+        alternate_phone: data.alternatePhone || null,
         email: data.email || null,
         address: data.address || null,
         colour: data.colour || null,

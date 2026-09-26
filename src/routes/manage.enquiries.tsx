@@ -102,10 +102,11 @@ function EnquiryCard({ enquiry: e, onMove }: { enquiry: Item; onMove: (id: strin
       <p className="font-semibold leading-snug">{e.productName ?? "Photo sent on WhatsApp"}</p>
       <p className="text-xs text-muted-foreground">
         {new Date(e.createdAt).toLocaleString("en-IN")} · quantity {e.qty}
-        {e.source === "whatsapp" ? " · from WhatsApp" : ""}
+        {e.source === "whatsapp" ? " · from WhatsApp" : e.source === "contact" ? " · Contact Us" : e.source === "bulk" ? " · Bulk Orders" : ""}
       </p>
       <p className="mt-2 text-sm">
         {e.name} · {e.phone}
+        {e.alternatePhone ? ` · Alt: ${e.alternatePhone}` : ""}
         {e.vehicle ? ` · ${e.vehicle}` : ""}
       </p>
       {e.note && <p className="mt-1 text-sm text-muted-foreground">“{e.note}”</p>}

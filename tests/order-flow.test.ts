@@ -217,6 +217,14 @@ describe("create_order", () => {
     const { data: order } = await sb.from("orders").select("address").eq("id", row.order_id).single();
     expect(order?.address).toMatchObject({ latitude: 23.406123, longitude: 87.914456 });
   });
+
+  it("preserves an optional alternate number in the immutable address snapshot", async () => {
+    const id = await makeProduct(500, 2);
+    const deliveryAddress = { ...address, alternatePhone: "9888888888" };
+    const { row } = await placeOrder([{ product_id: id, qty: 1 }], "Cash on Delivery", undefined, deliveryAddress);
+    const { data: order } = await sb.from("orders").select("address").eq("id", row.order_id).single();
+    expect(order?.address).toMatchObject({ alternatePhone: "9888888888" });
+  });
 });
 
 describe("mark_order_paid", () => {

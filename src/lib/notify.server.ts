@@ -10,7 +10,7 @@ export async function loadOrderForNotice(orderId: string): Promise<Row | null> {
   const { data } = await supabaseAdmin
     .from("orders")
     .select(
-      "id, human_id, public_token, status, total, tax_amount, payment_method, payment_status, shipping_method, address, contact_phone, courier_name, tracking_number, tracking_url, order_items(name_snapshot, qty, price_snapshot)",
+      "id, human_id, public_token, status, total, tax_amount, payment_method, payment_status, shipping_method, address, contact_phone, alternate_phone, courier_name, tracking_number, tracking_url, order_items(name_snapshot, qty, price_snapshot)",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -75,10 +75,11 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
     "",
     `Customer: ${a['name'] ?? "-"}`,
     `Phone: ${customerPhone(o)}`,
+    o['alternate_phone'] ? `Alt: ${o['alternate_phone']}` : "",
     addressLines(o),
     "",
     orderLink(o),
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 
   const customer = [
     `Hi ${a['name'] ?? "there"}, thank you for your order with ${BUSINESS.name}.`,

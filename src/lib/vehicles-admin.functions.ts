@@ -257,6 +257,7 @@ export type BookingRow = {
   modelName: string;
   customerName: string;
   phone: string;
+  alternatePhone: string | null;
   colour: string | null;
   status: string;
   paymentStatus: string;
@@ -299,6 +300,7 @@ export const listBookings = createServerFn({ method: "POST" })
         modelName: (r as { products?: { name?: string } | null }).products?.name ?? "",
         customerName: String(r.customer_name),
         phone: String(r.phone),
+        alternatePhone: r.alternate_phone,
         colour: r.colour,
         status: String(r.status),
         paymentStatus: String(r.payment_status),
@@ -417,6 +419,7 @@ export type LeadRow = {
   kind: string;
   name: string;
   phone: string;
+  alternatePhone: string | null;
   model: string | null;
   detail: string;
   status: string;
@@ -440,6 +443,7 @@ export const listLeads = createServerFn({ method: "POST" })
         kind: "finance",
         name: String(r.name),
         phone: String(r.phone),
+        alternatePhone: r.alternate_phone,
         model: model(r as Record<string, any>),
         detail: `Down payment ₹${r.down_payment ?? "-"} · ${r.tenure_months ?? "-"} months · income ₹${r.monthly_income ?? "-"} · ${r.employment ?? ""}`,
         status: String(r.status),
@@ -453,6 +457,7 @@ export const listLeads = createServerFn({ method: "POST" })
         kind: "exchange",
         name: String(r.name),
         phone: String(r.phone),
+        alternatePhone: null,
         model: model(r as Record<string, any>),
         detail: `${r.current_brand ?? ""} ${r.current_model ?? ""} ${r.year ?? ""} · ${r.km_run ?? "-"} km · ${r.condition ?? ""}${r.quoted_value ? ` · quoted ₹${r.quoted_value}` : ""}`,
         status: String(r.status),
@@ -466,6 +471,7 @@ export const listLeads = createServerFn({ method: "POST" })
         kind: "service",
         name: String(r.name),
         phone: String(r.phone),
+        alternatePhone: r.alternate_phone,
         model: model(r as Record<string, any>),
         detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""} — ${r.issue ?? ""}`,
         status: String(r.status),
@@ -479,6 +485,7 @@ export const listLeads = createServerFn({ method: "POST" })
       kind: "test_ride",
       name: String(r.name),
       phone: String(r.phone),
+      alternatePhone: r.alternate_phone,
       model: model(r as Record<string, any>),
       detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""}${r.note ? ` — ${r.note}` : ""}`,
       status: String(r.status),

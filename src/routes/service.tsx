@@ -33,7 +33,7 @@ export const Route = createFileRoute("/service")({
 });
 
 function ServicePage() {
-  const [book, setBook] = useState({ name: "", phone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, issue: "", registrationNumber: "" });
+  const [book, setBook] = useState({ name: "", phone: "", alternatePhone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, issue: "", registrationNumber: "" });
   const [bookMsg, setBookMsg] = useState<string | null>(null);
   const [look, setLook] = useState({ phone: "", reference: "" });
   const [history, setHistory] = useState<ServiceHistoryView | null>(null);
@@ -51,7 +51,10 @@ function ServicePage() {
         <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <h2 className="font-display text-lg font-bold">Book a service slot</h2>
           <Input placeholder="Your name" aria-label="Your name" value={book.name} onChange={(e) => setBook({ ...book, name: e.target.value })} />
-          <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" value={book.phone} onChange={(e) => setBook({ ...book, phone: e.target.value })} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={book.phone} onChange={(e) => setBook({ ...book, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+            <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={book.alternatePhone} onChange={(e) => setBook({ ...book, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+          </div>
           <Input placeholder="Registration number (if you have one)" aria-label="Registration number" value={book.registrationNumber} onChange={(e) => setBook({ ...book, registrationNumber: e.target.value })} />
           <Input type="date" aria-label="Preferred date" value={book.date} onChange={(e) => setBook({ ...book, date: e.target.value })} />
           <Select value={book.slot} onValueChange={(v) => setBook({ ...book, slot: v })}>
@@ -61,6 +64,10 @@ function ServicePage() {
           <Textarea rows={3} placeholder="What is the problem?" aria-label="What is the problem" value={book.issue} onChange={(e) => setBook({ ...book, issue: e.target.value })} />
           <Button
             onClick={async () => {
+              if (book.alternatePhone && !/^[6-9]\d{9}$/.test(book.alternatePhone)) {
+                setBookMsg("Enter a valid 10-digit alternate mobile number.");
+                return;
+              }
               const r = await requestService({ data: book });
               setBookMsg(r.ok ? "Slot requested. We will confirm on WhatsApp." : (r.error ?? "Please try again."));
             }}

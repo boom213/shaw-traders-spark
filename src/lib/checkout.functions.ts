@@ -5,6 +5,7 @@ export type CartItemInput = { productId: string; qty: number };
 export type Address = {
   name: string;
   phone: string;
+  alternatePhone?: string;
   line1: string;
   landmark?: string;
   city: string;
@@ -42,6 +43,7 @@ export const cleanAddress = (a: Address | undefined) => {
   return {
     name: String(a?.name ?? "").trim().slice(0, 120),
     phone: String(a?.phone ?? "").replace(/\D/g, "").slice(-10),
+    alternatePhone: String(a?.alternatePhone ?? "").replace(/\D/g, "").slice(-10),
     line1: String(a?.line1 ?? "").trim().slice(0, 300),
     landmark: String(a?.landmark ?? "").trim().slice(0, 160),
     city: String(a?.city ?? "").trim().slice(0, 120),
@@ -83,6 +85,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     if (data.items.length === 0) return { error: "Your cart is empty." };
     if (data.address.phone.length !== 10 || data.address.pincode.length !== 6 || !data.address.name || !data.address.line1) {
       return { error: "Please complete your delivery address." };
+    }
+    if (data.address.alternatePhone && !/^[6-9]\d{9}$/.test(data.address.alternatePhone)) {
+      return { error: "Enter a valid 10-digit alternate mobile number." };
     }
 
     const { publicClient } = await import("@/lib/supabase-public.server");
@@ -137,6 +142,33 @@ export const startCheckout = createServerFn({ method: "POST" })
       | { order_id: string; human_id: string; public_token: string; total: number; payment_status: string }
       | undefined;
     if (!row) return { error: "Could not place the order. Please try again." };
+
+    await supabaseAdmin
+      .from("orders")
+      .update({ alternate_phone: data.address.alternatePhone || null })
+      .eq("id", row.order_id);
+    if (userId) {
+      const { data: savedAddress } = await supabaseAdmin
+        .from("addresses")
+        .select("id")
+        .eq("profile_id", userId)
+        .eq("is_default", true)
+        .maybeSingle();
+      const addressRow = {
+        profile_id: userId,
+        name: data.address.name,
+        phone: data.address.phone,
+        alternate_phone: data.address.alternatePhone || null,
+        line1: data.address.line1,
+        landmark: data.address.landmark || null,
+        city: data.address.city,
+        state: data.address.state,
+        pincode: data.address.pincode,
+        is_default: true,
+      };
+      if (savedAddress) await supabaseAdmin.from("addresses").update(addressRow).eq("id", savedAddress.id);
+      else await supabaseAdmin.from("addresses").insert(addressRow);
+    }
 
     const payLater = data.paymentMethod === "Cash on Delivery" || data.paymentMethod === "Credit (account)";
     if (payLater) {

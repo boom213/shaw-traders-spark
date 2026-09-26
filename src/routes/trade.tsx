@@ -55,7 +55,7 @@ function TradePage() {
   const { data: account, isPending } = useQuery({ queryKey: ["trade-account"], queryFn: () => myTradeAccount() });
 
   const [form, setForm] = useState({
-    businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "",
+    businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "", alternatePhone: "",
     businessType: "", yearsInBusiness: "", staffCount: "", monthlyVolume: "",
   });
   const [brands, setBrands] = useState<string[]>([]);
@@ -92,6 +92,7 @@ function TradePage() {
       shopAddress: app.shopAddress,
       contactPerson: app.contactPerson,
       phone: app.phone,
+      alternatePhone: app.alternatePhone ?? "",
       businessType: app.businessType,
       yearsInBusiness: app.yearsInBusiness,
       staffCount: app.staffCount,
@@ -130,6 +131,7 @@ function TradePage() {
   const submit = async () => {
     const err = taxIdError(form.gstin, form.pan);
     if (err) return toast.error(err);
+    if (form.alternatePhone && !/^[6-9]\d{9}$/.test(form.alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
     setSaving(true);
     const res = await submitTradeApplication({ data: { ...form, brands, partCategories, documents: docs } });
     setSaving(false);
@@ -279,7 +281,8 @@ function TradePage() {
                 <Input placeholder="Person we should speak to" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
                 <Input placeholder="GSTIN (if you have one)" maxLength={15} aria-invalid={taxErr?.includes("GSTIN") || undefined} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} />
                 <Input placeholder="PAN (e.g. ABCDE1234F)" maxLength={10} aria-invalid={taxErr?.includes("PAN") || undefined} value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })} />
-                <Input placeholder="Mobile number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Input placeholder="Mobile number" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+                <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
               </div>
               {taxErr && <p role="alert" className="-mt-1 text-sm text-destructive">{taxErr}</p>}
               <Textarea rows={3} placeholder="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} />

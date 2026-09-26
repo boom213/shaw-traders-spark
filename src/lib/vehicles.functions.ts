@@ -88,16 +88,18 @@ async function productIdForSlug(slug: string): Promise<string | null> {
 
 /** Book a test ride on a date and slot. */
 export const requestTestRide = createServerFn({ method: "POST" })
-  .inputValidator((data: { slug: string; name: string; phone: string; date: string; slot: string; note?: string }) => ({
+  .inputValidator((data: { slug: string; name: string; phone: string; alternatePhone?: string; date: string; slot: string; note?: string }) => ({
     slug: text(data?.slug, 160),
     name: text(data?.name, 120),
     phone: phone10(data?.phone),
+    alternatePhone: phone10(data?.alternatePhone),
     date: dateOrNull(data?.date),
     slot: text(data?.slot, 40),
     note: text(data?.note, 400),
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     if (!data.name || data.phone.length !== 10) return { ok: false, error: "Please give your name and a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false, error: "Enter a valid 10-digit alternate mobile number." };
     if (data.date && data.date < todayInKolkata()) return { ok: false, error: "Please choose today or a future date." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const productId = await productIdForSlug(data.slug);
@@ -105,22 +107,24 @@ export const requestTestRide = createServerFn({ method: "POST" })
       product_id: productId,
       name: data.name,
       phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
       preferred_date: data.date,
       slot: data.slot || null,
       note: data.note || null,
     } as never);
     if (error) return { ok: false, error: "Could not send your request. Please try again." };
     const { notifyOwnerLead } = await import("@/lib/vehicle-notify.server");
-    await notifyOwnerLead("test ride request", [`${data.name} · ${data.phone}`, `${data.slug}`, `${data.date ?? "any day"} ${data.slot}`]);
+    await notifyOwnerLead("test ride request", [`${data.name} · ${data.phone}${data.alternatePhone ? ` · Alt: ${data.alternatePhone}` : ""}`, `${data.slug}`, `${data.date ?? "any day"} ${data.slot}`]);
     return { ok: true };
   });
 
 /** Ask about finance on a model. */
 export const requestFinance = createServerFn({ method: "POST" })
-  .inputValidator((data: { slug: string; name: string; phone: string; downPayment?: number; tenureMonths?: number; monthlyIncome?: number; employment?: string }) => ({
+  .inputValidator((data: { slug: string; name: string; phone: string; alternatePhone?: string; downPayment?: number; tenureMonths?: number; monthlyIncome?: number; employment?: string }) => ({
     slug: text(data?.slug, 160),
     name: text(data?.name, 120),
     phone: phone10(data?.phone),
+    alternatePhone: phone10(data?.alternatePhone),
     downPayment: numOrNull(data?.downPayment),
     tenureMonths: numOrNull(data?.tenureMonths),
     monthlyIncome: numOrNull(data?.monthlyIncome),
@@ -128,12 +132,14 @@ export const requestFinance = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     if (!data.name || data.phone.length !== 10) return { ok: false, error: "Please give your name and a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false, error: "Enter a valid 10-digit alternate mobile number." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const productId = await productIdForSlug(data.slug);
     const { error } = await supabaseAdmin.from("finance_enquiries").insert({
       product_id: productId,
       name: data.name,
       phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
       down_payment: data.downPayment,
       tenure_months: data.tenureMonths,
       monthly_income: data.monthlyIncome,
@@ -141,7 +147,7 @@ export const requestFinance = createServerFn({ method: "POST" })
     } as never);
     if (error) return { ok: false, error: "Could not send your enquiry. Please try again." };
     const { notifyOwnerLead } = await import("@/lib/vehicle-notify.server");
-    await notifyOwnerLead("finance enquiry", [`${data.name} · ${data.phone}`, data.slug, `Down payment ${data.downPayment ?? "-"}, ${data.tenureMonths ?? "-"} months`]);
+    await notifyOwnerLead("finance enquiry", [`${data.name} · ${data.phone}${data.alternatePhone ? ` · Alt: ${data.alternatePhone}` : ""}`, data.slug, `Down payment ${data.downPayment ?? "-"}, ${data.tenureMonths ?? "-"} months`]);
     return { ok: true };
   });
 
@@ -181,9 +187,10 @@ export const requestExchange = createServerFn({ method: "POST" })
 
 /** Book a service slot. */
 export const requestService = createServerFn({ method: "POST" })
-  .inputValidator((data: { name: string; phone: string; date: string; slot: string; issue?: string; registrationNumber?: string }) => ({
+  .inputValidator((data: { name: string; phone: string; alternatePhone?: string; date: string; slot: string; issue?: string; registrationNumber?: string }) => ({
     name: text(data?.name, 120),
     phone: phone10(data?.phone),
+    alternatePhone: phone10(data?.alternatePhone),
     date: dateOrNull(data?.date),
     slot: text(data?.slot, 40),
     issue: text(data?.issue, 600),
@@ -191,6 +198,7 @@ export const requestService = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     if (!data.name || data.phone.length !== 10) return { ok: false, error: "Please give your name and a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false, error: "Enter a valid 10-digit alternate mobile number." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let registrationId: string | null = null;
@@ -212,13 +220,14 @@ export const requestService = createServerFn({ method: "POST" })
       product_id: productId,
       name: data.name,
       phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
       preferred_date: data.date,
       slot: data.slot || null,
       issue: [data.registrationNumber ? `Reg ${data.registrationNumber}` : "", data.issue].filter(Boolean).join(" — ") || null,
     } as never);
     if (error) return { ok: false, error: "Could not book the slot. Please try again." };
     const { notifyOwnerLead } = await import("@/lib/vehicle-notify.server");
-    await notifyOwnerLead("service booking", [`${data.name} · ${data.phone}`, `${data.date ?? "any day"} ${data.slot}`, data.issue]);
+    await notifyOwnerLead("service booking", [`${data.name} · ${data.phone}${data.alternatePhone ? ` · Alt: ${data.alternatePhone}` : ""}`, `${data.date ?? "any day"} ${data.slot}`, data.issue]);
     return { ok: true };
   });
 

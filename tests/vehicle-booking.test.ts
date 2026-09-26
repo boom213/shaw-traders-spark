@@ -106,16 +106,18 @@ describe("booking track", () => {
         product_id: product!.id,
         customer_name: "Test Buyer",
         phone: "9999999999",
+        alternate_phone: "9888888888",
         price_breakdown: {},
         on_road_total: onRoad,
         token_amount: token,
         balance_due: onRoad - token,
       } as never)
-      .select("id, public_token, status, balance_due")
+      .select("id, public_token, status, balance_due, alternate_phone")
       .single();
     expect(error).toBeNull();
     expect(booking!.status).toBe("booked");
     expect(Number(booking!.balance_due)).toBe(onRoad - token);
+    expect(booking!.alternate_phone).toBe("9888888888");
 
     await admin.from("booking_events").insert({ booking_id: booking!.id, status: "allotted", note: "Allotted" } as never);
     const { data: view, error: viewError } = await anon.rpc("booking_by_token", { p_token: booking!.public_token });
