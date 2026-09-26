@@ -253,6 +253,13 @@
       "when": 1790444516093,
       "tag": "0035_add_atomic_product_brand_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790445718950,
+      "tag": "0036_record_optional_counter_sale_vendor_payments",
+      "breakpoints": true
     }
   ]
 }
