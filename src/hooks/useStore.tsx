@@ -76,7 +76,7 @@ type Ctx = {
   moveToCart: (productId: string) => void;
   toggleWishlist: (productId: string) => void;
   markViewed: (productId: string) => void;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
 };
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -223,7 +223,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...l,
           recentlyViewed: [productId, ...l.recentlyViewed.filter((r) => r !== productId)].slice(0, 12),
         })),
-      clearCart: () => update((l) => ({ ...l, cart: [] })),
+      clearCart: async () => {
+        const cleared = { ...lists, cart: [] };
+        if (timer.current) {
+          clearTimeout(timer.current);
+          timer.current = null;
+        }
+        writeLocal(cleared);
+        setLists(cleared);
+        if (!user) return;
+        const { error } = await supabase.from("user_lists").upsert({
+          profile_id: user.id,
+          cart: cleared.cart as never,
+          wishlist: cleared.wishlist as never,
+          saved: cleared.saved as never,
+          recently_viewed: cleared.recentlyViewed as never,
+        });
+        if (error) console.error("Could not clear the synced cart", error.message);
+      },
     }),
     [lists, ready, user, authReady, wishlistReady, update],
   );

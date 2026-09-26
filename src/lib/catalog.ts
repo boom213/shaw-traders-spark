@@ -152,7 +152,7 @@ export const BUSINESS = {
   tagline: "Complete EV Parts & Accessories",
   phone: "7501849610",
   phoneIntl: "917501849610",
-  address: "Defence Colony, Bud Bud, Bardhaman, West Bengal – 713403, India",
+  address: "CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403",
   site: "https://shawtradersev.info",
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",

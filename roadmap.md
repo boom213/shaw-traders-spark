@@ -28,3 +28,4 @@
 - [x] Add an admin-controlled homepage showroom section visibility setting.
 - [x] Add a Manager/Owner/Super Admin action to create wholesaler accounts.
 - [x] Add optional alternate phone capture, persistence, and staff display across customer forms.
+- [x] Fix post-order cart clearing, account booking tracking, trade-decision timing, address, Find Parts access, and vehicle-filter cleanup.

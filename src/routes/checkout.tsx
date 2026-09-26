@@ -112,7 +112,7 @@ function CheckoutPage() {
     if (user) {
       await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone });
     }
-    clearCart();
+    await clearCart();
     window.localStorage.removeItem(COUPON_KEY);
     toast.success(message);
     void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });

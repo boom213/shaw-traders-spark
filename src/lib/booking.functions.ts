@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 const phone10 = (v: unknown) => String(v ?? "").replace(/\D/g, "").slice(-10);
@@ -175,6 +176,39 @@ export type BookingView = {
   createdAt: string;
   events: { status: string; note: string | null; at: string }[];
 };
+
+export type CustomerBooking = {
+  humanId: string;
+  modelName: string;
+  status: string;
+  tokenAmount: number;
+  balanceDue: number;
+  token: string;
+};
+
+/** Scooter bookings belonging to the signed-in customer, newest first. */
+export const bookingsByUser = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<CustomerBooking[]> => {
+    const { data: rows, error } = await context.supabase
+      .from("vehicle_bookings")
+      .select("human_id, status, token_amount, balance_due, public_token, products(name)")
+      .eq("profile_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    return (rows ?? []).map((row) => {
+      const product = (Array.isArray(row.products) ? row.products[0] : row.products) as { name?: string | null } | null;
+      return {
+        humanId: String(row.human_id),
+        modelName: product?.name ?? "Electric scooter",
+        status: String(row.status),
+        tokenAmount: Number(row.token_amount),
+        balanceDue: Number(row.balance_due),
+        token: String(row.public_token),
+      };
+    });
+  });
 
 /** Follow a booking with the link the customer was given. */
 export const bookingByToken = createServerFn({ method: "POST" })

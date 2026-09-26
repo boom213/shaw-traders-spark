@@ -1,17 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { Button } from "@/components/ui/button";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
+import { staffSession } from "@/lib/staff.functions";
 
 export const Route = createFileRoute("/find-parts")({
-  loader: async ({ context }) => {
-    await Promise.all([
-      context.queryClient.ensureQueryData(vehicleTreeQuery()),
-      context.queryClient.ensureQueryData(categoriesQuery()),
-    ]);
-  },
   head: () => ({
     meta: [
       { title: "Find Parts for Your EV" },
@@ -30,6 +27,28 @@ export const Route = createFileRoute("/find-parts")({
 });
 
 function FindPartsPage() {
+  const getStaffSession = useServerFn(staffSession);
+  const { data: staff, isPending } = useQuery({
+    queryKey: ["find-parts-staff-session"],
+    queryFn: () => getStaffSession(),
+    retry: false,
+  });
+
+  if (isPending) {
+    return <div className="container-page py-14"><div className="h-44 animate-pulse rounded-2xl bg-muted" /></div>;
+  }
+
+  if (!staff?.signedIn) {
+    return (
+      <section className="w-full bg-muted py-20 text-center sm:py-28">
+        <div className="container-page">
+          <h1 className="font-display text-3xl font-bold sm:text-4xl">Coming Soon</h1>
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">We're improving this feature — check back soon.</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="container mx-auto space-y-8 px-4 py-6">
       <header className="space-y-2">

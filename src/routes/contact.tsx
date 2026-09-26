@@ -16,7 +16,7 @@ export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
       { title: "Contact Shaw Traders EV — Bud Bud, Bardhaman" },
-      { name: "description", content: "Call, WhatsApp or visit Shaw Traders EV at Defence Colony, Bud Bud, Bardhaman, West Bengal 713403 for EV spare parts, batteries and chargers." },
+      { name: "description", content: "Call, WhatsApp or visit Shaw Traders EV at CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403 for EV spare parts, batteries and chargers." },
       { property: "og:title", content: "Contact Shaw Traders EV" },
       { property: "og:description", content: "Phone 7501849610 — EV spare parts counter in Bud Bud, Bardhaman." },
       { property: "og:type", content: "website" },

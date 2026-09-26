@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { MessageCircle, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -178,13 +178,21 @@ function Shop() {
   const search = Route.useSearch();
   const navigate = useNavigate({ from: "/shop" });
   const [sheet, setSheet] = useState(false);
-  const { vehicle } = useVehicle();
+  const router = useRouter();
+  const { vehicle, setVehicle } = useVehicle();
 
-  // A saved scooter filters the list to parts that fit, until "All parts" is chosen.
+  // The finder passes model/category explicitly. Clear that temporary choice
+  // when leaving the shop so it cannot silently return on a later visit.
   useEffect(() => {
-    if (!vehicle || search.model || search.all) return;
-    void navigate({ search: (prev) => ({ ...prev, model: vehicle.model, page: undefined }) });
-  }, [vehicle, search.model, search.all, navigate]);
+    return router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
+      if (fromLocation?.pathname !== "/shop" || toLocation.pathname === "/shop") return;
+      setVehicle(null);
+      const previous = new URL(fromLocation.href, window.location.origin);
+      previous.searchParams.delete("model");
+      previous.searchParams.delete("all");
+      window.history.replaceState(window.history.state, "", `${previous.pathname}${previous.search}${previous.hash}`);
+    });
+  }, [router, setVehicle]);
 
   const apply = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch, page: undefined }) });
