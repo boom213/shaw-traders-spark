@@ -1,5 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChevronDown, Images, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Users } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +72,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
 
 function ManageLayout() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { staff } = Route.useRouteContext();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const denied = useRouterState({ select: (s) => new URLSearchParams(s.location.searchStr).get("denied") === "1" });
@@ -77,6 +80,20 @@ function ManageLayout() {
   const visibleNav = NAV.filter((item) => can(role, item.capability));
   const active = visibleNav.find((item) => item.exact ? pathname === item.to : pathname.startsWith(item.to)) ?? visibleNav[0];
   const groups = [...new Set(visibleNav.map((item) => item.group))];
+
+  useEffect(() => {
+    const refreshOperationalData = () => {
+      if (document.visibilityState === "visible") {
+        void queryClient.refetchQueries({ type: "active" });
+      }
+    };
+    window.addEventListener("focus", refreshOperationalData);
+    document.addEventListener("visibilitychange", refreshOperationalData);
+    return () => {
+      window.removeEventListener("focus", refreshOperationalData);
+      document.removeEventListener("visibilitychange", refreshOperationalData);
+    };
+  }, [queryClient]);
 
   return (
     <div className="container-page py-6 lg:py-8">
