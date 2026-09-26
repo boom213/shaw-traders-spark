@@ -2742,6 +2742,10 @@ export type Database = {
         Args: { p_order_id: string; p_reason?: string }
         Returns: boolean
       }
+      rename_product_brand: {
+        Args: { p_brand_id: string; p_new_name: string }
+        Returns: string
+      }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }
         Returns: {
