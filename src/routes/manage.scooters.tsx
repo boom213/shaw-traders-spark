@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,10 @@ import {
 } from "@/lib/vehicles-admin.functions";
 import { EMPTY_PRICE, EMPTY_SPECS } from "@/lib/vehicles";
 
-export const Route = createFileRoute("/manage/scooters")({ component: ManageScooters });
+export const Route = createFileRoute("/manage/scooters")({
+  validateSearch: (search: Record<string, unknown>) => ({ product: typeof search.product === "string" ? search.product : "" }),
+  component: ManageScooters,
+});
 
 const blank = (): SaveVehicleInput & { coloursText: string } => ({
   name: "",
@@ -37,6 +40,7 @@ const blank = (): SaveVehicleInput & { coloursText: string } => ({
 const STATUS_LABEL: Record<string, string> = { visible: "Live for customers", draft: "Draft", hidden: "Hidden" };
 
 function ManageScooters() {
+  const { product: selectedProduct } = Route.useSearch();
   const qc = useQueryClient();
   const { data: models } = useQuery({ queryKey: ["admin-vehicles"], queryFn: () => listVehiclesAdmin() });
   const [form, setForm] = useState<SaveVehicleInput & { coloursText: string }>(blank());
@@ -79,6 +83,12 @@ function ManageScooters() {
       price: v.price,
       coloursText: v.specs.colours.join(", "),
     });
+
+  useEffect(() => {
+    if (!selectedProduct || !models) return;
+    const selected = models.find((vehicle) => vehicle.id === selectedProduct);
+    if (selected) edit(selected);
+  }, [models, selectedProduct]);
 
   const setSpec = (patch: Record<string, unknown>) => setForm((f) => ({ ...f, specs: { ...f.specs, ...patch } }));
   const setPrice = (patch: Record<string, number>) => setForm((f) => ({ ...f, price: { ...f.price, ...patch } }));

@@ -24,6 +24,7 @@ export type CatalogueRow = {
   images: string[];
   status: string;
   rackLocation: string | null;
+  productKind: "part" | "vehicle";
 };
 
 export type CatalogueProductDetail = CatalogueRow & {
@@ -46,7 +47,7 @@ export type CatalogueProductDetail = CatalogueRow & {
 };
 
 const SELECT =
-  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
+  "id, sku, name, brand, price, mrp, stock, reorder_threshold, status, rack_location, product_kind, categories!inner(slug, name), product_images(url, sort_order), price_tiers(tier, price, min_qty)";
 
 const mapRow = (r: Row): CatalogueRow => ({
   id: String(r['id']),
@@ -67,6 +68,7 @@ const mapRow = (r: Row): CatalogueRow => ({
   reorderThreshold: r['reorder_threshold'] === null || r['reorder_threshold'] === undefined ? null : Number(r['reorder_threshold']),
   status: String(r['status'] ?? "visible"),
   rackLocation: r['rack_location'] ?? null,
+  productKind: r['product_kind'] === "vehicle" ? "vehicle" : "part",
   images: ((r['product_images'] ?? []) as Row[])
     .slice()
     .sort((a, b) => Number(a['sort_order'] ?? 0) - Number(b['sort_order'] ?? 0))

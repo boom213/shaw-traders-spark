@@ -105,11 +105,14 @@ function AllProductsPage() {
           <p className="p-10 text-center text-sm text-muted-foreground">No products match your search.</p>
         ) : products.map((product) => {
           const productStatus = isProductStatus(product.status) ? product.status : "hidden";
+          const editTarget = product.productKind === "vehicle"
+            ? { to: "/manage/scooters" as const, search: { product: product.id } }
+            : { to: "/manage/products/$productId" as const, params: { productId: product.id } };
           return (
             <article key={product.id} className="grid gap-3 border-b border-border p-4 last:border-b-0 lg:grid-cols-[4rem_minmax(12rem,2fr)_minmax(7rem,1fr)_minmax(6rem,1fr)_repeat(5,minmax(5rem,.7fr))] lg:items-center">
-              {canEdit ? <Link to="/manage/products/$productId" params={{ productId: product.id }} aria-label={`Edit ${product.name}`} className="block size-16 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /></Link> : <img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover" />}
+              {canEdit ? <Link {...editTarget} aria-label={`Edit ${product.name}`} className="block size-16 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /></Link> : <img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover" />}
               <div className="min-w-0">
-                {canEdit ? <Link to="/manage/products/$productId" params={{ productId: product.id }} className="font-semibold leading-snug text-primary hover:underline">{product.name}</Link> : <p className="font-semibold leading-snug">{product.name}</p>}
+                {canEdit ? <Link {...editTarget} className="font-semibold leading-snug text-primary hover:underline">{product.name}</Link> : <p className="font-semibold leading-snug">{product.name}</p>}
                 <p className="mt-1 text-xs text-muted-foreground">{product.sku}</p>
                 <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_CHIP[productStatus].className}`}>{STATUS_CHIP[productStatus].label}</span>
               </div>
