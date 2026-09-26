@@ -225,6 +225,13 @@
       "when": 1790440285930,
       "tag": "0031_link_counter_payments_to_vendor_qr",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790441515331,
+      "tag": "0032_make_counter_payment_vendor_qr_display_only",
+      "breakpoints": true
     }
   ]
 }
