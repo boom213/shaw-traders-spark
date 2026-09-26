@@ -346,7 +346,7 @@ function TradePage() {
               </p>
               <Button className="w-full sm:w-auto" disabled={saving} onClick={submit}>
                 {saving ? <Loader2 className="size-4 animate-spin" /> : null}
-                {status ? "Send updated application" : "Send application"}
+                {status ? "Resubmit for approval" : "Submit for approval"}
               </Button>
             </div>
           )}
