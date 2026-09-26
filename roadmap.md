@@ -42,3 +42,4 @@
 - [x] Add a paginated counter-sales payment dashboard with online reconciliation, charting, and CSV/PDF exports.
 - [x] Add a persistent collapsible desktop manager sidebar.
 - [x] Fix long legal-name invoice overlap and add staff-only invoices with photos and rack locations.
+- [x] Fix relative and WebP product photos in staff invoices, with catalogue and no-photo fallbacks.

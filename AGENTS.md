@@ -15,7 +15,7 @@
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
-- Generate customer, staff, and counter-sale invoices through one shared paginated A4 PDF template so tax fields and print layout stay consistent.
+- Use one A4 invoice template; staff copies resolve snapshot-first catalogue photos, including private WebP uploads.
 - Keep homepage social links iframe-free and lazy-mounted below the primary shopping content so third-party media does not delay the storefront.
 - Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
