@@ -266,6 +266,8 @@ function Dashboard() {
     toast.success("Password updated");
   };
 
+  if (!user) return null;
+
   return (
     <div className="container mx-auto space-y-10 px-4 py-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
