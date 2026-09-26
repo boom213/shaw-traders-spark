@@ -20,7 +20,7 @@ export async function notifyBookingPlaced(bookingId: string): Promise<void> {
   const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
   const { data: b } = await supabaseAdmin
     .from("vehicle_bookings")
-    .select("human_id, customer_name, phone, colour, token_amount, balance_due, on_road_total, public_token, products(name)")
+    .select("human_id, customer_name, phone, alternate_phone, colour, token_amount, balance_due, on_road_total, public_token, products(name)")
     .eq("id", bookingId)
     .maybeSingle();
   if (!b) return;
@@ -43,7 +43,7 @@ export async function notifyBookingPlaced(bookingId: string): Promise<void> {
     await sendWhatsAppText({
       to: o.phone,
       kind: "booking.placed.owner",
-      body: `New booking ${b.human_id}: ${model} for ${b.customer_name} (${b.phone}). Token ${formatINR(Number(b.token_amount))}.`,
+      body: `New booking ${b.human_id}: ${model} for ${b.customer_name} (${b.phone}${b.alternate_phone ? ` · Alt: ${b.alternate_phone}` : ""}). Token ${formatINR(Number(b.token_amount))}.`,
     });
   }
 }

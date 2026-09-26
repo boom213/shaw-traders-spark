@@ -92,6 +92,10 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
   const [link, setLink] = useState<string | null>(null);
 
   const submit = async () => {
+    if (form.alternatePhone && !/^[6-9]\d{9}$/.test(form.alternatePhone)) {
+      setNote("Enter a valid 10-digit alternate mobile number.");
+      return;
+    }
     setBusy(true);
     setNote(null);
     const res = await startBooking({ data: { slug, ...form } });
@@ -203,6 +207,7 @@ function TestRideForm({ slug }: { slug: string }) {
       </Select>
       <Button
         onClick={async () => {
+          if (f.alternatePhone && !/^[6-9]\d{9}$/.test(f.alternatePhone)) return setMsg("Enter a valid 10-digit alternate mobile number.");
           const r = await requestTestRide({ data: { slug, ...f } });
           setMsg(r.ok ? "Thank you — we will confirm your slot on WhatsApp." : (r.error ?? "Please try again."));
         }}
@@ -240,6 +245,7 @@ function FinanceForm({ slug, onRoad }: { slug: string; onRoad: number }) {
       <Button
         variant="outline"
         onClick={async () => {
+          if (f.alternatePhone && !/^[6-9]\d{9}$/.test(f.alternatePhone)) return setMsg("Enter a valid 10-digit alternate mobile number.");
           const r = await requestFinance({
             data: {
               slug,

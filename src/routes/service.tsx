@@ -64,6 +64,10 @@ function ServicePage() {
           <Textarea rows={3} placeholder="What is the problem?" aria-label="What is the problem" value={book.issue} onChange={(e) => setBook({ ...book, issue: e.target.value })} />
           <Button
             onClick={async () => {
+              if (book.alternatePhone && !/^[6-9]\d{9}$/.test(book.alternatePhone)) {
+                setBookMsg("Enter a valid 10-digit alternate mobile number.");
+                return;
+              }
               const r = await requestService({ data: book });
               setBookMsg(r.ok ? "Slot requested. We will confirm on WhatsApp." : (r.error ?? "Please try again."));
             }}
