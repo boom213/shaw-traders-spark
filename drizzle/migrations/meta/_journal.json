@@ -204,6 +204,13 @@
       "when": 1790436194932,
       "tag": "0028_reliable_payments_vendor_qr_accounting",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790436328216,
+      "tag": "0029_harden_ledger_writes_and_enable_scheduler",
+      "breakpoints": true
     }
   ]
 }
