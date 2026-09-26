@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogueInfo, catalogueUploadUrl } from "@/lib/brand-catalogue.functions";
 
@@ -74,7 +75,7 @@ function CataloguePage() {
                 </button>
               </span>
               <Button disabled={busy} onClick={() => void upload()}>
-                <Upload className="size-4" /> {busy ? "Uploading…" : "Upload"}
+                {busy ? <SparkRing /> : <Upload className="size-4" />} {busy ? "Uploading…" : "Upload"}
               </Button>
             </div>
           )}

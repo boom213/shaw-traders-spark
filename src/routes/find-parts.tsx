@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { FindPartsWidget } from "@/components/site/FindPartsWidget";
 import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { Button } from "@/components/ui/button";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
 import { staffSession } from "@/lib/staff.functions";
@@ -35,7 +36,7 @@ function FindPartsPage() {
   });
 
   if (isPending) {
-    return <div className="container-page py-14"><div className="h-44 animate-pulse rounded-2xl bg-muted" /></div>;
+    return <div className="container-page"><SparkCharge compact label="Checking access…" /></div>;
   }
 
   if (!staff?.signedIn) {

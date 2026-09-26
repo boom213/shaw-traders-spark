@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -85,7 +86,7 @@ Requirement: ${requirement}`;
           onChange={(e) => setRequirement(e.target.value)}
         />
         <div className="flex flex-wrap gap-3 pt-1">
-          <Button disabled={sending || !requirement.trim()} onClick={() => void send()}>{sending ? "Saving…" : "Send enquiry on WhatsApp"}</Button>
+          <Button disabled={sending || !requirement.trim()} onClick={() => void send()}>{sending ? <SparkRing /> : null}{sending ? "Saving…" : "Send enquiry on WhatsApp"}</Button>
           <Button asChild variant="outline">
             <a href={`tel:${BUSINESS.phone}`}>Call {BUSINESS.phone}</a>
           </Button>

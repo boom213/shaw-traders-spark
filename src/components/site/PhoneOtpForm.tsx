@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +59,7 @@ export function PhoneOtpForm({ idPrefix = "auth", onVerified }: { idPrefix?: str
         {mobileErr && <p role="alert" className="text-xs text-destructive">{mobileErr}</p>}
         <p className="text-xs text-muted-foreground">New number? We'll automatically create your account.</p>
       </div>
-      <Button type="submit" className="w-full" disabled={busy || !validMobile}>{busy ? "Sending…" : "Send code"}</Button>
+      <Button type="submit" className="w-full" disabled={busy || !validMobile}>{busy ? <SparkRing /> : null}{busy ? "Sending…" : "Send code"}</Button>
     </form>
   ) : (
     <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); void verify(); }}>
@@ -66,7 +67,7 @@ export function PhoneOtpForm({ idPrefix = "auth", onVerified }: { idPrefix?: str
         <Label htmlFor={`${idPrefix}-otp`}>6-digit code sent to {phone}</Label>
         <Input id={`${idPrefix}-otp`} inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={code} onChange={(e) => setCode(e.target.value)} />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Checking…" : "Verify and continue"}</Button>
+      <Button type="submit" className="w-full" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Checking…" : "Verify and continue"}</Button>
       <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => { setStage("mobile"); setCode(""); }}>
         Change number
       </button>

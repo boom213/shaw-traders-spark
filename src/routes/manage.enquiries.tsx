@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { listEnquiries, replyToEnquiry, setEnquiryStatus } from "@/lib/enquiries.functions";
@@ -178,7 +179,7 @@ function EnquiryCard({ enquiry: e, onMove }: { enquiry: Item; onMove: (id: strin
             <Input placeholder="Part ID of the alternative" value={productId} onChange={(ev) => setProductId(ev.target.value)} />
           )}
           <Button size="sm" disabled={busy} onClick={() => void send()} className="sm:col-span-2">
-            {busy ? "Sending…" : "Send on WhatsApp"}
+            {busy ? <SparkRing /> : null}{busy ? "Sending…" : "Send on WhatsApp"}
           </Button>
         </div>
       )}

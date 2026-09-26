@@ -55,7 +55,7 @@ function DomainHealthPage() {
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-          <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /> Re-check
+          <RefreshCw className={`size-4 ${isFetching ? "motion-safe-spin" : ""}`} /> Re-check
         </Button>
       </div>
 

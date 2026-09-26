@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { shopSettingsQuery } from "@/lib/shop-settings";
@@ -148,7 +149,7 @@ function ContactPage() {
               <Label className="text-xs">Message</Label>
               <Textarea rows={4} value={f.message} onChange={(e) => setF({ ...f, message: e.target.value })} />
             </div>
-            <Button disabled={sending} onClick={() => void send()}>{sending ? "Saving…" : "Send on WhatsApp"}</Button>
+            <Button disabled={sending} onClick={() => void send()}>{sending ? <SparkRing /> : null}{sending ? "Saving…" : "Send on WhatsApp"}</Button>
             <p className="text-xs text-muted-foreground">Your enquiry opens in WhatsApp so we can reply quickly.</p>
           </div>
         </div>
