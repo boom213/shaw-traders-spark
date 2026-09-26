@@ -5,6 +5,7 @@ import { getPublicShopSettings } from "@/lib/shop-settings.functions";
 export type ShopSettings = {
   orderingMode: OrderingMode;
   browseBanner: string | null;
+  showShowroomSection: boolean;
   gstEnabled: boolean;
   gstRate: number;
   pricesIncludeGst: boolean;
@@ -24,6 +25,7 @@ export type ShopSettings = {
 export const DEFAULT_SETTINGS: ShopSettings = {
   orderingMode: "full",
   browseBanner: null,
+  showShowroomSection: true,
   gstEnabled: true,
   gstRate: 18,
   pricesIncludeGst: true,
@@ -50,6 +52,7 @@ export const shopSettingsQuery = () =>
       return {
         orderingMode: isOrderingMode(data.ordering_mode) ? data.ordering_mode : "full",
         browseBanner: data.browse_banner,
+        showShowroomSection: data.show_showroom_section !== false,
         gstEnabled: Boolean(data.gst_enabled),
         gstRate: Number(data.gst_rate ?? 0),
         pricesIncludeGst: Boolean(data.prices_include_gst),

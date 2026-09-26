@@ -16,10 +16,16 @@ import { ScooterSection } from "@/components/home/ScooterSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
 import { BrochureDownloadDialog } from "@/components/site/BrochureDownloadDialog";
 import { homeQuery } from "@/lib/queries";
+import { shopSettingsQuery } from "@/lib/shop-settings";
 import storefrontHero from "@/assets/hero-storefront-reference.jpg";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(homeQuery()),
+  loader: async ({ context }) => {
+    await Promise.all([
+      context.queryClient.ensureQueryData(homeQuery()),
+      context.queryClient.ensureQueryData(shopSettingsQuery()),
+    ]);
+  },
   head: ({ loaderData }) => ({
     meta: [
       { title: "Shaw Traders EV — EV Parts, Batteries & Electric Scooters, Bud Bud" },
@@ -100,6 +106,7 @@ const TRUST = [
 
 function Home() {
   const { data: home } = useSuspenseQuery(homeQuery());
+  const { data: settings } = useSuspenseQuery(shopSettingsQuery());
   return (
     <div>
       <section className="border-b border-border bg-background">
@@ -154,9 +161,11 @@ function Home() {
 
       <BrandsSection />
 
-      <LazySection minHeight="24rem">
-        <ScooterSection />
-      </LazySection>
+      {settings.showShowroomSection && (
+        <LazySection minHeight="24rem">
+          <ScooterSection />
+        </LazySection>
+      )}
 
       <section className="container-page py-6 lg:py-10">
         <div className="grid gap-4 md:grid-cols-2">

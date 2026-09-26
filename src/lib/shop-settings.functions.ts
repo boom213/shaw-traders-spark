@@ -5,7 +5,7 @@ export const getPublicShopSettings = createServerFn({ method: "GET" }).handler(a
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("shop_settings")
-    .select("ordering_mode, browse_banner, gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
+    .select("ordering_mode, browse_banner, show_showroom_section, gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
     .maybeSingle();
 
   if (error) throw new Error("Could not load shop settings");
