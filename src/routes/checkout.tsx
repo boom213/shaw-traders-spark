@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Building2, Check, CreditCard, Landmark, MapPin, Truck, Wallet } from "lucide-react";
-import { useId, useState } from "react";
+import { AlertTriangle, Building2, Check, CreditCard, Landmark, MapPin, Plus, Truck, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
+import { AddressFields, EMPTY_ADDRESS, validateCustomerAddress, type CustomerAddressInput } from "@/components/site/AddressFields";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { lovable } from "@/integrations/lovable/index";
@@ -55,6 +57,29 @@ const PAYMENT = [
 ] as const;
 
 type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
+type SavedAddress = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  alternate_phone: string | null;
+  line1: string | null;
+  landmark: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  is_default: boolean;
+};
+
+const addressInput = (address: SavedAddress): CustomerAddressInput => ({
+  name: address.name ?? "",
+  phone: address.phone ?? "",
+  alternatePhone: address.alternate_phone ?? "",
+  line1: address.line1 ?? "",
+  landmark: address.landmark ?? "",
+  city: address.city ?? "",
+  state: address.state ?? "West Bengal",
+  pincode: address.pincode ?? "",
+});
 
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -76,20 +101,40 @@ function CheckoutPage() {
   const [placing, setPlacing] = useState(false);
   const [pending, setPending] = useState<PendingOrder | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [addr, setAddr] = useState({
-    name: "",
-    phone: "",
-    alternatePhone: "",
-    line1: "",
-    landmark: "",
-    city: "",
-    state: "West Bengal",
-    pincode: "",
-  });
+  const [addr, setAddr] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [makeDefault, setMakeDefault] = useState(false);
   const [delivery, setDelivery] = useState<(typeof DELIVERY)[number]>(DELIVERY[0]);
   const [payment, setPayment] = useState<string>(PAYMENT[0].id);
   const { account, isTrade } = useTradeAccount();
   const [freight, setFreight] = useState({ transportName: "", lrNumber: "" });
+  const { data: savedAddresses = [], isFetched: addressesFetched } = useQuery({
+    queryKey: ["my-addresses", user?.id],
+    queryFn: async () => {
+      if (!user) return [] as SavedAddress[];
+      const { data, error } = await supabase
+        .from("addresses")
+        .select("id, name, phone, alternate_phone, line1, landmark, city, state, pincode, is_default")
+        .eq("profile_id", user.id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as SavedAddress[];
+    },
+    enabled: Boolean(user),
+  });
+
+  useEffect(() => {
+    if (!addressesFetched || selectedAddressId !== undefined) return;
+    const initial = savedAddresses.find((address) => address.is_default) ?? savedAddresses[0];
+    if (initial) {
+      setSelectedAddressId(initial.id);
+      setAddr(addressInput(initial));
+    } else {
+      setSelectedAddressId(null);
+    }
+  }, [addressesFetched, savedAddresses, selectedAddressId]);
 
   const base = Math.max(0, subtotal - discount + delivery.fee);
   const taxed = settings ? withTax(base, settings) : { total: base, tax: 0 };
@@ -193,6 +238,26 @@ function CheckoutPage() {
 
     if ("error" in res) return toast.error(res.error);
 
+    if (selectedAddressId === null && saveAddress && user) {
+      if (makeDefault) {
+        const clear = await supabase.from("addresses").update({ is_default: false }).eq("profile_id", user.id).eq("is_default", true);
+        if (clear.error) toast.error("Order placed, but your saved addresses could not be updated");
+      }
+      const { error: saveError } = await supabase.from("addresses").insert({
+        profile_id: user.id,
+        name: addr.name.trim(),
+        phone: addr.phone,
+        alternate_phone: addr.alternatePhone || null,
+        line1: addr.line1.trim(),
+        landmark: addr.landmark.trim() || null,
+        city: addr.city.trim(),
+        state: addr.state.trim(),
+        pincode: addr.pincode,
+        is_default: makeDefault,
+      });
+      if (saveError) toast.error("Order placed, but this address could not be saved");
+    }
+
     const order: PendingOrder = { orderId: res.orderId, humanId: res.humanId, token: res.token, total: res.total };
 
     if (!res.razorpay) {
@@ -286,29 +351,34 @@ function CheckoutPage() {
           {step === 1 && (
             <div className="grid gap-4">
               <h3 className="font-display text-base font-bold">Delivery address</h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <F label="Full name" v={addr.name} on={(v) => setAddr({ ...addr, name: v })} />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <F label="Phone number" v={addr.phone} on={(v) => setAddr({ ...addr, phone: v })} numeric />
-                <F label="Alternate Number (optional)" v={addr.alternatePhone} on={(v) => setAddr({ ...addr, alternatePhone: v })} numeric />
-              </div>
-              <F label="House no., street, area" v={addr.line1} on={(v) => setAddr({ ...addr, line1: v })} />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <F label="Landmark (optional)" v={addr.landmark} on={(v) => setAddr({ ...addr, landmark: v })} />
-                <F label="City / town" v={addr.city} on={(v) => setAddr({ ...addr, city: v })} />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <F label="State" v={addr.state} on={(v) => setAddr({ ...addr, state: v })} />
-                <F label="PIN code" v={addr.pincode} on={(v) => setAddr({ ...addr, pincode: v })} />
-              </div>
+              {savedAddresses.length > 0 && (
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Choose a saved address</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {savedAddresses.map((address) => (
+                      <Button key={address.id} type="button" variant="outline" className={cn("h-auto min-h-24 items-start justify-start whitespace-normal p-3 text-left", selectedAddressId === address.id && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(address.id); setAddr(addressInput(address)); setSaveAddress(false); setMakeDefault(false); }}>
+                        <MapPin className="mt-0.5 size-4 shrink-0" />
+                        <span><span className="block font-semibold">{address.name}{address.is_default ? " · Default" : ""}</span><span className="block text-xs text-muted-foreground">{address.phone}</span><span className="block text-xs text-muted-foreground">{[address.line1, address.city, address.state, address.pincode].filter(Boolean).join(", ")}</span></span>
+                      </Button>
+                    ))}
+                    <Button type="button" variant="outline" className={cn("h-auto min-h-24 justify-start p-3", selectedAddressId === null && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(null); setAddr(EMPTY_ADDRESS); setSaveAddress(false); setMakeDefault(false); }}>
+                      <Plus className="size-4" /> Use a new address
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <AddressFields value={addr} onChange={setAddr} />
+              {selectedAddressId === null && (
+                <div className="grid gap-2 rounded-lg border border-border bg-surface p-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm"><Checkbox checked={saveAddress} onCheckedChange={(checked) => { setSaveAddress(checked === true); if (checked !== true) setMakeDefault(false); }} />Save this address for next time</label>
+                  {saveAddress && <label className="flex cursor-pointer items-center gap-2 pl-6 text-sm text-muted-foreground"><Checkbox checked={makeDefault} onCheckedChange={(checked) => setMakeDefault(checked === true)} />Make this my default address</label>}
+                </div>
+              )}
               <Button
                 className="mt-1 w-fit"
                 onClick={() => {
-                  if (!addr.name.trim() || !/^\d{10}$/.test(addr.phone.trim()) || !addr.line1.trim() || !/^\d{6}$/.test(addr.pincode.trim())) {
-                    return toast.error("Please add name, a 10-digit phone, address and a 6-digit PIN code");
-                  }
-                  if (addr.alternatePhone && !/^[6-9]\d{9}$/.test(addr.alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
+                  const validationError = validateCustomerAddress(addr);
+                  if (validationError) return toast.error(validationError);
                   setStep(2);
                 }}
               >
@@ -535,12 +605,3 @@ function CheckoutSignIn() {
   );
 }
 
-function F({ label, v, on, numeric = false }: { label: string; v: string; on: (s: string) => void; numeric?: boolean }) {
-  const id = useId();
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id} className="text-xs">{label}</Label>
-      <Input id={id} inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 10 : undefined} value={v} onChange={(e) => on(numeric ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value)} />
-    </div>
-  );
-}

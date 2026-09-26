@@ -25,7 +25,7 @@ export const EMPTY_ADDRESS: CustomerAddressInput = {
 };
 
 export function validateCustomerAddress(address: CustomerAddressInput): string | null {
-  if (!address.name.trim() || !/^[6-9]\d{9}$/.test(address.phone.trim()) || !address.line1.trim() || !/^\d{6}$/.test(address.pincode.trim())) {
+  if (!address.name.trim() || !/^\d{10}$/.test(address.phone.trim()) || !address.line1.trim() || !/^\d{6}$/.test(address.pincode.trim())) {
     return "Please add name, a valid 10-digit phone, address and a 6-digit PIN code";
   }
   if (address.alternatePhone && !/^[6-9]\d{9}$/.test(address.alternatePhone)) {
