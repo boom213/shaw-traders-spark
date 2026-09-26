@@ -281,6 +281,13 @@
       "when": 1790452572052,
       "tag": "0039_manager_paging_and_aggregate_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1790452820510,
+      "tag": "0040_correct_customer_lifetime_value_aggregate",
+      "breakpoints": true
     }
   ]
 }
