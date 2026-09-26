@@ -17,7 +17,6 @@ import { Footer } from "@/components/site/Footer";
 import { AnalyticsGate, CookieConsent } from "@/components/site/CookieConsent";
 import { MobileTabBar } from "@/components/site/MobileTabBar";
 import { OrderingBanner } from "@/components/site/OrderingBanner";
-import { WhatsAppFab } from "@/components/site/WhatsAppFab";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { setupServiceWorker } from "@/lib/pwa";
@@ -243,7 +242,6 @@ function RootComponent() {
           <Footer />
         </div>
         <MobileTabBar />
-        <WhatsAppFab />
         <CookieConsent />
         <AnalyticsGate />
         <Toaster position="top-center" />
