@@ -117,4 +117,23 @@ describe("invoice PDF", () => {
     expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
     expect(pdf.getPageCount()).toBe(1);
   });
+
+  it("uses the current catalogue photo when an order photo snapshot is broken", async () => {
+    const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII=";
+    const bytes = await createInvoicePdf(invoice({
+      staffCopy: true,
+      items: [{
+        name: "Product with a replaced photo",
+        qty: 1,
+        price: 12000,
+        productId: "battery",
+        image: "https://invalid.invalid/old-order-photo.webp",
+        fallbackImage: png,
+      }],
+    }));
+    await saveQaPdf("staff-invoice-photo-fallback.pdf", bytes);
+    const pdf = await PDFDocument.load(bytes);
+    expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
+    expect(pdf.getPageCount()).toBe(1);
+  });
 });
