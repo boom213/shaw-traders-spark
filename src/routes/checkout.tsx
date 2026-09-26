@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { useTradeAccount } from "@/hooks/useTrade";
-import { abandonPayment, paymentsAvailable, retryPayment, startCheckout, verifyPayment } from "@/lib/checkout.functions";
+import { abandonPayment, getMyAddresses, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -57,20 +57,7 @@ const PAYMENT = [
 ] as const;
 
 type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
-type SavedAddress = {
-  id: string;
-  name: string | null;
-  phone: string | null;
-  alternate_phone: string | null;
-  line1: string | null;
-  landmark: string | null;
-  city: string | null;
-  state: string | null;
-  pincode: string | null;
-  is_default: boolean;
-};
-
-const addressInput = (address: SavedAddress): CustomerAddressInput => ({
+const addressInput = (address: CheckoutAddress): CustomerAddressInput => ({
   name: address.name ?? "",
   phone: address.phone ?? "",
   alternatePhone: address.alternate_phone ?? "",
@@ -109,19 +96,10 @@ function CheckoutPage() {
   const [payment, setPayment] = useState<string>(PAYMENT[0].id);
   const { account, isTrade } = useTradeAccount();
   const [freight, setFreight] = useState({ transportName: "", lrNumber: "" });
+  const loadAddresses = useServerFn(getMyAddresses);
   const { data: savedAddresses = [], isFetched: addressesFetched } = useQuery({
     queryKey: ["my-addresses", user?.id],
-    queryFn: async () => {
-      if (!user) return [] as SavedAddress[];
-      const { data, error } = await supabase
-        .from("addresses")
-        .select("id, name, phone, alternate_phone, line1, landmark, city, state, pincode, is_default")
-        .eq("profile_id", user.id)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as SavedAddress[];
-    },
+    queryFn: () => loadAddresses(),
     enabled: Boolean(user),
   });
 
@@ -241,7 +219,10 @@ function CheckoutPage() {
     if (selectedAddressId === null && saveAddress && user) {
       if (makeDefault) {
         const clear = await supabase.from("addresses").update({ is_default: false }).eq("profile_id", user.id).eq("is_default", true);
-        if (clear.error) toast.error("Order placed, but your saved addresses could not be updated");
+        if (clear.error) {
+          toast.error("Order placed, but your saved addresses could not be updated");
+          return finishAfterAddressSave(res);
+        }
       }
       const { error: saveError } = await supabase.from("addresses").insert({
         profile_id: user.id,
@@ -258,6 +239,10 @@ function CheckoutPage() {
       if (saveError) toast.error("Order placed, but this address could not be saved");
     }
 
+    await finishAfterAddressSave(res);
+  };
+
+  const finishAfterAddressSave = async (res: Exclude<Awaited<ReturnType<typeof start>>, { error: string }>) => {
     const order: PendingOrder = { orderId: res.orderId, humanId: res.humanId, token: res.token, total: res.total };
 
     if (!res.razorpay) {

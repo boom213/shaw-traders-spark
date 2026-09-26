@@ -31,6 +31,19 @@ export type StartCheckoutResult =
       razorpay: { keyId: string; orderId: string; amountPaise: number } | null;
     };
 
+export type CheckoutAddress = {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  alternate_phone: string | null;
+  line1: string | null;
+  landmark: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  is_default: boolean;
+};
+
 const cleanItems = (items: CartItemInput[] | undefined) =>
   (items ?? [])
     .map((i) => ({ product_id: String(i.productId), qty: Math.max(1, Math.min(99, Number(i.qty) || 1)) }))
@@ -61,6 +74,22 @@ const friendly = (message: string) =>
 export const paymentsAvailable = createServerFn({ method: "GET" }).handler(async () => {
   const { razorpayKeys } = await import("@/lib/razorpay.server");
   return { online: razorpayKeys().configured };
+});
+
+/** Return only the signed-in customer's saved delivery addresses. */
+export const getMyAddresses = createServerFn({ method: "GET" }).handler(async (): Promise<CheckoutAddress[]> => {
+  const { currentUserId } = await import("@/lib/auth.server");
+  const userId = await currentUserId();
+  if (!userId) return [];
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("addresses")
+    .select("id, name, phone, alternate_phone, line1, landmark, city, state, pincode, is_default")
+    .eq("profile_id", userId)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error("Could not load your saved addresses.");
+  return (data ?? []) as CheckoutAddress[];
 });
 
 /**
