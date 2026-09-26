@@ -86,6 +86,17 @@ describe("invoice PDF", () => {
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
   });
 
+  it("keeps a six-figure total separate from its label", async () => {
+    const bytes = await createInvoicePdf(invoice({
+      subtotal: 84_745.76,
+      total: 100_000,
+      taxAmount: 15_254.24,
+      items: [{ name: "Electric scooter", qty: 1, price: 100_000, productId: "scooter" }],
+    }));
+    await saveQaPdf("six-figure-total-invoice.pdf", bytes);
+    expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
+  });
+
   it("creates a paginated internal staff copy and ignores broken thumbnails", async () => {
     const items = Array.from({ length: 32 }, (_, index) => ({
       name: `Workshop component with a long product description ${index + 1}`,
