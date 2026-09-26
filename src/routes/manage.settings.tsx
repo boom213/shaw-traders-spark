@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -194,7 +195,7 @@ function SettingsPage() {
       </section>
 
       <Button size="lg" className="w-fit" disabled={saving} onClick={() => void submit()}>
-        {saving ? "Saving…" : "Save settings"}
+        {saving ? <SparkRing /> : null}{saving ? "Saving…" : "Save settings"}
       </Button>
     </div>
   );

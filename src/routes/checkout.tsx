@@ -407,7 +407,7 @@ function CheckoutPage() {
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
                 <Button size="lg" disabled={placing} onClick={() => void placeOrder()}>
-                  {placing
+                  {placing ? <SparkRing /> : null}{placing
                     ? "Please wait…"
                     : payment === "Cash on Delivery"
                       ? `Place order · ${formatINR(grand)}`
@@ -528,7 +528,7 @@ function CheckoutSignIn() {
           <span className="h-px flex-1 bg-border" />
         </div>
         <Button type="button" variant="outline" className="w-full" disabled={googleBusy} onClick={() => void google()}>
-          {googleBusy ? "Please wait…" : "Continue with Google"}
+          {googleBusy ? <SparkRing /> : null}{googleBusy ? "Please wait…" : "Continue with Google"}
         </Button>
       </div>
     </div>
