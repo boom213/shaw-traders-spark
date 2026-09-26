@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Check, Download, FileText, Loader2, Trash2, Upload } from "lucide-react";
+import { Check, Download, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { useStore } from "@/hooks/useStore";
 import { BUSINESS, canonical, formatINR } from "@/lib/catalog";
 import { lovable } from "@/integrations/lovable/index";
@@ -242,7 +243,7 @@ function TradePage() {
       )}
 
       {isPending ? (
-        <div className="h-28 animate-pulse rounded-2xl bg-muted" />
+        <SparkCharge compact label="Loading your application…" />
       ) : (
         <>
           {status && (
@@ -329,7 +330,7 @@ function TradePage() {
                         onChange={(e) => void pick(d.field, e.target.files?.[0])}
                       />
                       <Button size="sm" variant="outline" disabled={busy === d.field} onClick={() => fileRefs.current[d.field]?.click()}>
-                        {busy === d.field ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+                        {busy === d.field ? <SparkRing /> : <Upload className="size-4" />}
                         {docs[d.field] ? "Replace" : "Attach"}
                       </Button>
                       {docs[d.field] && (
@@ -348,7 +349,7 @@ function TradePage() {
                  By submitting, you consent to Shaw Traders EV verifying the attached business documents for account verification purposes.
               </p>
               <Button className="w-full sm:w-auto" disabled={saving} onClick={submit}>
-                {saving ? <Loader2 className="size-4 animate-spin" /> : null}
+                {saving ? <SparkRing /> : null}
                 {status ? "Resubmit for approval" : "Submit for approval"}
               </Button>
             </div>
@@ -362,7 +363,7 @@ function TradePage() {
 function DocCheckLine({ check, missing }: { check?: DocCheck & { running?: boolean }; missing: boolean }) {
   if (missing) return <p className="mt-1.5 text-xs text-muted-foreground">Missing — required</p>;
   if (!check) return null;
-  if (check.running) return <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="size-3 animate-spin" /> Checking this paper…</p>;
+  if (check.running) return <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground"><SparkRing size="sm" /> Checking this paper…</p>;
   const label = { ok: "Looks good", unclear: "Unclear", mismatch: "Doesn't match", error: "Couldn't check" }[check.status];
   const tone = check.status === "ok" ? "text-primary" : check.status === "error" ? "text-muted-foreground" : "text-destructive";
   return (

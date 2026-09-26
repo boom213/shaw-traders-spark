@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -85,13 +86,13 @@ function AboutGallery() {
             photos.length >= MAX_PHOTOS ? "pointer-events-none opacity-50" : ""
           }`}
         >
-          {adding ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+          {adding ? <SparkRing /> : <ImagePlus className="size-4" />}
           Add photo
           <input type="file" accept="image/*" className="sr-only" onChange={(e) => void addPhoto(e.target.files?.[0])} />
         </label>
       </div>
 
-      {isPending && <p className="text-sm text-muted-foreground">Loading photos…</p>}
+      {isPending && <SparkCharge compact label="Loading photos…" />}
 
       {photos.map((photo, i) => (
         <PhotoCard
@@ -165,7 +166,7 @@ function PhotoCard({
             )}
           </div>
           <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border py-2 text-sm font-medium">
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+            {busy ? <SparkRing /> : <ImagePlus className="size-4" />}
             Change photo
             <input type="file" accept="image/*" className="sr-only" onChange={(e) => void replacePhoto(e.target.files?.[0])} />
           </label>

@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, ImagePlus, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -77,7 +78,7 @@ function HomeBanners() {
         </Button>
       </div>
 
-      {isPending && <p className="text-sm text-muted-foreground">Loading banners…</p>}
+      {isPending && <SparkCharge compact label="Loading banners…" />}
 
       {slides.map((slide, i) => (
         <SlideCard
@@ -152,7 +153,7 @@ function SlideCard({
             )}
           </div>
           <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-border py-2 text-sm font-medium">
-            {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+            {busy ? <SparkRing /> : <ImagePlus className="size-4" />}
             Change photo
             <input
               type="file"
