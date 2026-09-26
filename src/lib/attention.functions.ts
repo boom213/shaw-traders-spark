@@ -16,13 +16,13 @@ export async function needsAttentionData(): Promise<Attention> {
     sb.from("product_enquiries").select("id", { count: "exact", head: true }).eq("status", "new"),
     sb.from("trade_applications").select("id", { count: "exact", head: true }).in("status", ["pending", "more_info_needed"]),
     sb.from("orders").select("id", { count: "exact", head: true }).in("status", ["order_confirmed", "processing", "packed"]),
-    sb.from("products").select("id, price, stock, reorder_threshold, product_images(url)").eq("status", "visible").limit(3000),
+    sb.rpc("manager_product_attention_counts"),
   ]);
 
-  const rows = (products.data ?? []) as Row[];
-  const belowThreshold = rows.filter((p) => Number(p['stock'] ?? 0) <= Number(p['reorder_threshold'] ?? 3)).length;
-  const noPhoto = rows.filter((p) => ((p['product_images'] ?? []) as Row[]).length === 0).length;
-  const noPrice = rows.filter((p) => p['price'] === null).length;
+  const counts = (products.data ?? {}) as Row;
+  const belowThreshold = Number(counts['belowThreshold'] ?? 0);
+  const noPhoto = Number(counts['noPhoto'] ?? 0);
+  const noPrice = Number(counts['noPrice'] ?? 0);
 
   const items: AttentionItem[] = [
     { key: "enquiries", label: "Availability asks not answered", count: enquiries.count ?? 0, to: "/manage/enquiries" },
