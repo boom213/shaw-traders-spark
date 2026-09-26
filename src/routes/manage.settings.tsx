@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/manage/settings")({
 function SettingsPage() {
   const load = useServerFn(getShopSettings);
   const save = useServerFn(saveShopSettings);
+  const queryClient = useQueryClient();
   const { data, refetch } = useQuery({ queryKey: ["shop-settings-admin"], queryFn: () => load() });
   const [form, setForm] = useState<ShopSettingsRow | null>(null);
   const [saving, setSaving] = useState(false);
@@ -39,6 +40,7 @@ function SettingsPage() {
     setSaving(false);
     if (!res.ok) return toast.error(res.error ?? "Could not save.");
     toast.success("Settings saved");
+    await queryClient.invalidateQueries({ queryKey: ["shop-settings"] });
     void refetch();
   };
 
@@ -80,6 +82,14 @@ function SettingsPage() {
           </Field>
         )}
         <p className="text-xs text-muted-foreground">Saving this takes effect for customers straight away.</p>
+      </section>
+
+      <section className="grid gap-3 rounded-2xl border border-border bg-card p-5">
+        <h2 className="font-display text-base font-bold">Homepage sections</h2>
+        <Row label="Show electric scooters at our showroom">
+          <Switch checked={form.showShowroomSection} onCheckedChange={(v) => set("showShowroomSection", v)} />
+        </Row>
+        <p className="text-xs text-muted-foreground">Switch this off to hide the complete showroom scooter section from the homepage.</p>
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5">

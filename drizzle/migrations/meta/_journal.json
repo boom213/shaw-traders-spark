@@ -183,6 +183,13 @@
       "when": 1790358949685,
       "tag": "0025_tighten_selected_public_and_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790419599939,
+      "tag": "0026_add_showroom_homepage_visibility",
+      "breakpoints": true
     }
   ]
 }

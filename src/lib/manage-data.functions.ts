@@ -418,6 +418,7 @@ export const saveProducts = createServerFn({ method: "POST" })
 export type ShopSettingsRow = {
   orderingMode: string;
   browseBanner: string;
+  showShowroomSection: boolean;
   gstEnabled: boolean;
   gstRate: number;
   pricesIncludeGst: boolean;
@@ -452,6 +453,7 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
   return {
     orderingMode: String(data?.ordering_mode ?? "full"),
     browseBanner: String(data?.browse_banner ?? ""),
+    showShowroomSection: data?.show_showroom_section !== false,
     gstEnabled: Boolean(data?.gst_enabled ?? true),
     gstRate: Number(data?.gst_rate ?? 18),
     pricesIncludeGst: Boolean(data?.prices_include_gst ?? true),
@@ -509,6 +511,7 @@ export const saveShopSettings = createServerFn({ method: "POST" })
       id: true,
       ...sensitive,
       legal_name: String(data.legalName ?? "").trim() || null,
+      show_showroom_section: Boolean(data.showShowroomSection),
       billing_address: String(data.billingAddress ?? "").trim() || null,
       cod_enabled: Boolean(data.codEnabled),
       cod_limit: Math.max(0, Number(data.codLimit) || 0),

@@ -25,3 +25,4 @@
 - [x] Add a brochure enquiry popup, shop email notification, and post-submit download.
 - [x] Complete and verify Razorpay Standard Checkout with secure test credentials.
 - [x] Simplify wholesale registration documents and rename the account heading.
+- [x] Add an admin-controlled homepage showroom section visibility setting.
