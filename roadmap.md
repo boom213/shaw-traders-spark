@@ -47,3 +47,4 @@
 
 - [x] Paginate remaining manager lists to 8 rows, move counter-sale lookups on demand, aggregate overview metrics, and constrain growing panels.
 - [x] Index customer addresses, page profiles before detail aggregates, and time out slow Staff Invoice photos.
+- [x] Fix stuck Shop-to-product navigation and report route failures visibly.

@@ -24,4 +24,4 @@
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
 - Centralize manager refresh in `MANAGE_QUERY_OPTIONS`; keep sidebar collapse browser-local to the shared desktop layout.
 
-- Page manager lists by 8, fetch counter-sale customers on demand, and compute overview totals in the database.
+- Page manager lists by 8; aggregate totals in SQL. Never change history in router events; log caught route errors.

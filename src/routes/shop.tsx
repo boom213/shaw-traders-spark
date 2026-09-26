@@ -183,14 +183,12 @@ function Shop() {
 
   // The finder passes model/category explicitly. Clear that temporary choice
   // when leaving the shop so it cannot silently return on a later visit.
+  // Never mutate browser history here: doing so during onBeforeNavigate can
+  // leave TanStack Router's URL and rendered matches out of sync.
   useEffect(() => {
     return router.subscribe("onBeforeNavigate", ({ fromLocation, toLocation }) => {
       if (fromLocation?.pathname !== "/shop" || toLocation.pathname === "/shop") return;
       setVehicle(null);
-      const previous = new URL(fromLocation.href, window.location.origin);
-      previous.searchParams.delete("model");
-      previous.searchParams.delete("all");
-      window.history.replaceState(window.history.state, "", `${previous.pathname}${previous.search}${previous.hash}`);
     });
   }, [router, setVehicle]);
 

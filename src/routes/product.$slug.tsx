@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SectionHeading } from "@/components/site/Empty";
 import { EnquiryDialog } from "@/components/site/EnquiryDialog";
 import { ProductCard, ProductRating } from "@/components/site/ProductCard";
+import { RouteError } from "@/components/site/RouteError";
 import { useStore } from "@/hooks/useStore";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { staffProductMeta } from "@/lib/enquiries.functions";
@@ -136,9 +137,7 @@ export const Route = createFileRoute("/product/$slug")({
     };
   },
 
-  errorComponent: ({ error }) => (
-    <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error.message}</div>
-  ),
+  errorComponent: (props) => <RouteError {...props} boundary="product_route_error_component" />,
   notFoundComponent: () => (
     <div className="container-page py-16 text-center">
       <h1 className="font-display text-2xl font-bold">Product not available</h1>
