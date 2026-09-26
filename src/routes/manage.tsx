@@ -62,7 +62,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/about", label: "About Gallery", icon: Images, exact: false, capability: "content", group: "Manage" },
   { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Insights" },
   { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Owner" },
-  { to: "/manage/settings", label: "Payments & GST", icon: Settings, exact: false, capability: "settings", group: "Owner" },
+  { to: "/manage/settings", label: "Site Settings", icon: Settings, exact: false, capability: "settings", group: "Owner" },
   { to: "/manage/brand-catalogue", label: "Brand Catalogue", icon: FileSpreadsheet, exact: false, capability: "settings", group: "Owner" },
   { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "System" },
 ] as const;
