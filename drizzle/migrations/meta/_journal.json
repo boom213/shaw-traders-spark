@@ -295,6 +295,13 @@
       "when": 1790453874099,
       "tag": "0041_optimize_manager_customer_page",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1790456373083,
+      "tag": "0042_paginate_manager_orders_and_trade_outstanding",
+      "breakpoints": true
     }
   ]
 }

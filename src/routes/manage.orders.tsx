@@ -6,6 +6,7 @@ import { Check, MapPin, MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
+import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import {
   decideOrderRequest,
@@ -125,11 +126,13 @@ function downloadPdf(base64: string, fileName: string) {
 function ManageOrders() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
+  const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
 
-  const { data: orders, isPending } = useQuery({
-    queryKey: ["manage-orders", term],
-    queryFn: () => manageOrders({ data: { q: term } }),
+  const { data: orders, isPending, isFetching } = useQuery({
+    queryKey: ["manage-orders", term, page],
+    queryFn: () => manageOrders({ data: { q: term, page } }),
+    placeholderData: (previous) => previous,
   });
 
   const refresh = () => {
@@ -153,6 +156,7 @@ function ManageOrders() {
         onSubmit={(e) => {
           e.preventDefault();
           setTerm(q.trim());
+          setPage(0);
         }}
       >
         <Input placeholder="Search by order number, customer name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -161,13 +165,13 @@ function ManageOrders() {
 
       {isPending && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />)}</div>}
 
-      {!isPending && (orders ?? []).length === 0 && (
+      {!isPending && (orders?.items ?? []).length === 0 && (
         <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           No orders found. Orders placed on the website appear here.
         </p>
       )}
 
-      {(orders ?? []).map((o) => {
+      {(orders?.items ?? []).map((o) => {
         const mapUrl = deliveryMapUrl(o.address);
         return (
         <div key={o.id} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -257,6 +261,7 @@ function ManageOrders() {
         </div>
         );
       })}
+      <ListPager page={page} total={orders?.total ?? 0} busy={isFetching} onPage={setPage} />
     </div>
   );
 }

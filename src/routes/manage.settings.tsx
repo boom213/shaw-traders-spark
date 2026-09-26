@@ -1,24 +1,50 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
+import { HomeBanners } from "@/components/manage/HomeBannersPanel";
+import { AboutGalleryPanel } from "@/components/manage/AboutGalleryPanel";
+import { BrandCataloguePanel } from "@/components/manage/BrandCataloguePanel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getShopSettings, saveShopSettings, type ShopSettingsRow } from "@/lib/manage-data.functions";
 import { ORDERING_MODES } from "@/lib/ordering";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/manage/settings")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (["general", "banners", "about", "brand-catalogue"] as const).find((tab) => tab === search.tab) ?? "general",
+  }),
   head: () => ({ meta: [{ title: "Site Settings — Manager Panel" }, { name: "robots", content: "noindex" }] }),
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  return (
+    <Tabs value={tab} onValueChange={(next) => void navigate({ search: { tab: next as typeof tab } })}>
+      <TabsList className="h-auto w-full justify-start overflow-x-auto">
+        <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="banners">Home Banners</TabsTrigger>
+        <TabsTrigger value="about">About Gallery</TabsTrigger>
+        <TabsTrigger value="brand-catalogue">Brand Catalogue</TabsTrigger>
+      </TabsList>
+      <TabsContent value="general"><GeneralSettings /></TabsContent>
+      <TabsContent value="banners"><HomeBanners /></TabsContent>
+      <TabsContent value="about"><AboutGalleryPanel /></TabsContent>
+      <TabsContent value="brand-catalogue"><BrandCataloguePanel /></TabsContent>
+    </Tabs>
+  );
+}
+
+function GeneralSettings() {
   const load = useServerFn(getShopSettings);
   const save = useServerFn(saveShopSettings);
   const queryClient = useQueryClient();

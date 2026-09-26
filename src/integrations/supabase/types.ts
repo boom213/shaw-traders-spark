@@ -2646,6 +2646,13 @@ export type Database = {
           total_count: number
         }[]
       }
+      manage_order_page: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string }
+        Returns: {
+          order_id: string
+          total_count: number
+        }[]
+      }
       manager_customer_order_summary: {
         Args: { p_profile_id: string }
         Returns: Json
@@ -2671,6 +2678,19 @@ export type Database = {
           out_of_stock: number
           products: number
           revenue: number
+        }[]
+      }
+      manager_trade_outstanding_page: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          balance: number
+          credit_limit: number
+          name: string
+          oldest_due: string
+          overdue: boolean
+          phone: string
+          profile_id: string
+          total_count: number
         }[]
       }
       manager_vendor_payment_totals: {

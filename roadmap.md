@@ -49,3 +49,4 @@
 - [x] Index customer addresses, page profiles before detail aggregates, and time out slow Staff Invoice photos.
 - [x] Fix stuck Shop-to-product navigation and report route failures visibly.
 - [x] Add shared Spark Ring and Spark Charge loading indicators.
+- [x] Paginate manager orders and trade balances, stabilize capped catalogue reads, and consolidate Owner-only Site Settings.
