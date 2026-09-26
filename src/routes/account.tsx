@@ -179,7 +179,13 @@ function Dashboard() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
   const mobile = user?.phone ? `+${String(user.phone).replace(/\D/g, "")}` : "";
+  const providers = Array.isArray(user?.app_metadata?.providers) ? user.app_metadata.providers : [];
+  const hasEmailPassword = providers.includes("email");
   const loadBookings = useServerFn(bookingsByUser);
 
   const { data: profile } = useQuery({
@@ -229,6 +235,33 @@ function Dashboard() {
     toast.success("Details saved");
   };
 
+  const changePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!user?.email) return toast.error("Your account does not have an email address");
+    if (newPassword.length < 8) return toast.error("New password must be at least 8 characters");
+    if (newPassword !== confirmPassword) return toast.error("New passwords do not match");
+
+    setUpdatingPassword(true);
+    const { error: verificationError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verificationError) {
+      setUpdatingPassword(false);
+      const invalidPassword = /invalid.*(credential|login)|password/i.test(verificationError.message);
+      return toast.error(invalidPassword ? "Current password is incorrect" : "Could not verify your current password. Please try again.");
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setUpdatingPassword(false);
+    if (updateError) return toast.error(`Could not update password: ${updateError.message}`);
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    toast.success("Password updated");
+  };
+
   return (
     <div className="container mx-auto space-y-10 px-4 py-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -257,6 +290,57 @@ function Dashboard() {
           <Input placeholder="Email (optional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <Button disabled={saving} onClick={() => void saveProfile()}>Save details</Button>
+
+        {hasEmailPassword && (
+          <form className="space-y-4 border-t border-border pt-5" onSubmit={changePassword}>
+            <div>
+              <h3 className="font-semibold">Change password</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Enter your current password before choosing a new one.</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-password">New password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Use at least 8 characters.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm-new-password">Confirm new password</Label>
+                <Input
+                  id="confirm-new-password"
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </div>
+            </div>
+            <Button type="submit" disabled={updatingPassword}>
+              {updatingPassword && <SparkRing />}
+              {updatingPassword ? "Updating…" : "Update password"}
+            </Button>
+          </form>
+        )}
       </section>
 
       <section id="orders" className="scroll-mt-52 space-y-3">
