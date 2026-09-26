@@ -54,6 +54,7 @@ import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
 import { Route as ManageTradeRouteImport } from './routes/manage.trade'
+import { Route as ManageVendorsRouteImport } from './routes/manage.vendors'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
@@ -68,6 +69,7 @@ import { Route as ManageCustomersIndexRouteImport } from './routes/manage.custom
 import { Route as ManageCustomersCustomerIdRouteImport } from './routes/manage.customers.$customerId'
 import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
 import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
+import { Route as ApiPublicCronReleaseStaleOrdersRouteImport } from './routes/api/public/cron/release-stale-orders'
 import { Route as ApiPublicCronServiceRemindersRouteImport } from './routes/api/public/cron/service-reminders'
 import { Route as ApiPublicPhotoSplatRouteImport } from './routes/api/public/photo/$'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
@@ -297,6 +299,11 @@ const ManageTradeRoute = ManageTradeRouteImport.update({
   path: '/trade',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageVendorsRoute = ManageVendorsRouteImport.update({
+  id: '/vendors',
+  path: '/vendors',
+  getParentRoute: () => ManageRoute,
+} as any)
 const OrderIdRoute = OrderIdRouteImport.update({
   id: '/order/$id',
   path: '/order/$id',
@@ -371,6 +378,12 @@ const ApiPublicCronDailySummaryRoute =
     path: '/api/public/cron/daily-summary',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronReleaseStaleOrdersRoute =
+  ApiPublicCronReleaseStaleOrdersRouteImport.update({
+    id: '/api/public/cron/release-stale-orders',
+    path: '/api/public/cron/release-stale-orders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronServiceRemindersRoute =
   ApiPublicCronServiceRemindersRouteImport.update({
     id: '/api/public/cron/service-reminders',
@@ -434,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
   '/manage/trade': typeof ManageTradeRoute
+  '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -449,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/manage/customers/': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -496,6 +511,7 @@ export interface FileRoutesByTo {
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
   '/manage/trade': typeof ManageTradeRoute
+  '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -511,6 +527,7 @@ export interface FileRoutesByTo {
   '/manage/customers': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -561,6 +578,7 @@ export interface FileRoutesById {
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
   '/manage/trade': typeof ManageTradeRoute
+  '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/product/$slug': typeof ProductSlugRoute
   '/quote/$token': typeof QuoteTokenRoute
@@ -576,6 +594,7 @@ export interface FileRoutesById {
   '/manage/customers/': typeof ManageCustomersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
+  '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
   '/api/public/cron/service-reminders': typeof ApiPublicCronServiceRemindersRoute
   '/api/public/photo/$': typeof ApiPublicPhotoSplatRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
@@ -627,6 +646,7 @@ export interface FileRouteTypes {
     | '/manage/staff'
     | '/manage/summary'
     | '/manage/trade'
+    | '/manage/vendors'
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
@@ -642,6 +662,7 @@ export interface FileRouteTypes {
     | '/manage/customers/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
+    | '/api/public/cron/release-stale-orders'
     | '/api/public/cron/service-reminders'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -689,6 +710,7 @@ export interface FileRouteTypes {
     | '/manage/staff'
     | '/manage/summary'
     | '/manage/trade'
+    | '/manage/vendors'
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
@@ -704,6 +726,7 @@ export interface FileRouteTypes {
     | '/manage/customers'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
+    | '/api/public/cron/release-stale-orders'
     | '/api/public/cron/service-reminders'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -753,6 +776,7 @@ export interface FileRouteTypes {
     | '/manage/staff'
     | '/manage/summary'
     | '/manage/trade'
+    | '/manage/vendors'
     | '/order/$id'
     | '/product/$slug'
     | '/quote/$token'
@@ -768,6 +792,7 @@ export interface FileRouteTypes {
     | '/manage/customers/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
+    | '/api/public/cron/release-stale-orders'
     | '/api/public/cron/service-reminders'
     | '/api/public/photo/$'
     | '/api/public/whatsapp/webhook'
@@ -811,6 +836,7 @@ export interface RootRouteChildren {
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicCronCartRemindersRoute: typeof ApiPublicCronCartRemindersRoute
   ApiPublicCronDailySummaryRoute: typeof ApiPublicCronDailySummaryRoute
+  ApiPublicCronReleaseStaleOrdersRoute: typeof ApiPublicCronReleaseStaleOrdersRoute
   ApiPublicCronServiceRemindersRoute: typeof ApiPublicCronServiceRemindersRoute
   ApiPublicPhotoSplatRoute: typeof ApiPublicPhotoSplatRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -1133,6 +1159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageTradeRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/vendors': {
+      id: '/manage/vendors'
+      path: '/vendors'
+      fullPath: '/manage/vendors'
+      preLoaderRoute: typeof ManageVendorsRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/order/$id': {
       id: '/order/$id'
       path: '/order/$id'
@@ -1231,6 +1264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronDailySummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/release-stale-orders': {
+      id: '/api/public/cron/release-stale-orders'
+      path: '/api/public/cron/release-stale-orders'
+      fullPath: '/api/public/cron/release-stale-orders'
+      preLoaderRoute: typeof ApiPublicCronReleaseStaleOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/service-reminders': {
       id: '/api/public/cron/service-reminders'
       path: '/api/public/cron/service-reminders'
@@ -1288,6 +1328,7 @@ interface ManageRouteChildren {
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
   ManageTradeRoute: typeof ManageTradeRoute
+  ManageVendorsRoute: typeof ManageVendorsRoute
   ManageIndexRoute: typeof ManageIndexRoute
 }
 
@@ -1310,6 +1351,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
   ManageTradeRoute: ManageTradeRoute,
+  ManageVendorsRoute: ManageVendorsRoute,
   ManageIndexRoute: ManageIndexRoute,
 }
 
@@ -1364,6 +1406,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicCronCartRemindersRoute: ApiPublicCronCartRemindersRoute,
   ApiPublicCronDailySummaryRoute: ApiPublicCronDailySummaryRoute,
+  ApiPublicCronReleaseStaleOrdersRoute: ApiPublicCronReleaseStaleOrdersRoute,
   ApiPublicCronServiceRemindersRoute: ApiPublicCronServiceRemindersRoute,
   ApiPublicPhotoSplatRoute: ApiPublicPhotoSplatRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
