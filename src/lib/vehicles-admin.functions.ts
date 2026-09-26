@@ -275,22 +275,22 @@ export type BookingRow = {
 
 /** The booking pipeline. */
 export const listBookings = createServerFn({ method: "POST" })
-  .inputValidator((data: { status?: string } | undefined) => ({ status: text(data?.status, 30) || "open" }))
-  .handler(async ({ data }): Promise<BookingRow[]> => {
+  .inputValidator((data: { status?: string; page?: number } | undefined) => ({ status: text(data?.status, 30) || "open", page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: BookingRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     let query = supabaseAdmin
       .from("vehicle_bookings")
-      .select("*, products(name), vehicle_registrations(id, chassis_number, motor_number, registration_number, warranty_start)")
+      .select("*, products(name), vehicle_registrations(id, chassis_number, motor_number, registration_number, warranty_start)", { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range(data.page * 8, data.page * 8 + 7);
     if (data.status === "open") query = query.not("status", "in", "(delivered,cancelled)");
     else if (BOOKING_STATUSES.includes(data.status)) query = query.eq("status", data.status as never);
 
-    const { data: rows } = await query;
-    return (rows ?? []).map((r) => {
+    const { data: rows, count } = await query;
+    const items = (rows ?? []).map((r) => {
       const reg = (Array.isArray(r.vehicle_registrations) ? r.vehicle_registrations[0] : r.vehicle_registrations) as
         | Record<string, any>
         | null;
@@ -316,6 +316,7 @@ export const listBookings = createServerFn({ method: "POST" })
         warrantyStart: reg?.['warranty_start'] ?? null,
       };
     });
+    return { items, total: count ?? 0 };
   });
 
 /** Move a booking along its track and tell the customer. */
@@ -428,8 +429,8 @@ export type LeadRow = {
 
 /** Test rides, finance enquiries, exchange valuations and service bookings in one queue. */
 export const listLeads = createServerFn({ method: "POST" })
-  .inputValidator((data: { kind?: string } | undefined) => ({ kind: text(data?.kind, 20) || "test_ride" }))
-  .handler(async ({ data }): Promise<LeadRow[]> => {
+  .inputValidator((data: { kind?: string; page?: number } | undefined) => ({ kind: text(data?.kind, 20) || "test_ride", page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .handler(async ({ data }): Promise<{ items: LeadRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -437,8 +438,8 @@ export const listLeads = createServerFn({ method: "POST" })
     const model = (r: Record<string, any>) => (r['products'] as { name?: string } | null)?.name ?? null;
 
     if (data.kind === "finance") {
-      const { data: rows } = await supabaseAdmin.from("finance_enquiries").select(sel).order("created_at", { ascending: false }).limit(200);
-      return (rows ?? []).map((r) => ({
+      const { data: rows, count } = await supabaseAdmin.from("finance_enquiries").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
+      return { items: (rows ?? []).map((r) => ({
         id: String(r.id),
         kind: "finance",
         name: String(r.name),
@@ -448,11 +449,11 @@ export const listLeads = createServerFn({ method: "POST" })
         detail: `Down payment ₹${r.down_payment ?? "-"} · ${r.tenure_months ?? "-"} months · income ₹${r.monthly_income ?? "-"} · ${r.employment ?? ""}`,
         status: String(r.status),
         createdAt: String(r.created_at),
-      }));
+      })), total: count ?? 0 };
     }
     if (data.kind === "exchange") {
-      const { data: rows } = await supabaseAdmin.from("exchange_valuations").select(sel).order("created_at", { ascending: false }).limit(200);
-      return (rows ?? []).map((r) => ({
+      const { data: rows, count } = await supabaseAdmin.from("exchange_valuations").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
+      return { items: (rows ?? []).map((r) => ({
         id: String(r.id),
         kind: "exchange",
         name: String(r.name),
@@ -462,11 +463,11 @@ export const listLeads = createServerFn({ method: "POST" })
         detail: `${r.current_brand ?? ""} ${r.current_model ?? ""} ${r.year ?? ""} · ${r.km_run ?? "-"} km · ${r.condition ?? ""}${r.quoted_value ? ` · quoted ₹${r.quoted_value}` : ""}`,
         status: String(r.status),
         createdAt: String(r.created_at),
-      }));
+      })), total: count ?? 0 };
     }
     if (data.kind === "service") {
-      const { data: rows } = await supabaseAdmin.from("service_bookings").select(sel).order("created_at", { ascending: false }).limit(200);
-      return (rows ?? []).map((r) => ({
+      const { data: rows, count } = await supabaseAdmin.from("service_bookings").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
+      return { items: (rows ?? []).map((r) => ({
         id: String(r.id),
         kind: "service",
         name: String(r.name),
@@ -476,11 +477,11 @@ export const listLeads = createServerFn({ method: "POST" })
         detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""} — ${r.issue ?? ""}`,
         status: String(r.status),
         createdAt: String(r.created_at),
-      }));
+      })), total: count ?? 0 };
     }
 
-    const { data: rows } = await supabaseAdmin.from("test_ride_requests").select(sel).order("created_at", { ascending: false }).limit(200);
-    return (rows ?? []).map((r) => ({
+    const { data: rows, count } = await supabaseAdmin.from("test_ride_requests").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
+    return { items: (rows ?? []).map((r) => ({
       id: String(r.id),
       kind: "test_ride",
       name: String(r.name),
@@ -490,7 +491,7 @@ export const listLeads = createServerFn({ method: "POST" })
       detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""}${r.note ? ` — ${r.note}` : ""}`,
       status: String(r.status),
       createdAt: String(r.created_at),
-    }));
+    })), total: count ?? 0 };
   });
 
 const LEAD_TABLES: Record<string, string> = {
