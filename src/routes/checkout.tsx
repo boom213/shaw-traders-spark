@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
+import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
+import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/cart";
 import { previewCoupon } from "@/lib/shop-extras.functions";
@@ -56,7 +58,7 @@ type PendingOrder = { orderId: string; humanId: string; token: string; total: nu
 function CheckoutPage() {
   const navigate = useNavigate();
   const { mode: siteMode } = useSiteOrdering();
-  const { clearCart, user } = useStore();
+  const { authReady, clearCart, user } = useStore();
   const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const [couponCode, setCouponCode] = useState("");
   const { lines, loading, subtotal, discount } = useCartTotals(coupon);
@@ -94,9 +96,11 @@ function CheckoutPage() {
   const onlineReady = availability?.online === true;
   const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
 
-  if (loading) {
+  if (loading || !authReady) {
     return <div className="container-page py-16 text-center text-sm text-muted-foreground">Loading your cart…</div>;
   }
+
+  if (!user) return <CheckoutSignIn />;
 
   if (!pending && lines.length === 0) {
     return (
@@ -492,6 +496,39 @@ function CheckoutPage() {
             </p>
           )}
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function CheckoutSignIn() {
+  const [googleBusy, setGoogleBusy] = useState(false);
+
+  const google = async () => {
+    setGoogleBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/checkout` });
+    if (result.redirected) return;
+    setGoogleBusy(false);
+    if (result.error) toast.error(result.error.message || "Google sign-in failed");
+  };
+
+  return (
+    <div className="container-page py-10 sm:py-14">
+      <SectionHeading
+        as="h1"
+        title="Please sign in to continue"
+        subtitle="Your cart is saved. Sign in to enter your delivery details and place your order."
+      />
+      <div className="mx-auto mt-6 w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+        <PhoneOtpForm idPrefix="checkout" />
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          or
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <Button type="button" variant="outline" className="w-full" disabled={googleBusy} onClick={() => void google()}>
+          {googleBusy ? "Please wait…" : "Continue with Google"}
+        </Button>
       </div>
     </div>
   );

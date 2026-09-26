@@ -20,3 +20,4 @@
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
 - Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
 - Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.
+- Require a validated signed-in customer inside order creation; keep browsing and cart storage available to guests.
