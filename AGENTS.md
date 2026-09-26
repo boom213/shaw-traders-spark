@@ -9,9 +9,9 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep All Products read-only for Staff; Manager+ may edit products and managed brand dropdown values through catalogue-protected routes.
-- Model wholesale payments as auditable receipts and report them without overlapping order, ledger, or vendor totals.
-- Keep counter-sale Vendor QR selection optional; when staff select a vendor, atomically link the receipt to an auditable vendor payment.
+- All Products is Staff-read-only; Manager+ edits products/brands through catalogue-protected routes.
+- Keep wholesale receipts auditable and reporting totals non-overlapping.
+- Counter-sale Vendor QR is optional; selecting one atomically links its vendor payment.
 - Store optional delivery coordinates in each order's immutable address JSON snapshot, because a map pin belongs to that specific delivery rather than the customer's permanent profile.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
@@ -22,6 +22,6 @@
 - Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
 - Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
-- Centralize manager refresh; keep sidebar collapse browser-local.
-
-- Page by 8; aggregate in SQL. Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
+- Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
+- Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
+- Banners, About gallery, and brand catalogue live in Owner-only Site Settings; old URLs redirect there.
