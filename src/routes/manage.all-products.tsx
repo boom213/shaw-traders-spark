@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { allProductsList } from "@/lib/catalogue-admin.functions";
 import { STATUS_CHIP, isProductStatus } from "@/lib/ordering";
-import { placeholderFor } from "@/lib/placeholders";
 import { categoriesQuery } from "@/lib/queries";
 import { can } from "@/lib/staff-permissions";
 
@@ -110,7 +109,13 @@ function AllProductsPage() {
             : { to: "/manage/products/$productId" as const, params: { productId: product.id } };
           return (
             <article key={product.id} className="grid gap-3 border-b border-border p-4 last:border-b-0 lg:grid-cols-[4rem_minmax(12rem,2fr)_minmax(7rem,1fr)_minmax(6rem,1fr)_repeat(5,minmax(5rem,.7fr))] lg:items-center">
-              {canEdit ? <Link {...editTarget} aria-label={`Edit ${product.name}`} className="block size-16 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /></Link> : <img src={product.images[0] ?? placeholderFor(product.category)} alt="" className="size-16 rounded-md border border-border object-cover" />}
+              {canEdit ? (
+                <Link {...editTarget} aria-label={`Edit ${product.name}`} className="block size-16 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  {product.images[0] ? <img src={product.images[0]} alt="" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /> : <ComingSoon />}
+                </Link>
+              ) : product.images[0] ? (
+                <img src={product.images[0]} alt="" className="size-16 rounded-md border border-border object-cover" />
+              ) : <ComingSoon />}
               <div className="min-w-0">
                 {canEdit ? <Link {...editTarget} className="font-semibold leading-snug text-primary hover:underline">{product.name}</Link> : <p className="font-semibold leading-snug">{product.name}</p>}
                 <p className="mt-1 text-xs text-muted-foreground">{product.sku}</p>
@@ -138,6 +143,10 @@ function AllProductsPage() {
       </div>
     </section>
   );
+}
+
+function ComingSoon() {
+  return <div className="grid size-16 place-items-center rounded-md border border-dashed border-border bg-muted px-1 text-center text-[10px] font-semibold leading-tight text-muted-foreground">Coming soon</div>;
 }
 
 function Detail({ label, value, emphasize = false }: { label: string; value: string; emphasize?: boolean }) {
