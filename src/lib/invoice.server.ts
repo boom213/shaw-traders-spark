@@ -103,7 +103,7 @@ async function loadImagePayload(source: string): Promise<ImagePayload | null> {
   const origin = String(process.env['PUBLIC_SITE_URL'] ?? "https://shawtradersev.com").replace(/\/+$/, "");
   const url = source.startsWith("/") ? `${origin}${source}` : source;
   if (!/^https?:\/\//i.test(url)) return null;
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(5_000) });
   if (!response.ok) return null;
   return { bytes: new Uint8Array(await response.arrayBuffer()), type: response.headers.get("content-type") ?? "" };
 }
