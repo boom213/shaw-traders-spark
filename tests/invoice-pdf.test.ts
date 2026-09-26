@@ -80,7 +80,11 @@ describe("invoice PDF", () => {
       price: 125.5,
       productId: `product-${index + 1}`,
       rackLocation: index % 2 ? null : `Rack A-${index + 1}`,
-      image: index === 0 ? "https://invalid.invalid/missing.jpg" : null,
+      image: index === 0
+        ? "https://invalid.invalid/missing.jpg"
+        : index === 1
+          ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII="
+          : null,
     }));
     const bytes = await createInvoicePdf(invoice({ staffCopy: true, items }));
     await saveQaPdf("staff-invoice.pdf", bytes);
