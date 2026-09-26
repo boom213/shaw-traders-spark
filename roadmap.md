@@ -40,3 +40,4 @@
 - [x] Fix manager tab freshness, database-side customer pagination/statistics, and stale offline cache behavior.
 - [x] Add admin-managed product brands shared by product creation and editing.
 - [x] Add a paginated counter-sales payment dashboard with online reconciliation, charting, and CSV/PDF exports.
+- [x] Add a persistent collapsible desktop manager sidebar.
