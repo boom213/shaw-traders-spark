@@ -8,7 +8,6 @@ import {
   BriefcaseBusiness,
   ChevronDown,
   ClipboardList,
-  FileSpreadsheet,
   Gauge,
   Heart,
   LayoutDashboard,
@@ -51,7 +50,6 @@ const STAFF_LINKS = [
   { to: "/manage/trade", label: "Trade & credit", icon: BriefcaseBusiness, capability: "trade" },
   { to: "/manage/summary", label: "Reports", icon: Gauge, capability: "reports" },
   { to: "/manage/settings", label: "Site Settings", icon: Settings, capability: "settings" },
-  { to: "/manage/brand-catalogue", label: "Brand catalogue", icon: FileSpreadsheet, capability: "settings" },
   { to: "/manage/staff", label: "Staff access", icon: ShieldCheck, capability: "staff.manage" },
 ] as const satisfies ReadonlyArray<{ to: string; label: string; icon: typeof User; capability: StaffCapability }>;
 
