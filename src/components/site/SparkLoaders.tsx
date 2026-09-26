@@ -37,12 +37,7 @@ type SparkChargeProps = {
   compact?: boolean;
 };
 
-const SPARKS = [
-  { className: "left-[24%] top-[28%]", delay: "0s" },
-  { className: "right-[23%] top-[36%]", delay: "0.55s" },
-  { className: "left-[31%] top-[55%]", delay: "1.05s" },
-  { className: "right-[28%] top-[63%]", delay: "1.55s" },
-] as const;
+const SPARKS = ["left-[24%] top-[28%]", "right-[23%] top-[36%]", "left-[31%] top-[55%]", "right-[28%] top-[63%]"] as const;
 
 export function SparkCharge({ label = "Loading…", className, compact = false }: SparkChargeProps) {
   return (
@@ -53,11 +48,7 @@ export function SparkCharge({ label = "Loading…", className, compact = false }
     >
       <div className={cn("relative", compact ? "h-20 w-28" : "h-28 w-40")} aria-hidden="true">
         {SPARKS.map((spark) => (
-          <span
-            key={`${spark.className}-${spark.delay}`}
-            className={cn("spark-charge-particle absolute size-1 rounded-full bg-primary", spark.className)}
-            style={{ animationDelay: spark.delay }}
-          />
+          <span key={spark} className={cn("spark-charge-particle absolute size-1 rounded-full bg-primary", spark)} />
         ))}
         <div className="spark-charge-battery absolute inset-x-[27%] bottom-[8%] top-[10%] overflow-hidden rounded-md border-2 border-foreground/75 bg-background shadow-[var(--shadow-card)]">
           <div className="spark-charge-fill absolute inset-x-1 bottom-1 rounded-sm bg-primary" />

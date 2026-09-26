@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, GripVertical, Loader2, Pencil, Plus, Tags, Trash2 } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, GripVertical, Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -244,7 +245,7 @@ function AddProductDialog({ categories, brands }: { categories: CategoryOption[]
           {files.length > 0 && <p className="text-xs text-muted-foreground">{files.length} photo{files.length === 1 ? "" : "s"} selected. Photos are uploaded after the product is created.</p>}
         </div>
         <div className="grid gap-1 sm:col-span-2"><Label>Description</Label><Textarea rows={4} value={form.description} onChange={(e) => set("description", e.target.value)} /></div>
-        <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={saving || categories.length === 0}>{saving ? "Adding…" : "Add product"}</Button></div>
+        <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" disabled={saving || categories.length === 0}>{saving ? <SparkRing /> : null}{saving ? "Adding…" : "Add product"}</Button></div>
       </form>
     </DialogContent>
   </Dialog>;
@@ -409,7 +410,7 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <Button className="w-full sm:w-auto" disabled={saving || deleting} onClick={() => void save()}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? <SparkRing /> : null}{saving ? "Saving…" : "Save"}
         </Button>
         {canDelete && (
           <AlertDialog>
@@ -530,7 +531,7 @@ function Photos({ product }: { product: CatalogueRow }) {
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => void addFiles(e.target.files)} />
         <input ref={galleryRef} type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles(e.target.files)} />
         <Button size="sm" variant="outline" disabled={busy} onClick={() => cameraRef.current?.click()}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />} Take photo
+           {busy ? <SparkRing /> : <Camera className="size-4" />} Take photo
         </Button>
         <Button size="sm" variant="outline" disabled={busy} onClick={() => galleryRef.current?.click()}>
           Choose from gallery

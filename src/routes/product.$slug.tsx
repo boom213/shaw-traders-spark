@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SectionHeading } from "@/components/site/Empty";
 import { EnquiryDialog } from "@/components/site/EnquiryDialog";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { ProductCard, ProductRating } from "@/components/site/ProductCard";
 import { RouteError } from "@/components/site/RouteError";
 import { useStore } from "@/hooks/useStore";
@@ -569,7 +570,7 @@ function ProductPage() {
                   </div>
                 )}
               </div>
-              <Button type="submit" disabled={sending}>{sending ? "Submitting…" : "Submit review"}</Button>
+              <Button type="submit" disabled={sending}>{sending ? <SparkRing /> : null}{sending ? "Submitting…" : "Submit review"}</Button>
               <p className="text-xs text-muted-foreground">
                 {user
                   ? "Only customers who bought this part can review it. Reviews appear after Shaw Traders approves them."

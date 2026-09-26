@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Camera, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Save, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -92,7 +93,7 @@ function ProductEditorPage() {
     queryFn: () => getCatalogueProduct({ data: { id: productId } }),
   });
 
-  if (isPending) return <div className="h-96 animate-pulse rounded-lg bg-muted" />;
+  if (isPending) return <SparkCharge label="Loading product details…" />;
   if (!data?.ok) return <div className="rounded-lg border border-border p-8 text-center"><p className="text-sm text-muted-foreground">{data?.error ?? "Product not found."}</p><Button asChild variant="outline" className="mt-4"><Link to="/manage/all-products">Back to All Products</Link></Button></div>;
   return <ProductEditor key={data.product.id} product={data.product} categories={categories ?? []} brands={brands} />;
 }
@@ -194,7 +195,7 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
           <h2 className="font-display text-2xl font-bold">Edit product</h2>
           <p className="mt-1 text-sm text-muted-foreground">Update every catalogue value for {product.name}.</p>
         </div>
-        <Button type="submit" disabled={saving || uploading}><Save /> {saving ? "Saving…" : "Save changes"}</Button>
+        <Button type="submit" disabled={saving || uploading}>{saving ? <SparkRing /> : <Save />} {saving ? "Saving…" : "Save changes"}</Button>
       </div>
 
       <Section title="Product identity">
@@ -224,7 +225,7 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
           {images.map((url, index) => <div key={url} className="relative size-24 overflow-hidden rounded-md border border-border"><img src={url} alt="" className="size-full object-cover" />{index === 0 && <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">Main</span>}<Button type="button" variant="destructive" size="icon" aria-label="Remove photo" className="absolute bottom-1 right-1 size-7" onClick={() => void persistImages(images.filter((item) => item !== url))}><Trash2 /></Button></div>)}
           {!images.length && <div className="grid size-24 place-items-center rounded-md border border-dashed border-border text-xs text-muted-foreground">No photos</div>}
         </div>
-        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => cameraRef.current?.click()}>{uploading ? <Loader2 className="animate-spin" /> : <Camera />} Take photo</Button><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => galleryRef.current?.click()}><Plus /> Choose photos</Button></div>
+        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => cameraRef.current?.click()}>{uploading ? <SparkRing /> : <Camera />} Take photo</Button><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => galleryRef.current?.click()}><Plus /> Choose photos</Button></div>
         <input ref={cameraRef} hidden type="file" accept="image/*" capture="environment" onChange={(event) => void addPhotos(event.target.files)} />
         <input ref={galleryRef} hidden type="file" accept="image/*" multiple onChange={(event) => void addPhotos(event.target.files)} />
       </Section>
@@ -294,7 +295,7 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
         <Button type="button" variant="outline" onClick={() => set("compatibility", [...form.compatibility, { vehicleModel: "", yearFrom: "", yearTo: "", variant: "" }])}><Plus /> Add vehicle</Button>
       </Section>
 
-      <div className="flex justify-end border-t border-border pt-5"><Button type="submit" size="lg" disabled={saving || uploading}><Save /> {saving ? "Saving…" : "Save all changes"}</Button></div>
+      <div className="flex justify-end border-t border-border pt-5"><Button type="submit" size="lg" disabled={saving || uploading}>{saving ? <SparkRing /> : <Save />} {saving ? "Saving…" : "Save all changes"}</Button></div>
     </form>
   );
 }

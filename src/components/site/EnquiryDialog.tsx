@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,7 +88,7 @@ export function EnquiryDialog({
             <Textarea id="enq-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
           <Button type="submit" disabled={busy}>
-            {busy ? "Sending…" : "Send request"}
+            {busy ? <SparkRing /> : null}{busy ? "Sending…" : "Send request"}
           </Button>
         </form>
       </DialogContent>

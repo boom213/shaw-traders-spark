@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { useStore } from "@/hooks/useStore";
 import { findOrder, myOrders } from "@/lib/orders.functions";
 import { canonical, formatINR, statusLabel } from "@/lib/catalog";
@@ -71,7 +72,7 @@ function TrackPage() {
           <Label className="text-xs">Phone last 4</Label>
           <Input inputMode="numeric" maxLength={4} placeholder="1234" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-        <Button type="submit" disabled={busy}>{busy ? "Checking…" : "Track"}</Button>
+        <Button type="submit" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Checking…" : "Track"}</Button>
       </form>
 
       {authReady && !user && (

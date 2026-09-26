@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -44,7 +45,7 @@ function AccountPage() {
   useEffect(() => {
     if (user && next) void navigate({ to: next });
   }, [user, next, navigate]);
-  if (!authReady) return <div className="container mx-auto px-4 py-16 text-sm text-muted-foreground">Loading…</div>;
+  if (!authReady) return <div className="container-page"><SparkCharge label="Loading your account…" /></div>;
   return user ? <Dashboard /> : <AuthPanel />;
 }
 
@@ -136,7 +137,7 @@ function AuthPanel() {
                     {tab === "signup" && <p className="text-xs text-muted-foreground">Use at least 8 characters.</p>}
                   </div>
                   {tab === "signin" && <Button type="button" variant="link" className="h-auto p-0 text-xs" disabled={busy} onClick={() => void forgotPassword()}>Forgot password?</Button>}
-                  <Button type="submit" className="h-11 w-full" disabled={busy}>{busy ? "Please wait…" : tab === "signin" ? "Sign in" : "Create account"}</Button>
+                  <Button type="submit" className="h-11 w-full" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Please wait…" : tab === "signin" ? "Sign in" : "Create account"}</Button>
                 </form>
               </TabsContent>
             ))}

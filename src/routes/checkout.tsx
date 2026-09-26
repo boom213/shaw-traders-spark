@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { PhoneOtpForm } from "@/components/site/PhoneOtpForm";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
@@ -97,7 +98,7 @@ function CheckoutPage() {
   const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
 
   if (loading || !authReady) {
-    return <div className="container-page py-16 text-center text-sm text-muted-foreground">Loading your cart…</div>;
+    return <div className="container-page"><SparkCharge label="Loading your cart…" /></div>;
   }
 
   if (!user) return <CheckoutSignIn />;
@@ -240,7 +241,7 @@ function CheckoutPage() {
           </p>
           <div className="mt-5 grid gap-2">
             <Button size="lg" disabled={placing} onClick={() => void tryAgain()}>
-              {placing ? "Opening payment…" : `Pay ${formatINR(pending.total)} again`}
+              {placing ? <SparkRing /> : null}{placing ? "Opening payment…" : `Pay ${formatINR(pending.total)} again`}
             </Button>
             <Button variant="outline" onClick={() => void cancelOrder()}>Cancel this order</Button>
           </div>
@@ -406,7 +407,7 @@ function CheckoutPage() {
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
                 <Button size="lg" disabled={placing} onClick={() => void placeOrder()}>
-                  {placing
+                  {placing ? <SparkRing /> : null}{placing
                     ? "Please wait…"
                     : payment === "Cash on Delivery"
                       ? `Place order · ${formatINR(grand)}`
@@ -527,7 +528,7 @@ function CheckoutSignIn() {
           <span className="h-px flex-1 bg-border" />
         </div>
         <Button type="button" variant="outline" className="w-full" disabled={googleBusy} onClick={() => void google()}>
-          {googleBusy ? "Please wait…" : "Continue with Google"}
+          {googleBusy ? <SparkRing /> : null}{googleBusy ? "Please wait…" : "Continue with Google"}
         </Button>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { applyCatalogueCsv, exportCatalogueCsv, previewCatalogueCsv, type CsvPreview } from "@/lib/catalogue-admin.functions";
 
 export const Route = createFileRoute("/manage/import")({
@@ -108,7 +109,7 @@ function ImportPage() {
 
           <div className="mt-4 flex gap-2">
             <Button disabled={busy || preview.changes.length === 0} onClick={() => void apply()}>
-              {busy ? "Saving…" : `Apply ${preview.changes.length} changes`}
+              {busy ? <SparkRing /> : null}{busy ? "Saving…" : `Apply ${preview.changes.length} changes`}
             </Button>
             <Button variant="ghost" onClick={() => { setPreview(null); setCsv(""); setFileName(""); }}>Cancel</Button>
           </div>

@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BarChart3, CalendarDays, Download, FileSpreadsheet, Loader2, ReceiptText, RotateCcw } from "lucide-react";
+import { BarChart3, CalendarDays, Download, FileSpreadsheet, ReceiptText, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { formatINR } from "@/lib/catalog";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
@@ -95,7 +96,7 @@ function PaymentReportsPage() {
   return <div className="space-y-7">
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
       <div><div className="flex items-center gap-2"><BarChart3 className="size-6 text-primary" /><h2 className="font-display text-2xl font-bold">Payment Reports</h2></div><p className="mt-1 text-sm text-muted-foreground">Actual counter-sale receipts with online payments reconciled separately.</p></div>
-      <div className="flex gap-2"><Button variant="outline" disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("csv")}>{exporting === "csv" ? <Loader2 className="size-4 animate-spin" /> : <FileSpreadsheet className="size-4" />} CSV</Button><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />} PDF</Button></div>
+      <div className="flex gap-2"><Button variant="outline" disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("csv")}>{exporting === "csv" ? <SparkRing /> : <FileSpreadsheet className="size-4" />} CSV</Button><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <SparkRing /> : <Download className="size-4" />} PDF</Button></div>
     </header>
 
     <section className="space-y-3 border-b border-border pb-6">
@@ -103,12 +104,12 @@ function PaymentReportsPage() {
         <div className="flex rounded-md border border-border p-1">{(["daily", "weekly", "monthly", "custom"] as Range[]).map((value) => <Button key={value} size="sm" variant={range === value ? "default" : "ghost"} onClick={() => selectRange(value)} className="capitalize">{value}</Button>)}</div>
         {range === "custom" && <><label className="text-xs font-medium text-muted-foreground">From<Input type="date" value={from} max={to} onChange={(event) => { setFrom(event.target.value); setCounterPage(0); setOnlinePage(0); }} /></label><label className="text-xs font-medium text-muted-foreground">To<Input type="date" value={to} min={from} max={indianDate()} onChange={(event) => { setTo(event.target.value); setCounterPage(0); setOnlinePage(0); }} /></label></>}
         <div className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="size-4" />{from} to {to}</div>
-        <Button size="icon" variant="ghost" aria-label="Refresh report" title="Refresh report" onClick={() => void refetch()}><RotateCcw className={`size-4 ${isFetching ? "animate-spin" : ""}`} /></Button>
+        <Button size="icon" variant="ghost" aria-label="Refresh report" title="Refresh report" onClick={() => void refetch()}><RotateCcw className={`size-4 ${isFetching ? "motion-safe-spin" : ""}`} /></Button>
       </div>
       {!validRange && <p className="text-sm text-destructive">The From date must be before the To date.</p>}
     </section>
 
-    {isPending || !data ? <div className="h-80 animate-pulse rounded-md bg-muted" /> : <>
+    {isPending || !data ? <SparkCharge label="Charging payment reports…" /> : <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"><Metric label="Counter collected" value={formatINR(data.summary.counterAmount)} sub={`${data.summary.counterCount} receipt${data.summary.counterCount === 1 ? "" : "s"}`} /><Metric label="Online gross" value={formatINR(data.summary.onlineGross)} sub={`${data.summary.onlineCount} payment${data.summary.onlineCount === 1 ? "" : "s"}`} /><Metric label="Online refunds" value={formatINR(data.summary.onlineRefunded)} sub="Recorded in this period" /><Metric label="Online net" value={formatINR(data.summary.onlineNet)} sub="Gross less refunds" /><Metric label="Total net received" value={formatINR(data.summary.counterAmount + data.summary.onlineNet)} sub="Counter plus online net" /></div>
 
       <section className="space-y-4">

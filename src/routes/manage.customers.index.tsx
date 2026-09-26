@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MessageCircle, Phone } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ListPager, MANAGE_PAGE_SIZE } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { manageCustomers } from "@/lib/manage-data.functions";
@@ -54,7 +55,7 @@ function ManageCustomers() {
       </form>
 
       {isPending ? (
-        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+        <SparkCharge label="Loading customers…" />
       ) : customers.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           No customers yet. Everyone who places an order on the website will be listed here with their phone number and order history.

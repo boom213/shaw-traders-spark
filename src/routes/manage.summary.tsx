@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { dailySummaryPreview, sendSummaryNow } from "@/lib/manage-data.functions";
 import { formatINR } from "@/lib/catalog";
 
@@ -25,7 +26,7 @@ function SummaryPage() {
     onError: () => toast.error("Could not send the summary"),
   });
 
-  if (isPending || !data) return <p className="py-10 text-sm text-muted-foreground">Loading today's numbers…</p>;
+  if (isPending || !data) return <SparkCharge label="Loading today's numbers…" />;
 
   return (
     <div className="grid gap-6 py-2 lg:grid-cols-[1fr_340px]">
@@ -40,7 +41,7 @@ function SummaryPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-base font-bold">Today's summary message</h2>
             <Button size="sm" disabled={sendNow.isPending} onClick={() => sendNow.mutate()}>
-              {sendNow.isPending ? "Sending…" : "Send to me now"}
+              {sendNow.isPending ? <SparkRing /> : null}{sendNow.isPending ? "Sending…" : "Send to me now"}
             </Button>
           </div>
           <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-surface p-4 text-sm leading-relaxed">{data.body}</pre>

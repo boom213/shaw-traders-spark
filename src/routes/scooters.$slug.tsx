@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { BUSINESS, canonical, formatINR, whatsappLink } from "@/lib/catalog";
 import { getVehicle, requestFinance, requestTestRide } from "@/lib/vehicles.functions";
 import { startBooking, verifyBookingPayment } from "@/lib/booking.functions";
@@ -170,7 +171,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
         <Label htmlFor="bk-addr">Address (optional)</Label>
         <Textarea id="bk-addr" rows={2} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
       </div>
-      <Button onClick={submit} disabled={busy}>{busy ? "Please wait…" : `Pay ${formatINR(tokenAmount)} token`}</Button>
+      <Button onClick={submit} disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Please wait…" : `Pay ${formatINR(tokenAmount)} token`}</Button>
       <Note text={note} />
       {link && (
         <Button variant="outline" asChild>

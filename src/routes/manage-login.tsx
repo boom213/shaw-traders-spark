@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
@@ -135,7 +136,7 @@ function ManageLogin() {
         </div>
 
         <Button type="submit" className="mt-5 w-full" disabled={busy || !email || !password}>
-          {busy ? "Checking…" : firstTime ? "Create my account" : "Enter panel"}
+          {busy ? <SparkRing /> : null}{busy ? "Checking…" : firstTime ? "Create my account" : "Enter panel"}
         </Button>
 
         <button

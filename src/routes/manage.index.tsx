@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { dashboard } from "@/lib/dashboard.functions";
 import { needsAttention } from "@/lib/attention.functions";
 import { formatINR } from "@/lib/catalog";
@@ -24,11 +25,7 @@ function ManageOverview() {
   const { data: attention } = useQuery({ queryKey: ["manage-attention"], queryFn: () => needsAttention() });
 
   if (isPending || !data) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />)}
-      </div>
-    );
+    return <SparkCharge label="Loading manager overview…" />;
   }
 
   return (

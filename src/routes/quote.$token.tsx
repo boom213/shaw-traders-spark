@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loadQuote } from "@/lib/quote.functions";
@@ -143,7 +144,7 @@ function QuotePage() {
             <div className="grid gap-1.5"><Label htmlFor="q-state">State</Label><Input id="q-state" value={addr.state} onChange={set("state")} required /></div>
             <div className="grid gap-1.5"><Label htmlFor="q-pin">PIN code</Label><Input id="q-pin" inputMode="numeric" value={addr.pincode} onChange={set("pincode")} required /></div>
           </div>
-          <Button type="submit" disabled={busy}>{busy ? "Please wait…" : `Pay ${formatINR(total)}`}</Button>
+          <Button type="submit" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Please wait…" : `Pay ${formatINR(total)}`}</Button>
           <Button type="button" variant="outline" disabled={busy} onClick={() => void pay("Cash on Delivery")}>
             Pay cash on delivery
           </Button>

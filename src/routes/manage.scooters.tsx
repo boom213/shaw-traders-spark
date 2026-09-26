@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -301,7 +302,7 @@ function ManageScooters() {
         ))}
         <p className="text-sm font-semibold">On-road total: {formatINR(Math.max(0, onRoad))}</p>
 
-        <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save model"}</Button>
+        <Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? <SparkRing /> : null}{save.isPending ? "Saving…" : "Save model"}</Button>
         {msg && <p className="text-sm font-medium text-primary">{msg}</p>}
       </aside>
     </div>
