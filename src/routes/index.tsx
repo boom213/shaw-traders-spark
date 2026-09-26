@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowRight, BadgeCheck, Download, Handshake, IndianRupee, MessageCircle, Tags, Truck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Handshake, IndianRupee, MessageCircle, Tags, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyCatalogue, SectionHeading } from "@/components/site/Empty";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -14,6 +14,7 @@ import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { BrandsSection } from "@/components/home/BrandsSection";
 import { ScooterSection } from "@/components/home/ScooterSection";
 import { SocialProofSection } from "@/components/home/SocialProofSection";
+import { BrochureDownloadDialog } from "@/components/site/BrochureDownloadDialog";
 import { homeQuery } from "@/lib/queries";
 import storefrontHero from "@/assets/hero-storefront-reference.jpg";
 
@@ -127,7 +128,7 @@ function Home() {
                <div className="mt-5 grid max-w-xl gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 <Button size="lg" className="w-full" asChild><Link to="/shop">Shop EV Parts <ArrowRight /></Link></Button>
                  <Button size="lg" variant="outline" className="w-full bg-background/90" asChild><Link to="/brand"><Tags /> Browse EV Brands</Link></Button>
-                <Button size="lg" variant="outline" className="w-full bg-background/90 sm:col-span-2 lg:col-span-1" asChild><a href="/api/public/catalogue" download><Download /> Brochure</a></Button>
+                 <BrochureDownloadDialog className="w-full bg-background/90 sm:col-span-2 lg:col-span-1" />
               </div>
               <a href={whatsappLink(`Hello ${BUSINESS.name}, I need help finding an EV part.`)} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-10 w-fit items-center gap-2 text-xs font-semibold hover:underline">
                 <MessageCircle className="size-4 text-whatsapp" /> Need help? WhatsApp us

@@ -16,3 +16,4 @@
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
 - Generate customer, staff, and counter-sale invoices through one shared paginated A4 PDF template so tax fields and print layout stay consistent.
 - Keep homepage social links iframe-free and lazy-mounted below the primary shopping content so third-party media does not delay the storefront.
+- Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
