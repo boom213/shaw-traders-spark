@@ -211,6 +211,13 @@
       "when": 1790436328216,
       "tag": "0029_harden_ledger_writes_and_enable_scheduler",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790436511765,
+      "tag": "0030_preserve_counter_payment_metadata",
+      "breakpoints": true
     }
   ]
 }
