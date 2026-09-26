@@ -2586,6 +2586,35 @@ export type Database = {
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_trade: { Args: { _user_id: string }; Returns: boolean }
       log_search_miss: { Args: { p_term: string }; Returns: undefined }
+      manage_customer_page: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string }
+        Returns: {
+          city: string
+          customer_type: Database["public"]["Enums"]["customer_type"]
+          email: string
+          id: string
+          last_order_at: string
+          name: string
+          phone: string
+          price_tier: Database["public"]["Enums"]["price_tier"]
+          spend: number
+          total_count: number
+        }[]
+      }
+      manager_stats: {
+        Args: never
+        Returns: {
+          categories: number
+          customers: number
+          low_stock: number
+          no_photo: number
+          no_price: number
+          orders: number
+          out_of_stock: number
+          products: number
+          revenue: number
+        }[]
+      }
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: boolean

@@ -232,6 +232,13 @@
       "when": 1790441515331,
       "tag": "0032_make_counter_payment_vendor_qr_display_only",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790444000995,
+      "tag": "0033_paginate_manager_customers_and_aggregate_stats",
+      "breakpoints": true
     }
   ]
 }
