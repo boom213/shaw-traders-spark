@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 export type Enquiry = {
   id: string;
@@ -6,6 +7,7 @@ export type Enquiry = {
   productName: string;
   name: string;
   phone: string;
+  alternatePhone: string | null;
   qty: number;
   note: string | null;
   vehicle: string | null;
@@ -27,10 +29,11 @@ const siteOrigin = () =>
 
 /** A customer asking whether a part is available, or what it costs. */
 export const createEnquiry = createServerFn({ method: "POST" })
-  .inputValidator((data: { productId: string; name: string; phone: string; qty: number; note?: string; vehicle?: string }) => ({
+  .inputValidator((data: { productId: string; name: string; phone: string; alternatePhone?: string; qty: number; note?: string; vehicle?: string }) => ({
     productId: clean(data?.productId, 40),
     name: clean(data?.name, 120),
     phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
+    alternatePhone: String(data?.alternatePhone ?? "").replace(/\D/g, "").slice(-10),
     qty: Math.max(1, Math.min(999, Number(data?.qty) || 1)),
     note: clean(data?.note, 400),
     vehicle: clean(data?.vehicle, 120),
@@ -38,6 +41,7 @@ export const createEnquiry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.name.length < 2) return { ok: false as const, message: "Please tell us your name." };
     if (data.phone.length !== 10) return { ok: false as const, message: "Enter a 10-digit mobile number." };
+    if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false as const, message: "Enter a valid 10-digit alternate mobile number." };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: product } = await supabaseAdmin
@@ -52,6 +56,7 @@ export const createEnquiry = createServerFn({ method: "POST" })
       product_name: product.name,
       name: data.name,
       phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
       qty: data.qty,
       note: data.note || null,
       vehicle: data.vehicle || null,
@@ -60,6 +65,32 @@ export const createEnquiry = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, message: "Could not send your request. Please try again." };
 
     return { ok: true as const, message: "Thank you — we will call you back about availability." };
+  });
+
+const generalEnquirySchema = z.object({
+  source: z.enum(["contact", "bulk"]),
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().transform((v) => v.replace(/\D/g, "").slice(-10)).refine((v) => /^[6-9]\d{9}$/.test(v)),
+  alternatePhone: z.string().optional().default("").transform((v) => v.replace(/\D/g, "").slice(-10)).refine((v) => !v || /^[6-9]\d{9}$/.test(v)),
+  subject: z.string().trim().max(160).optional().default(""),
+  note: z.string().trim().max(500).optional().default(""),
+});
+
+export const createGeneralEnquiry = createServerFn({ method: "POST" })
+  .inputValidator((data) => generalEnquirySchema.parse(data))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("product_enquiries").insert({
+      product_id: null,
+      product_name: data.subject || (data.source === "bulk" ? "Bulk & dealer enquiry" : "Contact enquiry"),
+      name: data.name,
+      phone: data.phone,
+      alternate_phone: data.alternatePhone || null,
+      qty: 1,
+      note: data.note || null,
+      source: data.source,
+    });
+    return error ? { ok: false as const, message: "Could not save your enquiry. Please try again." } : { ok: true as const };
   });
 
 /** Availability requests waiting for the shop. */
@@ -72,7 +103,7 @@ export const listEnquiries = createServerFn({ method: "POST" })
     let query = supabaseAdmin
       .from("product_enquiries")
       .select(
-        "id, product_id, product_name, name, phone, qty, note, status, created_at, vehicle, source, photo_url, reply, replied_at, expected_date, quoted_price, quote_token",
+        "id, product_id, product_name, name, phone, alternate_phone, qty, note, status, created_at, vehicle, source, photo_url, reply, replied_at, expected_date, quoted_price, quote_token",
       )
       .order("created_at", { ascending: false })
       .limit(200);
@@ -84,6 +115,7 @@ export const listEnquiries = createServerFn({ method: "POST" })
       productName: String(r.product_name ?? "Photo from WhatsApp"),
       name: String(r.name),
       phone: String(r.phone),
+      alternatePhone: r.alternate_phone,
       qty: Number(r.qty ?? 1),
       note: r.note,
       vehicle: r.vehicle ?? null,
