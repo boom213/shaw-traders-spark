@@ -33,3 +33,4 @@
 - [x] Require customer sign-in before checkout while keeping browsing and carts guest-friendly.
 - [x] Add reliable wholesale/vendor payment records and late-payment protection.
 - [x] Auto-release abandoned online-payment stock and notify customers.
+- [x] Add a full product editor opened from All Products for catalogue-authorized admins.
