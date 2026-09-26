@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Check, MapPin, MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import {
   decideOrderRequest,
@@ -358,7 +359,7 @@ function TrackingForm({ order, onDone }: { order: ManageOrder; onDone: () => voi
           onDone();
         }}
       >
-        {busy ? "Saving…" : "Save & mark shipped"}
+        {busy ? <SparkRing /> : null}{busy ? "Saving…" : "Save & mark shipped"}
       </Button>
     </div>
   );
@@ -396,7 +397,7 @@ function RefundForm({ order, onDone }: { order: ManageOrder; onDone: () => void 
           onDone();
         }}
       >
-        {busy ? "Working…" : "Record refund"}
+        {busy ? <SparkRing /> : null}{busy ? "Working…" : "Record refund"}
       </Button>
     </div>
   );

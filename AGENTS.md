@@ -22,6 +22,6 @@
 - Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
 - Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
-- Centralize manager refresh in `MANAGE_QUERY_OPTIONS`; keep sidebar collapse browser-local to the shared desktop layout.
+- Centralize manager refresh; keep sidebar collapse browser-local.
 
-- Page lists by 8; aggregate totals in SQL. Router events never mutate history or broadcast grid state; log caught errors.
+- Page by 8; aggregate in SQL. Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.

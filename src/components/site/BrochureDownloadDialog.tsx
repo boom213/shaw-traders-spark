@@ -3,6 +3,7 @@ import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import {
   Dialog,
   DialogContent,
@@ -129,7 +130,7 @@ export function BrochureDownloadDialog({
               />
             </div>
             <Button type="submit" size="lg" className="w-full" disabled={busy}>
-              <Download /> {busy ? "Submitting…" : "Submit & Download"}
+              {busy ? <SparkRing /> : <Download />} {busy ? "Submitting…" : "Submit & Download"}
             </Button>
             <p className="text-xs text-muted-foreground">* Name and mobile number are required.</p>
           </form>

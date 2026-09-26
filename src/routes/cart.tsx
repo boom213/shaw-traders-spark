@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
 import { useTierPrices } from "@/hooks/useTrade";
@@ -119,9 +120,7 @@ function CartPage() {
       <SectionHeading title="Your Cart" subtitle={loading ? "Loading your cart…" : `${lines.length} item(s)`} />
 
       {loading ? (
-        <div className="grid gap-3">
-          {[0, 1, 2].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />)}
-        </div>
+        <SparkCharge label="Loading your cart…" />
       ) : lines.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border bg-surface px-6 py-14 text-center">
           <p className="text-sm text-muted-foreground">Your cart is empty.</p>
