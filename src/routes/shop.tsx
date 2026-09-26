@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ProductGridSkeleton, SectionHeading } from "@/components/site/Empty";
+import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SearchBox } from "@/components/site/SearchBox";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
@@ -279,7 +280,7 @@ function Shop() {
           </div>
 
           {isPending ? (
-            <ProductGridSkeleton count={12} />
+            <SparkCharge label="Loading products…" />
           ) : results.length === 0 ? (
             <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
               <h2 className="font-display text-xl font-bold">

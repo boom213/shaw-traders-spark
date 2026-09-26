@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ExternalLink, Loader2, Plus } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,7 +66,7 @@ function TradeAdmin() {
         </div>
 
         {isPending ? (
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+          <SparkCharge compact label="Loading trade applications…" />
         ) : (applications?.items ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nothing here right now.
@@ -161,7 +162,7 @@ function PaymentBox({ profileId, onDone }: { profileId: string; onDone: () => Pr
           await onDone();
         }}
       >
-        {busy ? <Loader2 className="size-4 animate-spin" /> : "Received"}
+        {busy ? <SparkRing /> : null}{busy ? "Recording…" : "Received"}
       </Button>
     </div>
   );
@@ -339,7 +340,7 @@ function CategoryPricing() {
           toast.success(`${res.updated} parts priced`);
         }}
       >
-        {busy ? <Loader2 className="size-4 animate-spin" /> : null} Apply to category
+        {busy ? <SparkRing /> : null} Apply to category
       </Button>
     </section>
   );
@@ -413,7 +414,7 @@ function ManualTradeAccount({ onDone }: { onDone: () => Promise<void> }) {
             await onDone();
           }}
         >
-          {busy ? <Loader2 className="size-4 animate-spin" /> : null} Create account
+          {busy ? <SparkRing /> : null} Create account
         </Button>
         <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
@@ -439,7 +440,7 @@ function AiPanel({ app, onDone }: { app: App; onDone: () => Promise<void> }) {
           catch { toast.error("AI check unavailable right now"); }
           setBusy(false);
         }}>
-          {busy ? <Loader2 className="size-4 animate-spin" /> : null} Re-run check
+          {busy ? <SparkRing /> : null} Re-run check
         </Button>
       </div>
       {missing.length > 0 && <p className="text-xs text-destructive">Missing: {missing.join(", ")}</p>}

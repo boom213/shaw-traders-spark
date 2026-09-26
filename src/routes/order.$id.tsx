@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SectionHeading } from "@/components/site/Empty";
+import { SparkCharge } from "@/components/site/SparkLoaders";
 import { getOrder } from "@/lib/orders.functions";
 import { getInvoice, requestOrderChange } from "@/lib/order-actions.functions";
 import { CANCELLABLE_STATUSES, CANCEL_REASONS, RETURNABLE_STATUSES, RETURN_REASONS } from "@/lib/order-reasons";
@@ -49,7 +50,7 @@ function OrderPage() {
     return <NotFound id={id} />;
   }
 
-  if (isPending) return <div className="container-page py-16 text-sm text-muted-foreground">Loading order…</div>;
+  if (isPending) return <div className="container-page"><SparkCharge label="Loading order…" /></div>;
 
   if (!data || data.state === "notfound") return <NotFound id={id} />;
 
