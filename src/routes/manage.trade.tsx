@@ -160,6 +160,7 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
     setBusy(false);
     if (!res.ok) return toast.error(res.error ?? "Could not save that");
     toast.success("Saved — the customer has been told");
+    await new Promise((resolve) => setTimeout(resolve, 900));
     await onDone();
   };
 

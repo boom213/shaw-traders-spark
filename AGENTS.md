@@ -18,3 +18,5 @@
 - Keep homepage social links iframe-free and lazy-mounted below the primary shopping content so third-party media does not delay the storefront.
 - Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
+- Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
+- Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.

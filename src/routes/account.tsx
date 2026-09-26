@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, Eye, EyeOff, LogOut, Mail, UserRound } from "lucide-react";
+import { Bike, CheckCircle2, Eye, EyeOff, LogOut, Mail, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,9 +15,11 @@ import { useStore } from "@/hooks/useStore";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { myOrders } from "@/lib/orders.functions";
+import { bookingsByUser } from "@/lib/booking.functions";
 import { reorderItems } from "@/lib/trade.functions";
 import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
+import { bookingStatusLabel } from "@/lib/vehicles";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -176,6 +179,7 @@ function Dashboard() {
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const mobile = user?.phone ? `+${String(user.phone).replace(/\D/g, "")}` : "";
+  const loadBookings = useServerFn(bookingsByUser);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -198,6 +202,12 @@ function Dashboard() {
   const { data: orders, isPending: ordersPending } = useQuery({
     queryKey: ["my-orders", user?.id],
     queryFn: () => myOrders(),
+    enabled: Boolean(user),
+  });
+
+  const { data: bookings, isPending: bookingsPending } = useQuery({
+    queryKey: ["my-bookings", user?.id],
+    queryFn: () => loadBookings(),
     enabled: Boolean(user),
   });
 
@@ -292,6 +302,40 @@ function Dashboard() {
                 Order these again
               </button>
               </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section id="bookings" className="scroll-mt-52 space-y-3">
+        <SectionHeading title="My Bookings" subtitle="Track your electric scooter bookings" />
+        {bookingsPending ? (
+          <div className="grid gap-2">{[0, 1].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl bg-muted" />)}</div>
+        ) : !bookings || bookings.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+            No scooter bookings yet. <Link to="/scooters" className="text-primary underline">Browse electric scooters</Link>
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {bookings.map((booking) => (
+              <Link
+                key={booking.token}
+                to="/booking/$token"
+                params={{ token: booking.token }}
+                className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface text-primary"><Bike className="size-5" /></span>
+                  <div>
+                    <p className="font-semibold">{booking.modelName}</p>
+                    <p className="text-xs text-muted-foreground">{booking.humanId} · {bookingStatusLabel(booking.status)}</p>
+                  </div>
+                </div>
+                <div className="text-right text-sm">
+                  <p><span className="text-muted-foreground">Token:</span> <strong>{formatINR(booking.tokenAmount)}</strong></p>
+                  <p className="text-xs text-muted-foreground">Balance {formatINR(booking.balanceDue)}</p>
+                </div>
+              </Link>
             ))}
           </div>
         )}
