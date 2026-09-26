@@ -60,6 +60,7 @@ function AuthPanel() {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [emailSent, setEmailSent] = useState(false);
+  const [resetSentEmail, setResetSentEmail] = useState<string | null>(null);
   const [showMobile, setShowMobile] = useState(false);
 
   const emailAuth = async (event: React.FormEvent) => {
@@ -87,10 +88,12 @@ function AuthPanel() {
 
   const forgotPassword = async () => {
     if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter your email address first");
+    const submittedEmail = email.trim();
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reset-password` });
+    const { error } = await supabase.auth.resetPasswordForEmail(submittedEmail, { redirectTo: `${window.location.origin}/reset-password` });
     setBusy(false);
     if (error) return toast.error(error.message);
+    setResetSentEmail(submittedEmail);
     toast.success("Password reset link sent");
   };
 
@@ -115,7 +118,16 @@ function AuthPanel() {
           Sign in or create an account to track orders and keep your saved parts together.
         </p>
 
-        {emailSent ? (
+        {resetSentEmail ? (
+          <div className="mt-6 rounded-lg border border-primary/30 bg-accent p-5 text-center">
+            <CheckCircle2 className="mx-auto size-8 text-primary" />
+            <h2 className="mt-3 font-semibold">Check your email</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Check your email at <strong className="font-semibold text-foreground">{resetSentEmail}</strong> for a link to reset your password.
+            </p>
+            <Button variant="outline" className="mt-4" onClick={() => setResetSentEmail(null)}>Back to sign in</Button>
+          </div>
+        ) : emailSent ? (
           <div className="mt-6 rounded-lg border border-primary/30 bg-accent p-5 text-center">
             <CheckCircle2 className="mx-auto size-8 text-primary" />
             <h2 className="mt-3 font-semibold">Check your email</h2>

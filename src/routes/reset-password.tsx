@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, KeyRound } from "lucide-react";
+import { AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { supabase } from "@/integrations/supabase/client";
 import { canonical } from "@/lib/catalog";
 
@@ -27,13 +28,41 @@ function ResetPasswordPage() {
   const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<"checking" | "ready" | "inactive" | "error">("checking");
+  const [linkError, setLinkError] = useState("");
   const [complete, setComplete] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const recovery = window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type") === "recovery";
-    supabase.auth.getSession().then(({ data }) => setReady(Boolean(data.session) || recovery));
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const error = query.get("error") ?? hash.get("error");
+    const errorCode = query.get("error_code") ?? hash.get("error_code");
+    const errorDescription = query.get("error_description") ?? hash.get("error_description");
+
+    if (error || errorCode || errorDescription) {
+      setLinkError(
+        errorCode === "otp_expired"
+          ? "This link has expired — request a new one."
+          : (errorDescription?.replace(/\+/g, " ") || "This reset link is invalid — request a new one."),
+      );
+      setStatus("error");
+      return;
+    }
+
+    const hasRecoveryToken =
+      query.has("code") ||
+      query.get("type") === "recovery" ||
+      hash.get("type") === "recovery" ||
+      hash.has("access_token");
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setStatus("ready");
+    });
+
+    if (!hasRecoveryToken) setStatus("inactive");
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const submit = async (event: React.FormEvent) => {
@@ -60,7 +89,7 @@ function ResetPasswordPage() {
             <p className="mt-2 text-sm text-muted-foreground">You can now continue to your account and shop securely.</p>
             <Button className="mt-6 w-full" onClick={() => void navigate({ to: "/account" })}>Continue to account</Button>
           </>
-        ) : ready ? (
+        ) : status === "ready" ? (
           <>
             <h1 className="mt-4 font-display text-2xl font-semibold">Choose a new password</h1>
             <p className="mt-2 text-sm text-muted-foreground">Use at least 8 characters that you do not use elsewhere.</p>
@@ -75,6 +104,20 @@ function ResetPasswordPage() {
               </div>
               <Button type="submit" className="w-full" disabled={busy}>{busy ? "Updating…" : "Update password"}</Button>
             </form>
+          </>
+        ) : status === "checking" ? (
+          <div className="mt-5 flex items-center gap-3 text-sm text-muted-foreground">
+            <SparkRing />
+            Checking your reset link…
+          </div>
+        ) : status === "error" ? (
+          <>
+            <span className="mt-4 grid size-11 place-items-center rounded-lg bg-destructive/10 text-destructive">
+              <AlertCircle className="size-5" />
+            </span>
+            <h1 className="mt-4 font-display text-2xl font-semibold">Reset link unavailable</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{linkError}</p>
+            <Button className="mt-6 w-full" variant="outline" asChild><Link to="/account">Request a new link</Link></Button>
           </>
         ) : (
           <>

@@ -53,3 +53,4 @@
 - [x] Hide Find Parts from the public storefront while retaining direct staff access.
 - [x] Add current-password-verified password changes for email-based customer accounts.
 - [x] Add customer-managed saved addresses and an explicit saved-address checkout picker.
+- [x] Make password-reset requests persistently confirmed and recovery links timing-safe with specific expiry guidance.
