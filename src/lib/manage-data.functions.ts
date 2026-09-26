@@ -120,56 +120,36 @@ export type ManageCustomer = {
   city?: string;
   customerType: "retail" | "trade";
   priceTier: "retail" | "trade" | "distributor";
-  orders: { humanId: string; token: string }[];
   spend: number;
   last: string | null;
 };
 
 export const manageCustomers = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().toLowerCase() }))
-  .handler(async ({ data }): Promise<ManageCustomer[]> => {
+  .inputValidator((data: { q?: string; page?: number; pageSize?: number } | undefined) => ({
+    q: String(data?.q ?? "").trim(),
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: Math.min(100, Math.max(10, Math.floor(Number(data?.pageSize ?? 25)))),
+  }))
+  .handler(async ({ data }): Promise<{ items: ManageCustomer[]; total: number }> => {
     const sb = await admin();
-    const [{ data: profiles, error: profileError }, { data: orders, error: orderError }, { data: addresses, error: addressError }] = await Promise.all([
-      sb.from("profiles").select("id, full_name, phone, email, customer_type, price_tier").order("created_at", { ascending: false }).limit(1000),
-      sb.from("orders").select("profile_id, human_id, public_token, total, placed_at").not("profile_id", "is", null).order("placed_at", { ascending: false }).limit(5000),
-      sb.from("addresses").select("profile_id, city, is_default").limit(3000),
-    ]);
-    if (profileError) throw new Error(profileError.message);
-    if (orderError) throw new Error(orderError.message);
-    if (addressError) throw new Error(addressError.message);
-
-    const ordersByProfile = new Map<string, Row[]>();
-    for (const order of (orders ?? []) as Row[]) {
-      const profileId = String(order['profile_id']);
-      ordersByProfile.set(profileId, [...(ordersByProfile.get(profileId) ?? []), order]);
-    }
-    const cityByProfile = new Map<string, string>();
-    for (const address of (addresses ?? []) as Row[]) {
-      const profileId = String(address['profile_id']);
-      if (address['is_default'] || !cityByProfile.has(profileId)) cityByProfile.set(profileId, String(address['city'] ?? ""));
-    }
-
-    const list = ((profiles ?? []) as Row[]).map((profile): ManageCustomer => {
-      const id = String(profile['id']);
-      const customerOrders = ordersByProfile.get(id) ?? [];
-      return {
-        id,
-        phone: String(profile['phone'] ?? ""),
-        name: String(profile['full_name'] ?? profile['email'] ?? "Customer"),
-        ...(profile['email'] ? { email: String(profile['email']) } : {}),
-        ...(cityByProfile.get(id) ? { city: cityByProfile.get(id) } : {}),
-        customerType: profile['customer_type'] === "trade" ? "trade" : "retail",
-        priceTier: ["retail", "trade", "distributor"].includes(String(profile['price_tier']))
-          ? profile['price_tier'] as ManageCustomer['priceTier']
-          : "retail",
-        orders: customerOrders.map((order) => ({ humanId: String(order['human_id']), token: String(order['public_token']) })),
-        spend: customerOrders.reduce((sum, order) => sum + Number(order['total'] ?? 0), 0),
-        last: customerOrders[0]?.['placed_at'] ? String(customerOrders[0]['placed_at']) : null,
-      };
-    }).sort((a, b) => (b.last ?? "").localeCompare(a.last ?? ""));
-    return data.q
-      ? list.filter((c) => `${c.name} ${c.email ?? ""} ${c.phone} ${c.city ?? ""}`.toLowerCase().includes(data.q))
-      : list;
+    const { data: rows, error } = await sb.rpc("manage_customer_page", {
+      p_query: data.q,
+      p_offset: data.page * data.pageSize,
+      p_limit: data.pageSize,
+    });
+    if (error) throw new Error(error.message);
+    const items = ((rows ?? []) as Row[]).map((row): ManageCustomer => ({
+      id: String(row['id']),
+      phone: String(row['phone'] ?? ""),
+      name: String(row['name'] ?? "Customer"),
+      ...(row['email'] ? { email: String(row['email']) } : {}),
+      ...(row['city'] ? { city: String(row['city']) } : {}),
+      customerType: row['customer_type'] === "trade" ? "trade" : "retail",
+      priceTier: (["retail", "trade", "distributor"].includes(String(row['price_tier'])) ? row['price_tier'] : "retail") as ManageCustomer['priceTier'],
+      spend: Number(row['spend'] ?? 0),
+      last: row['last_order_at'] ? String(row['last_order_at']) : null,
+    }));
+    return { items, total: Number((rows?.[0] as Row | undefined)?.['total_count'] ?? 0) };
   });
 
 export type ManageCustomerAddress = {
@@ -330,23 +310,19 @@ export const deleteManagedCustomerAddress = createServerFn({ method: "POST" })
 
 export const manageStats = createServerFn({ method: "POST" }).handler(async () => {
   const sb = await admin();
-  const [products, orders, categories] = await Promise.all([
-    sb.from("products").select("id, price, stock, product_images(url)").eq("status", "visible").limit(2000),
-    sb.from("orders").select("total, contact_phone").limit(2000),
-    sb.from("categories").select("id"),
-  ]);
-  const prod = (products.data ?? []) as Row[];
-  const ords = (orders.data ?? []) as Row[];
+  const { data, error } = await sb.rpc("manager_stats");
+  if (error) throw new Error(error.message);
+  const stats = (data?.[0] ?? {}) as Row;
   return {
-    products: prod.length,
-    categories: (categories.data ?? []).length,
-    noPrice: prod.filter((p) => p['price'] === null).length,
-    noPhoto: prod.filter((p) => ((p['product_images'] ?? []) as Row[]).length === 0).length,
-    lowStock: prod.filter((p) => Number(p['stock']) > 0 && Number(p['stock']) <= 3).length,
-    outOfStock: prod.filter((p) => Number(p['stock']) === 0).length,
-    orders: ords.length,
-    revenue: ords.reduce((n, o) => n + Number(o['total']), 0),
-    customers: new Set(ords.map((o) => String(o['contact_phone'] ?? ""))).size,
+    products: Number(stats['products'] ?? 0),
+    categories: Number(stats['categories'] ?? 0),
+    noPrice: Number(stats['no_price'] ?? 0),
+    noPhoto: Number(stats['no_photo'] ?? 0),
+    lowStock: Number(stats['low_stock'] ?? 0),
+    outOfStock: Number(stats['out_of_stock'] ?? 0),
+    orders: Number(stats['orders'] ?? 0),
+    revenue: Number(stats['revenue'] ?? 0),
+    customers: Number(stats['customers'] ?? 0),
   };
 });
 

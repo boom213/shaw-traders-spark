@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { manageCustomers } from "@/lib/manage-data.functions";
 import { BUSINESS, formatINR, whatsappLink } from "@/lib/catalog";
+import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 
 export const Route = createFileRoute("/manage/customers/")({
   head: () => ({
@@ -25,11 +26,18 @@ export const Route = createFileRoute("/manage/customers/")({
 function ManageCustomers() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 25;
 
-  const { data: customers, isPending } = useQuery({
-    queryKey: ["manage-customers", term],
-    queryFn: () => manageCustomers({ data: { q: term } }),
+  const { data, isPending, isFetching } = useQuery({
+    queryKey: ["manage-customers", term, page, pageSize],
+    queryFn: () => manageCustomers({ data: { q: term, page, pageSize } }),
+    placeholderData: (previous) => previous,
+    ...MANAGE_QUERY_OPTIONS,
   });
+  const customers = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="space-y-4">
@@ -38,6 +46,7 @@ function ManageCustomers() {
         onSubmit={(e) => {
           e.preventDefault();
           setTerm(q.trim());
+          setPage(0);
         }}
       >
         <Input placeholder="Search customers by name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -46,7 +55,7 @@ function ManageCustomers() {
 
       {isPending ? (
         <div className="h-64 animate-pulse rounded-2xl bg-muted" />
-      ) : (customers ?? []).length === 0 ? (
+      ) : customers.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           No customers yet. Everyone who places an order on the website will be listed here with their phone number and order history.
         </p>
@@ -64,7 +73,7 @@ function ManageCustomers() {
               </tr>
             </thead>
             <tbody>
-              {(customers ?? []).map((c) => (
+              {customers.map((c) => (
                 <tr key={c.id} className="border-t border-border">
                   <td className="p-3 font-medium">
                     <Link
@@ -98,6 +107,19 @@ function ManageCustomers() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {!isPending && total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+          <span>
+            {page * pageSize + 1}–{Math.min(total, (page + 1) * pageSize)} of {total}
+            {isFetching ? " · Updating…" : ""}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" variant="outline" disabled={page === 0 || isFetching} onClick={() => setPage((value) => Math.max(0, value - 1))}>Previous</Button>
+            <span>Page {page + 1} of {pages}</span>
+            <Button type="button" size="sm" variant="outline" disabled={page + 1 >= pages || isFetching} onClick={() => setPage((value) => value + 1)}>Next</Button>
+          </div>
         </div>
       )}
     </div>
