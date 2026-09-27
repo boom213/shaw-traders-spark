@@ -10,9 +10,9 @@
 <!-- LOVABLE:END -->
 
 - All Products is Staff-read-only; Manager+ edits products/brands through catalogue-protected routes.
-- Keep wholesale receipts auditable and reporting totals non-overlapping.
+- Keep wholesale receipts auditable; reporting totals never overlap.
 - Counter-sale Vendor QR is optional; selecting one atomically links its vendor payment.
-- Keep saved addresses customer-controlled; checkout snapshots the chosen address and never silently overwrites the address book.
+- Keep saved addresses customer-controlled; checkout snapshots choices and never silently overwrites them.
 - Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
 - Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
 - Keep one A4 invoice; use snapshot then catalogue photos, 5s fetch timeouts, and bundled WebP conversion.
@@ -20,8 +20,9 @@
 - Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
 - Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
 - Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
-- Read customer scooter bookings through authenticated owner-scoped access and keep public-token tracking as the booking detail path.
+- Read bookings through owner-scoped access; public-token tracking is the detail path.
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
 - Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
 - Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
 - Banners, About gallery, and brand catalogue live in Owner-only Site Settings; hide Find Parts publicly but retain its staff-only direct route.
+- Request password resets at `/forgot-password`; use `/reset-password` only to set the new password.
