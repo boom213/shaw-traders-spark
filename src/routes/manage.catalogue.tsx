@@ -84,7 +84,7 @@ function CataloguePage() {
           <div><h2 className="font-display text-lg font-bold">Products & stock</h2><p className="text-sm text-muted-foreground">Products are assigned to the same categories shown on the homepage.</p></div>
           <div className="flex flex-wrap gap-2">
             <ManageBrandsDialog brands={brands} />
-            {staff.role === "super_admin" && <AddProductDialog categories={categories ?? []} brands={brands} />}
+            <AddProductDialog categories={categories ?? []} brands={brands} />
           </div>
         </div>
         <form
