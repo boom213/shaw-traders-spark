@@ -1,17 +1,109 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { SearchBox } from "@/components/site/SearchBox";
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
-import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, NAV_CATEGORIES, whatsappLink, type Category } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { categoryIcon } from "@/components/site/category-icons";
+
+function CategoryNavigation({ categories }: { categories: Category[] }) {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [canScrollBack, setCanScrollBack] = useState(false);
+  const [canScrollForward, setCanScrollForward] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const overflow = rail.scrollWidth > rail.clientWidth + 1;
+    setHasOverflow(overflow);
+    setCanScrollBack(overflow && rail.scrollLeft > 1);
+    setCanScrollForward(overflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    updateScrollState();
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(rail);
+    rail.addEventListener("scroll", updateScrollState, { passive: true });
+    return () => {
+      observer.disconnect();
+      rail.removeEventListener("scroll", updateScrollState);
+    };
+  }, [categories, updateScrollState]);
+
+  const scroll = (direction: -1 | 1) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.7, 320), behavior: "smooth" });
+  };
+
+  return (
+    <nav className="border-t border-border bg-surface" aria-label="Product categories">
+      <div className="container-page relative">
+        {hasOverflow && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => scroll(-1)}
+            disabled={!canScrollBack}
+            className="absolute left-1 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-background shadow-sm sm:left-2"
+            aria-label="Previous categories"
+          >
+            <ChevronLeft />
+          </Button>
+        )}
+        <div
+          ref={railRef}
+          className={`hide-scrollbar flex items-center overflow-x-auto py-0 motion-reduce:scroll-auto ${hasOverflow ? "px-11 sm:px-12" : "justify-center"}`}
+        >
+          {categories.map((category) => {
+            const Icon = categoryIcon(category);
+            return (
+              <Link
+                key={category.slug}
+                to="/category/$slug"
+                params={{ slug: category.slug }}
+                className="flex h-11 min-w-[8.5rem] shrink-0 items-center justify-center gap-2 border-r border-border px-3 text-[13px] font-medium text-muted-foreground transition-colors first:border-l hover:bg-background hover:text-foreground"
+                activeProps={{
+                  className:
+                    "flex h-11 min-w-[8.5rem] shrink-0 items-center justify-center gap-2 border-x border-border bg-background px-3 text-[13px] font-semibold text-foreground",
+                }}
+              >
+                <Icon className="size-4 shrink-0 text-foreground" strokeWidth={1.7} />
+                <span className="whitespace-nowrap">{category.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+        {hasOverflow && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => scroll(1)}
+            disabled={!canScrollForward}
+            className="absolute right-1 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-background shadow-sm sm:right-2"
+            aria-label="Next categories"
+          >
+            <ChevronRight />
+          </Button>
+        )}
+      </div>
+    </nav>
+  );
+}
 
 function Logo() {
   return (
@@ -168,28 +260,7 @@ export function Header() {
         </div>
       </nav>
 
-      {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
-        <div className="container-page hide-scrollbar flex items-center overflow-x-auto py-0 lg:justify-center">
-          {navCategories.map((c) => {
-            const Icon = categoryIcon(c);
-            return (
-              <Link
-                key={c.slug}
-                to="/category/$slug"
-                params={{ slug: c.slug }}
-                className="flex h-11 min-w-[9rem] shrink-0 items-center justify-center gap-2 border-r border-border px-4 text-[13px] font-medium text-muted-foreground transition-colors first:border-l hover:bg-background hover:text-foreground"
-                activeProps={{
-                  className:
-                    "flex h-11 min-w-[9rem] shrink-0 items-center justify-center gap-2 border-x border-border bg-background px-4 text-[13px] font-semibold text-foreground",
-                }}
-              >
-                <Icon className="size-4 text-foreground" strokeWidth={1.7} />
-                {c.name}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>}
+      {navCategories.length > 0 && <CategoryNavigation categories={navCategories} />}
     </header>
   );
 }

@@ -57,3 +57,4 @@
 - [x] Move password-reset requests to a dedicated responsive forgot-password page.
 - [x] Allow managers and owners to add catalogue products while keeping permanent deletion super-admin-only.
 - [x] Add Owner-managed categories, saved category icons, the expanded part catalogue, and a six-plus-Others homepage row.
+- [x] Keep the persistent top category navigation edge-safe with dedicated overflow controls.
