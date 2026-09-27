@@ -1,5 +1,5 @@
 # Current task
-- [ ] Verify new staff creation and signed-in password change end to end; include the current password in the update request.
+- [x] Verify new staff creation and signed-in password change end to end; include the current password in the update request.
 
 # Roadmap
 
