@@ -1,11 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, LayoutGrid } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import { categoryIcon } from "@/components/site/category-icons";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { categoriesQuery } from "@/lib/queries";
 import type { Category } from "@/lib/catalog";
-import { placeholderFor } from "@/lib/placeholders";
 
 /** Scrollable row of every part category. */
 export function CategoryCarousel({ categories, limit, showOthers = false }: { categories?: Category[]; limit?: number; showOthers?: boolean }) {
@@ -15,45 +14,37 @@ export function CategoryCarousel({ categories, limit, showOthers = false }: { ca
   if (list.length === 0) return null;
 
   return (
-    <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} aria-label="Shop by category" className="w-full">
-      <CarouselContent className="-ml-2">
+    <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} aria-label="Shop by category" className="w-full px-10 sm:px-12 lg:px-0">
+      <CarouselContent className="ml-0 gap-3 lg:flex-wrap lg:justify-center">
         {list.map((c) => {
           const Icon = categoryIcon(c);
           return (
-            <CarouselItem key={c.slug} className="basis-[68%] pl-2 sm:basis-1/3 lg:basis-1/6">
+            <CarouselItem key={c.slug} className="basis-32 pl-0 sm:basis-36 lg:basis-36">
               <Link
                 to="/category/$slug"
                 params={{ slug: c.slug }}
-                className="group block overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-[var(--shadow-lift)]"
+                className="group flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-3 text-center shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-[var(--shadow-lift)] motion-reduce:transform-none motion-reduce:transition-none"
               >
-                <div className="relative aspect-[2/1] w-full overflow-hidden bg-surface">
-                  <img
-                    src={c.imageUrl || placeholderFor(c.slug)}
-                    alt={c.name}
-                    width={400}
-                    height={300}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-                  />
-                   <span className="absolute left-2 top-2 grid size-7 place-items-center rounded-md bg-background/90 text-foreground shadow-[var(--shadow-card)]">
-                    <Icon className="size-4" strokeWidth={1.5} />
-                  </span>
-                </div>
-                  <div className="flex items-center justify-between gap-2 px-3 py-3">
-                    <span className="block truncate text-xs font-semibold leading-snug sm:text-sm">{c.name}</span>
-                    <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-                      <ArrowRight className="size-3.5" />
-                    </span>
-                </div>
+                <Icon className="mb-3 size-8 text-foreground transition-colors group-hover:text-primary" strokeWidth={1.5} />
+                <span className="line-clamp-2 text-xs font-extrabold uppercase leading-snug text-foreground">{c.name}</span>
               </Link>
             </CarouselItem>
           );
         })}
-        {showOthers && <CarouselItem className="basis-[68%] pl-2 sm:basis-1/3 lg:basis-1/6"><Link to="/categories" className="group flex h-full min-h-32 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-[var(--shadow-lift)]"><span className="grid size-11 place-items-center rounded-lg bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground"><LayoutGrid className="size-5" /></span><span className="text-sm font-semibold">Others</span><span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">View all <ArrowRight className="size-3.5" /></span></Link></CarouselItem>}
+        {showOthers && (
+          <CarouselItem className="basis-32 pl-0 sm:basis-36 lg:basis-36">
+            <Link
+              to="/categories"
+              className="group flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-foreground bg-foreground p-3 text-center text-background shadow-[var(--shadow-card)] transition-[background-color,border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[var(--shadow-lift)] motion-reduce:transform-none motion-reduce:transition-none"
+            >
+              <LayoutGrid className="mb-3 size-8" strokeWidth={1.5} />
+              <span className="text-xs font-extrabold uppercase leading-snug">Others</span>
+            </Link>
+          </CarouselItem>
+        )}
       </CarouselContent>
-      <CarouselPrevious className="left-2 hidden lg:flex" aria-label="Previous categories" />
-      <CarouselNext className="right-2 hidden lg:flex" aria-label="Next categories" />
+      <CarouselPrevious className="left-0 lg:hidden" aria-label="Previous categories" />
+      <CarouselNext className="right-0 lg:hidden" aria-label="Next categories" />
     </Carousel>
   );
 }
