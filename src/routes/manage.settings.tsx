@@ -31,7 +31,7 @@ function SettingsPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   return (
     <Tabs value={tab} onValueChange={(next) => void navigate({ search: { tab: next as typeof tab } })}>
-      <TabsList className="h-auto w-full justify-start overflow-x-auto">
+      <TabsList className="grid h-auto w-full grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
         <TabsTrigger value="general">General</TabsTrigger>
         <TabsTrigger value="banners">Home Banners</TabsTrigger>
         <TabsTrigger value="about">About Gallery</TabsTrigger>
