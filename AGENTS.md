@@ -24,5 +24,5 @@
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
 - Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
 - Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
-- Banners, About gallery, brand catalogue, and categories live in Owner-only Site Settings; category icons use the shared registry; hide Find Parts publicly.
+- Owner Site Settings manages banners, galleries, brands, and categories. Share category icons; keep the top rail edge-safe; hide Find Parts.
 - Request password resets at `/forgot-password`; use `/reset-password` only to set the new password.
