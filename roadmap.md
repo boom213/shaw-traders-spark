@@ -1,5 +1,5 @@
 # Current task
-- [x] Verify new staff creation and signed-in password change end to end; include the current password in the update request.
+- [x] Fix and verify the genuine emailed password-recovery flow on the live site.
 
 # Roadmap
 
@@ -62,3 +62,4 @@
 - [x] Add Owner-managed categories, saved category icons, the expanded part catalogue, and a six-plus-Others homepage row.
 - [x] Keep the persistent top category navigation edge-safe with dedicated overflow controls.
 - [x] Align storefront search with visible parts and category terms.
+- [x] Recognize a freshly established recovery session after the email link removes its one-time token.
