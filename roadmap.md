@@ -53,7 +53,7 @@
 - [x] Hide Find Parts from the public storefront while retaining direct staff access.
 - [x] Add current-password-verified password changes for email-based customer accounts.
 - [x] Add customer-managed saved addresses and an explicit saved-address checkout picker.
-- [x] Make password-reset requests persistently confirmed and recovery links timing-safe with specific expiry guidance.
+- [x] Make password-reset requests persistently confirmed and recovery links timing-safe with session fallback and specific expiry guidance.
 - [x] Move password-reset requests to a dedicated responsive forgot-password page.
 - [x] Allow managers and owners to add catalogue products while keeping permanent deletion super-admin-only.
 - [x] Add Owner-managed categories, saved category icons, the expanded part catalogue, and a six-plus-Others homepage row.

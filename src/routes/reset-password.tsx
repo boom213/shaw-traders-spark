@@ -34,6 +34,7 @@ function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const query = new URLSearchParams(window.location.search);
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const error = query.get("error") ?? hash.get("error");
@@ -57,12 +58,21 @@ function ResetPasswordPage() {
       hash.has("access_token");
 
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setStatus("ready");
+      if (active && event === "PASSWORD_RECOVERY") setStatus("ready");
     });
 
-    if (!hasRecoveryToken) setStatus("inactive");
+    if (!hasRecoveryToken) {
+      setStatus("inactive");
+    } else {
+      void supabase.auth.getSession().then(({ data }) => {
+        if (active && data.session) setStatus("ready");
+      });
+    }
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const submit = async (event: React.FormEvent) => {
