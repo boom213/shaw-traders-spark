@@ -154,7 +154,7 @@ function Home() {
             </div>
             <span className="mx-auto mt-2 block h-0.5 w-8 bg-primary" />
           </div>
-          <CategoryCarousel categories={home.categories} />
+          <CategoryCarousel categories={home.categories} limit={6} showOthers />
         </section>
       )}
 

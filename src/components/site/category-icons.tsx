@@ -1,0 +1,77 @@
+import {
+  Armchair,
+  BatteryCharging,
+  Cable,
+  Circle,
+  CircleDot,
+  CircuitBoard,
+  Cog,
+  Cpu,
+  Disc3,
+  Footprints,
+  Gauge,
+  Lightbulb,
+  Lock,
+  Monitor,
+  Nut,
+  Package,
+  PlugZap,
+  RefreshCw,
+  Shield,
+  Unplug,
+  Volume2,
+  Waves,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import type { CategoryIconKey } from "@/lib/category-icon-keys";
+
+export const CATEGORY_ICON_REGISTRY: Record<CategoryIconKey, LucideIcon> = {
+  "battery-charging": BatteryCharging,
+  "plug-zap": PlugZap,
+  cog: Cog,
+  cpu: Cpu,
+  shield: Shield,
+  "disc-3": Disc3,
+  "circle-dot": CircleDot,
+  waves: Waves,
+  lightbulb: Lightbulb,
+  footprints: Footprints,
+  lock: Lock,
+  zap: Zap,
+  cable: Cable,
+  package: Package,
+  "circuit-board": CircuitBoard,
+  gauge: Gauge,
+  monitor: Monitor,
+  "refresh-cw": RefreshCw,
+  wrench: Wrench,
+  unplug: Unplug,
+  armchair: Armchair,
+  "volume-2": Volume2,
+  circle: Circle,
+  nut: Nut,
+};
+
+const LEGACY_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  "ev-batteries": BatteryCharging,
+  chargers: PlugZap,
+  motors: Cog,
+  controllers: Cpu,
+  "body-parts": Shield,
+  "brake-parts": Disc3,
+  "wheels-tyres": CircleDot,
+  suspension: Waves,
+  lighting: Lightbulb,
+  footrests: Footprints,
+  "locks-latches": Lock,
+  "electrical-parts": Zap,
+  "cables-wiring": Cable,
+  accessories: Package,
+};
+
+export function categoryIcon(category: { slug: string; icon?: string | null }): LucideIcon {
+  const saved = category.icon ? CATEGORY_ICON_REGISTRY[category.icon as CategoryIconKey] : undefined;
+  return saved ?? LEGACY_CATEGORY_ICONS[category.slug] ?? Package;
+}
