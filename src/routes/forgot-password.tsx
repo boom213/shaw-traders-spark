@@ -91,6 +91,7 @@ function ForgotPasswordPage() {
                   Check your email at <strong className="font-semibold text-foreground">{sentEmail}</strong> for a link to reset your password.
                 </p>
                 <Button type="button" variant="outline" className="mt-7 w-full" onClick={() => setSentEmail(null)}>Use a different email</Button>
+                <Button variant="ghost" className="mt-2 w-full" asChild><Link to="/account"><ArrowLeft />Back to Sign In</Link></Button>
               </div>
             ) : (
               <>
