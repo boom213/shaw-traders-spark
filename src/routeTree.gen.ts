@@ -19,6 +19,7 @@ import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FindPartsRouteImport } from './routes/find-parts'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ManageRouteImport } from './routes/manage'
 import { Route as ManageLoginRouteImport } from './routes/manage-login'
 import { Route as OffersRouteImport } from './routes/offers'
@@ -124,6 +125,11 @@ const ContactRoute = ContactRouteImport.update({
 const FindPartsRoute = FindPartsRouteImport.update({
   id: '/find-parts',
   path: '/find-parts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ManageRoute = ManageRouteImport.update({
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/find-parts': typeof FindPartsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
@@ -493,6 +500,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/find-parts': typeof FindPartsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
   '/privacy': typeof PrivacyRoute
@@ -560,6 +568,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
   '/find-parts': typeof FindPartsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/manage': typeof ManageRouteWithChildren
   '/manage-login': typeof ManageLoginRoute
   '/offers': typeof OffersRoute
@@ -630,6 +639,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/find-parts'
+    | '/forgot-password'
     | '/manage'
     | '/manage-login'
     | '/offers'
@@ -698,6 +708,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/find-parts'
+    | '/forgot-password'
     | '/manage-login'
     | '/offers'
     | '/privacy'
@@ -764,6 +775,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/contact'
     | '/find-parts'
+    | '/forgot-password'
     | '/manage'
     | '/manage-login'
     | '/offers'
@@ -833,6 +845,7 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
   FindPartsRoute: typeof FindPartsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   ManageRoute: typeof ManageRouteWithChildren
   ManageLoginRoute: typeof ManageLoginRoute
   OffersRoute: typeof OffersRoute
@@ -936,6 +949,13 @@ declare module '@tanstack/react-router' {
       path: '/find-parts'
       fullPath: '/find-parts'
       preLoaderRoute: typeof FindPartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/manage': {
@@ -1421,6 +1441,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
   FindPartsRoute: FindPartsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   ManageRoute: ManageRouteWithChildren,
   ManageLoginRoute: ManageLoginRoute,
   OffersRoute: OffersRoute,
