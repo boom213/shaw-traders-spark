@@ -45,28 +45,30 @@ function CategoryNavigation({ categories }: { categories: Category[] }) {
   const scroll = (direction: -1 | 1) => {
     const rail = railRef.current;
     if (!rail) return;
-    rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.7, 320), behavior: "smooth" });
+    rail.scrollBy({ left: direction * rail.clientWidth, behavior: "smooth" });
   };
 
   return (
     <nav className="border-t border-border bg-surface" aria-label="Product categories">
-      <div className="container-page relative">
-        {hasOverflow && (
+      <div className={`container-page ${hasOverflow ? "grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem]" : "flex justify-center"}`}>
+        <div className="grid place-items-center">
+          {hasOverflow && (
           <Button
             type="button"
             variant="outline"
             size="icon"
             onClick={() => scroll(-1)}
             disabled={!canScrollBack}
-            className="absolute left-1 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-background shadow-sm sm:left-2"
+            className="size-8 rounded-full bg-background shadow-sm"
             aria-label="Previous categories"
           >
             <ChevronLeft />
           </Button>
-        )}
+          )}
+        </div>
         <div
           ref={railRef}
-          className={`hide-scrollbar flex items-center overflow-x-auto py-0 motion-reduce:scroll-auto ${hasOverflow ? "px-11 sm:px-12" : "justify-center"}`}
+          className={`hide-scrollbar flex min-w-0 items-center overflow-x-auto py-0 motion-reduce:scroll-auto ${hasOverflow ? "snap-x snap-mandatory" : "justify-center"}`}
         >
           {categories.map((category) => {
             const Icon = categoryIcon(category);
@@ -75,10 +77,10 @@ function CategoryNavigation({ categories }: { categories: Category[] }) {
                 key={category.slug}
                 to="/category/$slug"
                 params={{ slug: category.slug }}
-                className="flex h-11 min-w-[8.5rem] shrink-0 items-center justify-center gap-2 border-r border-border px-3 text-[13px] font-medium text-muted-foreground transition-colors first:border-l hover:bg-background hover:text-foreground"
+                className="flex h-11 min-w-[20%] shrink-0 snap-start items-center justify-center gap-2 border-r border-border px-2 text-[13px] font-medium text-muted-foreground transition-colors first:border-l hover:bg-background hover:text-foreground lg:min-w-[12.5%] 2xl:min-w-[10%]"
                 activeProps={{
                   className:
-                    "flex h-11 min-w-[8.5rem] shrink-0 items-center justify-center gap-2 border-x border-border bg-background px-3 text-[13px] font-semibold text-foreground",
+                    "flex h-11 min-w-[20%] shrink-0 snap-start items-center justify-center gap-2 border-x border-border bg-background px-2 text-[13px] font-semibold text-foreground lg:min-w-[12.5%] 2xl:min-w-[10%]",
                 }}
               >
                 <Icon className="size-4 shrink-0 text-foreground" strokeWidth={1.7} />
@@ -87,19 +89,21 @@ function CategoryNavigation({ categories }: { categories: Category[] }) {
             );
           })}
         </div>
-        {hasOverflow && (
+        <div className="grid place-items-center">
+          {hasOverflow && (
           <Button
             type="button"
             variant="outline"
             size="icon"
             onClick={() => scroll(1)}
             disabled={!canScrollForward}
-            className="absolute right-1 top-1/2 z-10 size-8 -translate-y-1/2 rounded-full bg-background shadow-sm sm:right-2"
+            className="size-8 rounded-full bg-background shadow-sm"
             aria-label="Next categories"
           >
             <ChevronRight />
           </Button>
-        )}
+          )}
+        </div>
       </div>
     </nav>
   );
