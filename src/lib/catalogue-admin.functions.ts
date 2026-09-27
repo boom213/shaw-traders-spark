@@ -369,7 +369,7 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff({ superAdmin: true });
+    const actor = await requireStaff({ capability: "catalogue" });
     const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     if (data.name.length < 2) return { ok: false as const, error: "Enter a product name." };
     if (data.price !== null && (!Number.isFinite(data.price) || data.price < 0)) return { ok: false as const, error: "Price must be zero or more." };
