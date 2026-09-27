@@ -190,6 +190,7 @@ export type Database = {
         Row: {
           blurb: string | null
           created_at: string
+          icon: string | null
           id: string
           image_url: string | null
           name: string
@@ -200,6 +201,7 @@ export type Database = {
         Insert: {
           blurb?: string | null
           created_at?: string
+          icon?: string | null
           id?: string
           image_url?: string | null
           name: string
@@ -210,6 +212,7 @@ export type Database = {
         Update: {
           blurb?: string | null
           created_at?: string
+          icon?: string | null
           id?: string
           image_url?: string | null
           name?: string
@@ -2836,6 +2839,7 @@ export type Database = {
         Args: { p_brand_id: string; p_new_name: string }
         Returns: string
       }
+      reorder_categories: { Args: { p_ids: string[] }; Returns: number }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }
         Returns: {

@@ -302,6 +302,13 @@
       "when": 1790456373083,
       "tag": "0042_paginate_manager_orders_and_trade_outstanding",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1790496206057,
+      "tag": "0043_add_managed_category_icons_and_reordering",
+      "breakpoints": true
     }
   ]
 }
