@@ -1,3 +1,6 @@
+# Current task
+- [x] Verify new staff creation and signed-in password change end to end; include the current password in the update request.
+
 # Roadmap
 
 - [x] Define and enforce the staff/manager/owner/super-admin permission matrix.

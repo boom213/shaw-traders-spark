@@ -247,7 +247,10 @@ function Dashboard() {
       return toast.error(invalidPassword ? "Current password is incorrect" : "Could not verify your current password. Please try again.");
     }
 
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+      current_password: currentPassword,
+    });
     setUpdatingPassword(false);
     if (updateError) return toast.error(`Could not update password: ${updateError.message}`);
 
