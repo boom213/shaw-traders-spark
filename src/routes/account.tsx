@@ -60,7 +60,6 @@ function AuthPanel() {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [emailSent, setEmailSent] = useState(false);
-  const [resetSentEmail, setResetSentEmail] = useState<string | null>(null);
   const [showMobile, setShowMobile] = useState(false);
 
   const emailAuth = async (event: React.FormEvent) => {
@@ -86,17 +85,6 @@ function AuthPanel() {
     setEmailSent(true);
   };
 
-  const forgotPassword = async () => {
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter your email address first");
-    const submittedEmail = email.trim();
-    setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(submittedEmail, { redirectTo: `${window.location.origin}/reset-password` });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setResetSentEmail(submittedEmail);
-    toast.success("Password reset link sent");
-  };
-
   const google = async () => {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/account${window.location.search}` });
@@ -118,16 +106,7 @@ function AuthPanel() {
           Sign in or create an account to track orders and keep your saved parts together.
         </p>
 
-        {resetSentEmail ? (
-          <div className="mt-6 rounded-lg border border-primary/30 bg-accent p-5 text-center">
-            <CheckCircle2 className="mx-auto size-8 text-primary" />
-            <h2 className="mt-3 font-semibold">Check your email</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Check your email at <strong className="font-semibold text-foreground">{resetSentEmail}</strong> for a link to reset your password.
-            </p>
-            <Button variant="outline" className="mt-4" onClick={() => setResetSentEmail(null)}>Back to sign in</Button>
-          </div>
-        ) : emailSent ? (
+        {emailSent ? (
           <div className="mt-6 rounded-lg border border-primary/30 bg-accent p-5 text-center">
             <CheckCircle2 className="mx-auto size-8 text-primary" />
             <h2 className="mt-3 font-semibold">Check your email</h2>
@@ -152,7 +131,7 @@ function AuthPanel() {
                     <div className="relative"><Input id={`${tab}-password`} type={showPassword ? "text" : "password"} autoComplete={tab === "signin" ? "current-password" : "new-password"} className="h-11 pr-10" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)} /><Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1 size-9" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword((shown) => !shown)}>{showPassword ? <EyeOff /> : <Eye />}</Button></div>
                     {tab === "signup" && <p className="text-xs text-muted-foreground">Use at least 8 characters.</p>}
                   </div>
-                  {tab === "signin" && <Button type="button" variant="link" className="h-auto p-0 text-xs" disabled={busy} onClick={() => void forgotPassword()}>Forgot password?</Button>}
+                  {tab === "signin" && <Link to="/forgot-password" className="inline-flex min-h-8 items-center text-xs font-medium text-primary underline-offset-4 hover:underline">Forgot password?</Link>}
                   <Button type="submit" className="h-11 w-full" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Please wait…" : tab === "signin" ? "Sign in" : "Create account"}</Button>
                 </form>
               </TabsContent>
