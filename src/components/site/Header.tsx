@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Heart, Menu, MessageCircle, Package, ShoppingCart } from "lucide-react";
+import { Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SearchBox } from "@/components/site/SearchBox";
@@ -11,7 +11,7 @@ import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
-import { CATEGORY_ICONS } from "@/components/site/CategoryGrid";
+import { categoryIcon } from "@/components/site/category-icons";
 
 function Logo() {
   return (
@@ -171,7 +171,7 @@ export function Header() {
       {navCategories.length > 0 && <nav className="border-t border-border bg-surface">
         <div className="container-page hide-scrollbar flex items-center overflow-x-auto py-0 lg:justify-center">
           {navCategories.map((c) => {
-            const Icon = CATEGORY_ICONS[c.slug] ?? Package;
+            const Icon = categoryIcon(c);
             return (
               <Link
                 key={c.slug}

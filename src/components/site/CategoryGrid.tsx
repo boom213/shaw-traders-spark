@@ -1,40 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  BatteryCharging,
-  Cable,
-  CircleDot,
-  Cog,
-  Cpu,
-  Disc3,
-  Footprints,
-  Lightbulb,
-  Lock,
-  Package,
-  PlugZap,
-  Shield,
-  Waves,
-  Zap,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { categoriesQuery } from "@/lib/queries";
-
-export const CATEGORY_ICONS: Record<string, typeof Zap> = {
-  "ev-batteries": BatteryCharging,
-  chargers: PlugZap,
-  motors: Cog,
-  controllers: Cpu,
-  "body-parts": Shield,
-  "brake-parts": Disc3,
-  "wheels-tyres": CircleDot,
-  suspension: Waves,
-  lighting: Lightbulb,
-  footrests: Footprints,
-  "locks-latches": Lock,
-  "electrical-parts": Zap,
-  "cables-wiring": Cable,
-  accessories: Package,
-};
+import { categoryIcon } from "@/components/site/category-icons";
 
 export function CategoryGrid({ limit }: { limit?: number }) {
   const { data, isPending } = useQuery(categoriesQuery());
@@ -61,7 +29,7 @@ export function CategoryGrid({ limit }: { limit?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {list.map((c) => {
-        const Icon = CATEGORY_ICONS[c.slug] ?? Package;
+        const Icon = categoryIcon(c);
         return (
           <Link
             key={c.slug}

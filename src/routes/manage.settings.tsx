@@ -8,6 +8,7 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { HomeBanners } from "@/components/manage/HomeBannersPanel";
 import { AboutGalleryPanel } from "@/components/manage/AboutGalleryPanel";
 import { BrandCataloguePanel } from "@/components/manage/BrandCataloguePanel";
+import { CategoriesPanel } from "@/components/manage/CategoriesPanel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/manage/settings")({
   validateSearch: (search: Record<string, unknown>) => ({
-    tab: (["general", "banners", "about", "brand-catalogue"] as const).find((tab) => tab === search.tab) ?? "general",
+    tab: (["general", "banners", "about", "brand-catalogue", "categories"] as const).find((tab) => tab === search.tab) ?? "general",
   }),
   head: () => ({ meta: [{ title: "Site Settings — Manager Panel" }, { name: "robots", content: "noindex" }] }),
   component: SettingsPage,
@@ -35,11 +36,13 @@ function SettingsPage() {
         <TabsTrigger value="banners">Home Banners</TabsTrigger>
         <TabsTrigger value="about">About Gallery</TabsTrigger>
         <TabsTrigger value="brand-catalogue">Brand Catalogue</TabsTrigger>
+        <TabsTrigger value="categories">Categories</TabsTrigger>
       </TabsList>
       <TabsContent value="general"><GeneralSettings /></TabsContent>
       <TabsContent value="banners"><HomeBanners /></TabsContent>
       <TabsContent value="about"><AboutGalleryPanel /></TabsContent>
       <TabsContent value="brand-catalogue"><BrandCataloguePanel /></TabsContent>
+      <TabsContent value="categories"><CategoriesPanel /></TabsContent>
     </Tabs>
   );
 }

@@ -44,6 +44,7 @@ export type Category = {
   slug: string;
   name: string;
   blurb: string;
+  icon?: string | null;
   imageUrl?: string;
   productCount?: number;
 };

@@ -1,23 +1,24 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Package } from "lucide-react";
-import { CATEGORY_ICONS } from "@/components/site/CategoryGrid";
+import { ArrowRight, LayoutGrid } from "lucide-react";
+import { categoryIcon } from "@/components/site/category-icons";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { categoriesQuery } from "@/lib/queries";
 import type { Category } from "@/lib/catalog";
 import { placeholderFor } from "@/lib/placeholders";
 
 /** Scrollable row of every part category. */
-export function CategoryCarousel({ categories }: { categories?: Category[] }) {
+export function CategoryCarousel({ categories, limit, showOthers = false }: { categories?: Category[]; limit?: number; showOthers?: boolean }) {
   const { data } = useQuery({ ...categoriesQuery(), enabled: !categories });
-  const list = categories ?? data ?? [];
+  const all = categories ?? data ?? [];
+  const list = limit === undefined ? all : all.slice(0, limit);
   if (list.length === 0) return null;
 
   return (
     <Carousel opts={{ align: "start", containScroll: "trimSnaps" }} aria-label="Shop by category" className="w-full">
       <CarouselContent className="-ml-2">
         {list.map((c) => {
-          const Icon = CATEGORY_ICONS[c.slug] ?? Package;
+          const Icon = categoryIcon(c);
           return (
             <CarouselItem key={c.slug} className="basis-[68%] pl-2 sm:basis-1/3 lg:basis-1/6">
               <Link
@@ -49,6 +50,7 @@ export function CategoryCarousel({ categories }: { categories?: Category[] }) {
             </CarouselItem>
           );
         })}
+        {showOthers && <CarouselItem className="basis-[68%] pl-2 sm:basis-1/3 lg:basis-1/6"><Link to="/categories" className="group flex h-full min-h-32 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-5 text-center shadow-[var(--shadow-card)] transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-[var(--shadow-lift)]"><span className="grid size-11 place-items-center rounded-lg bg-muted transition-colors group-hover:bg-primary group-hover:text-primary-foreground"><LayoutGrid className="size-5" /></span><span className="text-sm font-semibold">Others</span><span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">View all <ArrowRight className="size-3.5" /></span></Link></CarouselItem>}
       </CarouselContent>
       <CarouselPrevious className="left-2 hidden lg:flex" aria-label="Previous categories" />
       <CarouselNext className="right-2 hidden lg:flex" aria-label="Next categories" />
