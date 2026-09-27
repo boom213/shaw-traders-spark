@@ -316,6 +316,13 @@
       "when": 1790496236047,
       "tag": "0044_secure_owner_category_management",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1790508849590,
+      "tag": "0045_align_product_search_visibility_and_categories",
+      "breakpoints": true
     }
   ]
 }
