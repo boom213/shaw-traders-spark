@@ -25,4 +25,4 @@
 - Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
 - Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
 - Owner manages site/category data. Share icons; keep top rail edge-safe; hide Find Parts. Search visible parts by fields and category.
-- Request password resets at `/forgot-password`; use `/reset-password` only to set the new password.
+- Reset requests use `/forgot-password`; `/reset-password` accepts only recovery events or recent recovery sessions.

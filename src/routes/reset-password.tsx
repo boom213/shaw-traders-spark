@@ -57,17 +57,24 @@ function ResetPasswordPage() {
       hash.get("type") === "recovery" ||
       hash.has("access_token");
 
+    const isRecentRecovery = (recoverySentAt?: string) => {
+      if (!recoverySentAt) return false;
+      const sentAt = Date.parse(recoverySentAt);
+      return Number.isFinite(sentAt) && Date.now() - sentAt < 15 * 60 * 1000;
+    };
+
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (active && event === "PASSWORD_RECOVERY") setStatus("ready");
     });
 
-    if (!hasRecoveryToken) {
+    void supabase.auth.getUser().then(({ data, error: userError }) => {
+      if (!active) return;
+      if (!userError && data.user && (hasRecoveryToken || isRecentRecovery(data.user.recovery_sent_at))) {
+        setStatus("ready");
+        return;
+      }
       setStatus("inactive");
-    } else {
-      void supabase.auth.getSession().then(({ data }) => {
-        if (active && data.session) setStatus("ready");
-      });
-    }
+    });
 
     return () => {
       active = false;
