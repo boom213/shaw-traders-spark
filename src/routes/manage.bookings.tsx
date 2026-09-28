@@ -14,6 +14,7 @@ import {
   listLeads,
   listServiceDue,
   recordDelivery,
+  resolveBookingPaymentReview,
   setBookingStatus,
   updateLead,
   type BookingRow,
@@ -78,6 +79,8 @@ function ManageBookings() {
               <SelectItem value="open">Open bookings</SelectItem>
               {BOOKING_FLOW.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="needs_review">Payment needs review</SelectItem>
+              <SelectItem value="unpaid_48h">Token unpaid over 48 hours</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -106,6 +109,7 @@ function ManageBookings() {
               {(b.status === "ready_for_delivery" || b.status === "delivered") && (
                 <DeliveryBox booking={b} onDone={() => qc.invalidateQueries({ queryKey: ["bookings"] })} />
               )}
+              {b.needsPaymentReview && <BookingPaymentReview booking={b} onDone={() => qc.invalidateQueries({ queryKey: ["bookings"] })} />}
             </div>
           ))}
           {(bookings?.items ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nothing here right now.</p>}
@@ -174,6 +178,23 @@ function ManageBookings() {
           {(due ?? []).length === 0 && <p className="text-sm text-muted-foreground">Nothing due.</p>}
         </div>
       </section>
+    </div>
+  );
+}
+
+function BookingPaymentReview({ booking, onDone }: { booking: BookingRow; onDone: () => void }) {
+  const resolve = useMutation({ mutationFn: (note: string) => resolveBookingPaymentReview({ data: { bookingId: booking.id, note } }) });
+  const [note, setNote] = useState("");
+  return (
+    <div className="mt-3 rounded-xl border border-destructive bg-surface p-3">
+      <p className="font-semibold text-destructive">Payment needs review</p>
+      <p className="mt-1 text-sm text-muted-foreground">{booking.paymentReviewNote ?? "Token payment arrived after cancellation."}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Input className="min-w-52 flex-1" placeholder="How was this resolved?" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Button variant="destructive" disabled={resolve.isPending || note.trim().length < 3} onClick={() => resolve.mutate(note, {
+          onSuccess: (result) => { result.ok ? onDone() : undefined; },
+        })}>{resolve.isPending ? "Saving…" : "Resolve review"}</Button>
+      </div>
     </div>
   );
 }

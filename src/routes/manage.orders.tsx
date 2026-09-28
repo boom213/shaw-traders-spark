@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   decideOrderRequest,
   manageOrders,
   recordRefund,
+  resolvePaymentReview,
   setOrderStatus,
   setTracking,
   staffInvoice,
@@ -127,11 +129,13 @@ function ManageOrders() {
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
   const queryClient = useQueryClient();
 
   const { data: orders, isPending, isFetching } = useQuery({
-    queryKey: ["manage-orders", term, page],
-    queryFn: () => manageOrders({ data: { q: term, page } }),
+    queryKey: ["manage-orders", term, statusFilter, paymentFilter, page],
+    queryFn: () => manageOrders({ data: { q: term, page, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter } }),
     placeholderData: (previous) => previous,
   });
 
@@ -152,7 +156,7 @@ function ManageOrders() {
   return (
     <div className="space-y-4">
       <form
-        className="flex max-w-md gap-2"
+        className="flex flex-wrap gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           setTerm(q.trim());
@@ -161,6 +165,24 @@ function ManageOrders() {
       >
         <Input placeholder="Search by order number, customer name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
         <Button type="submit" variant="outline">Search</Button>
+        <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0); }}>
+          <SelectTrigger className="w-44" aria-label="Order status"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All order statuses</SelectItem>
+            {ALL_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={paymentFilter} onValueChange={(value) => { setPaymentFilter(value); setPage(0); }}>
+          <SelectTrigger className="w-44" aria-label="Payment status"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All payments</SelectItem>
+            <SelectItem value="needs_review">Needs review</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="paid">Paid</SelectItem>
+            <SelectItem value="refunded">Refunded</SelectItem>
+            <SelectItem value="cod_pending">COD pending</SelectItem>
+          </SelectContent>
+        </Select>
       </form>
 
       {isPending && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />)}</div>}
@@ -208,6 +230,7 @@ function ManageOrders() {
           </ul>
 
           <Requests order={o} onDone={refresh} />
+          {o.needsPaymentReview && <PaymentReview order={o} onDone={refresh} />}
 
           <div className="mt-4 flex flex-wrap gap-2">
             {nextStatus(o.status) && (
@@ -262,6 +285,29 @@ function ManageOrders() {
         );
       })}
       <ListPager page={page} total={orders?.total ?? 0} busy={isFetching} onPage={setPage} />
+    </div>
+  );
+}
+
+function PaymentReview({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
+  const resolve = useServerFn(resolvePaymentReview);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="mt-4 rounded-xl border border-destructive bg-surface p-4">
+      <p className="font-semibold text-destructive">Payment needs review</p>
+      <p className="mt-1 text-sm text-muted-foreground">{order.paymentReviewNote ?? "Payment arrived after this order was cancelled or its stock was released."}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Input className="min-w-56 flex-1" placeholder="How was this resolved?" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Button variant="destructive" disabled={busy || note.trim().length < 3} onClick={async () => {
+          setBusy(true);
+          const result = await resolve({ data: { orderId: order.id, note } });
+          setBusy(false);
+          if (!result.ok) return toast.error(result.error ?? "Could not resolve this review");
+          toast.success("Payment review resolved");
+          onDone();
+        }}>{busy ? <SparkRing /> : null}{busy ? "Saving…" : "Resolve review"}</Button>
+      </div>
     </div>
   );
 }
