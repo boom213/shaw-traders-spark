@@ -12,7 +12,7 @@ export const tradeApprovalDrift = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return (data ?? []).flatMap((application) => {
       const profile = application.profiles;
-      const mismatched = profile.customer_type !== "trade" || !profile.trade_approved_at || profile.price_tier !== application.requested_tier || profile.business_name !== application.business_name;
+      const mismatched = profile.customer_type !== "trade" || !profile.trade_approved_at || profile.business_name !== application.business_name;
       return mismatched ? [{ applicationId: String(application.id), businessName: String(application.business_name) }] : [];
     });
   });
