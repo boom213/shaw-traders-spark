@@ -1,4 +1,5 @@
 # Current task
+- [x] Use compact product-photo thumbnails across all product lists while preserving full-size detail photos.
 - [x] Add compact product-photo thumbnails for Counter Sales results and staff invoice PDFs.
 - [x] Make wholesale approvals atomic, repair the three named accounts, warn on approval drift, and add wholesalers from Counter Sales.
 - [x] Apply the missing wholesaler business-name migration and add schema-drift safeguards.

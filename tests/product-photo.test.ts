@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { originalPathFromThumbnail, productPhotoStoragePath, productThumbnailStoragePath, productThumbnailUrl } from "@/lib/product-photo";
+import { imageFor, listImageFor } from "@/lib/placeholders";
 
 describe("product photo thumbnails", () => {
   it("maps private product photos to a deterministic compact variant", () => {
@@ -18,5 +19,11 @@ describe("product photo thumbnails", () => {
   it("rejects review and traversal paths", () => {
     expect(productPhotoStoragePath("/api/public/photo/review-photos/user/photo.webp")).toBeNull();
     expect(productPhotoStoragePath("/api/public/photo/../secret.webp")).toBeNull();
+  });
+
+  it("uses compact uploads in lists without changing the original product photo", () => {
+    const product = { images: ["/api/public/photo/product-id/photo.webp"], category: "motors" };
+    expect(listImageFor(product)).toBe("/api/public/photo/__thumbs__/product-id/photo.webp");
+    expect(imageFor(product)).toBe("/api/public/photo/product-id/photo.webp");
   });
 });

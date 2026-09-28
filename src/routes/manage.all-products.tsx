@@ -10,6 +10,7 @@ import { STATUS_CHIP, isProductStatus } from "@/lib/ordering";
 import { categoriesQuery } from "@/lib/queries";
 import { can } from "@/lib/staff-permissions";
 import { exportAllProductsCsv } from "@/lib/manage-exports.functions";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 export const Route = createFileRoute("/manage/all-products")({
   head: () => ({
@@ -113,10 +114,10 @@ function AllProductsPage() {
             <article key={product.id} className="grid gap-3 border-b border-border p-4 last:border-b-0 lg:grid-cols-[4rem_minmax(12rem,2fr)_minmax(7rem,1fr)_minmax(6rem,1fr)_repeat(5,minmax(5rem,.7fr))] lg:items-center">
               {canEdit ? (
                 <Link {...editTarget} aria-label={`Edit ${product.name}`} className="block size-16 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  {product.images[0] ? <img src={product.images[0]} alt="" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /> : <ComingSoon />}
+                  {product.images[0] ? <img src={productThumbnailUrl(product.images[0]) ?? product.images[0]} alt="" width={64} height={64} loading="lazy" decoding="async" className="size-16 rounded-md border border-border object-cover transition-opacity hover:opacity-80" /> : <ComingSoon />}
                 </Link>
               ) : product.images[0] ? (
-                <img src={product.images[0]} alt="" className="size-16 rounded-md border border-border object-cover" />
+                <img src={productThumbnailUrl(product.images[0]) ?? product.images[0]} alt="" width={64} height={64} loading="lazy" decoding="async" className="size-16 rounded-md border border-border object-cover" />
               ) : <ComingSoon />}
               <div className="min-w-0">
                 {canEdit ? <Link {...editTarget} className="font-semibold leading-snug text-primary hover:underline">{product.name}</Link> : <p className="font-semibold leading-snug">{product.name}</p>}
