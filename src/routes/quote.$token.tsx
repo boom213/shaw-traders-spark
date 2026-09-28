@@ -34,6 +34,7 @@ function QuotePage() {
   const [busy, setBusy] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<{ orderId: string; humanId: string; token: string } | null>(null);
   const [pollArmed, setPollArmed] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
   const [addr, setAddr] = useState({ name: "", phone: "", line1: "", city: "Bud Bud", state: "West Bengal", pincode: "" });
   const readPaymentState = useServerFn(paymentState);
   const abandon = useServerFn(abandonPayment);
@@ -64,8 +65,7 @@ function QuotePage() {
       if (!pendingOrder) return;
       setPollArmed(false);
       setBusy(false);
-      void abandon({ data: { orderId: pendingOrder.orderId } });
-      toast.error("We could not confirm this payment. If money was deducted, please do not pay again until staff checks it.");
+      setConfirmationMessage("We could not confirm this payment. If money was deducted, please do not pay again until staff checks it.");
     },
   });
 
@@ -112,6 +112,7 @@ function QuotePage() {
         return complete({ orderId: res.orderId, humanId: res.humanId, token: res.token });
       }
       setPendingOrder({ orderId: res.orderId, humanId: res.humanId, token: res.token });
+      setConfirmationMessage(check.error ?? "We could not confirm this payment yet. If money was deducted, please do not pay again.");
       setPollArmed(true);
       return;
     }
@@ -132,7 +133,7 @@ function QuotePage() {
     );
   }
 
-  if (pollArmed) {
+  if (pollArmed && confirmationPhase !== "grace") {
     return (
       <div className="container-page max-w-xl py-16 text-center">
         <SparkRing />
@@ -140,6 +141,22 @@ function QuotePage() {
         <p className="mt-2 text-sm text-muted-foreground">
           {confirmationPhase === "grace" ? "Still checking with your bank. Please do not pay again." : "This normally takes only a few seconds."}
         </p>
+      </div>
+    );
+  }
+
+  if (pendingOrder && confirmationMessage) {
+    return (
+      <div className="container-page max-w-xl py-16 text-center">
+        <h1 className="font-display text-2xl font-bold">Payment not confirmed yet</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{confirmationMessage}</p>
+        {pollArmed && <p className="mt-3 text-xs font-medium text-primary">We are still checking quietly in the background.</p>}
+        <Button className="mt-5" variant="outline" onClick={async () => {
+          setPollArmed(false);
+          await abandon({ data: { orderId: pendingOrder.orderId } });
+          setPendingOrder(null);
+          setConfirmationMessage(null);
+        }}>Cancel this order</Button>
       </div>
     );
   }

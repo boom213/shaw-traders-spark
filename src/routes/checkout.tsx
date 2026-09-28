@@ -192,6 +192,7 @@ function CheckoutPage() {
         await finish(order, `Payment received · order ${order.humanId}`);
         return;
       }
+      setFailure(check.error ?? "We could not confirm this payment yet. If money was deducted, please do not pay again.");
       setPollArmed(true);
       return;
     }
@@ -301,7 +302,7 @@ function CheckoutPage() {
     toast.message("Payment cancelled. Your cart is still here.");
   };
 
-  if (pending && pollArmed) {
+  if (pending && pollArmed && confirmationPhase !== "grace") {
     return (
       <div className="container-page grid place-items-center py-16">
         <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">

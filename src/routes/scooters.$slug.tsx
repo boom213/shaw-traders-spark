@@ -152,6 +152,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
           setNote(`Booking ${res.humanId} confirmed. We will call you about allotment.`);
         } else {
           setPendingBooking({ bookingId: res.bookingId, humanId: res.humanId, token: res.token });
+          setNote("We could not confirm the token payment yet. If money has left your account it will be confirmed automatically in a few minutes — we will message you. Do not pay again.");
           setPollArmed(true);
           return;
         }

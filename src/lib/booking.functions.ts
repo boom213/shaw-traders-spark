@@ -175,7 +175,7 @@ export const bookingPaymentState = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("vehicle_bookings")
-      .select("payment_status, human_id, public_token, needs_payment_review")
+      .select("payment_status, human_id, public_token, token_amount, needs_payment_review")
       .eq("id", data.bookingId)
       .maybeSingle();
     if (!row) return { status: "unknown" as const };
@@ -183,6 +183,7 @@ export const bookingPaymentState = createServerFn({ method: "POST" })
       status: String(row.payment_status),
       humanId: String(row.human_id),
       token: String(row.public_token),
+      tokenAmount: Number(row.token_amount ?? 0),
       needsReview: Boolean(row.needs_payment_review),
     };
   });

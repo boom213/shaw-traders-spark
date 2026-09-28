@@ -1,7 +1,7 @@
 export async function releaseStaleOrders(): Promise<{ released: number; failed: number }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-  const { data: orders, error } = await supabaseAdmin.from("orders").select("id").eq("payment_status", "pending").eq("stock_released", false).lt("placed_at", cutoff).limit(100);
+  const { data: orders, error } = await supabaseAdmin.from("orders").select("id").eq("payment_status", "pending").eq("stock_released", false).lt("placed_at", cutoff).limit(25);
   if (error) throw new Error(error.message);
   let released = 0;
   let failed = 0;

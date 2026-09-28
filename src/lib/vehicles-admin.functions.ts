@@ -329,7 +329,7 @@ export const resolveBookingPaymentReview = createServerFn({ method: "POST" })
   .inputValidator((data: { bookingId: string; note: string }) => ({ bookingId: uuid(data?.bookingId), note: text(data?.note, 300) }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff();
+    const actor = await requireStaff({ capability: "operations" });
     if (!data.bookingId || data.note.length < 3) return { ok: false as const, error: "Add a short resolution note." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: resolved, error } = await supabaseAdmin.rpc("resolve_booking_payment_review", {
