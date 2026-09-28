@@ -4,17 +4,28 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeading } from "@/components/site/Empty";
-import { inviteStaff, listStaff, recentAudit, revokeStaff, staffSession } from "@/lib/staff.functions";
+import { grantOwnerAccess, inviteStaff, listStaff, recentAudit, revokeStaff, staffSession } from "@/lib/staff.functions";
 
 export const Route = createFileRoute("/manage/staff")({
   head: () => ({ meta: [{ title: "Staff — Shaw Traders EV Manager" }, { name: "robots", content: "noindex" }] }),
   component: StaffPage,
 });
 
-const ROLES = ["staff", "manager", "owner"] as const;
+const ROLES = ["staff", "manager"] as const;
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: "permanent admin",
@@ -29,6 +40,7 @@ function StaffPage() {
   const list = useServerFn(listStaff);
   const invite = useServerFn(inviteStaff);
   const revoke = useServerFn(revokeStaff);
+  const grantOwner = useServerFn(grantOwnerAccess);
   const audit = useServerFn(recentAudit);
 
   const { data: me } = useQuery({ queryKey: ["staff-session"], queryFn: () => session() });
@@ -60,6 +72,16 @@ function StaffPage() {
       if ("error" in res && res.error) return toast.error(res.error);
       toast.success("Access removed");
       void qc.invalidateQueries({ queryKey: ["staff-list"] });
+    },
+  });
+
+  const ownerMutation = useMutation({
+    mutationFn: (profileId: string) => grantOwner({ data: { profileId } }),
+    onSuccess: (res) => {
+      if ("error" in res && res.error) return toast.error(res.error);
+      toast.success("Owner access granted");
+      void qc.invalidateQueries({ queryKey: ["staff-list"] });
+      void qc.invalidateQueries({ queryKey: ["staff-audit"] });
     },
   });
 
@@ -133,9 +155,40 @@ function StaffPage() {
                 </p>
               </div>
               {canManage && !m.isYou && !m.locked && (
-                <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(m.profileId)}>
-                  Remove access
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  {(m.role === "staff" || m.role === "manager") && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="default" size="sm">Grant Owner Access</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Grant Owner access to {m.name}?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-3">
+                              <p>This replaces their current role and gives access to confidential business controls and financial information:</p>
+                              <ul className="list-disc space-y-1 pl-5">
+                                <li>Site Settings and Domain Health</li>
+                                <li>Brand Catalogue</li>
+                                <li>Reports and Payment Reports</li>
+                                <li>Trade &amp; Credit</li>
+                              </ul>
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction disabled={ownerMutation.isPending} onClick={() => ownerMutation.mutate(m.profileId)}>
+                            Confirm Owner Access
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => revokeMutation.mutate(m.profileId)}>
+                    Remove access
+                  </Button>
+                </div>
               )}
               {m.locked && (
                 <span className="rounded-full bg-surface px-3 py-1 text-xs text-muted-foreground">

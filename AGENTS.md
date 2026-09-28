@@ -24,5 +24,5 @@
 - Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
 - Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
 - Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
-- Owner manages site/category data. Share icons; keep top rail edge-safe; hide Find Parts. Search visible parts by fields and category.
+- Owner manages site/category, reports and trade. Owner grants are audited; invites allow Staff/Manager only.
 - Reset requests use `/forgot-password`; `/reset-password` accepts recovery events or server-verified recent recovery sessions.

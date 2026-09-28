@@ -323,6 +323,13 @@
       "when": 1790508849590,
       "tag": "0045_align_product_search_visibility_and_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1790565316252,
+      "tag": "0046_add_atomic_owner_promotion",
+      "breakpoints": true
     }
   ]
 }
