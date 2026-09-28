@@ -10,8 +10,7 @@
 <!-- LOVABLE:END -->
 
 - All Products is Staff-read-only; Manager+ edits the catalogue.
-- Keep wholesale receipts auditable and reporting totals non-overlapping.
-- Vendor QR is optional; selection atomically links its payment.
+- Keep receipts auditable/non-overlapping; vendors are name-only collectors, optional links are atomic, and corrections never delete payments.
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings use a server allowlist; never expose operations fields.
