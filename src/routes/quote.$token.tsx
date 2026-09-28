@@ -138,9 +138,7 @@ function QuotePage() {
       <div className="container-page max-w-xl py-16 text-center">
         <SparkRing />
         <h1 className="mt-4 font-display text-2xl font-bold">Confirming your payment</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {confirmationPhase === "grace" ? "Still checking with your bank. Please do not pay again." : "This normally takes only a few seconds."}
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Please do not pay again or close this page.</p>
       </div>
     );
   }

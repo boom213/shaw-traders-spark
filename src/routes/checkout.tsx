@@ -306,7 +306,7 @@ function CheckoutPage() {
     return (
       <div className="container-page grid place-items-center py-16">
         <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">
-          <SparkCharge label={confirmationPhase === "grace" ? "Still confirming with your bank…" : "Confirming your payment…"} />
+          <SparkCharge label="Checking with your bank…" />
           <p className="mt-3 text-sm text-muted-foreground">Please do not pay again or close this page.</p>
         </div>
       </div>
