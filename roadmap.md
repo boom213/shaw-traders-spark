@@ -1,5 +1,5 @@
 # Current task
-- [x] Fix and verify the genuine emailed password-recovery flow on the live site.
+- [x] Securely verify and retest the genuine emailed password-recovery flow on the live site.
 
 # Roadmap
 
