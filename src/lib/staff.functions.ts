@@ -19,6 +19,38 @@ export type StaffMember = {
   locked: boolean;
 };
 
+export type StaffListInput = {
+  q: string;
+  role: "all" | StaffRoleName;
+  sort: "newest" | "oldest" | "name";
+  page: number;
+  pageSize: number;
+};
+
+export type AuditGroup =
+  | "all"
+  | "staff"
+  | "catalogue"
+  | "orders"
+  | "trade"
+  | "vendors"
+  | "vehicles"
+  | "content"
+  | "settings"
+  | "reviews"
+  | "bookings"
+  | "counter-sales";
+
+export type AuditDateRange = "all" | "7d" | "30d" | "90d";
+
+export type AuditItem = {
+  id: string;
+  actor: string;
+  action: string;
+  entity: string;
+  at: string;
+};
+
 const staffInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   name: z.string().trim().min(2).max(100),
@@ -26,6 +58,36 @@ const staffInviteSchema = z.object({
 });
 
 const ownerPromotionSchema = z.object({ profileId: z.string().uuid() });
+
+const staffListSchema = z.object({
+  q: z.string().trim().max(100).default(""),
+  role: z.enum(["all", "super_admin", "owner", "manager", "staff"]).default("all"),
+  sort: z.enum(["newest", "oldest", "name"]).default("newest"),
+  page: z.number().int().min(0).default(0),
+  pageSize: z.number().int().min(1).max(50).default(8),
+});
+
+const auditListSchema = z.object({
+  q: z.string().trim().max(100).default(""),
+  entityGroup: z.enum(["all", "staff", "catalogue", "orders", "trade", "vendors", "vehicles", "content", "settings", "reviews", "bookings", "counter-sales"]).default("all"),
+  dateRange: z.enum(["all", "7d", "30d", "90d"]).default("all"),
+  page: z.number().int().min(0).default(0),
+  pageSize: z.number().int().min(1).max(50).default(8),
+});
+
+const AUDIT_PREFIXES: Record<Exclude<AuditGroup, "all">, string[]> = {
+  staff: ["staff."],
+  catalogue: ["products.", "product_brands.", "categories.", "catalogue."],
+  orders: ["order."],
+  trade: ["trade."],
+  vendors: ["vendor."],
+  vehicles: ["vehicle.", "service."],
+  content: ["about_photo.", "hero."],
+  settings: ["settings."],
+  reviews: ["review.", "enquiry.", "customer."],
+  bookings: ["booking.", "test_ride."],
+  "counter-sales": ["counter_sale."],
+};
 
 /** Who is signed in to the manager panel on this request. */
 export const staffSession = createServerFn({ method: "POST" }).handler(async () => {
@@ -137,8 +199,10 @@ export const claimSuperAdmin = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Everyone with access to the manager panel. */
-export const listStaff = createServerFn({ method: "POST" }).handler(async (): Promise<StaffMember[]> => {
+/** Everyone with access to the manager panel, deduplicated before filtering and paging. */
+export const listStaff = createServerFn({ method: "POST" })
+  .inputValidator((data: StaffListInput) => staffListSchema.parse(data))
+  .handler(async ({ data }): Promise<{ items: StaffMember[]; total: number }> => {
   const { requireStaff } = await import("@/lib/staff.server");
   const me = await requireStaff({ capability: "staff.manage" });
   const sb = await adminClient();
@@ -164,7 +228,18 @@ export const listStaff = createServerFn({ method: "POST" }).handler(async (): Pr
     const current = best.get(entry.profileId);
     if (!current || rank[role]! < rank[current.role]!) best.set(entry.profileId, entry);
   }
-  return [...best.values()].sort((a, b) => rank[a.role]! - rank[b.role]! || a.name.localeCompare(b.name));
+  const term = data.q.toLocaleLowerCase();
+  const filtered = [...best.values()].filter((member) => {
+    const matchesTerm = !term || member.name.toLocaleLowerCase().includes(term) || member.email.toLocaleLowerCase().includes(term);
+    return matchesTerm && (data.role === "all" || member.role === data.role);
+  });
+  filtered.sort((a, b) => {
+    if (data.sort === "name") return a.name.localeCompare(b.name);
+    const dateOrder = new Date(a.since).getTime() - new Date(b.since).getTime();
+    return data.sort === "oldest" ? dateOrder : -dateOrder;
+  });
+  const from = data.page * data.pageSize;
+  return { items: filtered.slice(from, from + data.pageSize), total: filtered.length };
 });
 
 /** A super admin invites someone and receives a one-time password to pass on. */
@@ -266,21 +341,41 @@ export const revokeStaff = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Recent changes made by staff, newest first. */
-export const recentAudit = createServerFn({ method: "POST" }).handler(async () => {
+/** Site-wide staff activity, filtered and paged independently from the staff list. */
+export const recentAudit = createServerFn({ method: "POST" })
+  .inputValidator((data: { q: string; entityGroup: AuditGroup; dateRange: AuditDateRange; page: number; pageSize: number }) => auditListSchema.parse(data))
+  .handler(async ({ data }): Promise<{ items: AuditItem[]; total: number }> => {
   const { requireStaff } = await import("@/lib/staff.server");
   await requireStaff({ capability: "staff.manage" });
   const sb = await adminClient();
-  const { data: rows } = await sb
+  const from = data.page * data.pageSize;
+  let query = sb
     .from("audit_log")
-    .select("id, actor, action, entity, entity_id, diff, created_at")
+    .select("id, actor, action, entity, entity_id, diff, created_at", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(50);
-  return (rows ?? []).map((r) => ({
-    id: String(r.id),
-    actor: r.actor ?? "Unknown",
-    action: String(r.action),
-    entity: r.entity ?? "",
-    at: String(r.created_at),
-  }));
+    .range(from, from + data.pageSize - 1);
+  if (data.q) {
+    const escaped = data.q.replace(/[,%()]/g, " ");
+    query = query.or(`actor.ilike.%${escaped}%,action.ilike.%${escaped}%`);
+  }
+  if (data.entityGroup !== "all") {
+    const prefixes = AUDIT_PREFIXES[data.entityGroup];
+    query = query.or(prefixes.map((prefix) => `action.ilike.${prefix}%`).join(","));
+  }
+  if (data.dateRange !== "all") {
+    const days = Number(data.dateRange.replace("d", ""));
+    query = query.gte("created_at", new Date(Date.now() - days * 86_400_000).toISOString());
+  }
+  const { data: rows, count, error } = await query;
+  if (error) throw new Error("Unable to load recent changes");
+  return {
+    items: (rows ?? []).map((r) => ({
+      id: String(r.id),
+      actor: r.actor ?? "Unknown",
+      action: String(r.action),
+      entity: r.entity ?? "",
+      at: String(r.created_at),
+    })),
+    total: count ?? 0,
+  };
 });
