@@ -1,5 +1,5 @@
 # Current task
-- [ ] Add permission-gated, audited CSV exports to every requested manager list.
+- [x] Add permission-gated, audited CSV exports to every requested manager list.
 - [x] Remove automatic AI checks and extraction from wholesale document uploads and staff review.
 - [x] Split Online Orders into a compact responsive list and dedicated detail page with date filters and counts.
 - [x] Refine the Online Orders list and detail layout to match the uploaded design references.
