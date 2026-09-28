@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SparkCharge } from "@/components/site/SparkLoaders";
+import { SchemaHealthAlert } from "@/components/manage/SchemaHealthAlert";
 import { dashboard } from "@/lib/dashboard.functions";
 import { needsAttention } from "@/lib/attention.functions";
 import { formatINR } from "@/lib/catalog";
@@ -30,6 +31,7 @@ function ManageOverview() {
 
   return (
     <div className="space-y-6">
+      <SchemaHealthAlert />
       {data.needsPaymentReview > 0 && (
         <Link to="/manage/orders" search={{}} className="flex items-center justify-between gap-3 rounded-2xl border border-destructive bg-card p-4 shadow-[var(--shadow-card)]">
           <span className="font-semibold text-destructive">Payments need manual review</span>

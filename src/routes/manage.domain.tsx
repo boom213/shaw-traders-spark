@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SchemaHealthAlert } from "@/components/manage/SchemaHealthAlert";
 import { getDomainHealth, type RecordCheck } from "@/lib/domain-health.functions";
 
 export const Route = createFileRoute("/manage/domain")({
@@ -46,6 +47,7 @@ function DomainHealthPage() {
 
   return (
     <div className="space-y-6">
+      <SchemaHealthAlert />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-xl font-semibold">Domain health</h2>

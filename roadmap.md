@@ -1,4 +1,5 @@
 # Current task
+- [x] Apply the missing wholesaler business-name migration and add schema-drift safeguards.
 - [x] Simplify vendors to name-only and add filtered vendor history plus auditable split, cheque, and voided counter payments.
 - [x] Add permission-gated, audited CSV exports to every requested manager list.
 - [x] Remove automatic AI checks and extraction from wholesale document uploads and staff review.

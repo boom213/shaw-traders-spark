@@ -400,6 +400,20 @@
       "when": 1790614588172,
       "tag": "0056_auditable_counter_sale_payment_statuses",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1790616692549,
+      "tag": "0057_wholesaler_business_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1790616730896,
+      "tag": "0058_add_schema_health_check",
+      "breakpoints": true
     }
   ]
 }
