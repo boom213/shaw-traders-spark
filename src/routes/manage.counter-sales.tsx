@@ -7,13 +7,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
-import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
 import { placeholderFor } from "@/lib/placeholders";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
-import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/counter-sales")({
   head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { name: "robots", content: "noindex" }] }),
@@ -25,7 +23,6 @@ const money = (value: number) => `₹${value.toLocaleString("en-IN", { minimumFr
 const today = () => new Date().toISOString().slice(0, 10);
 
 function CounterSalesPage() {
-  const { staff } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -105,7 +102,6 @@ function CounterSalesPage() {
 
   return (
     <section className="space-y-6">
-      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} counterCount={salesData?.total} />
       <div className="border-b border-border pb-5">
         <div className="flex items-start gap-3"><Banknote className="mt-0.5 size-6 text-primary" /><div><h2 className="font-display text-xl font-bold">Wholesale Counter Sales</h2><p className="mt-1 text-sm text-muted-foreground">Wholesale sales billed at the counter.</p><p className="mt-1 text-sm text-muted-foreground">Create an offline-credit sale for an approved wholesale customer, issue the bill, and record payments later.</p></div></div>
       </div>

@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowRight, CalendarDays, Cloud, Download, MessageCircle, MoreVertical, Printer, Store } from "lucide-react";
 import { toast } from "sonner";
-import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
 import { ListPager } from "@/components/manage/ListPager";
 import { customerWhatsApp, downloadPdf, printPackingSlip } from "@/components/manage/order-tools";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +43,6 @@ function ManageOrders() {
       <Link to="/manage/orders" className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 rounded-lg border border-primary/25 bg-accent/50 p-4 shadow-[var(--shadow-card)]"><span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Cloud className="size-6" /></span><div className="min-w-0"><p className="font-display text-base font-bold">Online Orders</p><p className="truncate text-xs text-muted-foreground">Customer orders placed on the website.</p></div><div className="text-center"><p className="font-display text-xl font-bold">{countsQuery.data?.newOrders ?? "—"}</p><p className="text-xs text-muted-foreground">New Orders</p></div><ArrowRight className="size-4 text-muted-foreground" /></Link>
       {showCounterSales && <Link to="/manage/counter-sales" className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><span className="grid size-11 shrink-0 place-items-center rounded-lg bg-secondary text-primary"><Store className="size-6" /></span><div className="min-w-0"><p className="font-display text-base font-bold">Counter Sales</p><p className="truncate text-xs text-muted-foreground">Walk-in customers and offline sales.</p></div><div className="text-center"><p className="font-display text-xl font-bold">{countsQuery.data?.counterToday ?? "—"}</p><p className="text-xs text-muted-foreground">Today</p></div><ArrowRight className="size-4 text-muted-foreground" /></Link>}
     </div>
-    <OrderTypeTabs showCounterSales={showCounterSales} onlineCount={orders?.total} />
     <form className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_auto_auto_auto_auto_auto]" onSubmit={(event) => { event.preventDefault(); setTerm(q.trim()); setPage(0); }}>
       <Input aria-label="Search online orders" placeholder="Search order, customer or phone" value={q} onChange={(event) => setQ(event.target.value)} />
       <Select value={statusFilter} onValueChange={(value) => changeFilter(setStatusFilter, value)}><SelectTrigger className="w-full xl:w-44" aria-label="Order status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All order statuses</SelectItem>{ALL_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}</SelectContent></Select>
