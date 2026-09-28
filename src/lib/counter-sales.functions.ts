@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 type Row = Record<string, any>;
 
@@ -162,7 +163,8 @@ export const searchCounterProducts = createServerFn({ method: "POST" })
     return ((rows ?? []) as Row[]).map((row) => {
       const tiers = ((row['price_tiers'] ?? []) as Row[]).filter((tier) => tier['tier'] === customer.price_tier).sort((a, b) => Number(a['min_qty']) - Number(b['min_qty']));
       const images = ((row['product_images'] ?? []) as Row[]).sort((a, b) => Number(a['sort_order']) - Number(b['sort_order']));
-      return { id: String(row['id']), sku: String(row['sku']), name: String(row['name']), stock: Number(row['stock']), retailPrice: row['price'] == null ? null : Number(row['price']), wholesalePrice: tiers[0]?.['price'] == null ? (row['price'] == null ? null : Number(row['price'])) : Number(tiers[0]['price']), image: images[0]?.['url'] ? String(images[0]['url']) : null, rackLocation: row['rack_location'] ? String(row['rack_location']) : null };
+      const image = images[0]?.['url'] ? String(images[0]['url']) : null;
+      return { id: String(row['id']), sku: String(row['sku']), name: String(row['name']), stock: Number(row['stock']), retailPrice: row['price'] == null ? null : Number(row['price']), wholesalePrice: tiers[0]?.['price'] == null ? (row['price'] == null ? null : Number(row['price'])) : Number(tiers[0]['price']), image: productThumbnailUrl(image), rackLocation: row['rack_location'] ? String(row['rack_location']) : null };
     });
   });
 

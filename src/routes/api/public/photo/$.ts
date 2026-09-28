@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { originalPathFromThumbnail } from "@/lib/product-photo";
 
 /**
  * Serves product photos from private storage so the shop can show them to
@@ -17,6 +18,18 @@ export const Route = createFileRoute("/api/public/photo/$")({
         const bucket = first === "review-photos" ? "review-photos" : "product-photos";
         const path = first === "review-photos" ? raw.slice(first.length + 1) : raw;
         if (!path) return new Response("Not found", { status: 404 });
+
+        if (bucket === "product-photos" && originalPathFromThumbnail(path)) {
+          const { loadOrCreateProductThumbnail } = await import("@/lib/product-thumbnail.server");
+          const thumbnail = await loadOrCreateProductThumbnail(path);
+          if (!thumbnail) return new Response("Not found", { status: 404 });
+          return new Response(thumbnail.bytes, {
+            headers: {
+              "Content-Type": thumbnail.type || "image/png",
+              "Cache-Control": "public, max-age=31536000, immutable",
+            },
+          });
+        }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
