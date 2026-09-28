@@ -55,6 +55,7 @@ import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
 import { Route as ManageStaffRouteImport } from './routes/manage.staff'
 import { Route as ManageSummaryRouteImport } from './routes/manage.summary'
+import { Route as ManageSuppliersRouteImport } from './routes/manage.suppliers'
 import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as ManageVendorsRouteImport } from './routes/manage.vendors'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
@@ -307,6 +308,11 @@ const ManageSummaryRoute = ManageSummaryRouteImport.update({
   path: '/summary',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageSuppliersRoute = ManageSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageTradeRoute = ManageTradeRouteImport.update({
   id: '/trade',
   path: '/trade',
@@ -466,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/suppliers': typeof ManageSuppliersRoute
   '/manage/trade': typeof ManageTradeRoute
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
@@ -533,6 +540,7 @@ export interface FileRoutesByTo {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/suppliers': typeof ManageSuppliersRoute
   '/manage/trade': typeof ManageTradeRoute
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
@@ -603,6 +611,7 @@ export interface FileRoutesById {
   '/manage/settings': typeof ManageSettingsRoute
   '/manage/staff': typeof ManageStaffRoute
   '/manage/summary': typeof ManageSummaryRoute
+  '/manage/suppliers': typeof ManageSuppliersRoute
   '/manage/trade': typeof ManageTradeRoute
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
@@ -674,6 +683,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/suppliers'
     | '/manage/trade'
     | '/manage/vendors'
     | '/order/$id'
@@ -741,6 +751,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/suppliers'
     | '/manage/trade'
     | '/manage/vendors'
     | '/order/$id'
@@ -810,6 +821,7 @@ export interface FileRouteTypes {
     | '/manage/settings'
     | '/manage/staff'
     | '/manage/summary'
+    | '/manage/suppliers'
     | '/manage/trade'
     | '/manage/vendors'
     | '/order/$id'
@@ -1203,6 +1215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageSummaryRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/suppliers': {
+      id: '/manage/suppliers'
+      path: '/suppliers'
+      fullPath: '/manage/suppliers'
+      preLoaderRoute: typeof ManageSuppliersRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/trade': {
       id: '/manage/trade'
       path: '/trade'
@@ -1386,6 +1405,7 @@ interface ManageRouteChildren {
   ManageSettingsRoute: typeof ManageSettingsRoute
   ManageStaffRoute: typeof ManageStaffRoute
   ManageSummaryRoute: typeof ManageSummaryRoute
+  ManageSuppliersRoute: typeof ManageSuppliersRoute
   ManageTradeRoute: typeof ManageTradeRoute
   ManageVendorsRoute: typeof ManageVendorsRoute
   ManageIndexRoute: typeof ManageIndexRoute
@@ -1411,6 +1431,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageSettingsRoute: ManageSettingsRoute,
   ManageStaffRoute: ManageStaffRoute,
   ManageSummaryRoute: ManageSummaryRoute,
+  ManageSuppliersRoute: ManageSuppliersRoute,
   ManageTradeRoute: ManageTradeRoute,
   ManageVendorsRoute: ManageVendorsRoute,
   ManageIndexRoute: ManageIndexRoute,
