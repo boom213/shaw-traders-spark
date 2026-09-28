@@ -105,9 +105,9 @@ function CounterSalesPage() {
 
   return (
     <section className="space-y-6">
-      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} />
+      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} counterCount={salesData?.total} />
       <div className="border-b border-border pb-5">
-        <div className="flex items-start gap-3"><Banknote className="mt-0.5 size-6 text-primary" /><div><h2 className="font-display text-xl font-bold">Wholesale Counter Sales</h2><p className="mt-1 text-sm text-muted-foreground">Create an offline-credit sale for an approved wholesale customer, issue the bill, and record payments later.</p></div></div>
+        <div className="flex items-start gap-3"><Banknote className="mt-0.5 size-6 text-primary" /><div><h2 className="font-display text-xl font-bold">Wholesale Counter Sales</h2><p className="mt-1 text-sm text-muted-foreground">Wholesale sales billed at the counter.</p><p className="mt-1 text-sm text-muted-foreground">Create an offline-credit sale for an approved wholesale customer, issue the bill, and record payments later.</p></div></div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,.75fr)]">
