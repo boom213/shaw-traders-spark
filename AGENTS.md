@@ -9,21 +9,21 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- All Products is Staff-read-only; Manager+ edits products/brands through catalogue-protected routes.
-- Keep wholesale receipts auditable; reporting totals never overlap.
-- Counter-sale Vendor QR is optional; selecting one atomically links its vendor payment.
-- Keep saved addresses customer-controlled; checkout snapshots choices and never silently overwrites them.
-- Expose only the connector's referrer-restricted Google Maps browser key through a server function; keep server-side Maps credentials private.
-- Serve public shop settings through a server-side allowlist so private operational fields are never readable from the browser database client.
-- Keep one A4 invoice; use snapshot then catalogue photos, 5s fetch timeouts, and bundled WebP conversion.
-- Keep homepage social links iframe-free and lazy-mounted below the primary shopping content so third-party media does not delay the storefront.
-- Route every storefront brochure download through one shared validated enquiry dialog and send its fixed-recipient notification server-side.
-- Control homepage showroom visibility through the shared shop settings record so staff changes apply consistently to the storefront.
-- Persist post-checkout cart clearing immediately before navigation; keep debounced list syncing only for ordinary shopping-list changes.
-- Read bookings through owner-scoped access; public-token tracking is the detail path.
-- Require sign-in for orders, keep guest browsing/carts, auto-release unpaid stock after 30 minutes, and reject late-payment revival.
-- Centralize manager refresh; keep sidebar collapse browser-local. Page by 8; aggregate in SQL.
-- Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
-- Owner controls settings/reports/trade; grants are audited; invites allow Staff/Manager. Staff/audits page server-side.
-- Reset requests use `/forgot-password`; `/reset-password` accepts recovery events or server-verified recent recovery sessions.
-- Keep supplier purchases in their own auditable, void-only ledger; classify every entry visibly and never mix supplier payouts with customer QR collections.
+- All Products is Staff-read-only; Manager+ edits the catalogue.
+- Keep wholesale receipts auditable and reporting totals non-overlapping.
+- Vendor QR is optional; selection atomically links its payment.
+- Customers own saved addresses; checkout snapshots without silent overwrites.
+- Expose only the restricted Maps browser key; keep server credentials private.
+- Public settings use a server allowlist; never expose operations fields.
+- Keep one A4 invoice with photo fallbacks, 5s fetch limits, and WebP conversion.
+- Lazy-load iframe-free homepage social links below shopping content.
+- All brochure downloads use one validated enquiry and fixed-recipient notice.
+- Showroom visibility comes from shared shop settings.
+- Clear carts before navigation; debounce only ordinary list sync.
+- Bookings use owner-scoped reads and public-token tracking.
+- Require sign-in for orders; keep guest carts; release unpaid stock at 30 minutes; reconcile Razorpay through signed idempotent callbacks and 90-second polling; quarantine late payments for audited resolution.
+- Centralize manager refresh; sidebar collapse is local. Page by 8; aggregate in SQL.
+- Router events never mutate history/grid state; log errors. Use Spark loaders.
+- Owner controls settings/reports/trade; audit grants; invite Staff/Manager.
+- Reset requests use `/forgot-password`; recovery sessions set new passwords.
+- Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
