@@ -2,12 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { SparkCharge } from "@/components/site/SparkLoaders";
 import { SchemaHealthAlert } from "@/components/manage/SchemaHealthAlert";
+import { TradeApprovalDriftAlert } from "@/components/manage/TradeApprovalDriftAlert";
 import { dashboard } from "@/lib/dashboard.functions";
 import { needsAttention } from "@/lib/attention.functions";
 import { formatINR } from "@/lib/catalog";
 
 
 export const Route = createFileRoute("/manage/")({
+  head: () => ({ meta: [
+    { title: "Overview — Shaw Traders EV Manager" },
+    { name: "description", content: "Operational overview for Shaw Traders EV staff." },
+    { property: "og:title", content: "Overview — Shaw Traders EV Manager" },
+    { property: "og:description", content: "Operational overview for Shaw Traders EV staff." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   component: ManageOverview,
 });
 
@@ -32,6 +42,7 @@ function ManageOverview() {
   return (
     <div className="space-y-6">
       <SchemaHealthAlert />
+      <TradeApprovalDriftAlert />
       {data.needsPaymentReview > 0 && (
         <Link to="/manage/orders" search={{}} className="flex items-center justify-between gap-3 rounded-2xl border border-destructive bg-card p-4 shadow-[var(--shadow-card)]">
           <span className="font-semibold text-destructive">Payments need manual review</span>
