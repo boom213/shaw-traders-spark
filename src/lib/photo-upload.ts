@@ -23,12 +23,33 @@ export async function toWebp(file: File, maxSide = MAX_SIDE, quality = 0.82): Pr
   return blob;
 }
 
+async function productPhotoVariants(file: File) {
+  const bitmap = await createImageBitmap(file);
+  const render = async (maxSide: number, quality: number) => {
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not read this photo");
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+    if (!blob) throw new Error("Could not prepare this photo");
+    return blob;
+  };
+  try {
+    return await Promise.all([
+      render(MAX_SIDE, 0.82),
+      render(PRODUCT_THUMBNAIL_MAX_SIDE, 0.72),
+    ]);
+  } finally {
+    bitmap.close?.();
+  }
+}
+
 /** Upload one photo for a product and return the link to store against it. */
 export async function uploadProductPhoto(productId: string, file: File): Promise<string> {
-  const [blob, thumbnail] = await Promise.all([
-    toWebp(file),
-    toWebp(file, PRODUCT_THUMBNAIL_MAX_SIDE, 0.72),
-  ]);
+  const [blob, thumbnail] = await productPhotoVariants(file);
   const name = `${productId}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("product-photos").upload(name, blob, {
     contentType: "image/webp",
