@@ -56,7 +56,7 @@ function ManageCustomers() {
       >
         <Input placeholder="Search customers by name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
         <Button type="submit" variant="outline">Search</Button>
-        {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportCustomersCsv({ data: { q: term } })} />}
+        {can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportCustomersCsv({ data: { q: term, ...range } })} />}
       </form>
 
       {isPending ? (
