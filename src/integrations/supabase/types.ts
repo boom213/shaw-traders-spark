@@ -814,8 +814,10 @@ export type Database = {
           human_id: string
           id: string
           lr_number: string | null
+          needs_payment_review: boolean
           payment_method: string | null
           payment_provider: string | null
+          payment_review_note: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           placed_at: string
           price_tier: Database["public"]["Enums"]["price_tier"]
@@ -852,8 +854,10 @@ export type Database = {
           human_id: string
           id?: string
           lr_number?: string | null
+          needs_payment_review?: boolean
           payment_method?: string | null
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           price_tier?: Database["public"]["Enums"]["price_tier"]
@@ -890,8 +894,10 @@ export type Database = {
           human_id?: string
           id?: string
           lr_number?: string | null
+          needs_payment_review?: boolean
           payment_method?: string | null
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           price_tier?: Database["public"]["Enums"]["price_tier"]
@@ -926,6 +932,7 @@ export type Database = {
       }
       payment_events: {
         Row: {
+          booking_id: string | null
           created_at: string
           event_id: string
           event_type: string | null
@@ -935,6 +942,7 @@ export type Database = {
           provider: string
         }
         Insert: {
+          booking_id?: string | null
           created_at?: string
           event_id: string
           event_type?: string | null
@@ -944,6 +952,7 @@ export type Database = {
           provider?: string
         }
         Update: {
+          booking_id?: string | null
           created_at?: string
           event_id?: string
           event_type?: string | null
@@ -953,6 +962,13 @@ export type Database = {
           provider?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_events_order_id_fkey"
             columns: ["order_id"]
@@ -2236,9 +2252,11 @@ export type Database = {
           expected_delivery: string | null
           human_id: string
           id: string
+          needs_payment_review: boolean
           note: string | null
           on_road_total: number
           payment_provider: string | null
+          payment_review_note: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
           price_breakdown: Json
@@ -2263,9 +2281,11 @@ export type Database = {
           expected_delivery?: string | null
           human_id: string
           id?: string
+          needs_payment_review?: boolean
           note?: string | null
           on_road_total?: number
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
           price_breakdown?: Json
@@ -2290,9 +2310,11 @@ export type Database = {
           expected_delivery?: string | null
           human_id?: string
           id?: string
+          needs_payment_review?: boolean
           note?: string | null
           on_road_total?: number
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
           price_breakdown?: Json
@@ -2766,13 +2788,27 @@ export type Database = {
           total_count: number
         }[]
       }
-      manage_order_page: {
-        Args: { p_limit?: number; p_offset?: number; p_query?: string }
-        Returns: {
-          order_id: string
-          total_count: number
-        }[]
-      }
+      manage_order_page:
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_query?: string }
+            Returns: {
+              order_id: string
+              total_count: number
+            }[]
+          }
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_payment_status?: string
+              p_query?: string
+              p_status?: string
+            }
+            Returns: {
+              order_id: string
+              total_count: number
+            }[]
+          }
       manager_customer_order_summary: {
         Args: { p_profile_id: string }
         Returns: Json
@@ -2830,6 +2866,10 @@ export type Database = {
           this_month: number
           vendor_id: string
         }[]
+      }
+      mark_booking_paid: {
+        Args: { p_booking_id: string; p_payment_id: string }
+        Returns: boolean
       }
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
@@ -2989,6 +3029,14 @@ export type Database = {
         Returns: string
       }
       reorder_categories: { Args: { p_ids: string[] }; Returns: number }
+      resolve_booking_payment_review: {
+        Args: { p_actor: string; p_booking_id: string; p_note: string }
+        Returns: boolean
+      }
+      resolve_payment_review: {
+        Args: { p_actor: string; p_note: string; p_order_id: string }
+        Returns: boolean
+      }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }
         Returns: {
@@ -3068,6 +3116,7 @@ export type Database = {
           total_paid: number
         }[]
       }
+      sync_order_refund_total: { Args: { p_order_id: string }; Returns: number }
       tier_price: {
         Args: {
           p_product: string
