@@ -158,7 +158,11 @@ function ManageOrders() {
 
   return (
     <div className="space-y-4">
-      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} />
+      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} onlineCount={orders?.total} />
+      <div>
+        <h2 className="font-display text-xl font-bold">Online Orders</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Retail orders placed on the website.</p>
+      </div>
       <form
         className="flex flex-wrap gap-2"
         onSubmit={(e) => {
@@ -192,9 +196,14 @@ function ManageOrders() {
       {isPending && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />)}</div>}
 
       {!isPending && (orders?.items ?? []).length === 0 && (
-        <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
-          No orders found. Orders placed on the website appear here.
-        </p>
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
+          <p>No online retail orders match these filters.</p>
+          {can(staff.role, "counter-sales") && (
+            <Link to="/manage/counter-sales" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">
+              Looking for a counter sale? View wholesale counter sales.
+            </Link>
+          )}
+        </div>
       )}
 
       {(orders?.items ?? []).map((o) => {
