@@ -1331,7 +1331,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          business_name: string | null
           created_at: string
           credit_limit: number
           customer_type: Database["public"]["Enums"]["customer_type"]
@@ -1344,7 +1343,6 @@ export type Database = {
           trade_approved_at: string | null
         }
         Insert: {
-          business_name?: string | null
           created_at?: string
           credit_limit?: number
           customer_type?: Database["public"]["Enums"]["customer_type"]
@@ -1357,7 +1355,6 @@ export type Database = {
           trade_approved_at?: string | null
         }
         Update: {
-          business_name?: string | null
           created_at?: string
           credit_limit?: number
           customer_type?: Database["public"]["Enums"]["customer_type"]
