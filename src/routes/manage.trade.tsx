@@ -17,7 +17,6 @@ import {
   addLedgerEntry,
   applyCategoryDiscount,
   addTradeInternalNote,
-  createTradeAccountManually,
   decideTradeApplication,
   listTradeApplications,
   outstandingReport,
