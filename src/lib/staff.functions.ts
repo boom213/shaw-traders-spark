@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 
 const WINDOW_MINUTES = 15;
 const MAX_FAILURES = 5;
@@ -17,6 +18,14 @@ export type StaffMember = {
   isYou: boolean;
   locked: boolean;
 };
+
+const staffInviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(255),
+  name: z.string().trim().min(2).max(100),
+  role: z.enum(["staff", "manager"]),
+});
+
+const ownerPromotionSchema = z.object({ profileId: z.string().uuid() });
 
 /** Who is signed in to the manager panel on this request. */
 export const staffSession = createServerFn({ method: "POST" }).handler(async () => {
@@ -160,14 +169,7 @@ export const listStaff = createServerFn({ method: "POST" }).handler(async (): Pr
 
 /** A super admin invites someone and receives a one-time password to pass on. */
 export const inviteStaff = createServerFn({ method: "POST" })
-  .inputValidator((data: { email: string; name: string; role: string }) => ({
-    email: lower(data?.email),
-    name: clean(data?.name),
-    role: (["owner", "manager", "staff"].includes(String(data?.role)) ? String(data?.role) : "staff") as
-      | "owner"
-      | "manager"
-      | "staff",
-  }))
+  .inputValidator((data: { email: string; name: string; role: string }) => staffInviteSchema.parse(data))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit, isSuperAdminEmail } = await import("@/lib/staff.server");
     const me = await requireStaff({ superAdmin: true });
@@ -207,6 +209,37 @@ export const inviteStaff = createServerFn({ method: "POST" })
       ok: true as const,
       tempPassword: created?.user ? tempPassword : null,
     };
+  });
+
+/** A super admin deliberately promotes an existing staff member to Owner. */
+export const grantOwnerAccess = createServerFn({ method: "POST" })
+  .inputValidator((data: { profileId: string }) => ownerPromotionSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const me = await requireStaff({ superAdmin: true });
+    if (data.profileId === me.userId) return { error: "You cannot change your own access." };
+
+    const sb = await adminClient();
+    const { data: person } = await sb
+      .from("staff_roles")
+      .select("role, profiles(full_name, email)")
+      .eq("profile_id", data.profileId);
+    if (!person?.length) return { error: "That person does not currently have staff access." };
+    if (person.some((entry) => entry.role === "super_admin")) {
+      return { error: "Super admin access cannot be changed here." };
+    }
+    if (person.some((entry) => entry.role === "owner")) return { error: "That person is already an Owner." };
+
+    const { error } = await sb.rpc("grant_staff_owner", { p_profile_id: data.profileId });
+    if (error) return { error: error.message };
+
+    const profile = (person[0] as { profiles?: { full_name: string | null; email: string | null } | null }).profiles;
+    await logAudit(sb as never, me, "staff.owner_granted", "staff_roles", data.profileId, {
+      email: profile?.email ?? "",
+      previousRoles: person.map((entry) => entry.role),
+      role: "owner",
+    });
+    return { ok: true as const };
   });
 
 /** A super admin removes someone's access. Super admins cannot be removed. */

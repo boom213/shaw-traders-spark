@@ -23,11 +23,11 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
 export const CAPABILITY_ROLE: Record<StaffCapability, StaffRole> = {
   operations: "staff",
   catalogue: "manager",
-  trade: "manager",
+  trade: "owner",
   "counter-sales": "manager",
   "vendor-finance": "manager",
   content: "manager",
-  reports: "manager",
+  reports: "owner",
   settings: "owner",
   "staff.manage": "super_admin",
 };

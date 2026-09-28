@@ -1,5 +1,5 @@
 # Current task
-- [x] Securely verify and retest the genuine emailed password-recovery flow on the live site.
+- [ ] Restrict financial and trade data to owners and add deliberate, audited Owner promotion.
 
 # Roadmap
 
