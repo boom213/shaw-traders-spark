@@ -2631,6 +2631,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["price_tier"]
       }
+      grant_staff_owner: { Args: { p_profile_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_trade: { Args: { _user_id: string }; Returns: boolean }
       log_search_miss: { Args: { p_term: string }; Returns: undefined }
