@@ -26,3 +26,4 @@
 - Router events never mutate history or broadcast grid state; log errors. Use SparkRing inline and SparkCharge for page waits.
 - Owner controls settings/reports/trade; grants are audited; invites allow Staff/Manager. Staff/audits page server-side.
 - Reset requests use `/forgot-password`; `/reset-password` accepts recovery events or server-verified recent recovery sessions.
+- Keep supplier purchases in their own auditable, void-only ledger; classify every entry visibly and never mix supplier payouts with customer QR collections.
