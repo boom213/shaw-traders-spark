@@ -49,24 +49,24 @@ export const Route = createFileRoute("/manage")({
 });
 
 const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAPABILITY; label: string; icon: typeof LayoutDashboard; exact: boolean; capability: StaffCapability; group: string }[] = [
-  { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true, capability: "operations", group: "Work" },
-  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/enquiries", label: "Enquiries", icon: PhoneCall, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/customers", label: "Customers", icon: Users, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/all-products", label: "All Products", icon: PackageSearch, exact: false, capability: "operations", group: "Work" },
-  { to: "/manage/counter-sales", label: "Counter Sales", icon: Banknote, exact: false, capability: "counter-sales", group: "Work" },
-  { to: "/manage/vendors", label: "Vendor Payments", icon: QrCode, exact: false, capability: "vendor-finance", group: "Work" },
-  { to: "/manage/catalogue", label: "Products & Stock", icon: Boxes, exact: false, capability: "catalogue", group: "Manage" },
-  { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Manage" },
-  { to: "/manage/scooters", label: "Vehicle Catalogue", icon: Bike, exact: false, capability: "catalogue", group: "Manage" },
-  { to: "/manage/trade", label: "Trade & Credit", icon: Briefcase, exact: false, capability: "trade", group: "Manage" },
-  { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Insights" },
-  { to: "/manage/payment-reports", label: "Payment Reports", icon: ChartNoAxesCombined, exact: false, capability: "reports", group: "Insights" },
-  { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Owner" },
-  { to: "/manage/settings", label: "Site Settings", icon: Settings, exact: false, capability: "settings", group: "Owner" },
-  { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "System" },
+  { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true, capability: "operations", group: "" },
+  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false, capability: "operations", group: "Sales" },
+  { to: "/manage/counter-sales", label: "Counter Sales", icon: Banknote, exact: false, capability: "counter-sales", group: "Sales" },
+  { to: "/manage/vendors", label: "Vendor Payments", icon: QrCode, exact: false, capability: "vendor-finance", group: "Sales" },
+  { to: "/manage/enquiries", label: "Enquiries", icon: PhoneCall, exact: false, capability: "operations", group: "Sales" },
+  { to: "/manage/all-products", label: "All Products", icon: PackageSearch, exact: false, capability: "operations", group: "Catalog" },
+  { to: "/manage/catalogue", label: "Products & Stock", icon: Boxes, exact: false, capability: "catalogue", group: "Catalog" },
+  { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Catalog" },
+  { to: "/manage/scooters", label: "Vehicle Catalogue", icon: Bike, exact: false, capability: "catalogue", group: "Catalog" },
+  { to: "/manage/customers", label: "Customers", icon: Users, exact: false, capability: "operations", group: "Customers" },
+  { to: "/manage/trade", label: "Trade & Credit", icon: Briefcase, exact: false, capability: "trade", group: "Customers" },
+  { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false, capability: "operations", group: "Customers" },
+  { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Customers" },
+  { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Analytics" },
+  { to: "/manage/payment-reports", label: "Payment Reports", icon: ChartNoAxesCombined, exact: false, capability: "reports", group: "Analytics" },
+  { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Settings" },
+  { to: "/manage/settings", label: "Site Settings", icon: Settings, exact: false, capability: "settings", group: "Settings" },
+  { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "Settings" },
 ] as const;
 
 const MANAGER_SIDEBAR_COLLAPSED_KEY = "shaw-ev-manager-sidebar-collapsed";
@@ -139,7 +139,7 @@ function ManageLayout() {
           <TooltipProvider delayDuration={250}>
             <nav className={`hidden lg:block ${sidebarCollapsed ? "space-y-2" : "space-y-5"}`} aria-label="Manager navigation">
               {groups.map((group) => <div key={group}>
-                {!sidebarCollapsed && <p className="mb-1.5 px-3 text-xs font-semibold uppercase text-muted-foreground">{group}</p>}
+                {!sidebarCollapsed && group && <p className="mb-1.5 px-3 text-xs font-semibold uppercase text-muted-foreground">{group}</p>}
                 <div className="grid gap-1">{visibleNav.filter((n) => n.group === group).map((n) => {
                   const link = <Link key={n.to} to={n.to} activeOptions={{ exact: n.exact }} activeProps={{ className: "bg-muted text-foreground" }} aria-label={sidebarCollapsed ? n.label : undefined} className={`flex min-h-9 items-center rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground ${sidebarCollapsed ? "justify-center px-0" : "gap-2 px-3 py-2"}`}><n.icon className="size-4 shrink-0" />{!sidebarCollapsed && <span>{n.label}</span>}</Link>;
                   return sidebarCollapsed ? <Tooltip key={n.to}><TooltipTrigger asChild>{link}</TooltipTrigger><TooltipContent side="right">{n.label}</TooltipContent></Tooltip> : link;
