@@ -271,6 +271,8 @@ export type BookingRow = {
   motorNumber: string | null;
   registrationNumber: string | null;
   warrantyStart: string | null;
+  needsPaymentReview: boolean;
+  paymentReviewNote: string | null;
 };
 
 /** The booking pipeline. */
@@ -287,6 +289,8 @@ export const listBookings = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .range(data.page * 8, data.page * 8 + 7);
     if (data.status === "open") query = query.not("status", "in", "(delivered,cancelled)");
+    else if (data.status === "needs_review") query = query.eq("needs_payment_review", true);
+    else if (data.status === "unpaid_48h") query = query.neq("payment_status", "paid").neq("status", "cancelled").lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
     else if (BOOKING_STATUSES.includes(data.status)) query = query.eq("status", data.status as never);
 
     const { data: rows, count } = await query;
@@ -314,9 +318,29 @@ export const listBookings = createServerFn({ method: "POST" })
         motorNumber: reg?.['motor_number'] ?? null,
         registrationNumber: reg?.['registration_number'] ?? null,
         warrantyStart: reg?.['warranty_start'] ?? null,
+        needsPaymentReview: Boolean(r.needs_payment_review),
+        paymentReviewNote: r.payment_review_note ?? null,
       };
     });
     return { items, total: count ?? 0 };
+  });
+
+export const resolveBookingPaymentReview = createServerFn({ method: "POST" })
+  .inputValidator((data: { bookingId: string; note: string }) => ({ bookingId: uuid(data?.bookingId), note: text(data?.note, 300) }))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const actor = await requireStaff({ capability: "operations" });
+    if (!data.bookingId || data.note.length < 3) return { ok: false as const, error: "Add a short resolution note." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: resolved, error } = await supabaseAdmin.rpc("resolve_booking_payment_review", {
+      p_booking_id: data.bookingId,
+      p_note: data.note,
+      p_actor: actor.name,
+    });
+    if (error) return { ok: false as const, error: error.message };
+    if (!resolved) return { ok: false as const, error: "This payment review was already resolved." };
+    await logAudit(supabaseAdmin as never, actor, "booking.payment_review_resolved", "vehicle_bookings", data.bookingId, { note: data.note });
+    return { ok: true as const };
   });
 
 /** Move a booking along its track and tell the customer. */

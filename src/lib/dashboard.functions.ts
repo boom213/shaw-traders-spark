@@ -30,13 +30,14 @@ export type Dashboard = {
   emptySearches: { term: string; hits: number }[];
   errorsToday: number;
   recentErrors: { message: string; url: string; at: string }[];
+  needsPaymentReview: number;
 };
 
 export const dashboard = createServerFn({ method: "POST" }).handler(async (): Promise<Dashboard> => {
   const sb = await admin();
   const monthStart = istMidnight(30);
 
-  const [summaryRes, missesRes, errorsRes] = await Promise.all([
+  const [summaryRes, missesRes, errorsRes, orderReviewRes, bookingReviewRes] = await Promise.all([
     sb.rpc("manager_dashboard_summary", { p_today_from: istMidnight(0), p_week_from: istMidnight(7), p_month_from: monthStart }),
     sb.from("search_misses").select("term, hits").order("hits", { ascending: false }).limit(12),
     sb
@@ -45,6 +46,8 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
       .gte("created_at", istMidnight(0))
       .order("created_at", { ascending: false })
       .limit(200),
+    sb.from("orders").select("id", { count: "exact", head: true }).eq("needs_payment_review", true),
+    sb.from("vehicle_bookings").select("id", { count: "exact", head: true }).eq("needs_payment_review", true),
   ]);
 
   if (summaryRes.error) throw new Error(summaryRes.error.message);
@@ -67,5 +70,6 @@ export const dashboard = createServerFn({ method: "POST" }).handler(async (): Pr
       url: String(e['url'] ?? ""),
       at: String(e['created_at'] ?? ""),
     })),
+    needsPaymentReview: (orderReviewRes.count ?? 0) + (bookingReviewRes.count ?? 0),
   };
 });

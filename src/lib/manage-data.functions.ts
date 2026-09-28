@@ -20,6 +20,8 @@ export type ManageOrder = {
   trackingNumber: string | null;
   trackingUrl: string | null;
   refunded: number;
+  needsPaymentReview: boolean;
+  paymentReviewNote: string | null;
   requests: { id: string; kind: string; reason: string; details: string | null; status: string; createdAt: string }[];
 };
 
@@ -46,6 +48,8 @@ const mapManageOrder = (row: Row): ManageOrder => ({
   trackingNumber: row['tracking_number'] ?? null,
   trackingUrl: row['tracking_url'] ?? null,
   refunded: Number(row['refunded_total'] ?? 0),
+  needsPaymentReview: Boolean(row['needs_payment_review']),
+  paymentReviewNote: row['payment_review_note'] ?? null,
   requests: ((row['order_requests'] ?? []) as Row[]).map((r) => ({
     id: String(r['id']),
     kind: String(r['kind']),
@@ -72,10 +76,12 @@ async function adminAs(capability: "operations" | "catalogue" | "reports" | "set
 }
 
 export const manageOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string; page?: number; pageSize?: number } | undefined) => ({
+  .inputValidator((data: { q?: string; page?: number; pageSize?: number; status?: string; paymentStatus?: string } | undefined) => ({
     q: String(data?.q ?? "").trim(),
     page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
     pageSize: Math.min(100, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
+    status: String(data?.status ?? "").trim(),
+    paymentStatus: String(data?.paymentStatus ?? "").trim(),
   }))
   .handler(async ({ data }): Promise<{ items: ManageOrder[]; total: number }> => {
     const sb = await admin();
@@ -83,13 +89,15 @@ export const manageOrders = createServerFn({ method: "POST" })
       p_query: data.q,
       p_offset: data.page * data.pageSize,
       p_limit: data.pageSize,
+      p_status: data.status,
+      p_payment_status: data.paymentStatus,
     });
     if (pageError) throw new Error(pageError.message);
     const ids = (pageRows ?? []).map((row) => String(row.order_id));
     if (ids.length === 0) return { items: [], total: 0 };
     const { data: rows, error } = await sb
       .from("orders")
-      .select("id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)")
+      .select("id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, needs_payment_review, payment_review_note, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)")
       .in("id", ids);
     if (error) throw new Error(error.message);
     const byId = new Map((rows ?? []).map((row) => [String(row.id), row]));
@@ -695,14 +703,8 @@ export const recordRefund = createServerFn({ method: "POST" })
       created_by: actor.name,
     } as never);
 
-    const total = already + data.amount;
-    await sb
-      .from("orders")
-      .update({
-        refunded_total: total,
-        ...(total >= Number(order.total) - 0.01 ? { payment_status: "refunded" as never } : {}),
-      } as never)
-      .eq("id", order.id);
+    const { error: syncError } = await sb.rpc("sync_order_refund_total", { p_order_id: order.id });
+    if (syncError) return { ok: false as const, error: "The refund was recorded, but its total needs staff review." };
 
     await sb.from("order_events").insert({
       order_id: order.id,
@@ -714,6 +716,26 @@ export const recordRefund = createServerFn({ method: "POST" })
 
     const { notifyRefund } = await import("@/lib/notify.server");
     await notifyRefund(order.id, data.amount, method === "razorpay" ? "back to your original payment method" : "manually");
+    return { ok: true as const };
+  });
+
+/** Clear a late-payment review only after staff records how it was handled. */
+export const resolvePaymentReview = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string; note: string }) => ({
+    orderId: String(data?.orderId ?? ""),
+    note: String(data?.note ?? "").trim().slice(0, 300),
+  }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await adminAs();
+    if (data.note.length < 3) return { ok: false as const, error: "Add a short resolution note." };
+    const { data: resolved, error } = await sb.rpc("resolve_payment_review", {
+      p_order_id: data.orderId,
+      p_note: data.note,
+      p_actor: actor.name,
+    });
+    if (error) return { ok: false as const, error: error.message };
+    if (!resolved) return { ok: false as const, error: "This payment review was already resolved." };
+    await logAudit(sb as never, actor, "order.payment_review_resolved", "orders", data.orderId, { note: data.note });
     return { ok: true as const };
   });
 

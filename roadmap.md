@@ -1,5 +1,5 @@
 # Current task
-- [ ] Make Razorpay payments recoverable and auditable across checkout, quotes, scooter bookings, late-payment review, and refunds.
+- [x] Make Razorpay payments recoverable and auditable across checkout, quotes, scooter bookings, late-payment review, and refunds.
 - [ ] Replace insecure scheduled callbacks after secure database values are available.
 - [x] Add Suppliers & Purchases with an auditable payable ledger, filters, exports, and separated QR totals.
 - [x] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.

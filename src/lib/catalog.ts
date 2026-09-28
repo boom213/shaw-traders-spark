@@ -154,7 +154,7 @@ export const BUSINESS = {
   phone: "7501849610",
   phoneIntl: "917501849610",
   address: "CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403",
-  site: "https://shawtradersev.info",
+  site: "https://shawtradersev.com",
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",
   /** 1200x630 share banner used as the site-wide default og:image. */

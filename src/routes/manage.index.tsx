@@ -30,6 +30,12 @@ function ManageOverview() {
 
   return (
     <div className="space-y-6">
+      {data.needsPaymentReview > 0 && (
+        <Link to="/manage/orders" search={{}} className="flex items-center justify-between gap-3 rounded-2xl border border-destructive bg-card p-4 shadow-[var(--shadow-card)]">
+          <span className="font-semibold text-destructive">Payments need manual review</span>
+          <span className="rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">{data.needsPaymentReview}</span>
+        </Link>
+      )}
       {attention && attention.items.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="font-display text-lg font-bold">Needs your attention today</h2>

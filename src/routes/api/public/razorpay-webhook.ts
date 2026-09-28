@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 type RazorpayPayload = {
   event?: string;
   payload?: {
-    payment?: { entity?: { id?: string; order_id?: string; status?: string } };
+    payment?: { entity?: { id?: string; order_id?: string; status?: string; error_description?: string; error_reason?: string } };
     refund?: { entity?: { id?: string; payment_id?: string; amount?: number; status?: string } };
   };
 };
@@ -111,8 +111,8 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             return new Response("Could not update booking payment", { status: 500 });
           }
           if (markedPaid) {
-            const { notifyBookingPlaced } = await import("@/lib/vehicle-notify.server");
-            await notifyBookingPlaced(bookingId);
+            const { notifyBookingStatus } = await import("@/lib/vehicle-notify.server");
+            await notifyBookingStatus(bookingId, "booked", "Token amount received — thank you.");
           }
         }
 
@@ -127,7 +127,7 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             status: refund.status ?? (body.event === "refund.processed" ? "processed" : "created"),
             note: "Synchronized from Razorpay",
             created_by: "razorpay",
-          }, { onConflict: "provider_refund_id" });
+          }, { onConflict: "provider_refund_id", ignoreDuplicates: true });
           if (refundError) {
             console.error("razorpay webhook: refund update failed", refundError);
             return new Response("Could not update refund", { status: 500 });
@@ -137,13 +137,17 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
         }
 
         if (body.event === "payment.failed" && orderId) {
-          const { error: failureError } = await supabaseAdmin.from("order_events").insert({
-            order_id: orderId,
-            status: "order_confirmed",
-            note: "Razorpay reported a failed payment attempt",
-            created_by: "razorpay",
-          });
-          if (failureError) return new Response("Could not record payment failure", { status: 500 });
+          const { data: order } = await supabaseAdmin.from("orders").select("status, payment_status").eq("id", orderId).maybeSingle();
+          if (order?.payment_status === "pending") {
+            const reason = body.payload?.payment?.entity?.error_description ?? body.payload?.payment?.entity?.error_reason;
+            const { error: failureError } = await supabaseAdmin.from("order_events").insert({
+              order_id: orderId,
+              status: order.status,
+              note: `Razorpay reported a failed payment attempt${reason ? ` — ${String(reason).slice(0, 180)}` : ""}`,
+              created_by: "razorpay",
+            });
+            if (failureError) return new Response("Could not record payment failure", { status: 500 });
+          }
         }
 
         return new Response("ok", { status: 200 });

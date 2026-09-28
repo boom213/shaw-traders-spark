@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,10 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loadQuote } from "@/lib/quote.functions";
-import { startCheckout, verifyPayment } from "@/lib/checkout.functions";
+import { abandonPayment, paymentState, startCheckout, verifyPayment } from "@/lib/checkout.functions";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { formatINR } from "@/lib/catalog";
+import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
 
 export const Route = createFileRoute("/quote/$token")({
   head: () => ({
@@ -30,7 +32,12 @@ function QuotePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<{ orderId: string; humanId: string; token: string } | null>(null);
+  const [pollArmed, setPollArmed] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
   const [addr, setAddr] = useState({ name: "", phone: "", line1: "", city: "Bud Bud", state: "West Bengal", pincode: "" });
+  const readPaymentState = useServerFn(paymentState);
+  const abandon = useServerFn(abandonPayment);
 
   const { data: quote, isPending } = useQuery({
     queryKey: ["quote", token],
@@ -38,6 +45,29 @@ function QuotePage() {
   });
 
   const set = (k: keyof typeof addr) => (e: React.ChangeEvent<HTMLInputElement>) => setAddr({ ...addr, [k]: e.target.value });
+
+  const complete = (order: { orderId: string; humanId: string; token: string }) => {
+    setBusy(false);
+    toast.success(`Payment received · order ${order.humanId}`);
+    void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
+  };
+
+  const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
+    armed: pollArmed && Boolean(pendingOrder),
+    check: () => pendingOrder ? readPaymentState({ data: { orderId: pendingOrder.orderId } }) : Promise.resolve({ status: "unknown" as const }),
+    isConfirmed: (result) => result.status === "paid",
+    onConfirmed: () => {
+      if (!pendingOrder) return;
+      setPollArmed(false);
+      complete(pendingOrder);
+    },
+    onTimeout: () => {
+      if (!pendingOrder) return;
+      setPollArmed(false);
+      setBusy(false);
+      setConfirmationMessage("We could not confirm this payment. If money was deducted, please do not pay again until staff checks it.");
+    },
+  });
 
   const pay = async (method: "UPI" | "Cash on Delivery") => {
     if (!quote) return;
@@ -79,12 +109,15 @@ function QuotePage() {
       });
       setBusy(false);
       if (check.paid) {
-        toast.success(`Payment received · order ${res.humanId}`);
-        return void navigate({ to: "/order/$id", params: { id: res.orderId }, search: { t: res.token } });
+        return complete({ orderId: res.orderId, humanId: res.humanId, token: res.token });
       }
-      return toast.error(check.error ?? "We could not confirm this payment yet.");
+      setPendingOrder({ orderId: res.orderId, humanId: res.humanId, token: res.token });
+      setConfirmationMessage(check.error ?? "We could not confirm this payment yet. If money was deducted, please do not pay again.");
+      setPollArmed(true);
+      return;
     }
     setBusy(false);
+    await abandon({ data: { orderId: res.orderId } });
     toast.error(result.status === "dismissed" ? "Payment window closed." : result.message);
   };
 
@@ -96,6 +129,32 @@ function QuotePage() {
         <h1 className="font-display text-2xl font-bold">This quote link is not valid</h1>
         <p className="mt-2 text-muted-foreground">Please ask us again on WhatsApp for a fresh price.</p>
         <Button asChild className="mt-4"><Link to="/">Go to the shop</Link></Button>
+      </div>
+    );
+  }
+
+  if (pollArmed && confirmationPhase !== "grace") {
+    return (
+      <div className="container-page max-w-xl py-16 text-center">
+        <SparkRing />
+        <h1 className="mt-4 font-display text-2xl font-bold">Confirming your payment</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Please do not pay again or close this page.</p>
+      </div>
+    );
+  }
+
+  if (pendingOrder && confirmationMessage) {
+    return (
+      <div className="container-page max-w-xl py-16 text-center">
+        <h1 className="font-display text-2xl font-bold">Payment not confirmed yet</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{confirmationMessage}</p>
+        {pollArmed && <p className="mt-3 text-xs font-medium text-primary">We are still checking quietly in the background.</p>}
+        <Button className="mt-5" variant="outline" onClick={async () => {
+          setPollArmed(false);
+          await abandon({ data: { orderId: pendingOrder.orderId } });
+          setPendingOrder(null);
+          setConfirmationMessage(null);
+        }}>Cancel this order</Button>
       </div>
     );
   }
