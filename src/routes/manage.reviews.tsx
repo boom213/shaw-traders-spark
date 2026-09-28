@@ -6,10 +6,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Textarea } from "@/components/ui/textarea";
 import { manageReviews, moderateReview, replyToReview, type ManageReview } from "@/lib/reviews-admin.functions";
 import { cn } from "@/lib/utils";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { exportReviewsCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/reviews")({
   head: () => ({
@@ -34,6 +37,7 @@ const TABS = [
 ];
 
 function ReviewsPage() {
+  const { staff } = Route.useRouteContext();
   const [tab, setTab] = useState("pending");
   const [page, setPage] = useState(0);
   const list = useServerFn(manageReviews);
@@ -70,6 +74,7 @@ function ReviewsPage() {
             {t.label}
           </button>
         ))}
+        {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportReviewsCsv({ data: { status: tab } })} />}
       </div>
 
       {isPending ? (

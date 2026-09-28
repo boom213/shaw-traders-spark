@@ -5,10 +5,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ListPager, MANAGE_PAGE_SIZE } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Input } from "@/components/ui/input";
 import { manageCustomers } from "@/lib/manage-data.functions";
 import { BUSINESS, formatINR, whatsappLink } from "@/lib/catalog";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { exportCustomersCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/customers/")({
   head: () => ({
@@ -26,6 +29,7 @@ export const Route = createFileRoute("/manage/customers/")({
 });
 
 function ManageCustomers() {
+  const { staff } = Route.useRouteContext();
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
@@ -52,6 +56,7 @@ function ManageCustomers() {
       >
         <Input placeholder="Search customers by name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
         <Button type="submit" variant="outline">Search</Button>
+        {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportCustomersCsv({ data: { q: term } })} />}
       </form>
 
       {isPending ? (

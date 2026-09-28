@@ -6,9 +6,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Input } from "@/components/ui/input";
 import { listEnquiries, replyToEnquiry, setEnquiryStatus } from "@/lib/enquiries.functions";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { exportEnquiriesCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 
 export const Route = createFileRoute("/manage/enquiries")({
@@ -23,6 +26,7 @@ const TABS = [
 ] as const;
 
 function EnquiriesPage() {
+  const { staff } = Route.useRouteContext();
   const [tab, setTab] = useState<string>("new");
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
@@ -61,6 +65,7 @@ function EnquiriesPage() {
             {t.label}
           </button>
         ))}
+        {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportEnquiriesCsv({ data: { status: tab } })} />}
       </div>
 
       {isPending && [0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />)}
