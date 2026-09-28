@@ -161,7 +161,7 @@ async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext
     if (data.decision === "approved") {
       await supabaseAdmin
         .from("profiles")
-        .update({ customer_type: "trade", price_tier: data.tier, trade_approved_at: new Date().toISOString() } as never)
+        .update({ customer_type: "trade", price_tier: data.tier, trade_approved_at: new Date().toISOString(), business_name: app.business_name } as never)
         .eq("id", app.profile_id);
     } else {
       await supabaseAdmin.from("profiles").update({ trade_approved_at: null } as never).eq("id", app.profile_id);
@@ -226,7 +226,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
     }
 
     await supabaseAdmin.from("profiles").upsert(
-      { id: userId, phone: e164, full_name: data.contactPerson || null, customer_type: "trade" } as never,
+      { id: userId, phone: e164, full_name: data.contactPerson || null, customer_type: "trade", business_name: data.businessName } as never,
       { onConflict: "id" },
     );
 

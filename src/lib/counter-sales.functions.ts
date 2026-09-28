@@ -4,7 +4,10 @@ type Row = Record<string, any>;
 
 export type CounterCustomer = {
   id: string;
+  /** Business name when the wholesaler has one, else contact person, else email. */
   name: string;
+  /** Contact person, so the counter can see who to ask for. */
+  contactName: string;
   email: string;
   phone: string;
   priceTier: "trade" | "distributor";
@@ -87,17 +90,21 @@ export const counterSaleSetup = createServerFn({ method: "POST" }).handler(async
   };
 });
 
-export type CounterCustomerChoice = Pick<CounterCustomer, "id" | "name" | "email" | "phone">;
+export type CounterCustomerChoice = Pick<CounterCustomer, "id" | "name" | "contactName" | "email" | "phone">;
+
+/** Wholesalers are known by the name they trade under, not the contact person. */
+const displayName = (profile: { business_name?: string | null; full_name?: string | null; email?: string | null }) =>
+  String(profile.business_name || profile.full_name || profile.email || "Wholesale customer");
 
 export const searchCounterCustomers = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120) }))
   .handler(async ({ data }): Promise<CounterCustomerChoice[]> => {
     const { sb } = await counterAdmin();
-    let query = sb.from("profiles").select("id, full_name, email, phone").eq("customer_type", "trade").not("trade_approved_at", "is", null).order("full_name").limit(8);
-    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`); }
+    let query = sb.from("profiles").select("id, business_name, full_name, email, phone").eq("customer_type", "trade").not("trade_approved_at", "is", null).order("business_name", { nullsFirst: false }).order("full_name").limit(15);
+    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`); }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((profile) => ({ id: String(profile.id), name: String(profile.full_name ?? profile.email ?? "Wholesale customer"), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
+    return (rows ?? []).map((profile) => ({ id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
   });
 
 export const counterCustomerDetail = createServerFn({ method: "POST" })
@@ -105,14 +112,14 @@ export const counterCustomerDetail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CounterCustomer | null> => {
     const { sb } = await counterAdmin();
     const [{ data: profile, error }, { data: address }, { data: balance }, { data: overdue }] = await Promise.all([
-      sb.from("profiles").select("id, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle(),
+      sb.from("profiles").select("id, business_name, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle(),
       sb.from("addresses").select("name, phone, line1, landmark, city, state, pincode").eq("profile_id", data.customerId).order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       sb.rpc("trade_balance", { _profile_id: data.customerId }),
       sb.rpc("trade_overdue", { _profile_id: data.customerId }),
     ]);
     if (error) throw new Error(error.message);
     if (!profile || profile.customer_type !== "trade" || !profile.trade_approved_at) return null;
-    return { id: String(profile.id), name: String(profile.full_name ?? profile.email ?? "Wholesale customer"), email: String(profile.email ?? ""), phone: String(profile.phone ?? ""), priceTier: profile.price_tier === "distributor" ? "distributor" : "trade", creditLimit: Number(profile.credit_limit ?? 0), paymentTermsDays: Number(profile.payment_terms_days ?? 0), balance: Number(balance ?? 0), overdue: Boolean(overdue), address: address ? Object.fromEntries(Object.entries(address).filter(([, value]) => value != null)) as Record<string, string> : null };
+    return { id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? ""), priceTier: profile.price_tier === "distributor" ? "distributor" : "trade", creditLimit: Number(profile.credit_limit ?? 0), paymentTermsDays: Number(profile.payment_terms_days ?? 0), balance: Number(balance ?? 0), overdue: Boolean(overdue), address: address ? Object.fromEntries(Object.entries(address).filter(([, value]) => value != null)) as Record<string, string> : null };
   });
 
 export const searchCounterProducts = createServerFn({ method: "POST" })
@@ -144,7 +151,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
       const term = data.q.replace(/[%,()]/g, " ");
       const [{ data: matchingOrders }, { data: matchingProfiles }] = await Promise.all([
         sb.from("orders").select("id").ilike("human_id", `%${term}%`).limit(100),
-        sb.from("profiles").select("id").or(`full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100),
+        sb.from("profiles").select("id").or(`business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100),
       ]);
       const orderIds = (matchingOrders ?? []).map((row) => String(row.id));
       const profileIds = (matchingProfiles ?? []).map((row) => String(row.id));
@@ -159,7 +166,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
     if (orderIds.length === 0) return { items: [], total: count ?? 0 };
     const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
-      sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
+      sb.from("profiles").select("id, business_name, full_name, phone").in("id", profileIds),
       sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku, rack_location)").in("order_id", orderIds),
       sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at, status, cleared_on, voided_at, void_reason, qr_vendors(name)").in("order_id", orderIds),
     ]);
@@ -177,7 +184,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
       const total = Number(order?.['total'] ?? 0);
       const paid = payments.reduce((sum, payment) => payment['voided_at'] || payment['status'] === "bounced" ? sum : sum + Number(payment['amount'] ?? 0), 0);
       return {
-        orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), createdByEmail: String(row['created_by_email'] ?? ""), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
+        orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: displayName(profile ?? {}), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), createdByEmail: String(row['created_by_email'] ?? ""), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
         items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null, rackLocation: (item['products'] as Row | null)?.['rack_location'] ? String((item['products'] as Row)['rack_location']) : null })),
         payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null, status: payment['status'] === "pending" || payment['status'] === "bounced" ? payment['status'] : "cleared", clearedOn: payment['cleared_on'] ? String(payment['cleared_on']) : null, voidedAt: payment['voided_at'] ? String(payment['voided_at']) : null, voidReason: payment['void_reason'] ? String(payment['void_reason']) : null })),
       };
