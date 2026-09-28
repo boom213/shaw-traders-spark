@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
+import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -21,6 +22,7 @@ import {
   type ManageOrder,
 } from "@/lib/manage-data.functions";
 import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, type OrderStatus } from "@/lib/catalog";
+import { can } from "@/lib/staff-permissions";
 
 /** The next step in the normal order journey, so the owner can advance with one tap. */
 function nextStatus(current: OrderStatus): OrderStatus | null {
@@ -126,6 +128,7 @@ function downloadPdf(base64: string, fileName: string) {
 }
 
 function ManageOrders() {
+  const { staff } = Route.useRouteContext();
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
@@ -155,6 +158,7 @@ function ManageOrders() {
 
   return (
     <div className="space-y-4">
+      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} />
       <form
         className="flex flex-wrap gap-2"
         onSubmit={(e) => {
