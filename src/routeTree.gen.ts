@@ -48,7 +48,6 @@ import { Route as ManageDomainRouteImport } from './routes/manage.domain'
 import { Route as ManageEnquiriesRouteImport } from './routes/manage.enquiries'
 import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
-import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManagePaymentReportsRouteImport } from './routes/manage.payment-reports'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
@@ -70,6 +69,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ManageCustomersIndexRouteImport } from './routes/manage.customers.index'
 import { Route as ManageCustomersCustomerIdRouteImport } from './routes/manage.customers.$customerId'
+import { Route as ManageOrdersIndexRouteImport } from './routes/manage.orders.index'
 import { Route as ManageOrdersOrderIdRouteImport } from './routes/manage.orders.$orderId'
 import { Route as ManageProductsProductIdRouteImport } from './routes/manage.products.$productId'
 import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
@@ -274,11 +274,6 @@ const ManageImportRoute = ManageImportRouteImport.update({
   path: '/import',
   getParentRoute: () => ManageRoute,
 } as any)
-const ManageOrdersRoute = ManageOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
-  getParentRoute: () => ManageRoute,
-} as any)
 const ManagePaymentReportsRoute = ManagePaymentReportsRouteImport.update({
   id: '/payment-reports',
   path: '/payment-reports',
@@ -386,10 +381,15 @@ const ManageCustomersCustomerIdRoute =
     path: '/$customerId',
     getParentRoute: () => ManageCustomersRoute,
   } as any)
+const ManageOrdersIndexRoute = ManageOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageOrdersOrderIdRoute = ManageOrdersOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => ManageOrdersRoute,
+  id: '/orders/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => ManageRoute,
 } as any)
 const ManageProductsProductIdRoute = ManageProductsProductIdRouteImport.update({
   id: '/products/$productId',
@@ -471,7 +471,6 @@ export interface FileRoutesByFullPath {
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
-  '/manage/orders': typeof ManageOrdersRouteWithChildren
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
@@ -496,6 +495,7 @@ export interface FileRoutesByFullPath {
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
   '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers/': typeof ManageCustomersIndexRoute
+  '/manage/orders/': typeof ManageOrdersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -540,7 +540,6 @@ export interface FileRoutesByTo {
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
-  '/manage/orders': typeof ManageOrdersRouteWithChildren
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
@@ -565,6 +564,7 @@ export interface FileRoutesByTo {
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
   '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers': typeof ManageCustomersIndexRoute
+  '/manage/orders': typeof ManageOrdersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -612,7 +612,6 @@ export interface FileRoutesById {
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
-  '/manage/orders': typeof ManageOrdersRouteWithChildren
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
@@ -637,6 +636,7 @@ export interface FileRoutesById {
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
   '/manage/products/$productId': typeof ManageProductsProductIdRoute
   '/manage/customers/': typeof ManageCustomersIndexRoute
+  '/manage/orders/': typeof ManageOrdersIndexRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -685,7 +685,6 @@ export interface FileRouteTypes {
     | '/manage/enquiries'
     | '/manage/home'
     | '/manage/import'
-    | '/manage/orders'
     | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
@@ -710,6 +709,7 @@ export interface FileRouteTypes {
     | '/manage/orders/$orderId'
     | '/manage/products/$productId'
     | '/manage/customers/'
+    | '/manage/orders/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -754,7 +754,6 @@ export interface FileRouteTypes {
     | '/manage/enquiries'
     | '/manage/home'
     | '/manage/import'
-    | '/manage/orders'
     | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
@@ -779,6 +778,7 @@ export interface FileRouteTypes {
     | '/manage/orders/$orderId'
     | '/manage/products/$productId'
     | '/manage/customers'
+    | '/manage/orders'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -825,7 +825,6 @@ export interface FileRouteTypes {
     | '/manage/enquiries'
     | '/manage/home'
     | '/manage/import'
-    | '/manage/orders'
     | '/manage/payment-reports'
     | '/manage/reviews'
     | '/manage/scooters'
@@ -850,6 +849,7 @@ export interface FileRouteTypes {
     | '/manage/orders/$orderId'
     | '/manage/products/$productId'
     | '/manage/customers/'
+    | '/manage/orders/'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -1178,13 +1178,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageImportRouteImport
       parentRoute: typeof ManageRoute
     }
-    '/manage/orders': {
-      id: '/manage/orders'
-      path: '/orders'
-      fullPath: '/manage/orders'
-      preLoaderRoute: typeof ManageOrdersRouteImport
-      parentRoute: typeof ManageRoute
-    }
     '/manage/payment-reports': {
       id: '/manage/payment-reports'
       path: '/payment-reports'
@@ -1332,12 +1325,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageCustomersCustomerIdRouteImport
       parentRoute: typeof ManageCustomersRoute
     }
+    '/manage/orders/': {
+      id: '/manage/orders/'
+      path: '/orders'
+      fullPath: '/manage/orders/'
+      preLoaderRoute: typeof ManageOrdersIndexRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/orders/$orderId': {
       id: '/manage/orders/$orderId'
-      path: '/$orderId'
+      path: '/orders/$orderId'
       fullPath: '/manage/orders/$orderId'
       preLoaderRoute: typeof ManageOrdersOrderIdRouteImport
-      parentRoute: typeof ManageOrdersRoute
+      parentRoute: typeof ManageRoute
     }
     '/manage/products/$productId': {
       id: '/manage/products/$productId'
@@ -1405,18 +1405,6 @@ const ManageCustomersRouteWithChildren = ManageCustomersRoute._addFileChildren(
   ManageCustomersRouteChildren,
 )
 
-interface ManageOrdersRouteChildren {
-  ManageOrdersOrderIdRoute: typeof ManageOrdersOrderIdRoute
-}
-
-const ManageOrdersRouteChildren: ManageOrdersRouteChildren = {
-  ManageOrdersOrderIdRoute: ManageOrdersOrderIdRoute,
-}
-
-const ManageOrdersRouteWithChildren = ManageOrdersRoute._addFileChildren(
-  ManageOrdersRouteChildren,
-)
-
 interface ManageRouteChildren {
   ManageAboutRoute: typeof ManageAboutRoute
   ManageAllProductsRoute: typeof ManageAllProductsRoute
@@ -1429,7 +1417,6 @@ interface ManageRouteChildren {
   ManageEnquiriesRoute: typeof ManageEnquiriesRoute
   ManageHomeRoute: typeof ManageHomeRoute
   ManageImportRoute: typeof ManageImportRoute
-  ManageOrdersRoute: typeof ManageOrdersRouteWithChildren
   ManagePaymentReportsRoute: typeof ManagePaymentReportsRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
   ManageScootersRoute: typeof ManageScootersRoute
@@ -1440,7 +1427,9 @@ interface ManageRouteChildren {
   ManageTradeRoute: typeof ManageTradeRoute
   ManageVendorsRoute: typeof ManageVendorsRoute
   ManageIndexRoute: typeof ManageIndexRoute
+  ManageOrdersOrderIdRoute: typeof ManageOrdersOrderIdRoute
   ManageProductsProductIdRoute: typeof ManageProductsProductIdRoute
+  ManageOrdersIndexRoute: typeof ManageOrdersIndexRoute
 }
 
 const ManageRouteChildren: ManageRouteChildren = {
@@ -1455,7 +1444,6 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageEnquiriesRoute: ManageEnquiriesRoute,
   ManageHomeRoute: ManageHomeRoute,
   ManageImportRoute: ManageImportRoute,
-  ManageOrdersRoute: ManageOrdersRouteWithChildren,
   ManagePaymentReportsRoute: ManagePaymentReportsRoute,
   ManageReviewsRoute: ManageReviewsRoute,
   ManageScootersRoute: ManageScootersRoute,
@@ -1466,7 +1454,9 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageTradeRoute: ManageTradeRoute,
   ManageVendorsRoute: ManageVendorsRoute,
   ManageIndexRoute: ManageIndexRoute,
+  ManageOrdersOrderIdRoute: ManageOrdersOrderIdRoute,
   ManageProductsProductIdRoute: ManageProductsProductIdRoute,
+  ManageOrdersIndexRoute: ManageOrdersIndexRoute,
 }
 
 const ManageRouteWithChildren =

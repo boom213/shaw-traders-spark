@@ -16,7 +16,7 @@ import { ALL_STATUSES, formatINR, statusLabel } from "@/lib/catalog";
 import { manageOrderCounts, manageOrders, staffInvoice, type ManageOrder } from "@/lib/manage-data.functions";
 import { can } from "@/lib/staff-permissions";
 
-export const Route = createFileRoute("/manage/orders")({
+export const Route = createFileRoute("/manage/orders/")({
   head: () => ({ meta: [{ title: "Online Orders — Shaw Traders EV Manager" }, { name: "description", content: "Review and fulfil Shaw Traders EV online retail orders." }, { name: "robots", content: "noindex" }, { property: "og:title", content: "Online Orders — Shaw Traders EV Manager" }, { property: "og:description", content: "Review and fulfil online retail orders." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ManageOrders,
 });
