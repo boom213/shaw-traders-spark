@@ -1,5 +1,6 @@
 # Current task
 - [ ] Split Online Orders into a compact responsive list and dedicated detail page with date filters and counts.
+- [ ] Refine the Online Orders list and detail layout to match the uploaded design references.
 - [x] Separate retail online orders from wholesale counter sales in data, counts, labels, and empty states.
 - [x] Add permission-aware Online Orders and Counter Sales tabs to both order pages.
 - [x] Make Razorpay payments recoverable and auditable across checkout, quotes, scooter bookings, late-payment review, and refunds.
