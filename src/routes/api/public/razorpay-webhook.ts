@@ -127,7 +127,7 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             status: refund.status ?? (body.event === "refund.processed" ? "processed" : "created"),
             note: "Synchronized from Razorpay",
             created_by: "razorpay",
-          }, { onConflict: "provider_refund_id" });
+          }, { onConflict: "provider_refund_id", ignoreDuplicates: true });
           if (refundError) {
             console.error("razorpay webhook: refund update failed", refundError);
             return new Response("Could not update refund", { status: 500 });
