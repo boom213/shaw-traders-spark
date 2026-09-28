@@ -7,7 +7,11 @@ type ExportContext = Awaited<ReturnType<typeof import("@/lib/csv.server")["csvEx
 const clean = (value: unknown, max = 120) => String(value ?? "").trim().slice(0, max);
 const page = (value: unknown) => Math.max(0, Math.floor(Number(value ?? 0)));
 const safeDate = (value: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(value ?? "")) ? String(value) : null;
-const dateInput = (data: { from?: string; to?: string } | undefined) => ({ from: safeDate(data?.from), to: safeDate(data?.to) });
+const dateInput = (data: { from?: string; to?: string } | undefined) => {
+  const range = { from: safeDate(data?.from), to: safeDate(data?.to) };
+  if (range.from && range.to && range.from > range.to) throw new Error("From date must be before To date.");
+  return range;
+};
 const applyDateRange = <T extends { gte: (column: string, value: string) => T; lte: (column: string, value: string) => T }>(query: T, column: string, range: { from: string | null; to: string | null }) => {
   let filtered = query;
   if (range.from) filtered = filtered.gte(column, range.from);
