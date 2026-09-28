@@ -2,6 +2,22 @@ import { createServerFn } from "@tanstack/react-start";
 
 type Row = Record<string, any>;
 
+let hasBusinessName: boolean | null = null;
+
+async function withOptionalBusinessName<T extends { data: unknown; error: { code?: string } | null }>(
+  query: (includeBusinessName: boolean) => PromiseLike<T>,
+): Promise<T> {
+  if (hasBusinessName === false) return query(false);
+  const result = await query(true);
+  if (result.error?.code !== "42703") {
+    if (!result.error) hasBusinessName = true;
+    return result;
+  }
+  hasBusinessName = false;
+  console.warn("profiles.business_name is missing; apply migration 0057_wholesaler_business_name.sql. Falling back to contact names.");
+  return query(false);
+}
+
 export type CounterCustomer = {
   id: string;
   /** Business name when the wholesaler has one, else contact person, else email. */
@@ -100,9 +116,11 @@ export const searchCounterCustomers = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120) }))
   .handler(async ({ data }): Promise<CounterCustomerChoice[]> => {
     const { sb } = await counterAdmin();
-    let query = sb.from("profiles").select("id, business_name, full_name, email, phone").eq("customer_type", "trade").not("trade_approved_at", "is", null).order("business_name", { nullsFirst: false }).order("full_name").limit(15);
-    if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(`business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`); }
-    const { data: rows, error } = await query;
+    const { data: rows, error } = await withOptionalBusinessName((includeBusinessName) => {
+      let query = sb.from("profiles").select(includeBusinessName ? "id, business_name, full_name, email, phone" : "id, full_name, email, phone").eq("customer_type", "trade").not("trade_approved_at", "is", null).order(includeBusinessName ? "business_name" : "full_name", { nullsFirst: false }).order("full_name").limit(15);
+      if (data.q) { const term = data.q.replace(/[%,()]/g, " "); query = query.or(includeBusinessName ? `business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%` : `full_name.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`); }
+      return query;
+    });
     if (error) throw new Error(error.message);
     return (rows ?? []).map((profile) => ({ id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
   });
@@ -112,7 +130,7 @@ export const counterCustomerDetail = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CounterCustomer | null> => {
     const { sb } = await counterAdmin();
     const [{ data: profile, error }, { data: address }, { data: balance }, { data: overdue }] = await Promise.all([
-      sb.from("profiles").select("id, business_name, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle(),
+      withOptionalBusinessName((includeBusinessName) => sb.from("profiles").select(includeBusinessName ? "id, business_name, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at" : "id, full_name, email, phone, price_tier, credit_limit, payment_terms_days, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle()),
       sb.from("addresses").select("name, phone, line1, landmark, city, state, pincode").eq("profile_id", data.customerId).order("is_default", { ascending: false }).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       sb.rpc("trade_balance", { _profile_id: data.customerId }),
       sb.rpc("trade_overdue", { _profile_id: data.customerId }),
@@ -146,20 +164,24 @@ export const listCounterSales = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string; page?: number } | undefined) => ({ q: String(data?.q ?? "").trim().slice(0, 120), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
   .handler(async ({ data }): Promise<{ items: CounterSale[]; total: number }> => {
     const { sb } = await counterAdmin();
-    let query = sb.from("counter_sales").select("order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at, orders!inner(human_id), profiles!inner(full_name, phone)", { count: "exact" }).order("created_at", { ascending: false });
+    let orderIdsForSearch: string[] | null = null;
+    let profileIdsForSearch: string[] | null = null;
     if (data.q) {
       const term = data.q.replace(/[%,()]/g, " ");
       const [{ data: matchingOrders }, { data: matchingProfiles }] = await Promise.all([
         sb.from("orders").select("id").ilike("human_id", `%${term}%`).limit(100),
-        sb.from("profiles").select("id").or(`business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100),
+        withOptionalBusinessName((includeBusinessName) => sb.from("profiles").select("id").or(includeBusinessName ? `business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%` : `full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100)),
       ]);
-      const orderIds = (matchingOrders ?? []).map((row) => String(row.id));
-      const profileIds = (matchingProfiles ?? []).map((row) => String(row.id));
-      const filters = [...(orderIds.length ? [`order_id.in.(${orderIds.join(",")})`] : []), ...(profileIds.length ? [`profile_id.in.(${profileIds.join(",")})`] : [])];
-      if (filters.length === 0) return { items: [], total: 0 };
-      query = query.or(filters.join(","));
+      orderIdsForSearch = (matchingOrders ?? []).map((row) => String(row.id));
+      profileIdsForSearch = (matchingProfiles ?? []).map((row) => String(row.id));
     }
-    const { data: rows, error, count } = await query.range(data.page * 8, data.page * 8 + 7);
+    const filters = [...(orderIdsForSearch?.length ? [`order_id.in.(${orderIdsForSearch.join(",")})`] : []), ...(profileIdsForSearch?.length ? [`profile_id.in.(${profileIdsForSearch.join(",")})`] : [])];
+    if (data.q && filters.length === 0) return { items: [], total: 0 };
+    const { data: rows, error, count } = await withOptionalBusinessName((includeBusinessName) => {
+      let query = sb.from("counter_sales").select(`order_id, profile_id, invoice_kind, price_override_reason, note, created_by_name, created_by_email, cancelled_at, cancel_reason, created_at, orders!inner(human_id), profiles!inner(${includeBusinessName ? "business_name, " : ""}full_name, phone)`, { count: "exact" }).order("created_at", { ascending: false });
+      if (filters.length) query = query.or(filters.join(","));
+      return query.range(data.page * 8, data.page * 8 + 7);
+    });
     if (error) throw new Error(error.message);
     const orderIds = ((rows ?? []) as Row[]).map((row) => String(row['order_id']));
     const profileIds = [...new Set(((rows ?? []) as Row[]).map((row) => String(row['profile_id'])))];
