@@ -87,7 +87,7 @@ function CounterSalesPage() {
   });
   const correctionMutation = useMutation({
     mutationFn: async () => { if (!correction) throw new Error("Choose a payment."); return correction.action === "void" ? voidCounterSalePayment({ data: { paymentId: correction.payment.id, reason: correctionReason } }) : setChequeStatus({ data: { paymentId: correction.payment.id, status: correction.action, clearedOn: correction.action === "cleared" ? today() : undefined, reason: correctionReason } }); },
-    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success("Payment record updated"); setCorrection(null); setCorrectionReason(""); await refresh(); },
+    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success("Payment record updated"); setCorrection(null); setCorrectionReason(""); setSelectedSale(null); await refresh(); },
     onError: (error) => toast.error(error.message),
   });
   const cancelMutation = useMutation({
