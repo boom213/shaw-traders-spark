@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ExternalLink, Plus } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
+import { AddWholesalerDialog } from "@/components/manage/AddWholesalerDialog";
+import { TradeApprovalDriftAlert } from "@/components/manage/TradeApprovalDriftAlert";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
-import { taxIdError } from "@/lib/trade-options";
 import {
   addLedgerEntry,
   applyCategoryDiscount,
@@ -63,7 +64,8 @@ function TradeAdmin() {
 
   return (
     <div className="space-y-8">
-      <ManualTradeAccount onDone={refresh} />
+      <TradeApprovalDriftAlert />
+      <div className="flex justify-end"><AddWholesalerDialog onDone={async () => refresh()} /></div>
 
       <section className="space-y-3">
         <h2 className="font-display text-xl font-semibold">Trade applications</h2>
@@ -350,82 +352,6 @@ function CategoryPricing() {
       >
         {busy ? <SparkRing /> : null} Apply to category
       </Button>
-    </section>
-  );
-}
-
-function ManualTradeAccount({ onDone }: { onDone: () => Promise<void> }) {
-  const empty = { businessName: "", contactPerson: "", phone: "", gstin: "", pan: "", shopAddress: "" };
-  const [open, setOpen] = useState(false);
-  const [f, setF] = useState(empty);
-  const [verified, setVerified] = useState(true);
-  const [submitAs, setSubmitAs] = useState<"pending" | "approved">("approved");
-  const [tier, setTier] = useState("trade");
-  const [busy, setBusy] = useState(false);
-  const taxErr = taxIdError(f.gstin, f.pan, false);
-
-  if (!open) {
-    return (
-      <div className="flex justify-end">
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="size-4" /> Add wholesaler
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
-      <h2 className="font-display text-xl font-semibold">Add wholesaler</h2>
-      <p className="text-sm text-muted-foreground">For a dealer who sent details by phone or WhatsApp. They can later sign in with a code on this mobile number and see their account.</p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input placeholder="Business name" value={f.businessName} onChange={(e) => setF({ ...f, businessName: e.target.value })} />
-        <Input placeholder="Contact person" value={f.contactPerson} onChange={(e) => setF({ ...f, contactPerson: e.target.value })} />
-        <Input placeholder="10-digit mobile" inputMode="numeric" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
-        <Input placeholder="GSTIN (optional)" maxLength={15} value={f.gstin} onChange={(e) => setF({ ...f, gstin: e.target.value.toUpperCase() })} />
-        <Input placeholder="PAN" maxLength={10} value={f.pan} onChange={(e) => setF({ ...f, pan: e.target.value.toUpperCase() })} />
-      </div>
-      {taxErr && <p role="alert" className="text-sm text-destructive">{taxErr}</p>}
-      <Textarea rows={2} placeholder="Shop address" value={f.shopAddress} onChange={(e) => setF({ ...f, shopAddress: e.target.value })} />
-      <label className="flex min-h-10 items-center gap-2 text-sm">
-        <input type="checkbox" className="size-4" checked={verified} onChange={(e) => setVerified(e.target.checked)} />
-        Documents verified in person (no upload needed)
-      </label>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <label className="text-sm">
-          Save as
-          <select className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2" value={submitAs} onChange={(e) => setSubmitAs(e.target.value as "pending" | "approved")}>
-            <option value="approved">Approved now</option>
-            <option value="pending">Waiting for a second check</option>
-          </select>
-        </label>
-        <label className="text-sm">
-          Rate card
-          <select className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2" value={tier} onChange={(e) => setTier(e.target.value)} disabled={submitAs !== "approved"}>
-            <option value="trade">Trade</option>
-            <option value="distributor">Distributor</option>
-          </select>
-        </label>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button
-          disabled={busy}
-          onClick={async () => {
-            const err = taxIdError(f.gstin, f.pan);
-            if (err) return toast.error(err);
-            setBusy(true);
-            const res = await createTradeAccountManually({ data: { ...f, docsVerifiedInPerson: verified, submitAs, tier } });
-            setBusy(false);
-            if (!res.ok) return toast.error(res.error ?? "Could not create the account");
-            toast.success(submitAs === "approved" ? "Trade account opened" : "Added to the waiting list");
-            setF(empty);
-            setOpen(false);
-            await onDone();
-          }}
-        >
-          {busy ? <SparkRing /> : null} Create account
-        </Button>
-        <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-      </div>
     </section>
   );
 }

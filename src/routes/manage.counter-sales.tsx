@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
+import { AddWholesalerDialog } from "@/components/manage/AddWholesalerDialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, setChequeStatus, voidCounterSalePayment, type CounterPayment, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
@@ -122,7 +123,7 @@ function CounterSalesPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,.75fr)]">
         <div className="space-y-5">
           <Card title="1. Wholesale customer" icon={<UserRound className="size-4" />}>
-            <form className="mb-2 flex gap-2" onSubmit={(event) => { event.preventDefault(); setCustomerTerm(customerQuery.trim()); }}><Input aria-label="Search wholesale customers" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} placeholder="Search name, phone or email" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form>
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row"><form className="flex min-w-0 flex-1 gap-2" onSubmit={(event) => { event.preventDefault(); setCustomerTerm(customerQuery.trim()); }}><Input aria-label="Search wholesale customers" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} placeholder="Search name, phone or email" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form><AddWholesalerDialog onDone={async (created) => { await queryClient.invalidateQueries({ queryKey: ["counter-customers"] }); if (created.status === "approved") setCustomerId(created.profileId); }} /></div>
             <select aria-label="Wholesale customer" value={customerId} onChange={(event) => setCustomerId(event.target.value)} disabled={setupPending || customersFetching} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Select approved wholesale customer</option>
               {customers.map((item) => <option key={item.id} value={item.id}>{[item.name, item.contactName && item.contactName !== item.name ? item.contactName : "", item.phone || item.email].filter(Boolean).join(" · ")}</option>)}

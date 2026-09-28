@@ -136,36 +136,22 @@ async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext
 
     const { data: app, error: appError } = await supabaseAdmin
       .from("trade_applications")
-      .select("id, profile_id, business_name, status")
+      .select("id, profile_id, business_name, status, requested_tier, profiles(customer_type, price_tier, trade_approved_at, business_name)")
       .eq("id", data.id)
       .maybeSingle();
     if (appError) return { ok: false as const, error: appError.message };
     if (!app) return { ok: false as const, error: "Application not found." };
-    if ((app.status === "approved" || app.status === "rejected") && app.status === data.decision) {
+    const profile = app.profiles;
+    const approvalIsConsistent = data.decision !== "approved" || (profile?.customer_type === "trade" && Boolean(profile.trade_approved_at) && profile.price_tier === data.tier && profile.business_name === app.business_name);
+    if ((app.status === "approved" || app.status === "rejected") && app.status === data.decision && approvalIsConsistent) {
       return { ok: true as const, alreadyDecided: true as const };
     }
     if (data.decision !== "approved" && data.note.length < 4) {
       return { ok: false as const, error: "Please say what is missing or why." };
     }
 
-    await supabaseAdmin
-      .from("trade_applications")
-      .update({
-        status: data.decision,
-        decision_note: data.note || null,
-        reviewer: actor.name,
-        decided_at: new Date().toISOString(),
-      } as never)
-      .eq("id", data.id);
-
-    if (data.decision === "approved") {
-      await supabaseAdmin
-        .from("profiles")
-        .update({ customer_type: "trade", price_tier: data.tier, trade_approved_at: new Date().toISOString(), business_name: app.business_name } as never)
-        .eq("id", app.profile_id);
-    } else {
-      await supabaseAdmin.from("profiles").update({ trade_approved_at: null } as never).eq("id", app.profile_id);
-    }
+    const { error: decisionError } = await supabaseAdmin.rpc("decide_trade_application", { p_application_id: data.id, p_decision: data.decision, p_note: data.note, p_tier: data.tier as "retail" | "trade" | "distributor", p_reviewer: actor.name });
+    if (decisionError) return { ok: false as const, error: decisionError.message };
 
     await logAudit(supabaseAdmin as never, actor, `trade.application.${data.decision}`, "trade_applications", data.id, {
       business: app.business_name,
@@ -196,7 +182,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const actor = await requireStaff({ capability: "trade" });
+    const actor = await requireStaff({ manager: true });
     const { taxIdError } = await import("@/lib/trade-options");
     if (data.businessName.length < 3) return { ok: false as const, error: "Please give the business name." };
     if (data.phone.length !== 10) return { ok: false as const, error: "Enter a 10-digit mobile number." };
@@ -263,7 +249,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
       const res = await runTradeDecision(actor, { id: appId, decision: "approved", note, tier: data.tier });
       if (!res.ok) return res;
     }
-    return { ok: true as const, status: data.submitAs };
+    return { ok: true as const, status: data.submitAs, profileId: userId };
   });
 
 /** Credit limit, payment terms and tier for one trade account. */
