@@ -14,8 +14,8 @@ const dateInput = (data: { from?: string; to?: string } | undefined) => {
 };
 const applyDateRange = <T extends { gte: (column: string, value: string) => T; lte: (column: string, value: string) => T }>(query: T, column: string, range: { from: string | null; to: string | null }) => {
   let filtered = query;
-  if (range.from) filtered = filtered.gte(column, range.from);
-  if (range.to) filtered = filtered.lte(column, `${range.to}T23:59:59.999Z`);
+  if (range.from) filtered = filtered.gte(column, `${range.from}T00:00:00+05:30`);
+  if (range.to) filtered = filtered.lte(column, `${range.to}T23:59:59.999+05:30`);
   return filtered;
 };
 const result = (dataset: string, headers: string[], rows: unknown[][], truncated = false): CsvExportResult => ({ csv: toCsv(headers, rows), fileName: csvFileName(dataset), rows: rows.length, truncated });
