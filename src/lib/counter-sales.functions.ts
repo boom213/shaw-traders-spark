@@ -29,8 +29,13 @@ export type CounterProduct = {
 export type CounterPaymentVendor = {
   id: string;
   name: string;
-  upiId: string | null;
-  qrUrl: string | null;
+};
+
+export type CounterPayment = {
+  id: string; amount: number; method: string; reference: string | null; note: string | null;
+  receivedOn: string; recordedBy: string; vendorName: string | null;
+  status: "cleared" | "pending" | "bounced"; clearedOn: string | null;
+  voidedAt: string | null; voidReason: string | null;
 };
 
 export type CounterSale = {
@@ -55,7 +60,7 @@ export type CounterSale = {
   note: string | null;
   overrideReason: string | null;
   items: Array<{ name: string; sku: string; qty: number; price: number; image: string | null; rackLocation: string | null }>;
-  payments: Array<{ id: string; amount: number; method: string; reference: string | null; note: string | null; receivedOn: string; recordedBy: string; vendorName: string | null }>;
+  payments: CounterPayment[];
 };
 
 async function counterAdmin() {
@@ -72,14 +77,10 @@ export const counterSaleSetup = createServerFn({ method: "POST" }).handler(async
   const { sb } = await counterAdmin();
   const [{ data: settings }, { data: vendors, error: vendorError }] = await Promise.all([
     sb.from("shop_settings").select("gst_enabled, gst_rate, prices_include_gst, gstin").maybeSingle(),
-    sb.from("qr_vendors").select("id, name, upi_id, qr_image_path").eq("active", true).order("name"),
+    sb.from("qr_vendors").select("id, name").eq("active", true).order("name"),
   ]);
   if (vendorError) throw new Error(vendorError.message);
-  const vendorRows = await Promise.all(((vendors ?? []) as Row[]).map(async (vendor): Promise<CounterPaymentVendor> => {
-    const path = vendor['qr_image_path'] ? String(vendor['qr_image_path']) : "";
-    const { data: signed } = path ? await sb.storage.from("vendor-qr-codes").createSignedUrl(path, 300) : { data: null };
-    return { id: String(vendor['id']), name: String(vendor['name']), upiId: vendor['upi_id'] ? String(vendor['upi_id']) : null, qrUrl: signed?.signedUrl ?? null };
-  }));
+  const vendorRows = ((vendors ?? []) as Row[]).map((vendor): CounterPaymentVendor => ({ id: String(vendor['id']), name: String(vendor['name']) }));
   return {
     gst: { enabled: Boolean(settings?.gst_enabled), rate: Number(settings?.gst_rate ?? 0), included: Boolean(settings?.prices_include_gst), gstin: String(settings?.gstin ?? "") },
     vendors: vendorRows,
@@ -160,7 +161,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
       sb.from("profiles").select("id, full_name, phone").in("id", profileIds),
       sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku, rack_location)").in("order_id", orderIds),
-      sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at, qr_vendors(name)").in("order_id", orderIds),
+      sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at, status, cleared_on, voided_at, void_reason, qr_vendors(name)").in("order_id", orderIds),
     ]);
     const orderMap = new Map(((orders ?? []) as Row[]).map((item) => [String(item['id']), item]));
     const profileMap = new Map(((profiles ?? []) as Row[]).map((item) => [String(item['id']), item]));
@@ -174,11 +175,11 @@ export const listCounterSales = createServerFn({ method: "POST" })
       const saleItems = itemsMap.get(String(row['order_id'])) ?? [];
       const payments = (paymentsMap.get(String(row['order_id'])) ?? []).sort((a, b) => String(b['created_at']).localeCompare(String(a['created_at'])));
       const total = Number(order?.['total'] ?? 0);
-      const paid = payments.reduce((sum, payment) => sum + Number(payment['amount'] ?? 0), 0);
+      const paid = payments.reduce((sum, payment) => payment['voided_at'] || payment['status'] === "bounced" ? sum : sum + Number(payment['amount'] ?? 0), 0);
       return {
         orderId: String(row['order_id']), humanId: String(order?.['human_id'] ?? ""), token: String(order?.['public_token'] ?? ""), customerId: String(row['profile_id']), customerName: String(profile?.['full_name'] ?? "Wholesale customer"), customerPhone: String(profile?.['phone'] ?? ""), invoiceKind: row['invoice_kind'] === "gst" ? "gst" : "non_gst", total, tax: Number(order?.['tax_amount'] ?? 0), paid, balance: Math.max(0, total - paid), paymentStatus: String(order?.['payment_status'] ?? "cod_pending"), createdAt: String(row['created_at']), createdBy: String(row['created_by_name']), createdByEmail: String(row['created_by_email'] ?? ""), dueDate: order?.['credit_due_date'] ? String(order['credit_due_date']) : null, cancelledAt: row['cancelled_at'] ? String(row['cancelled_at']) : null, cancelReason: row['cancel_reason'] ?? null, note: row['note'] ?? null, overrideReason: row['price_override_reason'] ?? null,
         items: saleItems.map((item) => ({ name: String(item['name_snapshot']), sku: String((item['products'] as Row | null)?.['sku'] ?? ""), qty: Number(item['qty']), price: Number(item['price_snapshot'] ?? 0), image: item['image_snapshot'] ? String(item['image_snapshot']) : null, rackLocation: (item['products'] as Row | null)?.['rack_location'] ? String((item['products'] as Row)['rack_location']) : null })),
-        payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null })),
+        payments: payments.map((payment) => ({ id: String(payment['id']), amount: Number(payment['amount']), method: String(payment['method']), reference: payment['reference'] ?? null, note: payment['note'] ?? null, receivedOn: String(payment['received_on']), recordedBy: String(payment['recorded_by_name']), vendorName: (payment['qr_vendors'] as Row | null)?.['name'] ? String((payment['qr_vendors'] as Row)['name']) : null, status: payment['status'] === "pending" || payment['status'] === "bounced" ? payment['status'] : "cleared", clearedOn: payment['cleared_on'] ? String(payment['cleared_on']) : null, voidedAt: payment['voided_at'] ? String(payment['voided_at']) : null, voidReason: payment['void_reason'] ? String(payment['void_reason']) : null })),
       };
     });
     return { items: mapped, total: count ?? 0 };
@@ -204,6 +205,28 @@ export const recordCounterPayment = createServerFn({ method: "POST" })
     const { data: balance, error } = await sb.rpc("record_counter_sale_payment_with_vendor", { p_order_id: data.orderId, p_amount: data.amount, p_method: data.method, p_reference: data.reference, p_note: data.note, p_received_on: data.receivedOn, p_actor_id: actor.userId, p_actor_name: actor.name, p_actor_email: actor.email, p_vendor_id: data.vendorId } as never);
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb as never, actor, "counter_sale.payment_recorded", "orders", data.orderId, { amount: data.amount, method: data.method, reference: data.reference, receivedOn: data.receivedOn, vendorId: data.vendorId, balance });
+    return { ok: true as const, balance: Number(balance ?? 0) };
+  });
+
+export const voidCounterSalePayment = createServerFn({ method: "POST" })
+  .inputValidator((data: { paymentId: string; reason: string }) => ({ paymentId: String(data?.paymentId ?? "").slice(0, 40), reason: String(data?.reason ?? "").trim().slice(0, 300) }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await counterAdmin();
+    if (data.reason.length < 3) return { ok: false as const, error: "Add a reason for voiding this payment." };
+    const { data: balance, error } = await sb.rpc("void_counter_sale_payment", { p_payment_id: data.paymentId, p_reason: data.reason, p_actor_id: actor.userId, p_actor_name: actor.name });
+    if (error) return { ok: false as const, error: error.message };
+    await logAudit(sb as never, actor, "counter_sale.payment_voided", "counter_sale_payments", data.paymentId, { reason: data.reason, balance });
+    return { ok: true as const, balance: Number(balance ?? 0) };
+  });
+
+export const setChequeStatus = createServerFn({ method: "POST" })
+  .inputValidator((data: { paymentId: string; status: "cleared" | "bounced"; clearedOn?: string; reason?: string }) => ({ paymentId: String(data?.paymentId ?? "").slice(0, 40), status: data?.status === "bounced" ? "bounced" as const : "cleared" as const, clearedOn: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.clearedOn)) ? String(data.clearedOn) : null, reason: String(data?.reason ?? "").trim().slice(0, 300) }))
+  .handler(async ({ data }) => {
+    const { sb, actor, logAudit } = await counterAdmin();
+    if (data.status === "bounced" && data.reason.length < 3) return { ok: false as const, error: "Add a reason for marking this cheque bounced." };
+    const { data: balance, error } = await sb.rpc("set_cheque_status", { p_payment_id: data.paymentId, p_status: data.status, p_cleared_on: data.clearedOn, p_actor_name: actor.name });
+    if (error) return { ok: false as const, error: error.message };
+    await logAudit(sb as never, actor, "counter_sale.cheque_status", "counter_sale_payments", data.paymentId, { status: data.status, clearedOn: data.clearedOn, reason: data.reason, balance });
     return { ok: true as const, balance: Number(balance ?? 0) };
   });
 
