@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { csvCell } from "@/lib/csv";
 
 type Row = Record<string, any>;
 
@@ -540,11 +541,6 @@ export const setProductImages = createServerFn({ method: "POST" })
 
 /* ---------------------------------- CSV ---------------------------------- */
 
-const csvCell = (v: unknown) => {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
-
 export const exportCatalogueCsv = createServerFn({ method: "POST" }).handler(async (): Promise<{ csv: string; rows: number }> => {
   const { sb } = await adminAs();
   const { data: rows, error } = await sb
@@ -572,7 +568,7 @@ export const exportCatalogueCsv = createServerFn({ method: "POST" }).handler(asy
         .join(","),
     );
   }
-  return { csv: lines.join("\n"), rows: (rows ?? []).length };
+  return { csv: `\uFEFF${lines.join("\r\n")}`, rows: (rows ?? []).length };
 });
 
 export type CsvChange = {
