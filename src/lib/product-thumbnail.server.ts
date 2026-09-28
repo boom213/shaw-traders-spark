@@ -1,6 +1,12 @@
 import { PRODUCT_THUMBNAIL_MAX_SIDE, originalPathFromThumbnail, productThumbnailStoragePath } from "@/lib/product-photo";
 
 type ThumbnailPayload = { bytes: Uint8Array; type: string };
+type UpngModule = typeof import("upng-js");
+
+async function loadUpng(): Promise<UpngModule> {
+  const module = await import("upng-js");
+  return ((module as unknown as { default?: UpngModule }).default ?? module) as UpngModule;
+}
 
 function detectType(bytes: Uint8Array, suppliedType = "") {
   const type = suppliedType.toLowerCase();
@@ -42,7 +48,7 @@ async function createPngThumbnail(bytes: Uint8Array, suppliedType: string): Prom
     width = decoded.width;
     height = decoded.height;
   } else if (type === "png") {
-    const UPNG = await import("upng-js");
+    const UPNG = await loadUpng();
     const input = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
     const decoded = UPNG.decode(input);
     const frame = UPNG.toRGBA8(decoded)[0];
@@ -54,7 +60,7 @@ async function createPngThumbnail(bytes: Uint8Array, suppliedType: string): Prom
     return null;
   }
   const resized = resizeRgba(rgba, width, height);
-  const { encode } = await import("upng-js");
+  const { encode } = await loadUpng();
   const buffer = resized.data.buffer.slice(resized.data.byteOffset, resized.data.byteOffset + resized.data.byteLength) as ArrayBuffer;
   return new Uint8Array(encode([buffer], resized.width, resized.height, 0));
 }
