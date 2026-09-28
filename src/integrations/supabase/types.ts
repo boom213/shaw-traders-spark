@@ -2800,6 +2800,16 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["price_tier"]
       }
+      decide_trade_application: {
+        Args: {
+          p_application_id: string
+          p_decision: Database["public"]["Enums"]["trade_application_status"]
+          p_note: string
+          p_reviewer: string
+          p_tier: Database["public"]["Enums"]["price_tier"]
+        }
+        Returns: undefined
+      }
       grant_staff_owner: { Args: { p_profile_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_trade: { Args: { _user_id: string }; Returns: boolean }

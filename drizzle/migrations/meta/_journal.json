@@ -414,6 +414,13 @@
       "when": 1790616730896,
       "tag": "0058_add_schema_health_check",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790618656081,
+      "tag": "0059_atomic_trade_application_decisions",
+      "breakpoints": true
     }
   ]
 }
