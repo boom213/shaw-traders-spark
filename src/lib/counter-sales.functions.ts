@@ -224,7 +224,7 @@ export const setChequeStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await counterAdmin();
     if (data.status === "bounced" && data.reason.length < 3) return { ok: false as const, error: "Add a reason for marking this cheque bounced." };
-    const { data: balance, error } = await sb.rpc("set_cheque_status", { p_payment_id: data.paymentId, p_status: data.status, p_cleared_on: data.clearedOn, p_actor_name: actor.name });
+    const { data: balance, error } = await sb.rpc("set_cheque_status", { p_payment_id: data.paymentId, p_status: data.status, p_cleared_on: data.clearedOn, p_actor_name: actor.name } as never);
     if (error) return { ok: false as const, error: error.message };
     await logAudit(sb as never, actor, "counter_sale.cheque_status", "counter_sale_payments", data.paymentId, { status: data.status, clearedOn: data.clearedOn, reason: data.reason, balance });
     return { ok: true as const, balance: Number(balance ?? 0) };

@@ -1,5 +1,5 @@
 # Current task
-- [ ] Simplify vendors to name-only and add filtered vendor history plus auditable split, cheque, and voided counter payments.
+- [x] Simplify vendors to name-only and add filtered vendor history plus auditable split, cheque, and voided counter payments.
 - [x] Add permission-gated, audited CSV exports to every requested manager list.
 - [x] Remove automatic AI checks and extraction from wholesale document uploads and staff review.
 - [x] Split Online Orders into a compact responsive list and dedicated detail page with date filters and counts.
