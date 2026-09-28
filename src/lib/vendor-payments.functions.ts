@@ -10,6 +10,10 @@ export type VendorSummary = {
   qrUrl: string | null;
   allTime: number;
   thisMonth: number;
+  collectedAllTime: number;
+  collectedThisMonth: number;
+  paidOutAllTime: number;
+  paidOutThisMonth: number;
 };
 
 export type VendorPaymentRow = {
@@ -54,7 +58,7 @@ export const vendorDashboard = createServerFn({ method: "POST" })
     sb.from("qr_vendors").select("id, name, qr_image_path, upi_id, active, created_at").order("active", { ascending: false }).order("name"),
     sb.from("vendor_payments").select("id, vendor_id, amount, paid_on, reference, note, linked_ledger_id, created_by_name, created_by_email, created_at, qr_vendors(name)", { count: "exact" }).order("paid_on", { ascending: false }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7),
     sb.from("trade_ledger").select("amount").eq("kind", "payment").eq("method", "cash").gte("received_on", monthDate),
-    sb.rpc("manager_vendor_payment_totals", { p_month_from: monthDate }),
+    sb.rpc("manager_vendor_float_totals", { p_month_from: monthDate }),
   ]);
   if (vendorError) throw new Error(vendorError.message);
   if (paymentError) throw new Error(paymentError.message);
@@ -66,8 +70,12 @@ export const vendorDashboard = createServerFn({ method: "POST" })
     return {
       id: String(vendor["id"]), name: String(vendor["name"]), upiId: vendor["upi_id"] ? String(vendor["upi_id"]) : null,
       active: Boolean(vendor["active"]), qrUrl: await qrUrl(vendor["qr_image_path"] ? String(vendor["qr_image_path"]) : null),
-      allTime: Number(total?.["all_time"] ?? 0),
-      thisMonth: Number(total?.["this_month"] ?? 0),
+       allTime: Number(total?.["collected_all_time"] ?? 0) + Number(total?.["paid_out_all_time"] ?? 0),
+       thisMonth: Number(total?.["collected_this_month"] ?? 0) + Number(total?.["paid_out_this_month"] ?? 0),
+       collectedAllTime: Number(total?.["collected_all_time"] ?? 0),
+       collectedThisMonth: Number(total?.["collected_this_month"] ?? 0),
+       paidOutAllTime: Number(total?.["paid_out_all_time"] ?? 0),
+       paidOutThisMonth: Number(total?.["paid_out_this_month"] ?? 0),
     };
   }));
   return {
