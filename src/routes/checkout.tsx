@@ -133,7 +133,7 @@ function CheckoutPage() {
     void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
   };
 
-  const { phase: confirmationPhase } = usePaymentConfirmation({
+  const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
     armed: pollArmed && Boolean(pending),
     check: () => pending ? readPaymentState({ data: { orderId: pending.orderId } }) : Promise.resolve({ status: "unknown" as const }),
     isConfirmed: (result) => result.status === "paid",
