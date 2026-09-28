@@ -379,6 +379,13 @@
       "when": 1790603190076,
       "tag": "0053_order_list_dates_counts",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1790614478871,
+      "tag": "0054_make_vendor_qr_optional",
+      "breakpoints": true
     }
   ]
 }

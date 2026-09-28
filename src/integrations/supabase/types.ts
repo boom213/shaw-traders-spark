@@ -1349,7 +1349,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          qr_image_path: string
+          qr_image_path: string | null
           updated_at: string
           upi_id: string | null
         }
@@ -1358,7 +1358,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          qr_image_path: string
+          qr_image_path?: string | null
           updated_at?: string
           upi_id?: string | null
         }
@@ -1367,7 +1367,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          qr_image_path?: string
+          qr_image_path?: string | null
           updated_at?: string
           upi_id?: string | null
         }
