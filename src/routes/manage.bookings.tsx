@@ -86,7 +86,7 @@ function ManageBookings() {
               <SelectItem value="needs_review">Payment needs review</SelectItem>
               <SelectItem value="unpaid_48h">Token unpaid over 48 hours</SelectItem>
             </SelectContent>
-          </Select>{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportBookingsCsv({ data: { status: filter } })} />}</div>
+          </Select>{can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportBookingsCsv({ data: { status: filter, ...range } })} />}</div>
         </div>
 
         <div className="grid gap-3">

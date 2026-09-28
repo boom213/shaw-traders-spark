@@ -65,7 +65,7 @@ function EnquiriesPage() {
             {t.label}
           </button>
         ))}
-        {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportEnquiriesCsv({ data: { status: tab } })} />}
+        {can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportEnquiriesCsv({ data: { status: tab, ...range } })} />}
       </div>
 
       {isPending && [0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />)}

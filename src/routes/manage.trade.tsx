@@ -73,7 +73,7 @@ function TradeAdmin() {
               {f.label}
             </Button>
           ))}
-          {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportTradeApplicationsCsv({ data: { status: filter } })} />}
+          {can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportTradeApplicationsCsv({ data: { status: filter, ...range } })} />}
         </div>
 
         {isPending ? (
