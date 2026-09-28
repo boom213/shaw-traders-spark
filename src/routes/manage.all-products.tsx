@@ -88,7 +88,7 @@ function AllProductsPage() {
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <span>{total} products found{isFetching && !isPending ? " · Updating…" : ""}</span>
-          <div className="flex flex-wrap items-center gap-2">{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportAllProductsCsv({ data: { q: term, category, status } })} />}<label className="flex items-center gap-2 font-medium text-foreground">Rows per page
+          <div className="flex flex-wrap items-center gap-2">{can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportAllProductsCsv({ data: { q: term, category, status, ...range } })} />}<label className="flex items-center gap-2 font-medium text-foreground">Rows per page
             <select aria-label="Rows per page" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0); }} className="h-9 rounded-md border border-input bg-background px-2 text-sm">
               {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
