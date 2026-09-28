@@ -14,7 +14,7 @@
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings use a server allowlist; never expose operations fields.
-- Keep one A4 invoice with photo fallbacks, 5s fetch limits, and WebP conversion.
+- Keep one A4 invoice with compact photo variants, fallbacks, 5s fetch limits, and WebP conversion.
 - Lazy-load iframe-free homepage social links below shopping content.
 - All brochure downloads use one validated enquiry and fixed-recipient notice.
 - Showroom visibility comes from shared shop settings.
