@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight, GripVertical, Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import {
   AlertDialog,
@@ -25,6 +26,8 @@ import { uploadProductPhoto } from "@/lib/photo-upload";
 import { categoriesQuery, productBrandsQuery } from "@/lib/queries";
 import { placeholderFor } from "@/lib/placeholders";
 import { STATUS_CHIP, isProductStatus, type ProductStatus } from "@/lib/ordering";
+import { exportStockProductsCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/catalogue")({
   head: () => ({
@@ -83,6 +86,7 @@ function CataloguePage() {
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div><h2 className="font-display text-lg font-bold">Products & stock</h2><p className="text-sm text-muted-foreground">Products are assigned to the same categories shown on the homepage.</p></div>
           <div className="flex flex-wrap gap-2">
+            {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportStockProductsCsv({ data: { q: term, category: cat, filter } })} />}
             <ManageBrandsDialog brands={brands} />
             <AddProductDialog categories={categories ?? []} brands={brands} />
           </div>

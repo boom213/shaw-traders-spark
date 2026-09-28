@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { CounterReportRow, OnlineReportRow, PaymentMethodTotal, PaymentReportDocument } from "@/lib/payment-report.server";
+import { CSV_EXPORT_LIMIT, csvFileName, toCsv } from "@/lib/csv";
 
 type Row = Record<string, unknown>;
 export type PaymentChartPoint = { date: string; cash: number; upi: number; vendorQr: number; bankTransfer: number; cheque: number; other: number };
@@ -45,13 +46,14 @@ async function loadAll(from: string, to: string) {
   const first = await loadPage({ from, to, counterPage: 0, onlinePage: 0, pageSize: 100 });
   const counter = [...first.counter.items];
   const online = [...first.online.items];
-  for (let page = 1; page * 100 < first.counter.total; page += 1) counter.push(...(await loadPage({ from, to, counterPage: page, onlinePage: 0, pageSize: 100 })).counter.items);
-  for (let page = 1; page * 100 < first.online.total; page += 1) online.push(...(await loadPage({ from, to, counterPage: 0, onlinePage: page, pageSize: 100 })).online.items);
-  return { summary: first.summary, counter, online };
+  for (let page = 1; page * 100 < first.counter.total && counter.length < CSV_EXPORT_LIMIT; page += 1) counter.push(...(await loadPage({ from, to, counterPage: page, onlinePage: 0, pageSize: 100 })).counter.items);
+  for (let page = 1; page * 100 < first.online.total && online.length < CSV_EXPORT_LIMIT; page += 1) online.push(...(await loadPage({ from, to, counterPage: 0, onlinePage: page, pageSize: 100 })).online.items);
+  return { summary: first.summary, counter, online, counterTotal: first.counter.total, onlineTotal: first.online.total };
 }
 
-const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 export const exportPaymentReportCsv = createServerFn({ method: "POST" }).inputValidator((data: { from: string; to: string }) => validInput(data)).handler(async ({ data }) => {
+  const { csvExportContext, auditCsvExport } = await import("@/lib/csv.server");
+  const context = await csvExportContext();
   const report = await loadAll(data.from, data.to);
   const lines = [
     ["Payment report", `${data.from} to ${data.to}`],
@@ -61,7 +63,10 @@ export const exportPaymentReportCsv = createServerFn({ method: "POST" }).inputVa
     ["ONLINE PAYMENTS AND REFUNDS"], ["Date", "Order", "Customer", "Provider", "Payment ID", "Gross", "Refunded", "Net", "Status"],
     ...report.online.map((row) => [row.paidAt, row.humanId, row.customerName, row.provider, row.paymentId, row.gross, row.refunded, row.net, row.status]),
   ];
-  return { csv: lines.map((line) => line.map(csvCell).join(",")).join("\r\n"), fileName: `payment-report-${data.from}-to-${data.to}.csv` };
+  const rows = report.counter.length + report.online.length;
+  const output = { csv: toCsv([], lines).replace(/^\uFEFF\r\n/, "\uFEFF"), fileName: csvFileName("payment-report"), rows, truncated: report.counter.length < report.counterTotal || report.online.length < report.onlineTotal };
+  await auditCsvExport(context.sb as never, context.actor, context.logAudit, "payment-reports", output, { from: data.from, to: data.to });
+  return output;
 });
 
 export const exportPaymentReportPdf = createServerFn({ method: "POST" }).inputValidator((data: { from: string; to: string }) => validInput(data)).handler(async ({ data }) => {

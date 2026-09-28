@@ -30,3 +30,4 @@
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
 - Wholesale documents are reviewed manually by staff; never run AI document checks or extraction.
+- Manager CSV exports use one BOM/CRLF utility, export filtered datasets up to 10,000 rows, require Reports permission server-side, and create audit entries.

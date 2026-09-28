@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatINR } from "@/lib/catalog";
@@ -23,6 +24,8 @@ import {
 } from "@/lib/trade-admin.functions";
 import { vendorDashboard } from "@/lib/vendor-payments.functions";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { exportTradeApplicationsCsv, exportTradeOutstandingCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/trade")({ component: TradeAdmin });
 
@@ -35,6 +38,7 @@ const FILTERS = [
 ] as const;
 
 function TradeAdmin() {
+  const { staff } = Route.useRouteContext();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string>("pending");
   const [page, setPage] = useState(0);
@@ -69,6 +73,7 @@ function TradeAdmin() {
               {f.label}
             </Button>
           ))}
+          {can(staff.role, "reports") && <ExportCsvButton onExport={() => exportTradeApplicationsCsv({ data: { status: filter } })} />}
         </div>
 
         {isPending ? (
@@ -86,7 +91,7 @@ function TradeAdmin() {
       <CategoryPricing />
 
       <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Money owed</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl font-semibold">Money owed</h2>{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportTradeOutstandingCsv()} />}</div>
         {(outstanding?.items ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nobody owes anything at the moment.

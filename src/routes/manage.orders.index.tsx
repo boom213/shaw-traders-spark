@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArrowRight, CalendarDays, Cloud, Download, MessageCircle, MoreVertical, Printer, Store } from "lucide-react";
 import { toast } from "sonner";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { customerWhatsApp, downloadPdf, printPackingSlip } from "@/components/manage/order-tools";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ALL_STATUSES, formatINR, statusLabel } from "@/lib/catalog";
 import { manageOrderCounts, manageOrders, staffInvoice, type ManageOrder } from "@/lib/manage-data.functions";
 import { can } from "@/lib/staff-permissions";
+import { exportOrdersCsv } from "@/lib/manage-exports.functions";
 
 export const Route = createFileRoute("/manage/orders/")({
   head: () => ({ meta: [{ title: "Online Orders — Shaw Traders EV Manager" }, { name: "description", content: "Review and fulfil Shaw Traders EV online retail orders." }, { name: "robots", content: "noindex" }, { property: "og:title", content: "Online Orders — Shaw Traders EV Manager" }, { property: "og:description", content: "Review and fulfil online retail orders." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -26,6 +28,7 @@ function paymentLabel(value: string) { return value.replaceAll("_", " "); }
 function ManageOrders() {
   const { staff } = Route.useRouteContext();
   const showCounterSales = can(staff.role, "counter-sales");
+  const canExport = can(staff.role, "reports");
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
@@ -50,6 +53,7 @@ function ManageOrders() {
       <div className="relative"><CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" aria-label="Orders from" type="date" value={from} onChange={(event) => changeFilter(setFrom, event.target.value)} /></div>
       <Input aria-label="Orders to" type="date" min={from || undefined} value={to} onChange={(event) => changeFilter(setTo, event.target.value)} />
       <Button type="submit" variant="outline">Search</Button>
+      {canExport && <ExportCsvButton onExport={() => exportOrdersCsv({ data: { q: term, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter, from, to } })} />}
     </form>
     {ordersQuery.isPending && <div className="h-72 animate-pulse rounded-lg bg-muted" />}
     {!ordersQuery.isPending && !(orders?.items.length) && <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground"><p>No online retail orders match these filters.</p>{showCounterSales && <Link to="/manage/counter-sales" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">Looking for a counter sale? View wholesale counter sales.</Link>}</div>}
