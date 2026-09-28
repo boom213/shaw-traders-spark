@@ -48,7 +48,7 @@ async function loadAll(from: string, to: string) {
   const online = [...first.online.items];
   for (let page = 1; page * 100 < first.counter.total && counter.length < CSV_EXPORT_LIMIT; page += 1) counter.push(...(await loadPage({ from, to, counterPage: page, onlinePage: 0, pageSize: 100 })).counter.items);
   for (let page = 1; page * 100 < first.online.total && online.length < CSV_EXPORT_LIMIT; page += 1) online.push(...(await loadPage({ from, to, counterPage: 0, onlinePage: page, pageSize: 100 })).online.items);
-  return { summary: first.summary, counter, online };
+  return { summary: first.summary, counter, online, counterTotal: first.counter.total, onlineTotal: first.online.total };
 }
 
 export const exportPaymentReportCsv = createServerFn({ method: "POST" }).inputValidator((data: { from: string; to: string }) => validInput(data)).handler(async ({ data }) => {
@@ -64,7 +64,7 @@ export const exportPaymentReportCsv = createServerFn({ method: "POST" }).inputVa
     ...report.online.map((row) => [row.paidAt, row.humanId, row.customerName, row.provider, row.paymentId, row.gross, row.refunded, row.net, row.status]),
   ];
   const rows = report.counter.length + report.online.length;
-  const output = { csv: toCsv([], lines).replace(/^\uFEFF\r\n/, "\uFEFF"), fileName: csvFileName("payment-report"), rows, truncated: report.counter.length < report.counter.total || report.online.length < report.online.total };
+  const output = { csv: toCsv([], lines).replace(/^\uFEFF\r\n/, "\uFEFF"), fileName: csvFileName("payment-report"), rows, truncated: report.counter.length < report.counterTotal || report.online.length < report.onlineTotal };
   await auditCsvExport(context.sb as never, context.actor, context.logAudit, "payment-reports", output, { from: data.from, to: data.to });
   return output;
 });
