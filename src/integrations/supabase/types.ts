@@ -3116,6 +3116,7 @@ export type Database = {
           total_paid: number
         }[]
       }
+      sync_order_refund_total: { Args: { p_order_id: string }; Returns: number }
       tier_price: {
         Args: {
           p_product: string
