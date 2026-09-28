@@ -1,5 +1,5 @@
 # Current task
-- [x] Restrict financial and trade data to owners and add deliberate, audited Owner promotion.
+- [ ] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.
 
 # Roadmap
 
