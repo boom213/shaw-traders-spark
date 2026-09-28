@@ -27,7 +27,18 @@ import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { exportTradeApplicationsCsv, exportTradeOutstandingCsv } from "@/lib/manage-exports.functions";
 import { can } from "@/lib/staff-permissions";
 
-export const Route = createFileRoute("/manage/trade")({ component: TradeAdmin });
+export const Route = createFileRoute("/manage/trade")({
+  head: () => ({ meta: [
+    { title: "Trade & Credit — Shaw Traders EV Manager" },
+    { name: "description", content: "Review wholesale accounts, rates, credit, and payments." },
+    { property: "og:title", content: "Trade & Credit — Shaw Traders EV Manager" },
+    { property: "og:description", content: "Review wholesale accounts, rates, credit, and payments." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
+  component: TradeAdmin,
+});
 
 const FILTERS = [
   { id: "pending", label: "Waiting" },

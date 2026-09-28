@@ -9,6 +9,15 @@ import { formatINR } from "@/lib/catalog";
 
 
 export const Route = createFileRoute("/manage/")({
+  head: () => ({ meta: [
+    { title: "Overview — Shaw Traders EV Manager" },
+    { name: "description", content: "Operational overview for Shaw Traders EV staff." },
+    { property: "og:title", content: "Overview — Shaw Traders EV Manager" },
+    { property: "og:description", content: "Operational overview for Shaw Traders EV staff." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   component: ManageOverview,
 });
 

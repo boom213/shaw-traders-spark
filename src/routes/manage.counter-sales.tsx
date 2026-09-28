@@ -21,7 +21,7 @@ import { exportCounterSalesCsv } from "@/lib/manage-exports.functions";
 import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/counter-sales")({
-  head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { property: "og:title", content: "Counter Sales — Shaw Traders EV Manager" }, { property: "og:description", content: "Create and manage in-house wholesale counter sales." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   component: CounterSalesPage,
 });
 
