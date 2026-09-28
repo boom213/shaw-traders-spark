@@ -5,9 +5,7 @@ type Row = Record<string, unknown>;
 export type VendorSummary = {
   id: string;
   name: string;
-  upiId: string | null;
   active: boolean;
-  qrUrl: string | null;
   allTime: number;
   thisMonth: number;
   collectedAllTime: number;
@@ -39,37 +37,36 @@ async function vendorAdmin(superAdmin = false) {
   return { sb, actor, logAudit };
 }
 
-async function qrUrl(path: string | null): Promise<string | null> {
-  if (!path) return null;
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.storage.from("vendor-qr-codes").createSignedUrl(path, 300);
-  return data?.signedUrl ?? null;
-}
-
 export const vendorDashboard = createServerFn({ method: "POST" })
-  .inputValidator((data: { page?: number } | undefined) => ({ page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .inputValidator((data: { page?: number; vendorId?: string; from?: string; to?: string } | undefined) => ({ page: Math.max(0, Math.floor(Number(data?.page ?? 0))), vendorId: text(data?.vendorId, 40), from: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.from)) ? String(data?.from) : "", to: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.to)) ? String(data?.to) : "" }))
   .handler(async ({ data }) => {
   const { sb, actor } = await vendorAdmin();
   const monthStart = new Date();
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
   const monthDate = monthStart.toISOString().slice(0, 10);
-  const [{ data: vendors, error: vendorError }, { data: payments, error: paymentError, count }, { data: cashRows }, { data: totalRows, error: totalError }] = await Promise.all([
-    sb.from("qr_vendors").select("id, name, qr_image_path, upi_id, active, created_at").order("active", { ascending: false }).order("name"),
-    sb.from("vendor_payments").select("id, vendor_id, amount, paid_on, reference, note, linked_ledger_id, created_by_name, created_by_email, created_at, qr_vendors(name)", { count: "exact" }).order("paid_on", { ascending: false }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7),
+  let paymentQuery = sb.from("vendor_payments").select("id, vendor_id, amount, paid_on, reference, note, linked_ledger_id, created_by_name, created_by_email, created_at, qr_vendors(name)", { count: "exact" }).is("voided_at", null).order("paid_on", { ascending: false }).order("created_at", { ascending: false });
+  let paymentTotalQuery = sb.from("vendor_payments").select("amount").is("voided_at", null);
+  if (data.vendorId) { paymentQuery = paymentQuery.eq("vendor_id", data.vendorId); paymentTotalQuery = paymentTotalQuery.eq("vendor_id", data.vendorId); }
+  if (data.from) { paymentQuery = paymentQuery.gte("paid_on", data.from); paymentTotalQuery = paymentTotalQuery.gte("paid_on", data.from); }
+  if (data.to) { paymentQuery = paymentQuery.lte("paid_on", data.to); paymentTotalQuery = paymentTotalQuery.lte("paid_on", data.to); }
+  const [{ data: vendors, error: vendorError }, { data: payments, error: paymentError, count }, { data: filteredRows, error: filteredError }, { data: cashRows }, { data: totalRows, error: totalError }] = await Promise.all([
+    sb.from("qr_vendors").select("id, name, active, created_at").order("active", { ascending: false }).order("name"),
+    paymentQuery.range(data.page * 8, data.page * 8 + 7),
+    paymentTotalQuery,
     sb.from("trade_ledger").select("amount").eq("kind", "payment").eq("method", "cash").gte("received_on", monthDate),
     sb.rpc("manager_vendor_float_totals", { p_month_from: monthDate }),
   ]);
   if (vendorError) throw new Error(vendorError.message);
   if (paymentError) throw new Error(paymentError.message);
+  if (filteredError) throw new Error(filteredError.message);
   if (totalError) throw new Error(totalError.message);
   const paymentRows = (payments ?? []) as Row[];
   const totals = new Map(((totalRows ?? []) as Row[]).map((row) => [String(row["vendor_id"]), row]));
-  const summaries = await Promise.all(((vendors ?? []) as Row[]).map(async (vendor): Promise<VendorSummary> => {
+  const summaries = ((vendors ?? []) as Row[]).map((vendor): VendorSummary => {
     const total = totals.get(String(vendor["id"]));
     return {
-      id: String(vendor["id"]), name: String(vendor["name"]), upiId: vendor["upi_id"] ? String(vendor["upi_id"]) : null,
-      active: Boolean(vendor["active"]), qrUrl: await qrUrl(vendor["qr_image_path"] ? String(vendor["qr_image_path"]) : null),
+      id: String(vendor["id"]), name: String(vendor["name"]), active: Boolean(vendor["active"]),
        allTime: Number(total?.["collected_all_time"] ?? 0) + Number(total?.["paid_out_all_time"] ?? 0),
        thisMonth: Number(total?.["collected_this_month"] ?? 0) + Number(total?.["paid_out_this_month"] ?? 0),
        collectedAllTime: Number(total?.["collected_all_time"] ?? 0),
@@ -77,7 +74,7 @@ export const vendorDashboard = createServerFn({ method: "POST" })
        paidOutAllTime: Number(total?.["paid_out_all_time"] ?? 0),
        paidOutThisMonth: Number(total?.["paid_out_this_month"] ?? 0),
     };
-  }));
+  });
   return {
     vendors: summaries,
     payments: paymentRows.map((payment): VendorPaymentRow => ({
@@ -88,21 +85,20 @@ export const vendorDashboard = createServerFn({ method: "POST" })
       recordedBy: String(payment["created_by_name"]), recordedByEmail: String(payment["created_by_email"]), createdAt: String(payment["created_at"]),
     })),
     paymentTotal: count ?? 0,
+    filteredAmount: (filteredRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
     cashThisMonth: (cashRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
     canManageVendors: actor.role === "super_admin",
   };
 });
 
 export const saveVendor = createServerFn({ method: "POST" })
-  .inputValidator((data: { id?: string; name: string; qrImagePath?: string; upiId?: string; active?: boolean }) => ({
-    id: text(data?.id, 40), name: text(data?.name, 120), qrImagePath: text(data?.qrImagePath, 500),
-    upiId: text(data?.upiId, 120), active: data?.active !== false,
+  .inputValidator((data: { id?: string; name: string; active?: boolean }) => ({
+    id: text(data?.id, 40), name: text(data?.name, 120), active: data?.active !== false,
   }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await vendorAdmin(true);
     if (data.name.length < 2) return { ok: false as const, error: "Enter the vendor name." };
-    if (!data.id && !data.qrImagePath) return { ok: false as const, error: "Upload the vendor QR code." };
-    const patch = { name: data.name, upi_id: data.upiId || null, active: data.active, ...(data.qrImagePath ? { qr_image_path: data.qrImagePath } : {}) };
+    const patch = { name: data.name, active: data.active };
     if (data.id) {
       const { error } = await sb.from("qr_vendors").update(patch as never).eq("id", data.id);
       if (error) return { ok: false as const, error: error.message };
