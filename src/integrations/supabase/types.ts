@@ -3077,6 +3077,13 @@ export type Database = {
         Args: { p_actor: string; p_note: string; p_order_id: string }
         Returns: boolean
       }
+      schema_health: {
+        Args: { p_objects: string[] }
+        Returns: {
+          object: string
+          present: boolean
+        }[]
+      }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }
         Returns: {
