@@ -14,6 +14,7 @@ import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 export const COUPON_KEY = "shaw-ev-coupon";
 
@@ -133,7 +134,7 @@ function CartPage() {
               <div key={l.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-surface">
                   {l.product.images[0] ? (
-                    <img src={l.product.images[0]} alt={l.product.name} loading="lazy" className="size-full object-cover" />
+                    <img src={productThumbnailUrl(l.product.images[0]) ?? l.product.images[0]} alt={l.product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
                   ) : (
                     <span className="grid size-full place-items-center text-muted-foreground"><ImageIcon className="size-5" /></span>
                   )}

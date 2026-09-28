@@ -21,6 +21,7 @@ import {
   type SaveVehicleInput,
 } from "@/lib/vehicles-admin.functions";
 import { EMPTY_PRICE, EMPTY_SPECS } from "@/lib/vehicles";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 export const Route = createFileRoute("/manage/scooters")({
   validateSearch: (search: Record<string, unknown>) => ({ product: typeof search.product === "string" ? search.product : "" }),
@@ -110,7 +111,7 @@ function ManageScooters() {
             <div key={v.id} className="rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card)]">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="size-16 shrink-0 overflow-hidden rounded-xl bg-surface">
-                  {v.images[0] && <img src={v.images[0]} alt="" width={64} height={64} className="size-full object-cover" />}
+                  {v.images[0] && <img src={productThumbnailUrl(v.images[0]) ?? v.images[0]} alt="" width={64} height={64} loading="lazy" decoding="async" className="size-full object-cover" />}
                 </div>
                 <div className="min-w-40 flex-1">
                   <p className="font-semibold">
@@ -146,7 +147,7 @@ function ManageScooters() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   {v.images.map((url) => (
                     <div key={url} className="relative size-14 overflow-hidden rounded-lg border border-border">
-                      <img src={url} alt="" width={56} height={56} className="size-full object-cover" />
+                      <img src={productThumbnailUrl(url) ?? url} alt="" width={56} height={56} loading="lazy" decoding="async" className="size-full object-cover" />
                       <button
                         type="button"
                         aria-label="Remove photo"

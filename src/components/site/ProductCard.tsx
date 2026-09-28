@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
-import { imageFor } from "@/lib/placeholders";
+import { listImageFor } from "@/lib/placeholders";
 import { cn } from "@/lib/utils";
 
 export function ProductRating({ rating, count }: { rating?: number; count?: number }) {
@@ -73,7 +73,7 @@ export function ProductCard({ product }: { product: Product }) {
 
       <Link to="/product/$slug" params={{ slug: product.slug }} className="block aspect-square overflow-hidden bg-surface">
         <img
-          src={imageFor(product)}
+          src={listImageFor(product)}
           alt={product.name}
           loading="lazy"
           decoding="async"

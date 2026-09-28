@@ -12,6 +12,7 @@ import phMotor from "@/assets/ph-motor.jpg";
 import phSuspension from "@/assets/ph-suspension.jpg";
 import phWheel from "@/assets/ph-wheel.jpg";
 import type { Product } from "@/lib/catalog";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 export const CATEGORY_PLACEHOLDER: Record<string, string> = {
   "ev-batteries": phBattery,
@@ -35,6 +36,11 @@ export const placeholderFor = (category: string) => CATEGORY_PLACEHOLDER[categor
 /** Real photo when the shop has uploaded one, otherwise a category stand-in. */
 export function imageFor(product: Pick<Product, "images" | "category">) {
   return product.images[0] ?? placeholderFor(product.category);
+}
+
+/** Compact uploaded photo for list views; bundled category stand-ins stay unchanged. */
+export function listImageFor(product: Pick<Product, "images" | "category">) {
+  return productThumbnailUrl(imageFor(product)) ?? placeholderFor(product.category);
 }
 
 export const isPlaceholder = (product: Pick<Product, "images">) => !product.images[0];
