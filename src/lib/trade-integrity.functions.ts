@@ -6,7 +6,7 @@ export const tradeApprovalDrift = createServerFn({ method: "POST" })
   .inputValidator((data: undefined) => data)
   .handler(async (): Promise<TradeApprovalDrift[]> => {
     const { requireStaff } = await import("@/lib/staff.server");
-    await requireStaff({ capability: "trade" });
+    await requireStaff({ manager: true });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.from("trade_applications").select("id, business_name, requested_tier, profiles!inner(customer_type, price_tier, trade_approved_at, business_name)").eq("status", "approved");
     if (error) throw new Error(error.message);
