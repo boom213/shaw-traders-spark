@@ -14,7 +14,7 @@
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings use a server allowlist; never expose operations fields.
-- Use compact photos in lists/invoices; originals in details; PDF fallbacks and 5s fetch limits.
+- Photos: 480px cards, 192px rows/PDFs, originals in details; retain PDF fallback/5s limit.
 - Lazy-load iframe-free homepage social links below shopping content.
 - All brochure downloads use one validated enquiry and fixed-recipient notice.
 - Showroom visibility comes from shared shop settings.

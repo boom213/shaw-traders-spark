@@ -35,7 +35,7 @@ function ModelCard({ v, picked, onPick }: { v: VehicleModel; picked: boolean; on
       <Link to="/scooters/$slug" params={{ slug: v.slug }} className="block">
         <div className="aspect-4/3 w-full overflow-hidden bg-surface">
           {v.images[0] ? (
-            <img src={productThumbnailUrl(v.images[0]) ?? v.images[0]} alt={v.name} width={640} height={480} loading="lazy" decoding="async" className="size-full object-cover" />
+            <img src={productThumbnailUrl(v.images[0], "card") ?? v.images[0]} alt={v.name} width={640} height={480} loading="lazy" decoding="async" className="size-full object-cover" />
           ) : (
             <div className="grid size-full place-items-center text-sm text-muted-foreground">Photo coming soon</div>
           )}

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { PRODUCT_THUMBNAIL_MAX_SIDE, productThumbnailStoragePath } from "@/lib/product-photo";
+import { PRODUCT_THUMBNAIL_SIZES, productThumbnailStoragePath } from "@/lib/product-photo";
 
 const MAX_SIDE = 1400;
 
@@ -40,7 +40,8 @@ async function productPhotoVariants(file: File) {
   try {
     return await Promise.all([
       render(MAX_SIDE, 0.82),
-      render(PRODUCT_THUMBNAIL_MAX_SIDE, 0.72),
+      render(PRODUCT_THUMBNAIL_SIZES.compact, 0.8),
+      render(PRODUCT_THUMBNAIL_SIZES.card, 0.84),
     ]);
   } finally {
     bitmap.close?.();
@@ -49,7 +50,7 @@ async function productPhotoVariants(file: File) {
 
 /** Upload one photo for a product and return the link to store against it. */
 export async function uploadProductPhoto(productId: string, file: File): Promise<string> {
-  const [blob, thumbnail] = await productPhotoVariants(file);
+  const [blob, compactThumbnail, cardThumbnail] = await productPhotoVariants(file);
   const name = `${productId}/${crypto.randomUUID()}.webp`;
   const { error } = await supabase.storage.from("product-photos").upload(name, blob, {
     contentType: "image/webp",
@@ -57,12 +58,12 @@ export async function uploadProductPhoto(productId: string, file: File): Promise
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  const { error: thumbnailError } = await supabase.storage.from("product-photos").upload(productThumbnailStoragePath(name), thumbnail, {
-    contentType: "image/webp",
-    cacheControl: "31536000",
-    upsert: false,
-  });
-  if (thumbnailError) console.warn("Product photo uploaded without its compact thumbnail", thumbnailError.message);
+  const thumbnailResults = await Promise.all([
+    supabase.storage.from("product-photos").upload(productThumbnailStoragePath(name, "compact"), compactThumbnail, { contentType: "image/webp", cacheControl: "31536000", upsert: false }),
+    supabase.storage.from("product-photos").upload(productThumbnailStoragePath(name, "card"), cardThumbnail, { contentType: "image/webp", cacheControl: "31536000", upsert: false }),
+  ]);
+  const thumbnailErrors = thumbnailResults.map((result) => result.error?.message).filter(Boolean);
+  if (thumbnailErrors.length) console.warn("Product photo uploaded without every thumbnail", thumbnailErrors.join("; "));
   return `/api/public/photo/${name}`;
 }
 
