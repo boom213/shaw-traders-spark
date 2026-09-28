@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Camera, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Crown, Plus, Save, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -108,6 +108,7 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
   const [images, setImages] = useState(product.images);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingImages, setSavingImages] = useState(false);
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((current) => ({ ...current, [key]: value }));
   const optionalNumber = (value: string) => value.trim() === "" ? null : Number(value);
 
@@ -155,16 +156,53 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
   };
 
   const persistImages = async (next: string[]) => {
+    if (savingImages) return false;
     const previous = images;
     setImages(next);
-    const result = await saveImages({ data: { id: product.id, urls: next } });
-    if (!result.ok) {
+    setSavingImages(true);
+    try {
+      const result = await saveImages({ data: { id: product.id, urls: next } });
+      if (!result.ok) {
+        setImages(previous);
+        toast.error(result.error ?? "Could not save photos");
+        return false;
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["catalogue-product", product.id] }),
+        queryClient.invalidateQueries({ queryKey: ["all-products-admin"] }),
+        queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
+        queryClient.invalidateQueries({ queryKey: ["products"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+      ]);
+      return true;
+    } catch (error) {
       setImages(previous);
-      toast.error(result.error ?? "Could not save photos");
+      toast.error(error instanceof Error ? error.message : "Could not save photos");
       return false;
+    } finally {
+      setSavingImages(false);
     }
-    await queryClient.invalidateQueries({ queryKey: ["catalogue-product", product.id] });
-    return true;
+  };
+
+  const makeMain = async (index: number) => {
+    if (index === 0) return;
+    const next = [...images];
+    const [selected] = next.splice(index, 1);
+    if (!selected) return;
+    next.unshift(selected);
+    if (await persistImages(next)) toast.success("Main photo updated");
+  };
+
+  const moveImage = async (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= images.length) return;
+    const next = [...images];
+    const current = next[index];
+    const adjacent = next[target];
+    if (!current || !adjacent) return;
+    next[index] = adjacent;
+    next[target] = current;
+    if (await persistImages(next)) toast.success("Photo order updated");
   };
 
   const addPhotos = async (files: FileList | null) => {
@@ -222,10 +260,28 @@ function ProductEditor({ product, categories, brands }: { product: CatalogueProd
 
       <Section title="Photos" single>
         <div className="flex flex-wrap gap-3">
-          {images.map((url, index) => <div key={url} className="relative size-24 overflow-hidden rounded-md border border-border"><img src={url} alt="" className="size-full object-cover" />{index === 0 && <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">Main</span>}<Button type="button" variant="destructive" size="icon" aria-label="Remove photo" className="absolute bottom-1 right-1 size-7" onClick={() => void persistImages(images.filter((item) => item !== url))}><Trash2 /></Button></div>)}
+          {images.map((url, index) => (
+            <div key={url} className="w-28 rounded-md border border-border bg-card p-1.5">
+              <div className="relative aspect-square overflow-hidden rounded-sm bg-surface">
+                <img src={url} alt={`${product.name} photo ${index + 1}`} className="size-full object-cover" />
+                {index === 0 && <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">Main</span>}
+                <span className="absolute right-1 top-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">{index + 1}</span>
+                <Button type="button" variant="destructive" size="icon" aria-label={`Remove photo ${index + 1}`} disabled={savingImages} className="absolute bottom-1 right-1 size-7" onClick={() => void persistImages(images.filter((item) => item !== url))}><Trash2 /></Button>
+              </div>
+              {index === 0 ? (
+                <div className="mt-1.5 flex h-8 items-center justify-center gap-1 text-xs font-medium text-primary"><Crown className="size-3.5" /> Main photo</div>
+              ) : (
+                <Button type="button" variant="ghost" size="sm" className="mt-1.5 h-8 w-full px-1 text-xs" disabled={savingImages} onClick={() => void makeMain(index)}><Crown className="size-3.5" /> Set as main</Button>
+              )}
+              <div className="mt-1 grid grid-cols-2 gap-1">
+                <Button type="button" variant="outline" size="icon" className="h-8 w-full" aria-label={`Move photo ${index + 1} left`} disabled={savingImages || index === 0} onClick={() => void moveImage(index, -1)}><ArrowLeft className="size-3.5" /></Button>
+                <Button type="button" variant="outline" size="icon" className="h-8 w-full" aria-label={`Move photo ${index + 1} right`} disabled={savingImages || index === images.length - 1} onClick={() => void moveImage(index, 1)}><ArrowRight className="size-3.5" /></Button>
+              </div>
+            </div>
+          ))}
           {!images.length && <div className="grid size-24 place-items-center rounded-md border border-dashed border-border text-xs text-muted-foreground">No photos</div>}
         </div>
-        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => cameraRef.current?.click()}>{uploading ? <SparkRing /> : <Camera />} Take photo</Button><Button type="button" variant="outline" disabled={uploading || images.length >= 8} onClick={() => galleryRef.current?.click()}><Plus /> Choose photos</Button></div>
+        <div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={uploading || savingImages || images.length >= 8} onClick={() => cameraRef.current?.click()}>{uploading ? <SparkRing /> : <Camera />} Take photo</Button><Button type="button" variant="outline" disabled={uploading || savingImages || images.length >= 8} onClick={() => galleryRef.current?.click()}><Plus /> Choose photos</Button></div>
         <input ref={cameraRef} hidden type="file" accept="image/*" capture="environment" onChange={(event) => void addPhotos(event.target.files)} />
         <input ref={galleryRef} hidden type="file" accept="image/*" multiple onChange={(event) => void addPhotos(event.target.files)} />
       </Section>

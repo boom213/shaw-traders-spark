@@ -1,4 +1,5 @@
 # Current task
+- [x] Add main-photo selection and persistent image reordering to the product editor.
 - [x] Restore list-photo clarity with cache-safe 480px card images while retaining 192px row and PDF thumbnails.
 - [x] Use compact product-photo thumbnails across all product lists while preserving full-size detail photos.
 - [x] Add compact product-photo thumbnails for Counter Sales results and staff invoice PDFs.
