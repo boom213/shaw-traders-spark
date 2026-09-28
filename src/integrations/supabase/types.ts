@@ -1791,6 +1791,122 @@ export type Database = {
           },
         ]
       }
+      supplier_ledger: {
+        Row: {
+          amount: number
+          bill_number: string | null
+          category: Database["public"]["Enums"]["supplier_category"]
+          created_at: string
+          created_by: string | null
+          created_by_email: string | null
+          created_by_name: string | null
+          due_date: string | null
+          entry_date: string
+          id: string
+          kind: Database["public"]["Enums"]["supplier_entry_kind"]
+          method: Database["public"]["Enums"]["supplier_pay_method"] | null
+          note: string | null
+          reference: string | null
+          settled: boolean
+          supplier_id: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          amount: number
+          bill_number?: string | null
+          category?: Database["public"]["Enums"]["supplier_category"]
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          created_by_name?: string | null
+          due_date?: string | null
+          entry_date?: string
+          id?: string
+          kind: Database["public"]["Enums"]["supplier_entry_kind"]
+          method?: Database["public"]["Enums"]["supplier_pay_method"] | null
+          note?: string | null
+          reference?: string | null
+          settled?: boolean
+          supplier_id: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          amount?: number
+          bill_number?: string | null
+          category?: Database["public"]["Enums"]["supplier_category"]
+          created_at?: string
+          created_by?: string | null
+          created_by_email?: string | null
+          created_by_name?: string | null
+          due_date?: string | null
+          entry_date?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["supplier_entry_kind"]
+          method?: Database["public"]["Enums"]["supplier_pay_method"] | null
+          note?: string | null
+          reference?: string | null
+          settled?: boolean
+          supplier_id?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_ledger_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          active: boolean
+          address: string | null
+          created_at: string
+          gstin: string | null
+          id: string
+          name: string
+          note: string | null
+          opening_balance: number
+          payment_terms_days: number
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          name: string
+          note?: string | null
+          opening_balance?: number
+          payment_terms_days?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address?: string | null
+          created_at?: string
+          gstin?: string | null
+          id?: string
+          name?: string
+          note?: string | null
+          opening_balance?: number
+          payment_terms_days?: number
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       test_ride_requests: {
         Row: {
           alternate_phone: string | null
@@ -2697,6 +2813,16 @@ export type Database = {
           total_count: number
         }[]
       }
+      manager_vendor_float_totals: {
+        Args: { p_month_from: string }
+        Returns: {
+          collected_all_time: number
+          collected_this_month: number
+          paid_out_all_time: number
+          paid_out_this_month: number
+          vendor_id: string
+        }[]
+      }
       manager_vendor_payment_totals: {
         Args: { p_month_from: string }
         Returns: {
@@ -2771,6 +2897,10 @@ export type Database = {
           unit_price: number
         }[]
       }
+      recompute_supplier_settlement: {
+        Args: { p_supplier_id: string }
+        Returns: undefined
+      }
       record_counter_sale_payment: {
         Args: {
           p_actor_id: string
@@ -2798,6 +2928,24 @@ export type Database = {
           p_vendor_id: string
         }
         Returns: number
+      }
+      record_supplier_entry: {
+        Args: {
+          p_actor_email: string
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_bill_number: string
+          p_category: Database["public"]["Enums"]["supplier_category"]
+          p_due_date: string
+          p_entry_date: string
+          p_kind: Database["public"]["Enums"]["supplier_entry_kind"]
+          p_method: Database["public"]["Enums"]["supplier_pay_method"]
+          p_note: string
+          p_reference: string
+          p_supplier_id: string
+        }
+        Returns: string
       }
       record_trade_ledger_entry: {
         Args: {
@@ -2859,6 +3007,67 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["staff_role"]
       }
+      supplier_balance: { Args: { _supplier_id: string }; Returns: number }
+      supplier_ledger_page: {
+        Args: {
+          p_category: string
+          p_from: string
+          p_kind: string
+          p_limit: number
+          p_method: string
+          p_offset: number
+          p_query: string
+          p_show_voided: boolean
+          p_supplier: string
+          p_to: string
+        }
+        Returns: {
+          amount: number
+          bill_number: string
+          category: Database["public"]["Enums"]["supplier_category"]
+          created_at: string
+          created_by_email: string
+          created_by_name: string
+          due_date: string
+          entry_date: string
+          id: string
+          kind: Database["public"]["Enums"]["supplier_entry_kind"]
+          method: Database["public"]["Enums"]["supplier_pay_method"]
+          net_movement: number
+          note: string
+          reference: string
+          settled: boolean
+          supplier_id: string
+          supplier_name: string
+          total_adjustments: number
+          total_billed: number
+          total_count: number
+          total_paid: number
+          void_reason: string
+          voided_at: string
+        }[]
+      }
+      supplier_summary_page: {
+        Args: { p_limit: number; p_offset: number; p_query: string }
+        Returns: {
+          active: boolean
+          address: string
+          balance: number
+          created_at: string
+          gstin: string
+          id: string
+          last_payment_on: string
+          name: string
+          note: string
+          oldest_unsettled_due: string
+          opening_balance: number
+          payment_terms_days: number
+          phone: string
+          total_billed: number
+          total_count: number
+          total_paid: number
+        }[]
+      }
       tier_price: {
         Args: {
           p_product: string
@@ -2869,6 +3078,15 @@ export type Database = {
       }
       trade_balance: { Args: { _profile_id: string }; Returns: number }
       trade_overdue: { Args: { _profile_id: string }; Returns: boolean }
+      void_supplier_entry: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_entry_id: string
+          p_reason: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       booking_status:
@@ -2897,6 +3115,16 @@ export type Database = {
       product_status: "draft" | "visible" | "hidden"
       review_status: "pending" | "approved" | "rejected"
       staff_role: "super_admin" | "owner" | "manager" | "staff"
+      supplier_category:
+        | "stock_gst"
+        | "stock_no_gst"
+        | "expense"
+        | "transport"
+        | "advance"
+        | "drawings"
+        | "other"
+      supplier_entry_kind: "bill" | "payment" | "adjustment"
+      supplier_pay_method: "cash" | "upi" | "bank_transfer" | "cheque" | "other"
       trade_application_status:
         | "pending"
         | "approved"
@@ -3063,6 +3291,17 @@ export const Constants = {
       product_status: ["draft", "visible", "hidden"],
       review_status: ["pending", "approved", "rejected"],
       staff_role: ["super_admin", "owner", "manager", "staff"],
+      supplier_category: [
+        "stock_gst",
+        "stock_no_gst",
+        "expense",
+        "transport",
+        "advance",
+        "drawings",
+        "other",
+      ],
+      supplier_entry_kind: ["bill", "payment", "adjustment"],
+      supplier_pay_method: ["cash", "upi", "bank_transfer", "cheque", "other"],
       trade_application_status: [
         "pending",
         "approved",

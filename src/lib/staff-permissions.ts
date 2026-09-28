@@ -51,6 +51,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/products/$productId": "catalogue",
   "/manage/counter-sales": "counter-sales",
   "/manage/vendors": "vendor-finance",
+  "/manage/suppliers": "vendor-finance",
   "/manage/catalogue": "catalogue",
   "/manage/import": "catalogue",
   "/manage/scooters": "catalogue",
