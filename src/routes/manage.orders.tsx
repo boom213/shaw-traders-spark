@@ -1,19 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Download, MessageCircle, MoreVertical, Printer, ReceiptText, Store } from "lucide-react";
 import { toast } from "sonner";
-import { InvoiceButton } from "@/components/manage/OrderActions";
 import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
 import { ListPager } from "@/components/manage/ListPager";
-import { customerWhatsApp, printPackingSlip } from "@/components/manage/order-tools";
+import { customerWhatsApp, downloadPdf, printPackingSlip } from "@/components/manage/order-tools";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ALL_STATUSES, formatINR, statusLabel } from "@/lib/catalog";
-import { manageOrderCounts, manageOrders, type ManageOrder } from "@/lib/manage-data.functions";
+import { manageOrderCounts, manageOrders, staffInvoice, type ManageOrder } from "@/lib/manage-data.functions";
 import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/orders")({
@@ -72,5 +72,6 @@ function MobileOrder({ order }: { order: ManageOrder }) {
 }
 
 function OrderMenu({ order }: { order: ManageOrder }) {
-  return <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`More actions for ${order.humanId}`}><MoreVertical className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => { if (!printPackingSlip(order)) toast.error("Allow pop-ups to print the packing slip"); }}><Printer /> Packing slip</DropdownMenuItem><DropdownMenuItem asChild><a href={customerWhatsApp(order)} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp customer</a></DropdownMenuItem><DropdownMenuItem onSelect={(event) => event.preventDefault()}><Download /><InvoiceButton orderId={order.id} /></DropdownMenuItem></DropdownMenuContent></DropdownMenu>;
+  const getInvoice = useServerFn(staffInvoice);
+  return <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`More actions for ${order.humanId}`}><MoreVertical className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => { if (!printPackingSlip(order)) toast.error("Allow pop-ups to print the packing slip"); }}><Printer /> Packing slip</DropdownMenuItem><DropdownMenuItem asChild><a href={customerWhatsApp(order)} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp customer</a></DropdownMenuItem><DropdownMenuItem onSelect={async () => { const result = await getInvoice({ data: { orderId: order.id } }); if ("error" in result) return toast.error(result.error); downloadPdf(result.base64, result.fileName); }}><Download /> Download invoice</DropdownMenuItem></DropdownMenuContent></DropdownMenu>;
 }
