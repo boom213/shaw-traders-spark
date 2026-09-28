@@ -29,3 +29,4 @@
 - Owner controls settings/reports/trade; audit grants; invite Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
+- Wholesale documents are reviewed manually by staff; never run AI document checks or extraction.
