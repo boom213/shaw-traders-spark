@@ -128,7 +128,7 @@ export const searchCounterCustomers = createServerFn({ method: "POST" })
       return query;
     });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((profile) => ({ id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
+    return ((rows ?? []) as Row[]).map((profile) => ({ id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? "") }));
   });
 
 export const counterCustomerDetail = createServerFn({ method: "POST" })
@@ -179,7 +179,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
         withOptionalBusinessName((includeBusinessName) => sb.from("profiles").select("id").or(includeBusinessName ? `business_name.ilike.%${term}%,full_name.ilike.%${term}%,phone.ilike.%${term}%` : `full_name.ilike.%${term}%,phone.ilike.%${term}%`).limit(100)),
       ]);
       orderIdsForSearch = (matchingOrders ?? []).map((row) => String(row.id));
-      profileIdsForSearch = (matchingProfiles ?? []).map((row) => String(row.id));
+      profileIdsForSearch = ((matchingProfiles ?? []) as Row[]).map((row) => String(row.id));
     }
     const filters = [...(orderIdsForSearch?.length ? [`order_id.in.(${orderIdsForSearch.join(",")})`] : []), ...(profileIdsForSearch?.length ? [`profile_id.in.(${profileIdsForSearch.join(",")})`] : [])];
     if (data.q && filters.length === 0) return { items: [], total: 0 };
