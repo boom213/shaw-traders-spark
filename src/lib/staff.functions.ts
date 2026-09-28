@@ -58,6 +58,10 @@ const staffInviteSchema = z.object({
 });
 
 const ownerPromotionSchema = z.object({ profileId: z.string().uuid() });
+const staffRoleChangeSchema = z.object({
+  profileId: z.string().uuid(),
+  role: z.enum(["staff", "manager"]),
+});
 
 const staffListSchema = z.object({
   q: z.string().trim().max(100).default(""),
@@ -322,6 +326,44 @@ export const grantOwnerAccess = createServerFn({ method: "POST" })
       email: profile?.email ?? "",
       previousRoles: person.map((entry) => entry.role),
       role: "owner",
+    });
+    return { ok: true as const };
+  });
+
+/** A super admin moves an eligible account between Staff and Manager. */
+export const changeStaffRole = createServerFn({ method: "POST" })
+  .inputValidator((data: { profileId: string; role: "staff" | "manager" }) => staffRoleChangeSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const me = await requireStaff({ superAdmin: true });
+    if (data.profileId === me.userId) return { error: "You cannot change your own access." };
+
+    const sb = await adminClient();
+    const { data: person } = await sb
+      .from("staff_roles")
+      .select("role, profiles(full_name, email)")
+      .eq("profile_id", data.profileId);
+    if (!person?.length) return { error: "That person does not currently have staff access." };
+    if (person.some((entry) => entry.role === "super_admin")) {
+      return { error: "Super admin access cannot be changed here." };
+    }
+    if (person.some((entry) => entry.role === "owner")) {
+      return { error: "Owner access cannot be changed here." };
+    }
+    const currentRole = person[0]?.role;
+    if (currentRole === data.role) return { ok: true as const };
+
+    await sb.from("staff_roles").delete().eq("profile_id", data.profileId);
+    const { error } = await sb
+      .from("staff_roles")
+      .upsert({ profile_id: data.profileId, role: data.role }, { onConflict: "profile_id,role" });
+    if (error) return { error: error.message };
+
+    const profile = (person[0] as { profiles?: { full_name: string | null; email: string | null } | null }).profiles;
+    await logAudit(sb as never, me, "staff.role_changed", "staff_roles", data.profileId, {
+      email: profile?.email ?? "",
+      fromRole: currentRole,
+      toRole: data.role,
     });
     return { ok: true as const };
   });

@@ -25,7 +25,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ListPager, MANAGE_PAGE_SIZE } from "@/components/manage/ListPager";
 import { LineSkeleton, SectionHeading } from "@/components/site/Empty";
@@ -70,7 +70,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  grantOwnerAccess,
+  changeStaffRole,
   inviteStaff,
   listStaff,
   recentAudit,
@@ -167,7 +167,7 @@ function StaffPage() {
   const list = useServerFn(listStaff);
   const invite = useServerFn(inviteStaff);
   const revoke = useServerFn(revokeStaff);
-  const grantOwner = useServerFn(grantOwnerAccess);
+  const changeRole = useServerFn(changeStaffRole);
   const audit = useServerFn(recentAudit);
 
   const [search, setSearch] = useState("");
@@ -180,7 +180,6 @@ function StaffPage() {
   const [role, setRole] = useState<(typeof INVITE_ROLES)[number]>("staff");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [details, setDetails] = useState<StaffMember | null>(null);
-  const [ownerTarget, setOwnerTarget] = useState<StaffMember | null>(null);
   const [removeTarget, setRemoveTarget] = useState<StaffMember | null>(null);
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditSearch, setAuditSearch] = useState("");
@@ -230,12 +229,11 @@ function StaffPage() {
       void qc.invalidateQueries({ queryKey: ["staff-audit"] });
     },
   });
-  const ownerMutation = useMutation({
-    mutationFn: (profileId: string) => grantOwner({ data: { profileId } }),
+  const roleMutation = useMutation({
+    mutationFn: ({ profileId, role: nextRole }: { profileId: string; role: "staff" | "manager" }) => changeRole({ data: { profileId, role: nextRole } }),
     onSuccess: (res) => {
       if ("error" in res && res.error) return toast.error(res.error);
-      toast.success("Owner access granted");
-      setOwnerTarget(null);
+      toast.success("Role updated");
       setDetails(null);
       void qc.invalidateQueries({ queryKey: ["staff-list"] });
       void qc.invalidateQueries({ queryKey: ["staff-audit"] });
@@ -356,8 +354,7 @@ function StaffPage() {
         </Accordion>
       </div>
 
-      <StaffDetailsSheet member={details} open={Boolean(details)} side={isMobile ? "bottom" : "right"} canManage={canManage} onOpenChange={(open) => { if (!open) setDetails(null); }} onOwner={setOwnerTarget} onRemove={setRemoveTarget} />
-      <OwnerDialog member={ownerTarget} pending={ownerMutation.isPending} onOpenChange={(open) => { if (!open) setOwnerTarget(null); }} onConfirm={() => ownerTarget && ownerMutation.mutate(ownerTarget.profileId)} />
+      <StaffDetailsSheet member={details} open={Boolean(details)} side={isMobile ? "bottom" : "right"} canManage={canManage} rolePending={roleMutation.isPending} onOpenChange={(open) => { if (!open) setDetails(null); }} onSaveRole={(member, nextRole) => roleMutation.mutate({ profileId: member.profileId, role: nextRole })} onRemove={setRemoveTarget} />
       <RemoveDialog member={removeTarget} pending={revokeMutation.isPending} onOpenChange={(open) => { if (!open) setRemoveTarget(null); }} onConfirm={() => removeTarget && revokeMutation.mutate(removeTarget.profileId)} />
     </TooltipProvider>
   );
@@ -390,14 +387,15 @@ function ProtectedLock() {
   return <Tooltip><TooltipTrigger asChild><span className="inline-flex text-muted-foreground" tabIndex={0}><LockKeyhole className="size-3.5" /><span className="sr-only">Protected account</span></span></TooltipTrigger><TooltipContent>This account is protected and cannot be removed from this workspace.</TooltipContent></Tooltip>;
 }
 
-function StaffDetailsSheet({ member, open, side, canManage, onOpenChange, onOwner, onRemove }: { member: StaffMember | null; open: boolean; side: "right" | "bottom"; canManage: boolean; onOpenChange: (open: boolean) => void; onOwner: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
+function StaffDetailsSheet({ member, open, side, canManage, rolePending, onOpenChange, onSaveRole, onRemove }: { member: StaffMember | null; open: boolean; side: "right" | "bottom"; canManage: boolean; rolePending: boolean; onOpenChange: (open: boolean) => void; onSaveRole: (member: StaffMember, role: "staff" | "manager") => void; onRemove: (member: StaffMember) => void }) {
+  const [selectedRole, setSelectedRole] = useState<"staff" | "manager">("staff");
+  useEffect(() => {
+    if (member?.role === "staff" || member?.role === "manager") setSelectedRole(member.role);
+  }, [member?.profileId, member?.role]);
   if (!member) return null;
   const actionable = canManage && !member.isYou && !member.locked;
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="block space-y-4 border-t border-border pt-4">{(member.role === "staff" || member.role === "manager") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Owner unlocks Site Settings &amp; Domain Health, Brand Catalogue, Reports &amp; Payment Reports, and Trade &amp; Credit.</p><Button type="button" variant="outline" onClick={() => onOwner(member)}><Crown />Grant owner access</Button></div>}<div className={(member.role === "staff" || member.role === "manager") ? "border-t border-border pt-4" : ""}><Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></div></SheetFooter>}</SheetContent></Sheet>;
-}
-
-function OwnerDialog({ member, pending, onOpenChange, onConfirm }: { member: StaffMember | null; pending: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) {
-  return <AlertDialog open={Boolean(member)} onOpenChange={onOpenChange}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Grant Owner access to {member?.name}?</AlertDialogTitle><AlertDialogDescription asChild><div className="space-y-3"><p>This replaces their current role and gives access to confidential business controls and financial information:</p><ul className="list-disc space-y-1 pl-5"><li>Site Settings and Domain Health</li><li>Brand Catalogue</li><li>Reports and Payment Reports</li><li>Trade &amp; Credit</li></ul></div></AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction disabled={pending} onClick={onConfirm}>Confirm Owner Access</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>;
+  const canChangeRole = actionable && (member.role === "staff" || member.role === "manager");
+  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="block space-y-4 border-t border-border pt-4">{canChangeRole && <div className="space-y-2"><Label htmlFor="staff-detail-role">Role</Label><Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as "staff" | "manager")}><SelectTrigger id="staff-detail-role"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="staff">Staff</SelectItem><SelectItem value="manager">Manager</SelectItem></SelectContent></Select><Button type="button" onClick={() => onSaveRole(member, selectedRole)} disabled={selectedRole === member.role || rolePending}>{rolePending ? "Saving…" : "Save"}</Button></div>}<div className={canChangeRole ? "border-t border-border pt-4" : ""}><Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></div></SheetFooter>}</SheetContent></Sheet>;
 }
 
 function RemoveDialog({ member, pending, onOpenChange, onConfirm }: { member: StaffMember | null; pending: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) {
