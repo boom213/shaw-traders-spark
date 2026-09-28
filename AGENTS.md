@@ -21,7 +21,7 @@
 - Clear carts before navigation; debounce only ordinary list sync.
 - Bookings use owner-scoped reads and public-token tracking.
 - Require sign-in for orders; keep guest carts; release unpaid stock at 30 minutes; reconcile Razorpay through signed idempotent callbacks and 90-second polling; quarantine late payments for audited resolution.
-- Centralize manager refresh; sidebar collapse is local. Page by 8; aggregate in SQL.
+- Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
 - Keep order-type navigation link-based; online order queries exclude rows linked by `counter_sales.order_id`, while counter sales remain on their dedicated route.
 - Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
 - Router events never mutate history/grid state; log errors. Use Spark loaders.
