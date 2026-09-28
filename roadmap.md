@@ -1,5 +1,5 @@
 # Current task
-- [ ] Restrict financial and trade data to owners and add deliberate, audited Owner promotion.
+- [x] Restrict financial and trade data to owners and add deliberate, audited Owner promotion.
 
 # Roadmap
 
