@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { OrderDetailActions } from "@/components/manage/OrderActions";
+import { SparkRing } from "@/components/site/SparkLoaders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatINR, statusLabel } from "@/lib/catalog";
@@ -16,7 +17,7 @@ function OrderDetailPage() {
   const { orderId } = Route.useParams();
   const query = useQuery({ queryKey: ["manage-order", orderId], queryFn: () => manageOrder({ data: { orderId } }) });
   const order = query.data;
-  if (query.isPending) return <div className="h-96 animate-pulse rounded-lg bg-muted" />;
+  if (query.isPending) return <div className="grid min-h-72 place-items-center rounded-lg border border-border bg-card"><div className="flex items-center gap-3 text-sm text-muted-foreground"><SparkRing /> Loading order details…</div></div>;
   if (!order) return <div className="space-y-4"><p className="text-sm text-muted-foreground">Online order not found.</p><Button variant="outline" asChild><Link to="/manage/orders"><ArrowLeft className="size-4" /> Orders</Link></Button></div>;
   const address = order.address;
   return <div className="space-y-6">
