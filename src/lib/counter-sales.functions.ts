@@ -4,9 +4,15 @@ type Row = Record<string, any>;
 
 let hasBusinessName: boolean | null = null;
 
-async function withOptionalBusinessName<T extends { data: unknown; error: { code?: string } | null }>(
-  query: (includeBusinessName: boolean) => PromiseLike<T>,
-): Promise<T> {
+type OptionalBusinessNameResult = {
+  data: any;
+  error: { code?: string; message?: string } | null;
+  count?: number | null;
+};
+
+async function withOptionalBusinessName(
+  query: (includeBusinessName: boolean) => PromiseLike<OptionalBusinessNameResult>,
+): Promise<OptionalBusinessNameResult> {
   if (hasBusinessName === false) return query(false);
   const result = await query(true);
   if (result.error?.code !== "42703") {
@@ -188,7 +194,7 @@ export const listCounterSales = createServerFn({ method: "POST" })
     if (orderIds.length === 0) return { items: [], total: count ?? 0 };
     const [{ data: orders }, { data: profiles }, { data: items }, { data: payments }] = await Promise.all([
       sb.from("orders").select("id, human_id, public_token, total, tax_amount, payment_status, credit_due_date").in("id", orderIds),
-      sb.from("profiles").select("id, business_name, full_name, phone").in("id", profileIds),
+      withOptionalBusinessName((includeBusinessName) => sb.from("profiles").select(includeBusinessName ? "id, business_name, full_name, phone" : "id, full_name, phone").in("id", profileIds)),
       sb.from("order_items").select("order_id, name_snapshot, qty, price_snapshot, image_snapshot, products(sku, rack_location)").in("order_id", orderIds),
       sb.from("counter_sale_payments").select("id, order_id, amount, method, reference, note, received_on, recorded_by_name, created_at, status, cleared_on, voided_at, void_reason, qr_vendors(name)").in("order_id", orderIds),
     ]);
