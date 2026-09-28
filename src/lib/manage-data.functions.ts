@@ -9,6 +9,10 @@ export type ManageOrder = {
   token: string;
   status: OrderStatus;
   total: number;
+  subtotal: number;
+  discount: number;
+  shippingFee: number;
+  taxAmount: number;
   paymentMethod: string | null;
   paymentStatus: string;
   shippingMethod: string | null;
@@ -25,12 +29,18 @@ export type ManageOrder = {
   requests: { id: string; kind: string; reason: string; details: string | null; status: string; createdAt: string }[];
 };
 
+const MANAGE_ORDER_SELECT = "id, human_id, public_token, status, subtotal, shipping_fee, discount, total, tax_amount, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, needs_payment_review, payment_review_note, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)";
+
 const mapManageOrder = (row: Row): ManageOrder => ({
   id: String(row['id']),
   humanId: String(row['human_id']),
   token: String(row['public_token']),
   status: row['status'] as OrderStatus,
   total: Number(row['total']),
+  subtotal: Number(row['subtotal'] ?? 0),
+  discount: Number(row['discount'] ?? 0),
+  shippingFee: Number(row['shipping_fee'] ?? 0),
+  taxAmount: Number(row['tax_amount'] ?? 0),
   paymentMethod: row['payment_method'] ?? null,
   paymentStatus: String(row['payment_status']),
   shippingMethod: row['shipping_method'] ?? null,
@@ -76,12 +86,14 @@ async function adminAs(capability: "operations" | "catalogue" | "reports" | "set
 }
 
 export const manageOrders = createServerFn({ method: "POST" })
-  .inputValidator((data: { q?: string; page?: number; pageSize?: number; status?: string; paymentStatus?: string } | undefined) => ({
+  .inputValidator((data: { q?: string; page?: number; pageSize?: number; status?: string; paymentStatus?: string; from?: string; to?: string } | undefined) => ({
     q: String(data?.q ?? "").trim(),
     page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
     pageSize: Math.min(100, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
     status: String(data?.status ?? "").trim(),
     paymentStatus: String(data?.paymentStatus ?? "").trim(),
+    from: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.from ?? "")) ? String(data?.from) : null,
+    to: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.to ?? "")) ? String(data?.to) : null,
   }))
   .handler(async ({ data }): Promise<{ items: ManageOrder[]; total: number }> => {
     const sb = await admin();
@@ -91,13 +103,15 @@ export const manageOrders = createServerFn({ method: "POST" })
       p_limit: data.pageSize,
       p_status: data.status,
       p_payment_status: data.paymentStatus,
+      p_from: data.from,
+      p_to: data.to,
     });
     if (pageError) throw new Error(pageError.message);
     const ids = (pageRows ?? []).map((row) => String(row.order_id));
     if (ids.length === 0) return { items: [], total: 0 };
     const { data: rows, error } = await sb
       .from("orders")
-      .select("id, human_id, public_token, status, total, payment_method, payment_status, shipping_method, address, alternate_phone, placed_at, courier_name, tracking_number, tracking_url, refunded_total, needs_payment_review, payment_review_note, order_items(name_snapshot, price_snapshot, qty, image_snapshot, products(rack_location)), order_requests(id, kind, reason, details, status, created_at)")
+      .select(MANAGE_ORDER_SELECT)
       .in("id", ids);
     if (error) throw new Error(error.message);
     const byId = new Map((rows ?? []).map((row) => [String(row.id), row]));
@@ -107,6 +121,26 @@ export const manageOrders = createServerFn({ method: "POST" })
     });
     return { items, total: Number(pageRows?.[0]?.total_count ?? 0) };
   });
+
+export const manageOrder = createServerFn({ method: "POST" })
+  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .handler(async ({ data }): Promise<ManageOrder | null> => {
+    const sb = await admin();
+    const { data: counterSale, error: counterError } = await sb.from("counter_sales").select("order_id").eq("order_id", data.orderId).maybeSingle();
+    if (counterError) throw new Error(counterError.message);
+    if (counterSale) return null;
+    const { data: row, error } = await sb.from("orders").select(MANAGE_ORDER_SELECT).eq("id", data.orderId).maybeSingle();
+    if (error) throw new Error(error.message);
+    return row ? mapManageOrder(row) : null;
+  });
+
+export const manageOrderCounts = createServerFn({ method: "POST" }).handler(async (): Promise<{ newOrders: number; counterToday: number }> => {
+  const sb = await admin();
+  const { data, error } = await sb.rpc("manage_order_counts");
+  if (error) throw new Error(error.message);
+  const row = (data?.[0] ?? {}) as Row;
+  return { newOrders: Number(row['new_orders'] ?? 0), counterToday: Number(row['counter_today'] ?? 0) };
+});
 
 export const setOrderStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; status: OrderStatus }) => ({

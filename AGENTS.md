@@ -24,6 +24,7 @@
 - Require sign-in for orders; keep guest carts; release unpaid stock at 30 minutes; reconcile Razorpay through signed idempotent callbacks and 90-second polling; quarantine late payments for audited resolution.
 - Centralize manager refresh; sidebar collapse is local. Page by 8; aggregate in SQL.
 - Keep order-type navigation link-based; online order queries exclude rows linked by `counter_sales.order_id`, while counter sales remain on their dedicated route.
+- Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
 - Router events never mutate history/grid state; log errors. Use Spark loaders.
 - Owner controls settings/reports/trade; audit grants; invite Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
