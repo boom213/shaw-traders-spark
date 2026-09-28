@@ -147,17 +147,44 @@ export const verifyBookingPayment = createServerFn({ method: "POST" })
       return { paid: false, error: "We could not verify this payment. If money was taken it will be confirmed shortly." };
     }
 
-    await supabaseAdmin
-      .from("vehicle_bookings")
-      .update({ payment_status: "paid", provider_payment_id: data.paymentId, updated_at: new Date().toISOString() })
-      .eq("id", data.bookingId);
-    await supabaseAdmin
-      .from("booking_events")
-      .insert({ booking_id: data.bookingId, status: "booked", note: "Token amount received", created_by: "razorpay" } as never);
+    const { data: markedPaid, error: markError } = await supabaseAdmin.rpc("mark_booking_paid", {
+      p_booking_id: data.bookingId,
+      p_payment_id: data.paymentId,
+    });
+    if (markError) return { paid: false, error: "Payment was received, but this booking needs staff review." };
+    if (!markedPaid) {
+      const { data: latest } = await supabaseAdmin
+        .from("vehicle_bookings")
+        .select("payment_status, needs_payment_review")
+        .eq("id", data.bookingId)
+        .maybeSingle();
+      if (latest?.payment_status === "paid") return { paid: true };
+      return { paid: false, error: latest?.needs_payment_review ? "Your payment needs staff review. Please do not pay again." : "We are still confirming this payment." };
+    }
 
     const { notifyBookingPlaced } = await import("@/lib/vehicle-notify.server");
     await notifyBookingPlaced(data.bookingId);
     return { paid: true };
+  });
+
+/** Read-only reconciliation state after Razorpay returns to the browser. */
+export const bookingPaymentState = createServerFn({ method: "POST" })
+  .inputValidator((data: { bookingId: string }) => ({ bookingId: String(data?.bookingId ?? "") }))
+  .handler(async ({ data }) => {
+    if (!/^[0-9a-f-]{36}$/i.test(data.bookingId)) return { status: "unknown" as const };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("vehicle_bookings")
+      .select("payment_status, human_id, public_token, needs_payment_review")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!row) return { status: "unknown" as const };
+    return {
+      status: String(row.payment_status),
+      humanId: String(row.human_id),
+      token: String(row.public_token),
+      needsReview: Boolean(row.needs_payment_review),
+    };
   });
 
 export type BookingView = {

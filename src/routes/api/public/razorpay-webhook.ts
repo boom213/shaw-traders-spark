@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type RazorpayPayload = {
   event?: string;
-  payload?: { payment?: { entity?: { id?: string; order_id?: string; status?: string } } };
+  payload?: {
+    payment?: { entity?: { id?: string; order_id?: string; status?: string } };
+    refund?: { entity?: { id?: string; payment_id?: string; amount?: number; status?: string } };
+  };
 };
 
 export const Route = createFileRoute("/api/public/razorpay-webhook")({
@@ -24,9 +27,10 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
           return new Response("Bad payload", { status: 400 });
         }
 
+        const refund = body.payload?.refund?.entity;
         const eventId =
           request.headers.get("x-razorpay-event-id") ??
-          `${body.event ?? "event"}:${body.payload?.payment?.entity?.id ?? raw.length}`;
+          `${body.event ?? "event"}:${body.payload?.payment?.entity?.id ?? refund?.id ?? raw.length}`;
         const providerOrderId = body.payload?.payment?.entity?.order_id ?? null;
         const paymentId = body.payload?.payment?.entity?.id ?? null;
 
@@ -34,11 +38,27 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
 
         // Look the order up first so the event row can point at it.
         let orderId: string | null = null;
+        let bookingId: string | null = null;
         if (providerOrderId) {
           const { data: order } = await supabaseAdmin
             .from("orders")
             .select("id")
             .eq("provider_order_id", providerOrderId)
+            .maybeSingle();
+          orderId = order?.id ?? null;
+          if (!orderId) {
+            const { data: booking } = await supabaseAdmin
+              .from("vehicle_bookings")
+              .select("id")
+              .eq("provider_order_id", providerOrderId)
+              .maybeSingle();
+            bookingId = booking?.id ?? null;
+          }
+        } else if (refund?.payment_id) {
+          const { data: order } = await supabaseAdmin
+            .from("orders")
+            .select("id")
+            .eq("provider_payment_id", refund.payment_id)
             .maybeSingle();
           orderId = order?.id ?? null;
         }
@@ -51,6 +71,7 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             event_id: eventId,
             event_type: body.event ?? null,
             order_id: orderId,
+            booking_id: bookingId,
             payload: body as never,
           })
           .select("id")
@@ -78,6 +99,51 @@ export const Route = createFileRoute("/api/public/razorpay-webhook")({
             const { notifyOrderPlaced } = await import("@/lib/notify.server");
             await notifyOrderPlaced(orderId);
           }
+        }
+
+        if ((body.event === "payment.captured" || body.event === "order.paid") && bookingId && paymentId) {
+          const { data: markedPaid, error: markError } = await supabaseAdmin.rpc("mark_booking_paid", {
+            p_booking_id: bookingId,
+            p_payment_id: paymentId,
+          });
+          if (markError) {
+            console.error("razorpay webhook: booking payment update failed", markError);
+            return new Response("Could not update booking payment", { status: 500 });
+          }
+          if (markedPaid) {
+            const { notifyBookingPlaced } = await import("@/lib/vehicle-notify.server");
+            await notifyBookingPlaced(bookingId);
+          }
+        }
+
+        if ((body.event === "refund.created" || body.event === "refund.processed") && refund?.id && orderId) {
+          const amount = Math.max(0, Number(refund.amount ?? 0) / 100);
+          const { error: refundError } = await supabaseAdmin.from("refunds").upsert({
+            order_id: orderId,
+            amount,
+            method: "razorpay",
+            provider_refund_id: refund.id,
+            provider_payment_id: refund.payment_id ?? null,
+            status: refund.status ?? (body.event === "refund.processed" ? "processed" : "created"),
+            note: "Synchronized from Razorpay",
+            created_by: "razorpay",
+          }, { onConflict: "provider_refund_id" });
+          if (refundError) {
+            console.error("razorpay webhook: refund update failed", refundError);
+            return new Response("Could not update refund", { status: 500 });
+          }
+          const { error: syncError } = await supabaseAdmin.rpc("sync_order_refund_total", { p_order_id: orderId });
+          if (syncError) return new Response("Could not synchronize refund", { status: 500 });
+        }
+
+        if (body.event === "payment.failed" && orderId) {
+          const { error: failureError } = await supabaseAdmin.from("order_events").insert({
+            order_id: orderId,
+            status: "order_confirmed",
+            note: "Razorpay reported a failed payment attempt",
+            created_by: "razorpay",
+          });
+          if (failureError) return new Response("Could not record payment failure", { status: 500 });
         }
 
         return new Response("ok", { status: 200 });
