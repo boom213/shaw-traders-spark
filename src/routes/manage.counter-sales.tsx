@@ -12,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
 import { placeholderFor } from "@/lib/placeholders";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
-import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/counter-sales")({
   head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { name: "robots", content: "noindex" }] }),
@@ -24,7 +23,6 @@ const money = (value: number) => `₹${value.toLocaleString("en-IN", { minimumFr
 const today = () => new Date().toISOString().slice(0, 10);
 
 function CounterSalesPage() {
-  const { staff } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
