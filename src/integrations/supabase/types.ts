@@ -3194,6 +3194,7 @@ export type Database = {
         | "bank_transfer"
         | "wholesaler_adjustment"
         | "other"
+        | "cheque"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3372,6 +3373,7 @@ export const Constants = {
         "bank_transfer",
         "wholesaler_adjustment",
         "other",
+        "cheque",
       ],
     },
   },

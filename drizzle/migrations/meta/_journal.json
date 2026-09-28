@@ -386,6 +386,13 @@
       "when": 1790614478871,
       "tag": "0054_make_vendor_qr_optional",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1790614499944,
+      "tag": "0055_add_cheque_trade_payment_method",
+      "breakpoints": true
     }
   ]
 }

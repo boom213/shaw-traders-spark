@@ -1,0 +1,1 @@
+ALTER TYPE public.trade_payment_method ADD VALUE IF NOT EXISTS 'cheque';
