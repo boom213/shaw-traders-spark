@@ -7,11 +7,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
 import { placeholderFor } from "@/lib/placeholders";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { exportCounterSalesCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/counter-sales")({
   head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { name: "robots", content: "noindex" }] }),
@@ -23,6 +26,7 @@ const money = (value: number) => `₹${value.toLocaleString("en-IN", { minimumFr
 const today = () => new Date().toISOString().slice(0, 10);
 
 function CounterSalesPage() {
+  const { staff } = Route.useRouteContext();
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -147,7 +151,7 @@ function CounterSalesPage() {
       </div>
 
       <div className="space-y-3 border-t pt-6">
-        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-display text-lg font-bold">Recent counter sales</h3><p className="text-sm text-muted-foreground">Invoices, outstanding balances, and offline payment records.</p></div><form className="flex w-full gap-2 sm:w-auto" onSubmit={(event) => { event.preventDefault(); setSaleTerm(saleSearch.trim()); setSalePage(0); }}><Input aria-label="Search counter sales" className="w-full sm:w-72" value={saleSearch} onChange={(event) => setSaleSearch(event.target.value)} placeholder="Search invoice or customer" /><Button type="submit" variant="outline"><Search className="size-4" /></Button></form></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-display text-lg font-bold">Recent counter sales</h3><p className="text-sm text-muted-foreground">Invoices, outstanding balances, and offline payment records.</p></div><div className="flex w-full gap-2 sm:w-auto">{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportCounterSalesCsv({ data: { q: saleTerm } })} />}<form className="flex flex-1 gap-2" onSubmit={(event) => { event.preventDefault(); setSaleTerm(saleSearch.trim()); setSalePage(0); }}><Input aria-label="Search counter sales" className="w-full sm:w-72" value={saleSearch} onChange={(event) => setSaleSearch(event.target.value)} placeholder="Search invoice or customer" /><Button type="submit" variant="outline"><Search className="size-4" /></Button></form></div></div>
         <div className="overflow-hidden rounded-lg border bg-card">{salesPending ? <SparkCharge compact label="Loading sales…" /> : sales.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">No counter sales found.</p> : sales.map((sale) => <SaleRow key={sale.orderId} sale={sale} onView={() => setSelectedSale(sale)} onPay={() => { setPaymentSale(sale); setPayment((value) => ({ ...value, amount: sale.balance.toFixed(2) })); }} onInvoice={() => downloadInvoice(sale)} onStaffInvoice={() => downloadInvoice(sale, true)} onCancel={() => setCancelSale(sale)} />)}</div>
         <ListPager page={salePage} total={salesData?.total ?? 0} busy={salesFetching} onPage={setSalePage} />
       </div>

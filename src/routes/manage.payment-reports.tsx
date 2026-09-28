@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BarChart3, CalendarDays, Download, FileSpreadsheet, ReceiptText, RotateCcw } from "lucide-react";
+import { BarChart3, CalendarDays, Download, ReceiptText, RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { formatINR } from "@/lib/catalog";
@@ -59,7 +60,7 @@ function PaymentReportsPage() {
   const [to, setTo] = useState(initial.to);
   const [counterPage, setCounterPage] = useState(0);
   const [onlinePage, setOnlinePage] = useState(0);
-  const [exporting, setExporting] = useState<"csv" | "pdf" | null>(null);
+  const [exporting, setExporting] = useState<"pdf" | null>(null);
   const getReport = useServerFn(paymentReport);
   const getCsv = useServerFn(exportPaymentReportCsv);
   const getPdf = useServerFn(exportPaymentReportPdf);
@@ -77,17 +78,11 @@ function PaymentReportsPage() {
     setRange(value); setCounterPage(0); setOnlinePage(0);
     if (value !== "custom") { const next = period(value); setFrom(next.from); setTo(next.to); }
   }
-  async function exportReport(type: "csv" | "pdf") {
+  async function exportReport(type: "pdf") {
     try {
       setExporting(type);
-      if (type === "csv") {
-        const result = await getCsv({ data: { from, to } });
-        const url = URL.createObjectURL(new Blob([result.csv], { type: "text/csv;charset=utf-8" }));
-        const anchor = document.createElement("a"); anchor.href = url; anchor.download = result.fileName; anchor.click(); URL.revokeObjectURL(url);
-      } else {
-        const result = await getPdf({ data: { from, to } });
-        downloadBase64(result.base64, result.fileName, "application/pdf");
-      }
+      const result = await getPdf({ data: { from, to } });
+      downloadBase64(result.base64, result.fileName, "application/pdf");
       toast.success(`${type.toUpperCase()} report downloaded`);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Report download failed"); }
     finally { setExporting(null); }
@@ -96,7 +91,7 @@ function PaymentReportsPage() {
   return <div className="space-y-7">
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
       <div><div className="flex items-center gap-2"><BarChart3 className="size-6 text-primary" /><h2 className="font-display text-2xl font-bold">Payment Reports</h2></div><p className="mt-1 text-sm text-muted-foreground">Actual counter-sale receipts with online payments reconciled separately.</p></div>
-      <div className="flex gap-2"><Button variant="outline" disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("csv")}>{exporting === "csv" ? <SparkRing /> : <FileSpreadsheet className="size-4" />} CSV</Button><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <SparkRing /> : <Download className="size-4" />} PDF</Button></div>
+       <div className="flex gap-2"><ExportCsvButton disabled={!validRange} onExport={() => getCsv({ data: { from, to } })} /><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <SparkRing /> : <Download className="size-4" />} PDF</Button></div>
     </header>
 
     <section className="space-y-3 border-b border-border pb-6">
