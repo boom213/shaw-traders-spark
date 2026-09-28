@@ -40,7 +40,7 @@ export function imageFor(product: Pick<Product, "images" | "category">) {
 
 /** Compact uploaded photo for list views; bundled category stand-ins stay unchanged. */
 export function listImageFor(product: Pick<Product, "images" | "category">) {
-  return productThumbnailUrl(imageFor(product)) ?? placeholderFor(product.category);
+  return productThumbnailUrl(imageFor(product), "card") ?? placeholderFor(product.category);
 }
 
 export const isPlaceholder = (product: Pick<Product, "images">) => !product.images[0];
