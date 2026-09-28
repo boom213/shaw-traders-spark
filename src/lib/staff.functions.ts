@@ -89,6 +89,28 @@ const AUDIT_PREFIXES: Record<Exclude<AuditGroup, "all">, string[]> = {
   "counter-sales": ["counter_sale."],
 };
 
+const STAFF_ROLE_RANK: Record<StaffRoleName, number> = { super_admin: 0, owner: 1, manager: 2, staff: 3 };
+
+export function prepareStaffPage(members: StaffMember[], input: StaffListInput) {
+  const best = new Map<string, StaffMember>();
+  for (const member of members) {
+    const current = best.get(member.profileId);
+    if (!current || STAFF_ROLE_RANK[member.role] < STAFF_ROLE_RANK[current.role]) best.set(member.profileId, member);
+  }
+  const term = input.q.trim().toLocaleLowerCase();
+  const filtered = [...best.values()].filter((member) => {
+    const matchesTerm = !term || member.name.toLocaleLowerCase().includes(term) || member.email.toLocaleLowerCase().includes(term);
+    return matchesTerm && (input.role === "all" || member.role === input.role);
+  });
+  filtered.sort((a, b) => {
+    if (input.sort === "name") return a.name.localeCompare(b.name);
+    const dateOrder = new Date(a.since).getTime() - new Date(b.since).getTime();
+    return input.sort === "oldest" ? dateOrder : -dateOrder;
+  });
+  const from = input.page * input.pageSize;
+  return { items: filtered.slice(from, from + input.pageSize), total: filtered.length };
+}
+
 /** Who is signed in to the manager panel on this request. */
 export const staffSession = createServerFn({ method: "POST" }).handler(async () => {
   const { staffContext } = await import("@/lib/staff.server");
@@ -211,8 +233,7 @@ export const listStaff = createServerFn({ method: "POST" })
     .select("profile_id, role, created_at, profiles(full_name, email)")
     .order("created_at");
 
-  const best = new Map<string, StaffMember>();
-  const rank: Record<string, number> = { super_admin: 0, owner: 1, manager: 2, staff: 3 };
+  const candidates: StaffMember[] = [];
   for (const r of rows ?? []) {
     const p = (r as { profiles?: { full_name: string | null; email: string | null } | null }).profiles;
     const role = r.role as StaffRoleName;
@@ -225,21 +246,9 @@ export const listStaff = createServerFn({ method: "POST" })
       isYou: r.profile_id === me.userId,
       locked: role === "super_admin",
     };
-    const current = best.get(entry.profileId);
-    if (!current || rank[role]! < rank[current.role]!) best.set(entry.profileId, entry);
+    candidates.push(entry);
   }
-  const term = data.q.toLocaleLowerCase();
-  const filtered = [...best.values()].filter((member) => {
-    const matchesTerm = !term || member.name.toLocaleLowerCase().includes(term) || member.email.toLocaleLowerCase().includes(term);
-    return matchesTerm && (data.role === "all" || member.role === data.role);
-  });
-  filtered.sort((a, b) => {
-    if (data.sort === "name") return a.name.localeCompare(b.name);
-    const dateOrder = new Date(a.since).getTime() - new Date(b.since).getTime();
-    return data.sort === "oldest" ? dateOrder : -dateOrder;
-  });
-  const from = data.page * data.pageSize;
-  return { items: filtered.slice(from, from + data.pageSize), total: filtered.length };
+  return prepareStaffPage(candidates, data);
 });
 
 /** A super admin invites someone and receives a one-time password to pass on. */
