@@ -23,7 +23,8 @@ import { cn } from "@/lib/utils";
 import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { useTradeAccount } from "@/hooks/useTrade";
-import { abandonPayment, getMyAddresses, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
+import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
+import { abandonPayment, getMyAddresses, paymentState, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -83,11 +84,13 @@ function CheckoutPage() {
   const verify = useServerFn(verifyPayment);
   const retry = useServerFn(retryPayment);
   const abandon = useServerFn(abandonPayment);
+  const readPaymentState = useServerFn(paymentState);
 
   const [step, setStep] = useState(1);
   const [placing, setPlacing] = useState(false);
   const [pending, setPending] = useState<PendingOrder | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const [pollArmed, setPollArmed] = useState(false);
   const [addr, setAddr] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -120,6 +123,31 @@ function CheckoutPage() {
   const onlineReady = availability?.online === true;
   const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
 
+  const finish = async (order: PendingOrder, message: string) => {
+    if (user) {
+      await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone });
+    }
+    await clearCart();
+    window.localStorage.removeItem(COUPON_KEY);
+    toast.success(message);
+    void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
+  };
+
+  const { phase: confirmationPhase } = usePaymentConfirmation({
+    armed: pollArmed && Boolean(pending),
+    check: () => pending ? readPaymentState({ data: { orderId: pending.orderId } }) : Promise.resolve({ status: "unknown" as const }),
+    isConfirmed: (result) => result.status === "paid",
+    onConfirmed: () => {
+      if (!pending) return;
+      setPollArmed(false);
+      void finish(pending, `Payment received · order ${pending.humanId}`);
+    },
+    onTimeout: () => {
+      setPollArmed(false);
+      setFailure("We could not confirm this payment yet. If money was deducted, please do not pay again until staff checks it.");
+    },
+  });
+
   if (loading || !authReady) {
     return <div className="container-page"><SparkCharge label="Loading your cart…" /></div>;
   }
@@ -135,16 +163,6 @@ function CheckoutPage() {
       </div>
     );
   }
-
-  const finish = async (order: PendingOrder, message: string) => {
-    if (user) {
-      await supabase.from("profiles").upsert({ id: user.id, full_name: addr.name, phone: addr.phone });
-    }
-    await clearCart();
-    window.localStorage.removeItem(COUPON_KEY);
-    toast.success(message);
-    void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
-  };
 
   /** Open Razorpay for an order that is waiting for payment. */
   const runPayment = async (
@@ -174,7 +192,7 @@ function CheckoutPage() {
         await finish(order, `Payment received · order ${order.humanId}`);
         return;
       }
-      setFailure(check.error ?? "We could not confirm this payment yet.");
+      setPollArmed(true);
       return;
     }
 
@@ -262,6 +280,12 @@ function CheckoutPage() {
   const tryAgain = async () => {
     if (!pending) return;
     setPlacing(true);
+    const latest = await readPaymentState({ data: { orderId: pending.orderId } });
+    if (latest.status === "paid") {
+      setPlacing(false);
+      await finish(pending, `Payment received · order ${pending.humanId}`);
+      return;
+    }
     const res = await retry({ data: { orderId: pending.orderId } });
     setPlacing(false);
     if ("error" in res) return toast.error(res.error);
@@ -270,11 +294,23 @@ function CheckoutPage() {
 
   const cancelOrder = async () => {
     if (!pending) return;
+    setPollArmed(false);
     await abandon({ data: { orderId: pending.orderId } });
     setPending(null);
     setFailure(null);
     toast.message("Payment cancelled. Your cart is still here.");
   };
+
+  if (pending && pollArmed) {
+    return (
+      <div className="container-page grid place-items-center py-16">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-7 text-center shadow-[var(--shadow-card)]">
+          <SparkCharge label={confirmationPhase === "grace" ? "Still confirming with your bank…" : "Confirming your payment…"} />
+          <p className="mt-3 text-sm text-muted-foreground">Please do not pay again or close this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Retry screen — shown after a failed, cancelled or timed-out payment.
   if (pending && failure) {

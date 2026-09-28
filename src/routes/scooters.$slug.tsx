@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +11,9 @@ import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { BUSINESS, canonical, formatINR, whatsappLink } from "@/lib/catalog";
 import { getVehicle, requestFinance, requestTestRide } from "@/lib/vehicles.functions";
-import { startBooking, verifyBookingPayment } from "@/lib/booking.functions";
+import { bookingPaymentState, startBooking, verifyBookingPayment } from "@/lib/booking.functions";
 import { payWithRazorpay } from "@/lib/razorpay-client";
+import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
 import { SPEC_ROWS, TEST_RIDE_SLOTS, emi, priceLines } from "@/lib/vehicles";
 
 export const Route = createFileRoute("/scooters/$slug")({
@@ -91,6 +93,29 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [link, setLink] = useState<string | null>(null);
+  const [pendingBooking, setPendingBooking] = useState<{ bookingId: string; humanId: string; token: string } | null>(null);
+  const [pollArmed, setPollArmed] = useState(false);
+  const readBookingPayment = useServerFn(bookingPaymentState);
+
+  const { phase: confirmationPhase } = usePaymentConfirmation({
+    armed: pollArmed && Boolean(pendingBooking),
+    check: () => pendingBooking ? readBookingPayment({ data: { bookingId: pendingBooking.bookingId } }) : Promise.resolve({ status: "unknown" as const }),
+    isConfirmed: (result) => result.status === "paid",
+    onConfirmed: () => {
+      if (!pendingBooking) return;
+      setPollArmed(false);
+      setBusy(false);
+      setNote(`Booking ${pendingBooking.humanId} confirmed. We will call you about allotment.`);
+      setLink(`/booking/${pendingBooking.token}`);
+    },
+    onTimeout: () => {
+      if (!pendingBooking) return;
+      setPollArmed(false);
+      setBusy(false);
+      setNote(`Booking ${pendingBooking.humanId} is held. We could not confirm the token yet — if money was deducted, please do not pay again.`);
+      setLink(`/booking/${pendingBooking.token}`);
+    },
+  });
 
   const submit = async () => {
     if (form.alternatePhone && !/^[6-9]\d{9}$/.test(form.alternatePhone)) {
@@ -115,7 +140,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
         prefill: { name: form.name, contact: form.phone, ...(form.email ? { email: form.email } : {}) },
       });
       if (pay.status === "success") {
-        await verifyBookingPayment({
+        const verified = await verifyBookingPayment({
           data: {
             bookingId: res.bookingId,
             razorpayOrderId: pay.payload.razorpay_order_id,
@@ -123,7 +148,13 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
             signature: pay.payload.razorpay_signature,
           },
         });
-        setNote(`Booking ${res.humanId} confirmed. We will call you about allotment.`);
+        if (verified.paid) {
+          setNote(`Booking ${res.humanId} confirmed. We will call you about allotment.`);
+        } else {
+          setPendingBooking({ bookingId: res.bookingId, humanId: res.humanId, token: res.token });
+          setPollArmed(true);
+          return;
+        }
       } else {
         setNote(`Booking ${res.humanId} is held. The token was not paid yet — you can pay at the shop.`);
       }
@@ -137,6 +168,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
   return (
     <div className="grid gap-3">
       <DialogTitle className="font-display text-lg font-bold">Book this scooter</DialogTitle>
+      {pollArmed && <p className="text-sm font-medium text-primary">{confirmationPhase === "grace" ? "Still confirming with your bank…" : "Confirming your token payment…"}</p>}
       <p className="text-sm text-muted-foreground">
         Pay a token of {formatINR(tokenAmount)} now. The balance is paid at delivery.
       </p>
