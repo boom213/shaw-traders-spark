@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Download, MessageCircle, MoreVertical, Printer, ReceiptText, Store } from "lucide-react";
+import { ArrowRight, CalendarDays, Cloud, Download, MessageCircle, MoreVertical, Printer, Store } from "lucide-react";
 import { toast } from "sonner";
 import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
 import { ListPager } from "@/components/manage/ListPager";
@@ -39,17 +39,17 @@ function ManageOrders() {
   const orders = ordersQuery.data;
   const changeFilter = (setter: (value: string) => void, value: string) => { setter(value); setPage(0); };
   return <div className="space-y-5">
-    <OrderTypeTabs showCounterSales={showCounterSales} onlineCount={orders?.total} />
-    <div><h2 className="font-display text-xl font-bold">Online Orders</h2><p className="mt-1 text-sm text-muted-foreground">Retail orders placed on the website.</p></div>
+    <div><h2 className="font-display text-2xl font-bold">Manager Orders</h2><p className="mt-1 text-sm text-muted-foreground">View and manage online orders and counter sales in one place.</p></div>
     <div className={`grid gap-3 ${showCounterSales ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
-      <Link to="/manage/orders" className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><div><p className="text-sm text-muted-foreground">Online Orders</p><p className="font-display text-2xl font-bold">{countsQuery.data?.newOrders ?? "—"}</p><p className="text-xs text-muted-foreground">New Orders</p></div><ReceiptText className="size-6 text-primary" /></Link>
-      {showCounterSales && <Link to="/manage/counter-sales" className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><div><p className="text-sm text-muted-foreground">Counter Sales</p><p className="font-display text-2xl font-bold">{countsQuery.data?.counterToday ?? "—"}</p><p className="text-xs text-muted-foreground">Today</p></div><Store className="size-6 text-primary" /></Link>}
+      <Link to="/manage/orders" className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 rounded-lg border border-primary/25 bg-accent/50 p-4 shadow-[var(--shadow-card)]"><span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><Cloud className="size-6" /></span><div className="min-w-0"><p className="font-display text-base font-bold">Online Orders</p><p className="truncate text-xs text-muted-foreground">Customer orders placed on the website.</p></div><div className="text-center"><p className="font-display text-xl font-bold">{countsQuery.data?.newOrders ?? "—"}</p><p className="text-xs text-muted-foreground">New Orders</p></div><ArrowRight className="size-4 text-muted-foreground" /></Link>
+      {showCounterSales && <Link to="/manage/counter-sales" className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><span className="grid size-11 shrink-0 place-items-center rounded-lg bg-secondary text-primary"><Store className="size-6" /></span><div className="min-w-0"><p className="font-display text-base font-bold">Counter Sales</p><p className="truncate text-xs text-muted-foreground">Walk-in customers and offline sales.</p></div><div className="text-center"><p className="font-display text-xl font-bold">{countsQuery.data?.counterToday ?? "—"}</p><p className="text-xs text-muted-foreground">Today</p></div><ArrowRight className="size-4 text-muted-foreground" /></Link>}
     </div>
+    <OrderTypeTabs showCounterSales={showCounterSales} onlineCount={orders?.total} />
     <form className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_auto_auto_auto_auto_auto]" onSubmit={(event) => { event.preventDefault(); setTerm(q.trim()); setPage(0); }}>
       <Input aria-label="Search online orders" placeholder="Search order, customer or phone" value={q} onChange={(event) => setQ(event.target.value)} />
       <Select value={statusFilter} onValueChange={(value) => changeFilter(setStatusFilter, value)}><SelectTrigger className="w-full xl:w-44" aria-label="Order status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All order statuses</SelectItem>{ALL_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}</SelectContent></Select>
       <Select value={paymentFilter} onValueChange={(value) => changeFilter(setPaymentFilter, value)}><SelectTrigger className="w-full xl:w-40" aria-label="Payment status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All payments</SelectItem><SelectItem value="needs_review">Needs review</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="paid">Paid</SelectItem><SelectItem value="refunded">Refunded</SelectItem><SelectItem value="cod_pending">COD pending</SelectItem></SelectContent></Select>
-      <Input aria-label="Orders from" type="date" value={from} onChange={(event) => changeFilter(setFrom, event.target.value)} />
+      <div className="relative"><CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" aria-label="Orders from" type="date" value={from} onChange={(event) => changeFilter(setFrom, event.target.value)} /></div>
       <Input aria-label="Orders to" type="date" min={from || undefined} value={to} onChange={(event) => changeFilter(setTo, event.target.value)} />
       <Button type="submit" variant="outline">Search</Button>
     </form>
