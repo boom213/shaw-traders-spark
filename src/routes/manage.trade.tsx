@@ -91,7 +91,7 @@ function TradeAdmin() {
       <CategoryPricing />
 
       <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl font-semibold">Money owed</h2>{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportTradeOutstandingCsv()} />}</div>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl font-semibold">Money owed</h2>{can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportTradeOutstandingCsv({ data: range })} />}</div>
         {(outstanding?.items ?? []).length === 0 ? (
           <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
             Nobody owes anything at the moment.
