@@ -225,8 +225,10 @@ export type Database = {
       counter_sale_payments: {
         Row: {
           amount: number
+          cleared_on: string | null
           created_at: string
           id: string
+          linked_ledger_id: string | null
           method: string
           note: string | null
           order_id: string
@@ -235,12 +237,18 @@ export type Database = {
           recorded_by_email: string | null
           recorded_by_name: string
           reference: string | null
+          status: string
           vendor_id: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
         }
         Insert: {
           amount: number
+          cleared_on?: string | null
           created_at?: string
           id?: string
+          linked_ledger_id?: string | null
           method: string
           note?: string | null
           order_id: string
@@ -249,12 +257,18 @@ export type Database = {
           recorded_by_email?: string | null
           recorded_by_name: string
           reference?: string | null
+          status?: string
           vendor_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Update: {
           amount?: number
+          cleared_on?: string | null
           created_at?: string
           id?: string
+          linked_ledger_id?: string | null
           method?: string
           note?: string | null
           order_id?: string
@@ -263,9 +277,20 @@ export type Database = {
           recorded_by_email?: string | null
           recorded_by_name?: string
           reference?: string | null
+          status?: string
           vendor_id?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "counter_sale_payments_linked_ledger_id_fkey"
+            columns: ["linked_ledger_id"]
+            isOneToOne: false
+            referencedRelation: "trade_ledger"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "counter_sale_payments_order_id_fkey"
             columns: ["order_id"]
@@ -2540,6 +2565,7 @@ export type Database = {
           paid_on: string
           reference: string | null
           vendor_id: string
+          voided_at: string | null
         }
         Insert: {
           amount: number
@@ -2553,6 +2579,7 @@ export type Database = {
           paid_on?: string
           reference?: string | null
           vendor_id: string
+          voided_at?: string | null
         }
         Update: {
           amount?: number
@@ -2566,6 +2593,7 @@ export type Database = {
           paid_on?: string
           reference?: string | null
           vendor_id?: string
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -3053,6 +3081,15 @@ export type Database = {
           score: number
         }[]
       }
+      set_cheque_status: {
+        Args: {
+          p_actor_name: string
+          p_cleared_on: string
+          p_payment_id: string
+          p_status: string
+        }
+        Returns: number
+      }
       set_order_gst: {
         Args: { p_enabled: boolean; p_order_id: string; p_rate: number }
         Returns: boolean
@@ -3136,6 +3173,15 @@ export type Database = {
       }
       trade_balance: { Args: { _profile_id: string }; Returns: number }
       trade_overdue: { Args: { _profile_id: string }; Returns: boolean }
+      void_counter_sale_payment: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_payment_id: string
+          p_reason: string
+        }
+        Returns: number
+      }
       void_supplier_entry: {
         Args: {
           p_actor_id: string

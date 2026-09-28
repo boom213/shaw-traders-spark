@@ -393,6 +393,13 @@
       "when": 1790614499944,
       "tag": "0055_add_cheque_trade_payment_method",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1790614588172,
+      "tag": "0056_auditable_counter_sale_payment_statuses",
+      "breakpoints": true
     }
   ]
 }
