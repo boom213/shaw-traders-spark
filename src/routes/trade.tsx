@@ -13,8 +13,6 @@ import { useStore } from "@/hooks/useStore";
 import { BUSINESS, canonical, formatINR } from "@/lib/catalog";
 import { lovable } from "@/integrations/lovable/index";
 import { uploadTradeDoc } from "@/lib/trade-upload";
-import { checkTradeDocument, myDocChecks } from "@/lib/trade-ai.functions";
-import type { DocCheck } from "@/lib/trade-ai.server";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
 import { categoriesQuery } from "@/lib/queries";
@@ -68,20 +66,6 @@ function TradePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const [checks, setChecks] = useState<Record<string, DocCheck & { running?: boolean }>>({});
-  useEffect(() => {
-    if (!user) return;
-    void myDocChecks().then((rows) => setChecks(Object.fromEntries(rows.map((c) => [c.field, c]))));
-  }, [user?.id]);
-  const runCheck = async (field: TradeDocField, path: string) => {
-    setChecks((c) => ({ ...c, [field]: { field, status: "ok", extracted: {}, issues: [], checkedAt: "", running: true } }));
-    try {
-      const res = await checkTradeDocument({ data: { field, path, businessName: form.businessName, gstin: form.gstin, pan: form.pan } });
-      setChecks((c) => { const n = { ...c }; if (res) n[field] = res; else delete n[field]; return n; });
-    } catch {
-      setChecks((c) => ({ ...c, [field]: { field, status: "error", extracted: {}, issues: ["AI check unavailable right now."], checkedAt: "" } }));
-    }
-  };
 
   useEffect(() => {
     const app = account?.application;
@@ -110,8 +94,7 @@ function TradePage() {
     try {
       const path = await uploadTradeDoc(user.id, field, file);
       setDocs((d) => ({ ...d, [field]: path }));
-      toast.success("Document attached — checking it now");
-      void runCheck(field, path);
+      toast.success("Document attached");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not upload that file");
     }
@@ -122,7 +105,6 @@ function TradePage() {
     setBusy(field);
     await deleteTradeDocument({ data: { field } });
     setDocs((d) => ({ ...d, [field]: undefined }));
-    setChecks((c) => { const n = { ...c }; delete n[field]; return n; });
     await qc.invalidateQueries({ queryKey: ["trade-account"] });
     setBusy(null);
     toast.success("Document removed");
@@ -340,7 +322,7 @@ function TradePage() {
                       )}
                     </div>
                   </div>
-                  <DocCheckLine check={docs[d.field] ? checks[d.field] : undefined} missing={d.required && !docs[d.field]} />
+                  {d.required && !docs[d.field] && <p className="mt-1.5 text-xs text-muted-foreground">Missing — required</p>}
                   </div>
                 ))}
               </div>
@@ -356,21 +338,6 @@ function TradePage() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function DocCheckLine({ check, missing }: { check?: DocCheck & { running?: boolean }; missing: boolean }) {
-  if (missing) return <p className="mt-1.5 text-xs text-muted-foreground">Missing — required</p>;
-  if (!check) return null;
-  if (check.running) return <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground"><SparkRing size="sm" /> Checking this paper…</p>;
-  const label = { ok: "Looks good", unclear: "Unclear", mismatch: "Doesn't match", error: "Couldn't check" }[check.status];
-  const tone = check.status === "ok" ? "text-primary" : check.status === "error" ? "text-muted-foreground" : "text-destructive";
-  return (
-    <div className="mt-1.5 text-xs">
-      <p className={`font-semibold ${tone}`}>{label}</p>
-      {check.issues.map((i) => <p key={i} className="text-muted-foreground">{i}</p>)}
-      {check.status !== "ok" && check.status !== "error" && <p className="text-muted-foreground">You can still send the application — our staff will check it too.</p>}
     </div>
   );
 }
