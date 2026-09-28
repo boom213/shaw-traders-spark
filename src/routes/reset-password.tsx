@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { supabase } from "@/integrations/supabase/client";
 import { canonical } from "@/lib/catalog";
+import { hasRecentPasswordRecovery } from "@/lib/password-recovery.functions";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/reset-password")({
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const verifyRecentRecovery = useServerFn(hasRecentPasswordRecovery);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<"checking" | "ready" | "inactive" | "error">("checking");
@@ -51,36 +54,39 @@ function ResetPasswordPage() {
       return;
     }
 
-    const hasRecoveryToken =
-      query.has("code") ||
-      query.get("type") === "recovery" ||
-      hash.get("type") === "recovery" ||
-      hash.has("access_token");
+    let recoveryEventSeen = false;
 
-    const isRecentRecovery = (recoverySentAt?: string) => {
-      if (!recoverySentAt) return false;
-      const sentAt = Date.parse(recoverySentAt);
-      return Number.isFinite(sentAt) && Date.now() - sentAt < 15 * 60 * 1000;
+    const checkSessionRecovery = async () => {
+      try {
+        const recent = await verifyRecentRecovery();
+        if (active && recent) setStatus("ready");
+        else if (active && !recoveryEventSeen) setStatus("inactive");
+      } catch {
+        if (active && !recoveryEventSeen) setStatus("inactive");
+      }
     };
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
-      if (active && event === "PASSWORD_RECOVERY") setStatus("ready");
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      if (event === "PASSWORD_RECOVERY") {
+        recoveryEventSeen = true;
+        setStatus("ready");
+      } else if (event === "SIGNED_IN" && session) {
+        void checkSessionRecovery();
+      }
     });
 
-    void supabase.auth.getUser().then(({ data, error: userError }) => {
+    void supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      if (!userError && data.user && (hasRecoveryToken || isRecentRecovery(data.user.recovery_sent_at))) {
-        setStatus("ready");
-        return;
-      }
-      setStatus("inactive");
+      if (data.session) void checkSessionRecovery();
+      else if (!recoveryEventSeen) setStatus("inactive");
     });
 
     return () => {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [verifyRecentRecovery]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
