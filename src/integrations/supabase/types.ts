@@ -2788,6 +2788,13 @@ export type Database = {
           total_count: number
         }[]
       }
+      manage_order_counts: {
+        Args: never
+        Returns: {
+          counter_today: number
+          new_orders: number
+        }[]
+      }
       manage_order_page:
         | {
             Args: { p_limit?: number; p_offset?: number; p_query?: string }
@@ -2798,11 +2805,13 @@ export type Database = {
           }
         | {
             Args: {
+              p_from?: string
               p_limit?: number
               p_offset?: number
               p_payment_status?: string
               p_query?: string
               p_status?: string
+              p_to?: string
             }
             Returns: {
               order_id: string
