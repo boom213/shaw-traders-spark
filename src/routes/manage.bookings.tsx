@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ListPager } from "@/components/manage/ListPager";
+import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatINR } from "@/lib/catalog";
@@ -19,6 +20,8 @@ import {
   updateLead,
   type BookingRow,
 } from "@/lib/vehicles-admin.functions";
+import { exportBookingsCsv } from "@/lib/manage-exports.functions";
+import { can } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage/bookings")({ component: ManageBookings });
 
@@ -53,6 +56,7 @@ function DeliveryBox({ booking, onDone }: { booking: BookingRow; onDone: () => v
 }
 
 function ManageBookings() {
+  const { staff } = Route.useRouteContext();
   const qc = useQueryClient();
   const [filter, setFilter] = useState("open");
   const [leadKind, setLeadKind] = useState("test_ride");
@@ -73,7 +77,7 @@ function ManageBookings() {
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-bold">Scooter bookings</h2>
-          <Select value={filter} onValueChange={(value) => { setFilter(value); setBookingPage(0); }}>
+          <div className="flex flex-wrap gap-2"><Select value={filter} onValueChange={(value) => { setFilter(value); setBookingPage(0); }}>
             <SelectTrigger className="w-52" aria-label="Filter bookings"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open bookings</SelectItem>
@@ -82,7 +86,7 @@ function ManageBookings() {
               <SelectItem value="needs_review">Payment needs review</SelectItem>
               <SelectItem value="unpaid_48h">Token unpaid over 48 hours</SelectItem>
             </SelectContent>
-          </Select>
+          </Select>{can(staff.role, "reports") && <ExportCsvButton onExport={() => exportBookingsCsv({ data: { status: filter } })} />}</div>
         </div>
 
         <div className="grid gap-3">
