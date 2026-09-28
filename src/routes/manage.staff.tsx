@@ -46,7 +46,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -330,10 +329,10 @@ function StaffPage() {
               <div className="hidden overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] md:block">
                 <table className="w-full text-sm">
                   <thead className="bg-surface text-left text-xs uppercase text-muted-foreground"><tr><th className="p-3">Staff member</th><th className="p-3">Role</th><th className="p-3">Added</th><th className="w-16 p-3 text-right"><span className="sr-only">Actions</span></th></tr></thead>
-                  <tbody>{members.map((member) => <StaffTableRow key={member.profileId} member={member} canManage={canManage} onDetails={setDetails} onOwner={setOwnerTarget} onRemove={setRemoveTarget} />)}</tbody>
+                  <tbody>{members.map((member) => <StaffTableRow key={member.profileId} member={member} canManage={canManage} onDetails={setDetails} onRemove={setRemoveTarget} />)}</tbody>
                 </table>
               </div>
-              <div className="grid gap-2 md:hidden">{members.map((member) => <StaffMobileCard key={member.profileId} member={member} canManage={canManage} onDetails={setDetails} onOwner={setOwnerTarget} onRemove={setRemoveTarget} />)}</div>
+              <div className="grid gap-2 md:hidden">{members.map((member) => <StaffMobileCard key={member.profileId} member={member} canManage={canManage} onDetails={setDetails} onRemove={setRemoveTarget} />)}</div>
             </>
           )}
           {!staffQuery.isPending && !staffQuery.isError && <ListPager page={page} total={total} busy={staffQuery.isFetching} onPage={setPage} />}
@@ -364,27 +363,25 @@ function StaffPage() {
   );
 }
 
-function StaffActions({ member, canManage, onDetails, onOwner, onRemove }: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onOwner: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
+function StaffActions({ member, canManage, onDetails, onRemove }: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
   const actionable = canManage && !member.isYou && !member.locked;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild><Button type="button" size="icon" variant="ghost" aria-label={`Actions for ${member.name}`}><MoreHorizontal /></Button></DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => onDetails(member)}>View details</DropdownMenuItem>
-        {actionable && <DropdownMenuSeparator />}
-        {actionable && (member.role === "staff" || member.role === "manager") && <DropdownMenuItem onSelect={() => onOwner(member)}><Crown />Grant owner access</DropdownMenuItem>}
         {actionable && <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => onRemove(member)}><UserMinus />Remove access</DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-function StaffTableRow(props: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onOwner: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
+function StaffTableRow(props: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
   const { member } = props;
   return <tr className="border-t border-border"><td className="p-3"><div className="flex items-center gap-3"><StaffAvatar member={member} /><div className="min-w-0"><p className="flex items-center gap-1.5 font-medium">{member.name}{member.isYou && <span className="text-xs font-normal text-muted-foreground">(you)</span>}{member.locked && <ProtectedLock />}</p><p className="truncate text-xs text-muted-foreground">{member.email}</p><ActiveIndicator /></div></div></td><td className="p-3"><RoleBadge role={member.role} /></td><td className="p-3 text-muted-foreground">{new Date(member.since).toLocaleDateString("en-IN")}</td><td className="p-3 text-right"><StaffActions {...props} /></td></tr>;
 }
 
-function StaffMobileCard(props: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onOwner: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
+function StaffMobileCard(props: { member: StaffMember; canManage: boolean; onDetails: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
   const { member } = props;
   return <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-[var(--shadow-card)]"><StaffAvatar member={member} /><div className="min-w-0 flex-1"><p className="flex items-center gap-1.5 font-medium">{member.name}{member.isYou && <span className="text-xs font-normal text-muted-foreground">(you)</span>}{member.locked && <ProtectedLock />}</p><p className="truncate text-xs text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator /><span className="text-xs text-muted-foreground">Added {new Date(member.since).toLocaleDateString("en-IN")}</span></div></div><StaffActions {...props} /></div>;
 }
@@ -396,7 +393,7 @@ function ProtectedLock() {
 function StaffDetailsSheet({ member, open, side, canManage, onOpenChange, onOwner, onRemove }: { member: StaffMember | null; open: boolean; side: "right" | "bottom"; canManage: boolean; onOpenChange: (open: boolean) => void; onOwner: (member: StaffMember) => void; onRemove: (member: StaffMember) => void }) {
   if (!member) return null;
   const actionable = canManage && !member.isYou && !member.locked;
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="gap-2 border-t border-border pt-4">{(member.role === "staff" || member.role === "manager") && <Button type="button" variant="outline" onClick={() => onOwner(member)}><Crown />Grant owner access</Button>}<Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></SheetFooter>}</SheetContent></Sheet>;
+  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="block space-y-4 border-t border-border pt-4">{(member.role === "staff" || member.role === "manager") && <div className="space-y-2"><p className="text-xs text-muted-foreground">Owner unlocks Site Settings &amp; Domain Health, Brand Catalogue, Reports &amp; Payment Reports, and Trade &amp; Credit.</p><Button type="button" variant="outline" onClick={() => onOwner(member)}><Crown />Grant owner access</Button></div>}<div className={(member.role === "staff" || member.role === "manager") ? "border-t border-border pt-4" : ""}><Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></div></SheetFooter>}</SheetContent></Sheet>;
 }
 
 function OwnerDialog({ member, pending, onOpenChange, onConfirm }: { member: StaffMember | null; pending: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) {
