@@ -1,468 +1,76 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Check, MapPin, MessageCircle, Printer } from "lucide-react";
+import { Download, MessageCircle, MoreVertical, Printer, ReceiptText, Store } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { SparkRing } from "@/components/site/SparkLoaders";
-import { ListPager } from "@/components/manage/ListPager";
+import { InvoiceButton } from "@/components/manage/OrderActions";
 import { OrderTypeTabs } from "@/components/manage/OrderTypeTabs";
+import { ListPager } from "@/components/manage/ListPager";
+import { customerWhatsApp, printPackingSlip } from "@/components/manage/order-tools";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  decideOrderRequest,
-  manageOrders,
-  recordRefund,
-  resolvePaymentReview,
-  setOrderStatus,
-  setTracking,
-  staffInvoice,
-  staffPickingInvoice,
-  type ManageOrder,
-} from "@/lib/manage-data.functions";
-import { ALL_STATUSES, BUSINESS, formatINR, ORDER_FLOW, statusLabel, type OrderStatus } from "@/lib/catalog";
+import { ALL_STATUSES, formatINR, statusLabel } from "@/lib/catalog";
+import { manageOrderCounts, manageOrders, type ManageOrder } from "@/lib/manage-data.functions";
 import { can } from "@/lib/staff-permissions";
 
-/** The next step in the normal order journey, so the owner can advance with one tap. */
-function nextStatus(current: OrderStatus): OrderStatus | null {
-  const i = ORDER_FLOW.findIndex((s) => s.value === current);
-  if (i === -1 || i + 1 >= ORDER_FLOW.length) return null;
-  return ORDER_FLOW[i + 1]!.value;
-}
-
-/** Opens WhatsApp with the customer's number and the order already mentioned. */
-function customerWhatsApp(o: ManageOrder) {
-  const digits = String(o.address['phone'] ?? "").replace(/\D/g, "").slice(-10);
-  const text = `Hello ${String(o.address['name'] ?? "")}, this is ${BUSINESS.name} about your order ${o.humanId}.`;
-  return `https://wa.me/91${digits}?text=${encodeURIComponent(text)}`;
-}
-
-function deliveryMapUrl(address: Record<string, string>) {
-  const latitude = Number(address['latitude']);
-  const longitude = Number(address['longitude']);
-  return Number.isFinite(latitude) && Number.isFinite(longitude)
-    ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-    : null;
-}
-
-function escapeHtml(s: string) {
-  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
-}
-
-/** Opens a clean one-page slip the owner can print or save for the parcel. */
-function printPackingSlip(o: ManageOrder) {
-  const a = o.address as Record<string, unknown>;
-  const rows = o.items
-    .map(
-      (it) =>
-        `<tr><td>${
-          it.image
-            ? `<img src="${escapeHtml(it.image)}" width="56" height="56" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px;float:left;margin-right:8px"/>`
-            : ""
-        }${escapeHtml(it.name)}${
-          it.rackLocation ? `<br/><span class="muted">Shelf: ${escapeHtml(it.rackLocation)}</span>` : ""
-        }</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${
-          it.price === null ? "-" : formatINR(it.price * it.qty)
-        }</td></tr>`,
-    )
-    .join("");
-
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${o.humanId}</title><style>
-    body{font-family:system-ui,sans-serif;margin:24px;color:#111}
-    h1{font-size:20px;margin:0}
-    table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
-    th,td{border-bottom:1px solid #ddd;padding:8px 6px;text-align:left}
-    .muted{color:#555;font-size:13px}
-    .box{border:1px solid #ddd;border-radius:8px;padding:12px;margin-top:16px}
-    @media print{button{display:none}}
-  </style></head><body>
-    <h1>${escapeHtml(BUSINESS.name)}</h1>
-    <p class="muted">${escapeHtml(BUSINESS.address)}<br/>${escapeHtml(BUSINESS.phone)}</p>
-    <h2 style="font-size:16px">Packing slip · ${escapeHtml(o.humanId)}</h2>
-    <p class="muted">${new Date(o.placedAt).toLocaleString("en-IN")} · ${escapeHtml(o.paymentMethod ?? "")} · ${escapeHtml(o.paymentStatus)}</p>
-    <div class="box">
-      <strong>Deliver to</strong><br/>
-      ${escapeHtml(String(a['name'] ?? ""))}<br/>
-      ${escapeHtml(String(a['line1'] ?? ""))}${a['landmark'] ? `, ${escapeHtml(String(a['landmark']))}` : ""}<br/>
-      ${escapeHtml(String(a['city'] ?? ""))}, ${escapeHtml(String(a['state'] ?? ""))} – ${escapeHtml(String(a['pincode'] ?? ""))}<br/>
-      ${escapeHtml(String(a['phone'] ?? ""))}
-    </div>
-    <table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Amount</th></tr></thead>
-    <tbody>${rows}</tbody></table>
-    <p style="text-align:right;font-weight:700;margin-top:12px">Total ${formatINR(o.total)}</p>
-    <p class="muted">${escapeHtml(o.shippingMethod ?? "")}</p>
-    <button onclick="window.print()">Print</button>
-  </body></html>`;
-
-  const w = window.open("", "_blank", "width=800,height=900");
-  if (!w) return toast.error("Allow pop-ups to print the packing slip");
-  w.document.write(html);
-  w.document.close();
-  w.focus();
-  setTimeout(() => w.print(), 300);
-}
-
 export const Route = createFileRoute("/manage/orders")({
-  head: () => ({
-    meta: [
-      { title: "Manage Orders — Shaw Traders EV" },
-      { name: "description", content: "Review and fulfil Shaw Traders EV customer orders." },
-      { property: "og:title", content: "Manage Orders — Shaw Traders EV" },
-      { property: "og:description", content: "Review and fulfil Shaw Traders EV customer orders." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Online Orders — Shaw Traders EV Manager" }, { name: "description", content: "Review and fulfil Shaw Traders EV online retail orders." }, { name: "robots", content: "noindex" }, { property: "og:title", content: "Online Orders — Shaw Traders EV Manager" }, { property: "og:description", content: "Review and fulfil online retail orders." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ManageOrders,
 });
 
-function downloadPdf(base64: string, fileName: string) {
-  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-  const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+function itemValue(order: ManageOrder) { return order.items.reduce((sum, item) => sum + (item.price ?? 0) * item.qty, 0); }
+function paymentLabel(value: string) { return value.replaceAll("_", " "); }
 
 function ManageOrders() {
   const { staff } = Route.useRouteContext();
+  const showCounterSales = can(staff.role, "counter-sales");
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   const [page, setPage] = useState(0);
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
-  const queryClient = useQueryClient();
-
-  const { data: orders, isPending, isFetching } = useQuery({
-    queryKey: ["manage-orders", term, statusFilter, paymentFilter, page],
-    queryFn: () => manageOrders({ data: { q: term, page, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter } }),
-    placeholderData: (previous) => previous,
-  });
-
-  const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["manage-orders"] });
-    void queryClient.invalidateQueries({ queryKey: ["manage-stats"] });
-  };
-
-  const mutation = useMutation({
-    mutationFn: (vars: { id: string; status: OrderStatus }) => setOrderStatus({ data: vars }),
-    onSuccess: () => {
-      refresh();
-      toast.success("Order status updated and the customer has been told");
-    },
-    onError: () => toast.error("Could not update this order"),
-  });
-
-  return (
-    <div className="space-y-4">
-      <OrderTypeTabs showCounterSales={can(staff.role, "counter-sales")} onlineCount={orders?.total} />
-      <div>
-        <h2 className="font-display text-xl font-bold">Online Orders</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Retail orders placed on the website.</p>
-      </div>
-      <form
-        className="flex flex-wrap gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setTerm(q.trim());
-          setPage(0);
-        }}
-      >
-        <Input placeholder="Search by order number, customer name or phone" value={q} onChange={(e) => setQ(e.target.value)} />
-        <Button type="submit" variant="outline">Search</Button>
-        <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(0); }}>
-          <SelectTrigger className="w-44" aria-label="Order status"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All order statuses</SelectItem>
-            {ALL_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={paymentFilter} onValueChange={(value) => { setPaymentFilter(value); setPage(0); }}>
-          <SelectTrigger className="w-44" aria-label="Payment status"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All payments</SelectItem>
-            <SelectItem value="needs_review">Needs review</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="refunded">Refunded</SelectItem>
-            <SelectItem value="cod_pending">COD pending</SelectItem>
-          </SelectContent>
-        </Select>
-      </form>
-
-      {isPending && <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-36 animate-pulse rounded-2xl bg-muted" />)}</div>}
-
-      {!isPending && (orders?.items ?? []).length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
-          <p>No online retail orders match these filters.</p>
-          {can(staff.role, "counter-sales") && (
-            <Link to="/manage/counter-sales" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">
-              Looking for a counter sale? View wholesale counter sales.
-            </Link>
-          )}
-        </div>
-      )}
-
-      {(orders?.items ?? []).map((o) => {
-        const mapUrl = deliveryMapUrl(o.address);
-        return (
-        <div key={o.id} className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-display text-lg font-bold">{o.humanId}</p>
-              <p className="text-sm text-muted-foreground">
-                 {new Date(o.placedAt).toLocaleString("en-IN")} · {o.address['name']} · {o.address['phone']}
-                 {o.alternatePhone ? ` · Alt: ${o.alternatePhone}` : ""}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {o.address['line1']}, {o.address['city']}, {o.address['state']} – {o.address['pincode']}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="font-display text-lg font-bold">{formatINR(o.total)}</p>
-              <p className="text-xs text-muted-foreground">
-                {o.paymentMethod} · {o.paymentStatus} · {o.shippingMethod}
-              </p>
-              <p className="text-xs text-primary">{statusLabel(o.status)}</p>
-              {o.refunded > 0 && <p className="text-xs text-muted-foreground">Refunded {formatINR(o.refunded)}</p>}
-            </div>
-          </div>
-
-          <ul className="mt-3 space-y-1 text-sm">
-            {o.items.map((it, i) => (
-              <li key={`${o.id}-${i}`} className="flex justify-between gap-3">
-                <span className="line-clamp-1">{it.name} × {it.qty}</span>
-                <span className="text-muted-foreground">
-                  {it.price === null ? "Price on enquiry" : formatINR(it.price * it.qty)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <Requests order={o} onDone={refresh} />
-          {o.needsPaymentReview && <PaymentReview order={o} onDone={refresh} />}
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {nextStatus(o.status) && (
-              <Button
-                size="sm"
-                disabled={mutation.isPending}
-                onClick={() => mutation.mutate({ id: o.id, status: nextStatus(o.status)! })}
-              >
-                <Check className="size-4" /> Mark {statusLabel(nextStatus(o.status)!).toLowerCase()}
-              </Button>
-            )}
-            <Button size="sm" variant="outline" onClick={() => printPackingSlip(o)}>
-              <Printer className="size-4" /> Packing slip
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <a href={customerWhatsApp(o)} target="_blank" rel="noreferrer">
-                <MessageCircle className="size-4" /> WhatsApp customer
-              </a>
-            </Button>
-            {mapUrl && (
-              <Button size="sm" variant="outline" asChild>
-                <a href={mapUrl} target="_blank" rel="noreferrer"><MapPin className="size-4" /> View delivery pin</a>
-              </Button>
-            )}
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {ALL_STATUSES.map((s) => (
-              <button
-                key={s.value}
-                disabled={mutation.isPending}
-                onClick={() => mutation.mutate({ id: o.id, status: s.value })}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  o.status === s.value ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary"
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-            <InvoiceButton orderId={o.id} />
-            <InvoiceButton orderId={o.id} staffCopy />
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/order/$id" params={{ id: o.id }} search={{ t: o.token }}>Open order page</Link>
-            </Button>
-          </div>
-
-          <div className="mt-4 grid gap-4 border-t border-border pt-4 md:grid-cols-2">
-            <TrackingForm order={o} onDone={refresh} />
-            <RefundForm order={o} onDone={refresh} />
-          </div>
-        </div>
-        );
-      })}
-      <ListPager page={page} total={orders?.total ?? 0} busy={isFetching} onPage={setPage} />
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const ordersQuery = useQuery({ queryKey: ["manage-orders", term, statusFilter, paymentFilter, from, to, page], queryFn: () => manageOrders({ data: { q: term, page, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter, from, to } }), placeholderData: (previous) => previous });
+  const countsQuery = useQuery({ queryKey: ["manage-order-counts"], queryFn: () => manageOrderCounts() });
+  const orders = ordersQuery.data;
+  const changeFilter = (setter: (value: string) => void, value: string) => { setter(value); setPage(0); };
+  return <div className="space-y-5">
+    <OrderTypeTabs showCounterSales={showCounterSales} onlineCount={orders?.total} />
+    <div><h2 className="font-display text-xl font-bold">Online Orders</h2><p className="mt-1 text-sm text-muted-foreground">Retail orders placed on the website.</p></div>
+    <div className={`grid gap-3 ${showCounterSales ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+      <Link to="/manage/orders" className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><div><p className="text-sm text-muted-foreground">Online Orders</p><p className="font-display text-2xl font-bold">{countsQuery.data?.newOrders ?? "—"}</p><p className="text-xs text-muted-foreground">New Orders</p></div><ReceiptText className="size-6 text-primary" /></Link>
+      {showCounterSales && <Link to="/manage/counter-sales" className="flex items-center justify-between rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><div><p className="text-sm text-muted-foreground">Counter Sales</p><p className="font-display text-2xl font-bold">{countsQuery.data?.counterToday ?? "—"}</p><p className="text-xs text-muted-foreground">Today</p></div><Store className="size-6 text-primary" /></Link>}
     </div>
-  );
+    <form className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1fr)_auto_auto_auto_auto_auto]" onSubmit={(event) => { event.preventDefault(); setTerm(q.trim()); setPage(0); }}>
+      <Input aria-label="Search online orders" placeholder="Search order, customer or phone" value={q} onChange={(event) => setQ(event.target.value)} />
+      <Select value={statusFilter} onValueChange={(value) => changeFilter(setStatusFilter, value)}><SelectTrigger className="w-full xl:w-44" aria-label="Order status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All order statuses</SelectItem>{ALL_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}</SelectContent></Select>
+      <Select value={paymentFilter} onValueChange={(value) => changeFilter(setPaymentFilter, value)}><SelectTrigger className="w-full xl:w-40" aria-label="Payment status"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All payments</SelectItem><SelectItem value="needs_review">Needs review</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="paid">Paid</SelectItem><SelectItem value="refunded">Refunded</SelectItem><SelectItem value="cod_pending">COD pending</SelectItem></SelectContent></Select>
+      <Input aria-label="Orders from" type="date" value={from} onChange={(event) => changeFilter(setFrom, event.target.value)} />
+      <Input aria-label="Orders to" type="date" min={from || undefined} value={to} onChange={(event) => changeFilter(setTo, event.target.value)} />
+      <Button type="submit" variant="outline">Search</Button>
+    </form>
+    {ordersQuery.isPending && <div className="h-72 animate-pulse rounded-lg bg-muted" />}
+    {!ordersQuery.isPending && !(orders?.items.length) && <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground"><p>No online retail orders match these filters.</p>{showCounterSales && <Link to="/manage/counter-sales" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">Looking for a counter sale? View wholesale counter sales.</Link>}</div>}
+    {!!orders?.items.length && <>
+      <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block"><table className="w-full min-w-[980px] text-sm"><thead className="border-b bg-muted/60 text-left text-xs text-muted-foreground"><tr><th className="p-3">#</th><th className="p-3">Order No.</th><th className="p-3">Customer</th><th className="p-3">Date &amp; Time</th><th className="p-3">Items</th><th className="p-3">Amount</th><th className="p-3">Payment</th><th className="p-3">Status</th><th className="p-3 text-right">Actions</th></tr></thead><tbody className="divide-y">{orders.items.map((order, index) => <OrderRow key={order.id} order={order} index={page * 8 + index + 1} />)}</tbody></table></div>
+      <div className="grid gap-3 md:hidden">{orders.items.map((order) => <MobileOrder key={order.id} order={order} />)}</div>
+    </>}
+    <ListPager page={page} total={orders?.total ?? 0} busy={ordersQuery.isFetching} onPage={setPage} />
+  </div>;
 }
 
-function PaymentReview({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
-  const resolve = useServerFn(resolvePaymentReview);
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-  return (
-    <div className="mt-4 rounded-xl border border-destructive bg-surface p-4">
-      <p className="font-semibold text-destructive">Payment needs review</p>
-      <p className="mt-1 text-sm text-muted-foreground">{order.paymentReviewNote ?? "Payment arrived after this order was cancelled or its stock was released."}</p>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Input className="min-w-56 flex-1" placeholder="How was this resolved?" value={note} onChange={(e) => setNote(e.target.value)} />
-        <Button variant="destructive" disabled={busy || note.trim().length < 3} onClick={async () => {
-          setBusy(true);
-          const result = await resolve({ data: { orderId: order.id, note } });
-          setBusy(false);
-          if (!result.ok) return toast.error(result.error ?? "Could not resolve this review");
-          toast.success("Payment review resolved");
-          onDone();
-        }}>{busy ? <SparkRing /> : null}{busy ? "Saving…" : "Resolve review"}</Button>
-      </div>
-    </div>
-  );
+function OrderRow({ order, index }: { order: ManageOrder; index: number }) {
+  return <tr className="align-middle hover:bg-muted/30"><td className="p-3 text-muted-foreground">{index}</td><td className="p-3"><p className="font-semibold">{order.humanId}</p><Badge variant="outline" className="mt-1">Online</Badge></td><td className="p-3"><p className="font-medium">{order.address['name'] || "Customer"}</p><p className="text-xs text-muted-foreground">{order.address['phone']}</p></td><td className="p-3 text-muted-foreground">{new Date(order.placedAt).toLocaleString("en-IN")}</td><td className="p-3"><p>{order.items.reduce((sum, item) => sum + item.qty, 0)} item(s)</p><p className="text-xs text-muted-foreground">{formatINR(itemValue(order))}</p></td><td className="p-3 font-semibold">{formatINR(order.total)}</td><td className="p-3"><Badge variant="secondary" className="capitalize">{paymentLabel(order.paymentStatus)}</Badge></td><td className="p-3"><Badge variant={order.needsPaymentReview ? "destructive" : "outline"}>{order.needsPaymentReview ? "Needs review" : statusLabel(order.status)}</Badge></td><td className="p-3"><div className="flex justify-end gap-1"><Button size="sm" variant="outline" asChild><Link to="/manage/orders/$orderId" params={{ orderId: order.id }}>View</Link></Button><OrderMenu order={order} /></div></td></tr>;
 }
 
-function InvoiceButton({ orderId, staffCopy = false }: { orderId: string; staffCopy?: boolean }) {
-  const getCustomerInvoice = useServerFn(staffInvoice);
-  const getStaffInvoice = useServerFn(staffPickingInvoice);
-  const [busy, setBusy] = useState(false);
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={busy}
-      onClick={async () => {
-        setBusy(true);
-        const res = await (staffCopy ? getStaffInvoice : getCustomerInvoice)({ data: { orderId } });
-        setBusy(false);
-        if ("error" in res) return toast.error(res.error);
-        downloadPdf(res.base64, res.fileName);
-      }}
-    >
-      {busy ? "Preparing…" : staffCopy ? "Staff Invoice" : "Download invoice"}
-    </Button>
-  );
+function MobileOrder({ order }: { order: ManageOrder }) {
+  return <article className="rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-card)]"><Link to="/manage/orders/$orderId" params={{ orderId: order.id }} className="block"><div className="flex items-start justify-between gap-3"><div><p className="font-display font-bold">{order.humanId}</p><p className="mt-1 text-sm">{order.address['name'] || "Customer"}</p><p className="text-xs text-muted-foreground">{order.address['phone']} · {new Date(order.placedAt).toLocaleString("en-IN")}</p></div><p className="font-bold">{formatINR(order.total)}</p></div><div className="mt-3 flex flex-wrap gap-2"><Badge variant="secondary" className="capitalize">{paymentLabel(order.paymentStatus)}</Badge><Badge variant={order.needsPaymentReview ? "destructive" : "outline"}>{order.needsPaymentReview ? "Needs review" : statusLabel(order.status)}</Badge><span className="text-xs text-muted-foreground">{order.items.reduce((sum, item) => sum + item.qty, 0)} item(s)</span></div></Link><div className="mt-3 flex justify-end"><OrderMenu order={order} /></div></article>;
 }
 
-function Requests({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
-  const decide = useServerFn(decideOrderRequest);
-  const [note, setNote] = useState("");
-  const pending = order.requests.filter((r) => r.status === "pending");
-  const past = order.requests.filter((r) => r.status !== "pending");
-  if (order.requests.length === 0) return null;
-
-  return (
-    <div className="mt-4 grid gap-2">
-      {pending.map((r) => (
-        <div key={r.id} className="rounded-xl border border-primary/40 bg-accent p-4">
-          <p className="text-sm font-semibold">
-            {r.kind === "return" ? "Return requested" : "Cancellation requested"} — {r.reason}
-          </p>
-          {r.details && <p className="mt-1 text-sm text-muted-foreground">{r.details}</p>}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Input className="max-w-xs" placeholder="Note for the customer (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-            <Button
-              size="sm"
-              onClick={async () => {
-                const res = await decide({ data: { requestId: r.id, approve: true, note } });
-                res.ok ? toast.success("Approved and the customer has been told") : toast.error(res.error ?? "Could not do that");
-                onDone();
-              }}
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={async () => {
-                const res = await decide({ data: { requestId: r.id, approve: false, note } });
-                res.ok ? toast.success("Declined and the customer has been told") : toast.error(res.error ?? "Could not do that");
-                onDone();
-              }}
-            >
-              Decline
-            </Button>
-          </div>
-        </div>
-      ))}
-      {past.map((r) => (
-        <p key={r.id} className="text-xs text-muted-foreground">
-          {r.kind === "return" ? "Return" : "Cancellation"} request ({r.reason}) — {r.status}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-function TrackingForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
-  const save = useServerFn(setTracking);
-  const [courier, setCourier] = useState(order.courierName ?? "");
-  const [number, setNumber] = useState(order.trackingNumber ?? "");
-  const [url, setUrl] = useState(order.trackingUrl ?? "");
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <div className="grid gap-2">
-      <p className="text-sm font-semibold">Courier &amp; tracking</p>
-      <Input placeholder="Courier name (e.g. Delhivery)" value={courier} onChange={(e) => setCourier(e.target.value)} />
-      <Input placeholder="Tracking number" value={number} onChange={(e) => setNumber(e.target.value)} />
-      <Input placeholder="Tracking link (optional)" value={url} onChange={(e) => setUrl(e.target.value)} />
-      <Button
-        size="sm"
-        className="w-fit"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          const res = await save({ data: { id: order.id, courier, trackingNumber: number, trackingUrl: url, markShipped: true } });
-          setBusy(false);
-          if (!res.ok) return toast.error(res.error ?? "Could not save");
-          toast.success("Tracking saved, order marked shipped and the customer told");
-          onDone();
-        }}
-      >
-        {busy ? <SparkRing /> : null}{busy ? "Saving…" : "Save & mark shipped"}
-      </Button>
-    </div>
-  );
-}
-
-function RefundForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
-  const refund = useServerFn(recordRefund);
-  const left = Math.max(0, order.total - order.refunded);
-  const [amount, setAmount] = useState(String(left));
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  return (
-    <div className="grid gap-2">
-      <p className="text-sm font-semibold">Refund</p>
-      <p className="text-xs text-muted-foreground">
-        {order.paymentStatus === "paid"
-          ? "Paid online — the refund goes back to the customer's card or UPI automatically."
-          : "Not paid online — this records the refund you handed back yourself."}
-        {" "}Left to refund: {formatINR(left)}
-      </p>
-      <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-      <Input placeholder="Reason / note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
-      <Button
-        size="sm"
-        variant="outline"
-        className="w-fit"
-        disabled={busy || left <= 0}
-        onClick={async () => {
-          setBusy(true);
-          const res = await refund({ data: { orderId: order.id, amount: Number(amount), note } });
-          setBusy(false);
-          if (!res.ok) return toast.error(res.error ?? "Could not record the refund");
-          toast.success("Refund recorded and the customer told");
-          onDone();
-        }}
-      >
-        {busy ? <SparkRing /> : null}{busy ? "Working…" : "Record refund"}
-      </Button>
-    </div>
-  );
+function OrderMenu({ order }: { order: ManageOrder }) {
+  return <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label={`More actions for ${order.humanId}`}><MoreVertical className="size-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => { if (!printPackingSlip(order)) toast.error("Allow pop-ups to print the packing slip"); }}><Printer /> Packing slip</DropdownMenuItem><DropdownMenuItem asChild><a href={customerWhatsApp(order)} target="_blank" rel="noreferrer"><MessageCircle /> WhatsApp customer</a></DropdownMenuItem><DropdownMenuItem onSelect={(event) => event.preventDefault()}><Download /><InvoiceButton orderId={order.id} /></DropdownMenuItem></DropdownMenuContent></DropdownMenu>;
 }
