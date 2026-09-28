@@ -330,6 +330,13 @@
       "when": 1790565316252,
       "tag": "0046_add_atomic_owner_promotion",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1790580961048,
+      "tag": "0047_supplier_purchase_ledger",
+      "breakpoints": true
     }
   ]
 }
