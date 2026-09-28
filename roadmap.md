@@ -1,5 +1,5 @@
 # Current task
-- [ ] Add permission-aware Online Orders and Counter Sales tabs to both order pages.
+- [x] Add permission-aware Online Orders and Counter Sales tabs to both order pages.
 - [x] Make Razorpay payments recoverable and auditable across checkout, quotes, scooter bookings, late-payment review, and refunds.
 - [ ] Replace insecure scheduled callbacks after secure database values are available.
 - [x] Add Suppliers & Purchases with an auditable payable ledger, filters, exports, and separated QR totals.
