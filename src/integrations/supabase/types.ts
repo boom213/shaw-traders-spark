@@ -814,8 +814,10 @@ export type Database = {
           human_id: string
           id: string
           lr_number: string | null
+          needs_payment_review: boolean
           payment_method: string | null
           payment_provider: string | null
+          payment_review_note: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           placed_at: string
           price_tier: Database["public"]["Enums"]["price_tier"]
@@ -852,8 +854,10 @@ export type Database = {
           human_id: string
           id?: string
           lr_number?: string | null
+          needs_payment_review?: boolean
           payment_method?: string | null
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           price_tier?: Database["public"]["Enums"]["price_tier"]
@@ -890,8 +894,10 @@ export type Database = {
           human_id?: string
           id?: string
           lr_number?: string | null
+          needs_payment_review?: boolean
           payment_method?: string | null
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           placed_at?: string
           price_tier?: Database["public"]["Enums"]["price_tier"]
@@ -2782,13 +2788,27 @@ export type Database = {
           total_count: number
         }[]
       }
-      manage_order_page: {
-        Args: { p_limit?: number; p_offset?: number; p_query?: string }
-        Returns: {
-          order_id: string
-          total_count: number
-        }[]
-      }
+      manage_order_page:
+        | {
+            Args: { p_limit?: number; p_offset?: number; p_query?: string }
+            Returns: {
+              order_id: string
+              total_count: number
+            }[]
+          }
+        | {
+            Args: {
+              p_limit?: number
+              p_offset?: number
+              p_payment_status?: string
+              p_query?: string
+              p_status?: string
+            }
+            Returns: {
+              order_id: string
+              total_count: number
+            }[]
+          }
       manager_customer_order_summary: {
         Args: { p_profile_id: string }
         Returns: Json
@@ -3011,6 +3031,10 @@ export type Database = {
       reorder_categories: { Args: { p_ids: string[] }; Returns: number }
       resolve_booking_payment_review: {
         Args: { p_actor: string; p_booking_id: string; p_note: string }
+        Returns: boolean
+      }
+      resolve_payment_review: {
+        Args: { p_actor: string; p_note: string; p_order_id: string }
         Returns: boolean
       }
       search_product_ids: {
