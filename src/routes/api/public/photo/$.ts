@@ -23,7 +23,8 @@ export const Route = createFileRoute("/api/public/photo/$")({
           const { loadOrCreateProductThumbnail } = await import("@/lib/product-thumbnail.server");
           const thumbnail = await loadOrCreateProductThumbnail(path);
           if (!thumbnail) return new Response("Not found", { status: 404 });
-          return new Response(thumbnail.bytes, {
+          const body = thumbnail.bytes.buffer.slice(thumbnail.bytes.byteOffset, thumbnail.bytes.byteOffset + thumbnail.bytes.byteLength) as ArrayBuffer;
+          return new Response(body, {
             headers: {
               "Content-Type": thumbnail.type || "image/png",
               "Cache-Control": "public, max-age=31536000, immutable",
