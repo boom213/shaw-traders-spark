@@ -365,6 +365,13 @@
       "when": 1790583559063,
       "tag": "0051_quarantine_late_payments_as_received",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1790591907904,
+      "tag": "0052_exclude_counter_sales_from_online_orders",
+      "breakpoints": true
     }
   ]
 }
