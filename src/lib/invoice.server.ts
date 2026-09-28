@@ -5,6 +5,7 @@ import invoiceLogoUrl from "@/assets/invoice-logo.png?inline";
 import regularFontUrl from "@/assets/fonts/DejaVuSans.ttf?inline";
 import boldFontUrl from "@/assets/fonts/DejaVuSans-Bold.ttf?inline";
 import { BUSINESS } from "@/lib/catalog";
+import { productThumbnailUrl } from "@/lib/product-photo";
 
 type Row = Record<string, unknown>;
 
@@ -94,6 +95,10 @@ async function loadImagePayload(source: string): Promise<ImagePayload | null> {
   if (source.startsWith("/api/public/photo/")) {
     const path = source.slice("/api/public/photo/".length).replace(/^\/+/, "");
     if (!path || path.includes("..") || path.startsWith("review-photos/")) return null;
+    if (path.startsWith("__thumbs__/")) {
+      const { loadOrCreateProductThumbnail } = await import("@/lib/product-thumbnail.server");
+      return loadOrCreateProductThumbnail(path);
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin.storage.from("product-photos").download(path);
     if (error || !data) return null;
@@ -148,7 +153,11 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   const logo = await pdf.embedPng(bytesFromDataUrl(invoiceLogoUrl));
   const thumbnails = await Promise.all(document.items.map(async (item) => {
     if (!document.staffCopy) return null;
-    const candidates = [...new Set([item.image, item.fallbackImage].filter((source): source is string => Boolean(source)))];
+    const originals = [item.image, item.fallbackImage].filter((source): source is string => Boolean(source));
+    const candidates = [...new Set(originals.flatMap((source) => {
+      const thumbnail = productThumbnailUrl(source);
+      return thumbnail && thumbnail !== source ? [thumbnail, source] : [source];
+    }))];
     for (const source of candidates) {
       try {
         const payload = await loadImagePayload(source);
