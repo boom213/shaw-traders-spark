@@ -1,5 +1,5 @@
 # Current task
-- [ ] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.
+- [x] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.
 
 # Roadmap
 
