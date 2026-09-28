@@ -926,6 +926,7 @@ export type Database = {
       }
       payment_events: {
         Row: {
+          booking_id: string | null
           created_at: string
           event_id: string
           event_type: string | null
@@ -935,6 +936,7 @@ export type Database = {
           provider: string
         }
         Insert: {
+          booking_id?: string | null
           created_at?: string
           event_id: string
           event_type?: string | null
@@ -944,6 +946,7 @@ export type Database = {
           provider?: string
         }
         Update: {
+          booking_id?: string | null
           created_at?: string
           event_id?: string
           event_type?: string | null
@@ -953,6 +956,13 @@ export type Database = {
           provider?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payment_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payment_events_order_id_fkey"
             columns: ["order_id"]
@@ -2236,9 +2246,11 @@ export type Database = {
           expected_delivery: string | null
           human_id: string
           id: string
+          needs_payment_review: boolean
           note: string | null
           on_road_total: number
           payment_provider: string | null
+          payment_review_note: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           phone: string
           price_breakdown: Json
@@ -2263,9 +2275,11 @@ export type Database = {
           expected_delivery?: string | null
           human_id: string
           id?: string
+          needs_payment_review?: boolean
           note?: string | null
           on_road_total?: number
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone: string
           price_breakdown?: Json
@@ -2290,9 +2304,11 @@ export type Database = {
           expected_delivery?: string | null
           human_id?: string
           id?: string
+          needs_payment_review?: boolean
           note?: string | null
           on_road_total?: number
           payment_provider?: string | null
+          payment_review_note?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           phone?: string
           price_breakdown?: Json
@@ -2831,6 +2847,10 @@ export type Database = {
           vendor_id: string
         }[]
       }
+      mark_booking_paid: {
+        Args: { p_booking_id: string; p_payment_id: string }
+        Returns: boolean
+      }
       mark_order_paid: {
         Args: { p_order_id: string; p_payment_id: string }
         Returns: boolean
@@ -2989,6 +3009,10 @@ export type Database = {
         Returns: string
       }
       reorder_categories: { Args: { p_ids: string[] }; Returns: number }
+      resolve_booking_payment_review: {
+        Args: { p_actor: string; p_booking_id: string; p_note: string }
+        Returns: boolean
+      }
       search_product_ids: {
         Args: { p_limit?: number; p_term: string }
         Returns: {
