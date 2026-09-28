@@ -1,4 +1,5 @@
 # Current task
+- [ ] Add Suppliers & Purchases with an auditable payable ledger, filters, exports, and separated QR totals.
 - [x] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.
 
 # Roadmap
