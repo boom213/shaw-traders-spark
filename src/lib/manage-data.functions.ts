@@ -70,7 +70,9 @@ const mapManageOrder = (row: Row): ManageOrder => ({
   })),
 });
 
-async function admin(capability: "operations" | "catalogue" | "reports" | "settings" = "operations") {
+type ManageCapability = "online-orders" | "operations" | "catalogue" | "reports" | "settings";
+
+async function admin(capability: ManageCapability = "operations") {
   const { requireStaff } = await import("@/lib/staff.server");
   await requireStaff({ capability });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -78,11 +80,24 @@ async function admin(capability: "operations" | "catalogue" | "reports" | "setti
 }
 
 /** Admin client plus the signed-in staff member, for changes that must be audited. */
-async function adminAs(capability: "operations" | "catalogue" | "reports" | "settings" = "operations") {
+async function adminAs(capability: ManageCapability = "operations") {
   const { requireStaff, logAudit } = await import("@/lib/staff.server");
   const actor = await requireStaff({ capability });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return { sb: supabaseAdmin, actor, logAudit };
+}
+
+async function requireRetailOrder(sb: Awaited<ReturnType<typeof admin>>, role: string, orderId: string) {
+  if (role !== "online_sales") return;
+  const { data, error } = await sb.from("counter_sales").select("order_id").eq("order_id", orderId).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (data) throw new Error("Online Sales access is limited to retail online orders");
+}
+
+async function onlineOrderAdmin(orderId?: string) {
+  const context = await adminAs("online-orders");
+  if (orderId) await requireRetailOrder(context.sb, context.actor.role, orderId);
+  return context;
 }
 
 export const manageOrders = createServerFn({ method: "POST" })
@@ -96,7 +111,7 @@ export const manageOrders = createServerFn({ method: "POST" })
     to: /^\d{4}-\d{2}-\d{2}$/.test(String(data?.to ?? "")) ? String(data?.to) : null,
   }))
   .handler(async ({ data }): Promise<{ items: ManageOrder[]; total: number }> => {
-    const sb = await admin();
+    const sb = await admin("online-orders");
     const { data: pageRows, error: pageError } = await sb.rpc("manage_order_page", {
       p_query: data.q,
       p_offset: data.page * data.pageSize,
@@ -125,7 +140,7 @@ export const manageOrders = createServerFn({ method: "POST" })
 export const manageOrder = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
   .handler(async ({ data }): Promise<ManageOrder | null> => {
-    const sb = await admin();
+    const { sb, actor } = await onlineOrderAdmin(data.orderId);
     const { data: counterSale, error: counterError } = await sb.from("counter_sales").select("order_id").eq("order_id", data.orderId).maybeSingle();
     if (counterError) throw new Error(counterError.message);
     if (counterSale) return null;
@@ -135,11 +150,11 @@ export const manageOrder = createServerFn({ method: "POST" })
   });
 
 export const manageOrderCounts = createServerFn({ method: "POST" }).handler(async (): Promise<{ newOrders: number; counterToday: number }> => {
-  const sb = await admin();
+  const { sb, actor } = await onlineOrderAdmin();
   const { data, error } = await sb.rpc("manage_order_counts");
   if (error) throw new Error(error.message);
   const row = (data?.[0] ?? {}) as Row;
-  return { newOrders: Number(row['new_orders'] ?? 0), counterToday: Number(row['counter_today'] ?? 0) };
+  return { newOrders: Number(row['new_orders'] ?? 0), counterToday: actor.role === "online_sales" ? 0 : Number(row['counter_today'] ?? 0) };
 });
 
 export const setOrderStatus = createServerFn({ method: "POST" })
@@ -148,7 +163,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     status: String(data?.status ?? "") as OrderStatus,
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await onlineOrderAdmin(data.id);
     const { data: before } = await sb.from("orders").select("status, human_id").eq("id", data.id).maybeSingle();
     const { error } = await sb.from("orders").update({ status: data.status }).eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -591,7 +606,7 @@ export const setOrderGst = createServerFn({ method: "POST" })
     rate: data?.rate === undefined ? 0 : Math.max(0, Math.min(50, Number(data.rate) || 0)),
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await onlineOrderAdmin(data.orderId);
     const { error } = await sb.rpc("set_order_gst", {
       p_order_id: data.orderId,
       p_enabled: data.enabled,
@@ -612,7 +627,7 @@ export const setTracking = createServerFn({ method: "POST" })
     markShipped: data?.markShipped !== false,
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await onlineOrderAdmin(data.id);
     if (!data.courier || !data.trackingNumber) return { ok: false as const, error: "Add both the courier and the tracking number." };
 
     const patch: Record<string, unknown> = {
@@ -646,13 +661,14 @@ export const decideOrderRequest = createServerFn({ method: "POST" })
     note: String(data?.note ?? "").trim().slice(0, 300),
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await adminAs("online-orders");
     const { data: req } = await sb
       .from("order_requests")
       .select("id, order_id, kind, status")
       .eq("id", data.requestId)
       .maybeSingle();
     if (!req) return { ok: false as const, error: "Request not found." };
+    await requireRetailOrder(sb, actor.role, String(req.order_id));
     if (req.status !== "pending") return { ok: false as const, error: "This request was already answered." };
 
     await sb
@@ -702,7 +718,7 @@ export const recordRefund = createServerFn({ method: "POST" })
     viaRazorpay: data?.viaRazorpay !== false,
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await onlineOrderAdmin(data.orderId);
     if (data.amount <= 0) return { ok: false as const, error: "Enter the refund amount." };
 
     const { data: order } = await sb
@@ -760,7 +776,7 @@ export const resolvePaymentReview = createServerFn({ method: "POST" })
     note: String(data?.note ?? "").trim().slice(0, 300),
   }))
   .handler(async ({ data }) => {
-    const { sb, actor, logAudit } = await adminAs();
+    const { sb, actor, logAudit } = await onlineOrderAdmin(data.orderId);
     if (data.note.length < 3) return { ok: false as const, error: "Add a short resolution note." };
     const { data: resolved, error } = await sb.rpc("resolve_payment_review", {
       p_order_id: data.orderId,
@@ -777,7 +793,7 @@ export const resolvePaymentReview = createServerFn({ method: "POST" })
 export const staffInvoice = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
   .handler(async ({ data }) => {
-    await admin();
+    await onlineOrderAdmin(data.orderId);
     const { invoicePdfBase64 } = await import("@/lib/invoice.server");
     return invoicePdfBase64(data.orderId);
   });
@@ -786,7 +802,7 @@ export const staffInvoice = createServerFn({ method: "POST" })
 export const staffPickingInvoice = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
   .handler(async ({ data }) => {
-    await admin();
+    await onlineOrderAdmin(data.orderId);
     const { invoicePdfBase64 } = await import("@/lib/invoice.server");
     return invoicePdfBase64(data.orderId, true);
   });
