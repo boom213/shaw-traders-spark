@@ -9,6 +9,24 @@ export function razorpayKeys() {
 
 export type RazorpayOrder = { id: string; amount: number; currency: string };
 
+async function razorpayGet<T>(path: string): Promise<{ data: T } | { error: string }> {
+  const keys = razorpayKeys();
+  if (!keys.configured) return { error: "Razorpay credentials are not configured." };
+  try {
+    const response = await fetch(`https://api.razorpay.com/v1${path}`, { headers: { authorization: `Basic ${Buffer.from(`${keys.keyId}:${keys.keySecret}`).toString("base64")}` }, signal: AbortSignal.timeout(5000) });
+    if (!response.ok) { console.error("razorpay review failed", response.status, (await response.text()).slice(0, 300)); return { error: response.status === 404 ? "Razorpay could not find this order." : "Razorpay could not be checked right now." }; }
+    return { data: await response.json() as T };
+  } catch (error) { console.error("razorpay review failed", error); return { error: "Razorpay could not be checked right now." }; }
+}
+
+export async function fetchRazorpayOrderWithPayments(orderId: string): Promise<{ order: RazorpayOrder & { status: string }; payments: { id: string; orderId: string | null; amountPaise: number; currency: string; status: string }[] } | { error: string }> {
+  type LivePayment = { id: string; order_id?: string | null; amount: number; currency: string; status: string };
+  const [order, payments] = await Promise.all([razorpayGet<RazorpayOrder & { status: string }>(`/orders/${encodeURIComponent(orderId)}`), razorpayGet<{ items?: LivePayment[] }>(`/orders/${encodeURIComponent(orderId)}/payments`)]);
+  if ("error" in order) return order;
+  if ("error" in payments) return payments;
+  return { order: order.data, payments: (payments.data.items ?? []).map((item) => ({ id: item.id, orderId: item.order_id ?? null, amountPaise: Number(item.amount), currency: item.currency, status: item.status })) };
+}
+
 /** Create an order with Razorpay. Amount is in rupees and converted to paise here. */
 export async function createRazorpayOrder(input: {
   amountRupees: number;

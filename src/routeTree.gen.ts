@@ -50,6 +50,7 @@ import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
 import { Route as ManagePaymentReportsRouteImport } from './routes/manage.payment-reports'
+import { Route as ManageRazorpayReviewRouteImport } from './routes/manage.razorpay-review'
 import { Route as ManageReviewsRouteImport } from './routes/manage.reviews'
 import { Route as ManageScootersRouteImport } from './routes/manage.scooters'
 import { Route as ManageSettingsRouteImport } from './routes/manage.settings'
@@ -285,6 +286,11 @@ const ManagePaymentReportsRoute = ManagePaymentReportsRouteImport.update({
   path: '/payment-reports',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageRazorpayReviewRoute = ManageRazorpayReviewRouteImport.update({
+  id: '/razorpay-review',
+  path: '/razorpay-review',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManageReviewsRoute = ManageReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
@@ -479,6 +485,7 @@ export interface FileRoutesByFullPath {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRouteWithChildren
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
+  '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -548,6 +555,7 @@ export interface FileRoutesByTo {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
+  '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -621,6 +629,7 @@ export interface FileRoutesById {
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRouteWithChildren
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
+  '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
   '/manage/reviews': typeof ManageReviewsRoute
   '/manage/scooters': typeof ManageScootersRoute
   '/manage/settings': typeof ManageSettingsRoute
@@ -695,6 +704,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/payment-reports'
+    | '/manage/razorpay-review'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -764,6 +774,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/payment-reports'
+    | '/manage/razorpay-review'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -836,6 +847,7 @@ export interface FileRouteTypes {
     | '/manage/import'
     | '/manage/orders'
     | '/manage/payment-reports'
+    | '/manage/razorpay-review'
     | '/manage/reviews'
     | '/manage/scooters'
     | '/manage/settings'
@@ -1202,6 +1214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManagePaymentReportsRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/razorpay-review': {
+      id: '/manage/razorpay-review'
+      path: '/razorpay-review'
+      fullPath: '/manage/razorpay-review'
+      preLoaderRoute: typeof ManageRazorpayReviewRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/reviews': {
       id: '/manage/reviews'
       path: '/reviews'
@@ -1450,6 +1469,7 @@ interface ManageRouteChildren {
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRouteWithChildren
   ManagePaymentReportsRoute: typeof ManagePaymentReportsRoute
+  ManageRazorpayReviewRoute: typeof ManageRazorpayReviewRoute
   ManageReviewsRoute: typeof ManageReviewsRoute
   ManageScootersRoute: typeof ManageScootersRoute
   ManageSettingsRoute: typeof ManageSettingsRoute
@@ -1476,6 +1496,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRouteWithChildren,
   ManagePaymentReportsRoute: ManagePaymentReportsRoute,
+  ManageRazorpayReviewRoute: ManageRazorpayReviewRoute,
   ManageReviewsRoute: ManageReviewsRoute,
   ManageScootersRoute: ManageScootersRoute,
   ManageSettingsRoute: ManageSettingsRoute,

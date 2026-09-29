@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - All Products is Staff-read-only; Manager+ edits the catalogue.
-- Keep receipts auditable/non-overlapping; vendors are name-only collectors, optional links are atomic, and corrections never delete payments.
+- Keep receipts auditable; vendor links are atomic and corrections never delete payments.
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings use a server allowlist; never expose operations fields.
@@ -29,4 +29,5 @@
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
 - Wholesale reviews are manual and decisions atomic; never run AI document checks.
-- Manager CSV exports use one BOM/CRLF utility, export filtered datasets up to 10,000 rows, require Reports permission server-side, and create audit entries.
+- CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
+- Razorpay review is Owner+ read-only, server-side, and never changes money or stock.
