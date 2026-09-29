@@ -39,7 +39,7 @@ import { can, ROLE_LABEL, type StaffCapability, type StaffRole } from "@/lib/sta
 
 const STAFF_LINKS = [
   { to: "/manage", label: "Overview", icon: LayoutDashboard, capability: "operations" },
-  { to: "/manage/orders", label: "Orders", icon: ClipboardList, capability: "operations" },
+  { to: "/manage/orders", label: "Orders", icon: ClipboardList, capability: "online-orders" },
   { to: "/manage/enquiries", label: "Enquiries", icon: PackageSearch, capability: "operations" },
   { to: "/manage/bookings", label: "Bookings & service", icon: Wrench, capability: "operations" },
   { to: "/manage/customers", label: "Customers", icon: Users, capability: "operations" },

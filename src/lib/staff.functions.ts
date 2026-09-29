@@ -7,7 +7,7 @@ const MAX_FAILURES = 5;
 const clean = (v: unknown) => String(v ?? "").trim();
 const lower = (v: unknown) => clean(v).toLowerCase();
 
-export type StaffRoleName = "super_admin" | "owner" | "manager" | "staff";
+export type StaffRoleName = "super_admin" | "owner" | "manager" | "staff" | "online_sales";
 
 export type StaffMember = {
   profileId: string;
@@ -54,18 +54,18 @@ export type AuditItem = {
 const staffInviteSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   name: z.string().trim().min(2).max(100),
-  role: z.enum(["staff", "manager"]),
+  role: z.enum(["online_sales", "staff", "manager"]),
 });
 
 const ownerPromotionSchema = z.object({ profileId: z.string().uuid() });
 const staffRoleChangeSchema = z.object({
   profileId: z.string().uuid(),
-  role: z.enum(["staff", "manager"]),
+  role: z.enum(["online_sales", "staff", "manager"]),
 });
 
 const staffListSchema = z.object({
   q: z.string().trim().max(100).default(""),
-  role: z.enum(["all", "super_admin", "owner", "manager", "staff"]).default("all"),
+  role: z.enum(["all", "super_admin", "owner", "manager", "staff", "online_sales"]).default("all"),
   sort: z.enum(["newest", "oldest", "name"]).default("newest"),
   page: z.number().int().min(0).default(0),
   pageSize: z.number().int().min(1).max(50).default(8),
@@ -93,7 +93,7 @@ const AUDIT_PREFIXES: Record<Exclude<AuditGroup, "all">, string[]> = {
   "counter-sales": ["counter_sale."],
 };
 
-const STAFF_ROLE_RANK: Record<StaffRoleName, number> = { super_admin: 0, owner: 1, manager: 2, staff: 3 };
+const STAFF_ROLE_RANK: Record<StaffRoleName, number> = { super_admin: 0, owner: 1, manager: 2, staff: 3, online_sales: 4 };
 
 export function prepareStaffPage(members: StaffMember[], input: StaffListInput) {
   const best = new Map<string, StaffMember>();
@@ -330,9 +330,9 @@ export const grantOwnerAccess = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** A super admin moves an eligible account between Staff and Manager. */
+/** A super admin moves an eligible account between the lower-tier roles. */
 export const changeStaffRole = createServerFn({ method: "POST" })
-  .inputValidator((data: { profileId: string; role: "staff" | "manager" }) => staffRoleChangeSchema.parse(data))
+  .inputValidator((data: { profileId: string; role: "online_sales" | "staff" | "manager" }) => staffRoleChangeSchema.parse(data))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const me = await requireStaff({ superAdmin: true });

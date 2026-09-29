@@ -1,6 +1,7 @@
-export type StaffRole = "super_admin" | "owner" | "manager" | "staff";
+export type StaffRole = "super_admin" | "owner" | "manager" | "staff" | "online_sales";
 
 export type StaffCapability =
+  | "online-orders"
   | "operations"
   | "catalogue"
   | "trade"
@@ -11,9 +12,10 @@ export type StaffCapability =
   | "settings"
   | "staff.manage";
 
-const RANK: Record<StaffRole, number> = { staff: 0, manager: 1, owner: 2, super_admin: 3 };
+const RANK: Record<StaffRole, number> = { online_sales: 0, staff: 1, manager: 2, owner: 3, super_admin: 4 };
 
 export const ROLE_LABEL: Record<StaffRole, string> = {
+  online_sales: "Online Sales",
   staff: "Staff",
   manager: "Manager",
   owner: "Owner",
@@ -21,6 +23,7 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
 };
 
 export const CAPABILITY_ROLE: Record<StaffCapability, StaffRole> = {
+  "online-orders": "online_sales",
   operations: "staff",
   catalogue: "manager",
   trade: "owner",
@@ -42,7 +45,7 @@ export function can(role: StaffRole, capability: StaffCapability): boolean {
 
 export const MANAGE_ROUTE_CAPABILITY = {
   "/manage": "operations",
-  "/manage/orders": "operations",
+  "/manage/orders": "online-orders",
   "/manage/enquiries": "operations",
   "/manage/reviews": "operations",
   "/manage/bookings": "operations",
@@ -68,8 +71,12 @@ export const MANAGE_ROUTE_CAPABILITY = {
 
 export function capabilityForManagePath(pathname: string): StaffCapability {
   const path = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
-  if (path.startsWith("/manage/orders/")) return "operations";
+  if (path.startsWith("/manage/orders/")) return "online-orders";
   if (path.startsWith("/manage/customers/")) return "operations";
   if (path.startsWith("/manage/products/")) return "catalogue";
   return MANAGE_ROUTE_CAPABILITY[path as keyof typeof MANAGE_ROUTE_CAPABILITY] ?? "operations";
+}
+
+export function manageFallbackForRole(role: StaffRole): "/manage" | "/manage/orders" {
+  return !can(role, "operations") && can(role, "online-orders") ? "/manage/orders" : "/manage";
 }

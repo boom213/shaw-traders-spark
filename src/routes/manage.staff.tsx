@@ -101,12 +101,13 @@ export const Route = createFileRoute("/manage/staff")({
   component: StaffPage,
 });
 
-const INVITE_ROLES = ["staff", "manager"] as const;
+const INVITE_ROLES = ["online_sales", "staff", "manager"] as const;
 const STAFF_ROLES: Array<{ value: "all" | StaffRoleName; label: string }> = [
   { value: "all", label: "All roles" },
   { value: "owner", label: "Owner" },
   { value: "manager", label: "Manager" },
   { value: "staff", label: "Staff" },
+  { value: "online_sales", label: "Online Sales" },
   { value: "super_admin", label: "Permanent admin" },
 ];
 const ROLE_LABEL: Record<StaffRoleName, string> = {
@@ -114,8 +115,10 @@ const ROLE_LABEL: Record<StaffRoleName, string> = {
   owner: "Owner",
   manager: "Manager",
   staff: "Staff",
+  online_sales: "Online Sales",
 };
 const CAPABILITY_LABEL: Record<StaffCapability, string> = {
+  "online-orders": "Online orders",
   operations: "Operations",
   catalogue: "Catalogue",
   trade: "Trade & Credit",
@@ -146,7 +149,7 @@ function initials(name: string) {
 }
 
 function RoleBadge({ role }: { role: StaffRoleName }) {
-  const variant = role === "super_admin" ? "default" : role === "owner" ? "secondary" : "outline";
+  const variant = role === "super_admin" ? "default" : role === "owner" ? "secondary" : role === "online_sales" ? "destructive" : "outline";
   return <Badge variant={variant}>{ROLE_LABEL[role]}</Badge>;
 }
 
@@ -232,7 +235,7 @@ function StaffPage() {
     },
   });
   const roleMutation = useMutation({
-    mutationFn: ({ profileId, role: nextRole }: { profileId: string; role: "staff" | "manager" }) => changeRole({ data: { profileId, role: nextRole } }),
+    mutationFn: ({ profileId, role: nextRole }: { profileId: string; role: "online_sales" | "staff" | "manager" }) => changeRole({ data: { profileId, role: nextRole } }),
     onSuccess: (res) => {
       if ("error" in res && res.error) return toast.error(res.error);
       toast.success("Role updated");
@@ -264,7 +267,7 @@ function StaffPage() {
           <section className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]" aria-label="Invite staff">
             <div>
               <h2 className="font-display text-lg font-semibold">Invite staff</h2>
-              <p className="text-sm text-muted-foreground">Give a Staff or Manager account immediate access.</p>
+              <p className="text-sm text-muted-foreground">Give an Online Sales, Staff, or Manager account immediate access.</p>
             </div>
             {tempPassword ? (
               <div className="rounded-lg border border-border bg-surface p-4 text-sm">
@@ -390,15 +393,15 @@ function ProtectedLock() {
   return <Tooltip><TooltipTrigger asChild><span className="inline-flex text-muted-foreground" tabIndex={0}><LockKeyhole className="size-3.5" /><span className="sr-only">Protected account</span></span></TooltipTrigger><TooltipContent>This account is protected and cannot be removed from this workspace.</TooltipContent></Tooltip>;
 }
 
-function StaffDetailsSheet({ member, open, side, canManage, rolePending, onOpenChange, onSaveRole, onRemove }: { member: StaffMember | null; open: boolean; side: "right" | "bottom"; canManage: boolean; rolePending: boolean; onOpenChange: (open: boolean) => void; onSaveRole: (member: StaffMember, role: "staff" | "manager") => void; onRemove: (member: StaffMember) => void }) {
-  const [selectedRole, setSelectedRole] = useState<"staff" | "manager">("staff");
+function StaffDetailsSheet({ member, open, side, canManage, rolePending, onOpenChange, onSaveRole, onRemove }: { member: StaffMember | null; open: boolean; side: "right" | "bottom"; canManage: boolean; rolePending: boolean; onOpenChange: (open: boolean) => void; onSaveRole: (member: StaffMember, role: "online_sales" | "staff" | "manager") => void; onRemove: (member: StaffMember) => void }) {
+  const [selectedRole, setSelectedRole] = useState<"online_sales" | "staff" | "manager">("staff");
   useEffect(() => {
-    if (member?.role === "staff" || member?.role === "manager") setSelectedRole(member.role);
+    if (member?.role === "online_sales" || member?.role === "staff" || member?.role === "manager") setSelectedRole(member.role);
   }, [member?.profileId, member?.role]);
   if (!member) return null;
   const actionable = canManage && !member.isYou && !member.locked;
-  const canChangeRole = actionable && (member.role === "staff" || member.role === "manager");
-  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="block space-y-4 border-t border-border pt-4">{canChangeRole ? <div className="space-y-2"><Label htmlFor="staff-detail-role">Role</Label><Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as "staff" | "manager")}><SelectTrigger id="staff-detail-role"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="staff">Staff</SelectItem><SelectItem value="manager">Manager</SelectItem></SelectContent></Select><div className="flex flex-wrap items-center justify-between gap-2"><Button type="button" onClick={() => onSaveRole(member, selectedRole)} disabled={selectedRole === member.role || rolePending}>{rolePending ? "Saving…" : "Save"}</Button><Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></div></div> : <Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button>}</SheetFooter>}</SheetContent></Sheet>;
+  const canChangeRole = actionable && (member.role === "online_sales" || member.role === "staff" || member.role === "manager");
+  return <Sheet open={open} onOpenChange={onOpenChange}><SheetContent side={side} className={side === "bottom" ? "h-[92vh] overflow-y-auto rounded-t-2xl" : "overflow-y-auto sm:max-w-md"}><SheetHeader><SheetTitle>Staff details</SheetTitle><SheetDescription>Access and permissions for this workspace.</SheetDescription></SheetHeader><div className="py-6"><div className="flex items-center gap-4"><StaffAvatar member={member} size="large" /><div className="min-w-0"><h2 className="flex items-center gap-2 font-display text-xl font-semibold">{member.name}{member.locked && <ProtectedLock />}</h2><p className="truncate text-sm text-muted-foreground">{member.email}</p><div className="mt-2 flex flex-wrap items-center gap-2"><RoleBadge role={member.role} /><ActiveIndicator />{member.isYou && <Badge variant="outline">You</Badge>}</div></div></div><dl className="mt-6 border-y border-border py-4 text-sm"><div className="flex justify-between gap-4"><dt className="text-muted-foreground">Added</dt><dd>{new Date(member.since).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</dd></div></dl><div className="mt-6"><h3 className="font-semibold">Permissions</h3><div className="mt-3 grid gap-2">{(Object.keys(CAPABILITY_ROLE) as StaffCapability[]).map((capability) => { const allowed = roleAtLeast(member.role, CAPABILITY_ROLE[capability]); return <div key={capability} className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2 text-sm"><span>{CAPABILITY_LABEL[capability]}</span><span className={`flex items-center gap-1 ${allowed ? "text-foreground" : "text-muted-foreground"}`}>{allowed ? <Check className="size-4" /> : <X className="size-4" />}{allowed ? "Allowed" : "Not allowed"}</span></div>; })}</div></div></div>{actionable && <SheetFooter className="block space-y-4 border-t border-border pt-4">{canChangeRole ? <div className="space-y-2"><Label htmlFor="staff-detail-role">Role</Label><Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as "online_sales" | "staff" | "manager")}><SelectTrigger id="staff-detail-role"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="online_sales">Online Sales</SelectItem><SelectItem value="staff">Staff</SelectItem><SelectItem value="manager">Manager</SelectItem></SelectContent></Select><div className="flex flex-wrap items-center justify-between gap-2"><Button type="button" onClick={() => onSaveRole(member, selectedRole)} disabled={selectedRole === member.role || rolePending}>{rolePending ? "Saving…" : "Save"}</Button><Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button></div></div> : <Button type="button" variant="destructive" onClick={() => onRemove(member)}><UserMinus />Remove access</Button>}</SheetFooter>}</SheetContent></Sheet>;
 }
 
 function RemoveDialog({ member, pending, onOpenChange, onConfirm }: { member: StaffMember | null; pending: boolean; onOpenChange: (open: boolean) => void; onConfirm: () => void }) {

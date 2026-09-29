@@ -428,6 +428,20 @@
       "when": 1790618853680,
       "tag": "0060_allow_atomic_trade_profile_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1790662003647,
+      "tag": "0061_add_online_sales_staff_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1790662029558,
+      "tag": "0062_rank_online_sales_staff_role",
+      "breakpoints": true
     }
   ]
 }

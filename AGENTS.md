@@ -22,10 +22,10 @@
 - Bookings use owner-scoped reads and public-token tracking.
 - Require sign-in for orders; keep guest carts; release unpaid stock at 30 minutes; reconcile Razorpay through signed idempotent callbacks and 90-second polling; quarantine late payments for audited resolution.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
-- Keep order-type navigation link-based; online order queries exclude rows linked by `counter_sales.order_id`, while counter sales remain on their dedicated route.
+- Online Sales gets server-enforced online-order-only access; online queries exclude `counter_sales.order_id` and Counter Sales stays separate.
 - Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
 - Router events never mutate history/grid state; log errors. Use Spark loaders.
-- Owner controls settings/reports/trade; audit grants; invite Staff/Manager.
+- Owner controls settings/reports/trade; audit grants; invite Online Sales/Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
 - Wholesale reviews are manual and decisions atomic; never run AI document checks.

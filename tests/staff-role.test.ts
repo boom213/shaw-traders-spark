@@ -38,6 +38,17 @@ describe("staff_role", () => {
     expect(data).toBe("owner");
   });
 
+  it("resolves manager above online sales", async () => {
+    const id = await makeProfile();
+    await sb.from("staff_roles").insert([
+      { profile_id: id, role: "online_sales" },
+      { profile_id: id, role: "manager" },
+    ]);
+    const { data, error } = await sb.rpc("staff_role", { _user_id: id });
+    expect(error).toBeNull();
+    expect(data).toBe("manager");
+  });
+
   it("returns nothing for someone who is not staff", async () => {
     const id = await makeProfile();
     const { data } = await sb.rpc("staff_role", { _user_id: id });
