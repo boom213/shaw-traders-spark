@@ -18,4 +18,9 @@ describe("store provider stability", () => {
     expect(outlet).toBeGreaterThan(start);
     expect(end).toBeGreaterThan(outlet);
   });
+
+  it("prefetches footer settings for identical server and browser markup", async () => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/routes/__root.tsx", "utf8"));
+    expect(source).toContain("context.queryClient.ensureQueryData(shopSettingsQuery())");
+  });
 });
