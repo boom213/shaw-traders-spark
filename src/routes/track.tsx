@@ -9,7 +9,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { useStore } from "@/hooks/useStore";
 import { findOrder, myOrders } from "@/lib/orders.functions";
-import { canonical, formatINR, statusLabel } from "@/lib/catalog";
+import { canonical, formatINR, paymentStatusLabel, statusLabel } from "@/lib/catalog";
 
 export const Route = createFileRoute("/track")({
   head: () => ({
@@ -96,8 +96,9 @@ function TrackPage() {
                 <span>
                   <span className="block text-sm font-semibold">{o.humanId}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {new Date(o.placedAt).toLocaleDateString("en-IN")} · {statusLabel(o.status)}
+                    {new Date(o.placedAt).toLocaleDateString("en-IN")} · Order: {statusLabel(o.status)}
                   </span>
+                  <span className="block text-xs text-muted-foreground">{o.paymentMethod || "Not specified"} · {paymentStatusLabel(o.paymentStatus)}</span>
                 </span>
                 <span className="text-sm font-semibold">{formatINR(o.total)}</span>
               </Link>

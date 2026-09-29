@@ -23,7 +23,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { myOrders } from "@/lib/orders.functions";
 import { bookingsByUser } from "@/lib/booking.functions";
 import { reorderItems } from "@/lib/trade.functions";
-import { BUSINESS, canonical, formatINR, statusLabel } from "@/lib/catalog";
+import { BUSINESS, canonical, formatINR, paymentStatusLabel, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 
@@ -371,10 +371,12 @@ function Dashboard() {
                   <p className="text-xs text-muted-foreground">
                     {new Date(o.placedAt).toLocaleDateString("en-IN")} · {o.items.length} item(s)
                   </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Payment mode: {o.paymentMethod || "Not specified"}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{formatINR(o.total)}</p>
-                  <p className="text-xs text-primary">{statusLabel(o.status)}</p>
+                  <p className="text-xs text-primary">Order: {statusLabel(o.status)}</p>
+                  <p className="text-xs text-muted-foreground">Payment: {paymentStatusLabel(o.paymentStatus)}</p>
                 </div>
               </Link>
               {purchase.eligible && <button

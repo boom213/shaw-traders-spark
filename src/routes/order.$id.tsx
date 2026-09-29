@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Circle, ImageIcon } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, Clock3, ImageIcon, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { getInvoice, requestOrderChange } from "@/lib/order-actions.functions";
 import { CANCELLABLE_STATUSES, CANCEL_REASONS, RETURNABLE_STATUSES, RETURN_REASONS } from "@/lib/order-reasons";
 import type { OrderView } from "@/lib/catalog";
 import { toast } from "sonner";
-import { BUSINESS, ORDER_FLOW, formatINR, statusLabel, whatsappLink } from "@/lib/catalog";
+import { BUSINESS, ORDER_FLOW, formatINR, paymentHeadline, paymentStatusLabel, statusLabel, whatsappLink } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
 type OrderSearch = { t?: string };
@@ -84,12 +84,14 @@ function OrderPage() {
   const order = data.order;
   const stepIndex = ORDER_FLOW.findIndex((s) => s.value === order.status);
   const lastEventAt = order.events?.at(-1)?.createdAt ?? order.updatedAt;
+  const PaymentIcon = order.paymentStatus === "failed" ? AlertCircle : order.paymentStatus === "pending" ? Clock3 : order.paymentStatus === "refunded" ? RotateCcw : CheckCircle2;
+  const paymentProblem = order.paymentStatus === "failed";
 
   return (
     <div className="container-page py-10">
-      <div className="rounded-3xl border border-primary/30 bg-accent px-6 py-8 text-center">
-        <CheckCircle2 className="mx-auto size-10 text-primary" />
-        <h1 className="mt-3 font-display text-2xl font-bold">Thank you, your order is confirmed</h1>
+      <div className={cn("rounded-3xl border px-6 py-8 text-center", paymentProblem ? "border-destructive/30 bg-destructive/10" : "border-primary/30 bg-accent")}>
+        <PaymentIcon className={cn("mx-auto size-10", paymentProblem ? "text-destructive" : "text-primary")} />
+        <h1 className="mt-3 font-display text-2xl font-bold">{paymentHeadline(order.paymentStatus)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Order ID <strong className="text-foreground">{order.humanId}</strong> · placed{" "}
           {new Date(order.placedAt).toLocaleString("en-IN")}
@@ -171,8 +173,11 @@ function OrderPage() {
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 text-sm">
             <h3 className="font-display text-base font-bold">Payment & delivery</h3>
-            <p className="mt-2 text-muted-foreground">{order.paymentMethod}</p>
-            <p className="text-muted-foreground">{order.shippingMethod}</p>
+            <dl className="mt-3 grid gap-1.5">
+              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Payment mode</dt><dd className="text-right font-medium">{order.paymentMethod || "Not specified"}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Payment status</dt><dd className={cn("text-right font-semibold", paymentProblem ? "text-destructive" : "text-foreground")}>{paymentStatusLabel(order.paymentStatus)}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">Delivery method</dt><dd className="text-right font-medium">{order.shippingMethod || "Standard delivery"}</dd></div>
+            </dl>
             <dl className="mt-3 grid gap-1.5 border-t border-border pt-3">
               <div className="flex justify-between"><dt className="text-muted-foreground">Subtotal</dt><dd>{formatINR(order.subtotal)}</dd></div>
               {order.discount > 0 && (
