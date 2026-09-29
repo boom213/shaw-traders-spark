@@ -6,6 +6,7 @@ const lists = (overrides: Partial<ShoppingListsState> = {}): ShoppingListsState 
   wishlist: [],
   saved: [],
   recentlyViewed: [],
+  cartClearedAt: null,
   ...overrides,
 });
 
@@ -43,6 +44,7 @@ describe("cart lifecycle", () => {
     expect(cleared.cart).toHaveLength(0);
     expect(cleared.wishlist).toEqual(["wish"]);
     expect(cleared.saved).toEqual(["later"]);
+    expect(cleared.cartClearedAt).not.toBeNull();
   });
 });
 

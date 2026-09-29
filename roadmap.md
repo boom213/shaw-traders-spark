@@ -1,4 +1,5 @@
 # Current task
+- [x] Prevent stale synced cart data and pending cross-tab uploads from restoring a deliberately cleared cart.
 - [x] Make cart clearing reliable after completed checkout, add a confirmed Clear cart action, and cover standard cart flows.
 - [x] Separate customer-facing order and payment states, including payment mode and readable payment status.
 - [x] Restrict storefront cart actions and online checkout to signed-in non-staff retail customers while preserving guest carts.
