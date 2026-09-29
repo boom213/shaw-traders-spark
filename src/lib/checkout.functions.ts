@@ -285,7 +285,7 @@ export const retryPayment = createServerFn({ method: "POST" })
       .from("orders")
       .select("id, human_id, total, payment_status")
       .eq("id", data.orderId)
-      .eq("profile_id", purchase.eligible ? (await import("@/lib/trade.server")).tradeAccount().then((account) => account.userId) : null)
+      .eq("profile_id", purchase.userId)
       .maybeSingle();
     if (!order) return { error: "Unknown order." };
     if (order.payment_status === "paid") return { error: "This order is already paid." };
