@@ -14,6 +14,8 @@ export type ShopSettings = {
   billingAddress: string | null;
   codEnabled: boolean;
   codLimit: number;
+  minOrderValue: number;
+  codMinOrderValue: number;
   codPincodes: string[];
   supportEmail: string | null;
   grievanceName: string | null;
@@ -34,6 +36,8 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   billingAddress: null,
   codEnabled: true,
   codLimit: 2000,
+  minOrderValue: 0,
+  codMinOrderValue: 0,
   codPincodes: [],
   supportEmail: null,
   grievanceName: null,
@@ -61,6 +65,8 @@ export const shopSettingsQuery = () =>
         billingAddress: data.billing_address,
         codEnabled: Boolean(data.cod_enabled),
         codLimit: Number(data.cod_limit ?? 0),
+        minOrderValue: Number(data.min_order_value ?? 0),
+        codMinOrderValue: Number(data.cod_min_order_value ?? 0),
         codPincodes: (data.cod_pincodes ?? []) as string[],
         supportEmail: data.support_email,
         grievanceName: data.grievance_officer_name,
@@ -85,9 +91,16 @@ export function withTax(base: number, s: ShopSettings) {
 /** Can this order be paid in cash on delivery? */
 export function codAllowed(total: number, pincode: string, s: ShopSettings) {
   if (!s.codEnabled) return { allowed: false, reason: "Cash on delivery is currently switched off." };
+  if (s.codMinOrderValue > 0 && total < s.codMinOrderValue)
+    return { allowed: false, reason: `Cash on delivery needs a minimum order of ₹${s.codMinOrderValue.toLocaleString("en-IN")}.` };
   if (s.codLimit > 0 && total > s.codLimit)
     return { allowed: false, reason: `Cash on delivery is available up to ₹${s.codLimit.toLocaleString("en-IN")} only.` };
   if (s.codPincodes.length > 0 && pincode && !s.codPincodes.includes(pincode))
     return { allowed: false, reason: `Cash on delivery is not available for PIN code ${pincode}.` };
   return { allowed: true, reason: "" };
+}
+
+/** Goods-value floor after discounts, before shipping and any added tax. */
+export function minimumOrderShortfall(goodsTotal: number, s: ShopSettings) {
+  return s.minOrderValue > 0 ? Math.max(0, s.minOrderValue - goodsTotal) : 0;
 }

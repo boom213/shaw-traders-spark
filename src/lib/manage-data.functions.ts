@@ -487,6 +487,8 @@ export type ShopSettingsRow = {
   billingAddress: string;
   codEnabled: boolean;
   codLimit: number;
+  minOrderValue: number;
+  codMinOrderValue: number;
   codPincodes: string;
   ownerWhatsapp: string;
   ownerEmail: string;
@@ -522,6 +524,8 @@ export const getShopSettings = createServerFn({ method: "POST" }).handler(async 
     billingAddress: String(data?.billing_address ?? ""),
     codEnabled: Boolean(data?.cod_enabled ?? true),
     codLimit: Number(data?.cod_limit ?? 2000),
+    minOrderValue: Number(data?.min_order_value ?? 0),
+    codMinOrderValue: Number(data?.cod_min_order_value ?? 0),
     codPincodes: ((data?.cod_pincodes ?? []) as string[]).join(", "),
     ownerWhatsapp: String(data?.owner_whatsapp ?? "7501849610"),
     ownerEmail: String(data?.owner_email ?? ""),
@@ -575,6 +579,8 @@ export const saveShopSettings = createServerFn({ method: "POST" })
       billing_address: String(data.billingAddress ?? "").trim() || null,
       cod_enabled: Boolean(data.codEnabled),
       cod_limit: Math.max(0, Number(data.codLimit) || 0),
+      min_order_value: Math.max(0, Number(data.minOrderValue) || 0),
+      cod_min_order_value: Math.max(0, Number(data.codMinOrderValue) || 0),
       cod_pincodes: pincodes,
       owner_whatsapp: String(data.ownerWhatsapp ?? "").replace(/\D/g, "").slice(-12) || "7501849610",
       owner_email: String(data.ownerEmail ?? "").trim() || null,

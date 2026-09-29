@@ -20,7 +20,7 @@ import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/rou
 import { previewCoupon } from "@/lib/shop-extras.functions";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
-import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
+import { codAllowed, minimumOrderShortfall, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
@@ -122,10 +122,12 @@ function CheckoutPage() {
   }, [addressesFetched, savedAddresses, selectedAddressId]);
 
   const base = Math.max(0, subtotal - discount + delivery.fee);
+  const goodsTotal = Math.max(0, subtotal - discount);
   const taxed = settings ? withTax(base, settings) : { total: base, tax: 0 };
   const grand = taxed.total;
   const onlineReady = availability?.online === true;
   const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
+  const minimumShortfall = settings ? minimumOrderShortfall(goodsTotal, settings) : 0;
 
   const finish = async (order: PendingOrder, message: string) => {
     if (user) {
@@ -255,6 +257,9 @@ function CheckoutPage() {
   };
 
   const placeOrder = async () => {
+    if (minimumShortfall > 0 && settings) {
+      return toast.error(`Add ${formatINR(minimumShortfall)} more to reach the ${formatINR(settings.minOrderValue)} minimum order value.`);
+    }
     const short = lines.find((l) => l.product.stock < l.qty);
     if (short) {
       toast.error(
@@ -549,7 +554,7 @@ function CheckoutPage() {
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-                <Button size="lg" disabled={placing} onClick={() => void placeOrder()}>
+                <Button size="lg" disabled={placing || minimumShortfall > 0} onClick={() => void placeOrder()}>
                   {placing ? <SparkRing /> : null}{placing
                     ? "Please wait…"
                     : payment === "Cash on Delivery"
@@ -634,6 +639,11 @@ function CheckoutPage() {
             )}
             <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(grand)}</dd></div>
           </dl>
+          {minimumShortfall > 0 && settings && (
+            <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm font-medium text-destructive">
+              Add {formatINR(minimumShortfall)} more to reach the {formatINR(settings.minOrderValue)} minimum order value.
+            </p>
+          )}
           {settings?.gstin && (
             <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Building2 className="size-3.5" /> GSTIN {settings.gstin}

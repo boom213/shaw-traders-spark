@@ -1686,6 +1686,7 @@ export type Database = {
           browse_banner: string | null
           cod_enabled: boolean
           cod_limit: number
+          cod_min_order_value: number
           cod_pincodes: string[]
           default_hsn: string
           grievance_officer_email: string | null
@@ -1697,6 +1698,7 @@ export type Database = {
           id: boolean
           legal_name: string | null
           low_stock_threshold: number
+          min_order_value: number
           notify_enabled: boolean
           ordering_mode: Database["public"]["Enums"]["ordering_mode"]
           owner_email: string | null
@@ -1712,6 +1714,7 @@ export type Database = {
           browse_banner?: string | null
           cod_enabled?: boolean
           cod_limit?: number
+          cod_min_order_value?: number
           cod_pincodes?: string[]
           default_hsn?: string
           grievance_officer_email?: string | null
@@ -1723,6 +1726,7 @@ export type Database = {
           id?: boolean
           legal_name?: string | null
           low_stock_threshold?: number
+          min_order_value?: number
           notify_enabled?: boolean
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"]
           owner_email?: string | null
@@ -1738,6 +1742,7 @@ export type Database = {
           browse_banner?: string | null
           cod_enabled?: boolean
           cod_limit?: number
+          cod_min_order_value?: number
           cod_pincodes?: string[]
           default_hsn?: string
           grievance_officer_email?: string | null
@@ -1749,6 +1754,7 @@ export type Database = {
           id?: boolean
           legal_name?: string | null
           low_stock_threshold?: number
+          min_order_value?: number
           notify_enabled?: boolean
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"]
           owner_email?: string | null
