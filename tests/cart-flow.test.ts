@@ -51,6 +51,15 @@ describe("cart lifecycle", () => {
     expect(cleared.saved).toEqual(["later"]);
     expect(cleared.cartClearedAt).not.toBeNull();
   });
+
+  it("does not restore legacy saved lines after a timestamped local clear", () => {
+    const merged = mergeShoppingLists(
+      lists({ cartClearedAt: 500 }),
+      lists({ cart: [{ productId: "old-part", qty: 2 }] }),
+    );
+    expect(merged.cart).toEqual([]);
+    expect(merged.cartClearedAt).toBe(500);
+  });
 });
 
 describe("checkout cart-clear wiring", () => {
