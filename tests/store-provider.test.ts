@@ -43,6 +43,24 @@ describe("store provider stability", () => {
     expect(merged.cartClearedAt).toBe(200);
   });
 
+  it("keeps a local clear authoritative when stale saved lines carry the same clear timestamp", () => {
+    const merged = mergeShoppingLists(
+      lists({ cartClearedAt: 200 }),
+      lists({ cart: [{ productId: "stale-part", qty: 1 }], cartClearedAt: 200 }),
+    );
+    expect(merged.cart).toEqual([]);
+    expect(merged.cartClearedAt).toBe(200);
+  });
+
+  it("keeps a newer remote clear authoritative over stale local lines", () => {
+    const merged = mergeShoppingLists(
+      lists({ cart: [{ productId: "stale-local-part", qty: 1 }], cartClearedAt: 100 }),
+      lists({ cartClearedAt: 200 }),
+    );
+    expect(merged.cart).toEqual([]);
+    expect(merged.cartClearedAt).toBe(200);
+  });
+
   it("keeps normal cart merging unchanged without a clear signal", () => {
     const merged = mergeShoppingLists(
       lists({ cart: [{ productId: "local-part", qty: 2 }, { productId: "shared-part", qty: 3 }] }),
@@ -61,5 +79,14 @@ describe("store provider stability", () => {
     expect(storageSync).toContain("if (timer.current)");
     expect(storageSync).toContain("clearTimeout(timer.current)");
     expect(storageSync).toContain("timer.current = null");
+  });
+
+  it("waits for the initial account read and serializes remote writes", async () => {
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/hooks/useStore.tsx", "utf8"));
+    const accountRead = source.slice(source.indexOf("if (!user || !ready || mirrored.current)"), source.indexOf("// Push changes up"));
+    expect(accountRead.indexOf("mirrored.current = true")).toBeGreaterThan(accountRead.indexOf("maybeSingle()"));
+    expect(source).toContain("writeChain.current.then(write, write)");
+    expect(source).toContain("return queueRemoteWrite(user.id, cleared)");
+    expect(source).toContain("cart_cleared_at.lte.");
   });
 });

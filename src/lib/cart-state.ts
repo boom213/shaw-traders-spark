@@ -11,13 +11,17 @@ export type ShoppingListsState = {
 export function mergeShoppingLists(local: ShoppingListsState, remote: ShoppingListsState): ShoppingListsState {
   const localClearIsNewer = local.cart.length === 0
     && local.cartClearedAt !== null
+    && local.cartClearedAt >= (remote.cartClearedAt ?? 0);
+  const remoteClearIsNewer = remote.cart.length === 0
     && remote.cartClearedAt !== null
-    && local.cartClearedAt > remote.cartClearedAt;
-  const cart = localClearIsNewer ? [] : remote.cart.map((line) => ({ ...line }));
-  for (const line of local.cart) {
-    const match = cart.find((candidate) => candidate.productId === line.productId);
-    if (match) match.qty = Math.max(match.qty, line.qty);
-    else cart.push({ ...line });
+    && remote.cartClearedAt > (local.cartClearedAt ?? 0);
+  const cart = localClearIsNewer || remoteClearIsNewer ? [] : remote.cart.map((line) => ({ ...line }));
+  if (!localClearIsNewer && !remoteClearIsNewer) {
+    for (const line of local.cart) {
+      const match = cart.find((candidate) => candidate.productId === line.productId);
+      if (match) match.qty = Math.max(match.qty, line.qty);
+      else cart.push({ ...line });
+    }
   }
 
   const unique = (left: string[], right: string[]) => Array.from(new Set([...left, ...right]));
@@ -31,5 +35,5 @@ export function mergeShoppingLists(local: ShoppingListsState, remote: ShoppingLi
 }
 
 export function withoutCart(lists: ShoppingListsState, cartClearedAt = Date.now()): ShoppingListsState {
-  return { ...lists, cart: [], cartClearedAt };
+  return { ...lists, cart: [], cartClearedAt: Math.max(cartClearedAt, (lists.cartClearedAt ?? 0) + 1) };
 }

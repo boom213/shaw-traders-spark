@@ -78,6 +78,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listsRef = useRef<Lists>(EMPTY);
   const revision = useRef(0);
+  const writeChain = useRef<Promise<boolean>>(Promise.resolve(true));
+
+  const queueRemoteWrite = useCallback((profileId: string, next: Lists) => {
+    const write = async () => {
+      const values = {
+        cart: next.cart as never,
+        wishlist: next.wishlist as never,
+        saved: next.saved as never,
+        recently_viewed: next.recentlyViewed as never,
+        cart_cleared_at: next.cartClearedAt,
+      };
+      let update = supabase
+        .from("user_lists")
+        .update(values)
+        .eq("profile_id", profileId);
+      update = next.cartClearedAt === null
+        ? update.is("cart_cleared_at", null)
+        : update.or(`cart_cleared_at.is.null,cart_cleared_at.lte.${next.cartClearedAt}`);
+      const { data, error } = await update.select("profile_id");
+      if (error) {
+        console.error("Could not sync shopping lists", error.message);
+        return false;
+      }
+      if ((data ?? []).length === 0) {
+        const { data: existing, error: readError } = await supabase
+          .from("user_lists")
+          .select("profile_id")
+          .eq("profile_id", profileId)
+          .maybeSingle();
+        if (readError) {
+          console.error("Could not verify shopping lists", readError.message);
+          return false;
+        }
+        if (existing) return true;
+        const { error: insertError } = await supabase.from("user_lists").insert({ profile_id: profileId, ...values });
+        if (insertError) {
+          console.error("Could not create shopping lists", insertError.message);
+          return false;
+        }
+      }
+      return true;
+    };
+    const queued = writeChain.current.then(write, write);
+    writeChain.current = queued;
+    return queued;
+  }, []);
 
   const replaceLists = useCallback((next: Lists) => {
     listsRef.current = next;
@@ -132,19 +178,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user || !ready || mirrored.current) return;
-    mirrored.current = true;
     const startedAtRevision = revision.current;
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("user_lists")
         .select("cart, wishlist, saved, recently_viewed, cart_cleared_at")
         .eq("profile_id", user.id)
         .maybeSingle();
-      const remote = listsFromRow(data);
-      if (revision.current !== startedAtRevision) {
+      if (error) {
+        console.error("Could not load shopping lists", error.message);
         setWishlistReady(true);
         return;
       }
+      const remote = listsFromRow(data);
+      if (revision.current !== startedAtRevision) {
+        mirrored.current = true;
+        setWishlistReady(true);
+        return;
+      }
+      mirrored.current = true;
       setLists((local) => {
         const merged = mergeLists(local, remote);
         listsRef.current = merged;
@@ -160,24 +212,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!user || !ready || !mirrored.current) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      void supabase
-        .from("user_lists")
-        .upsert({
-          profile_id: user.id,
-          cart: lists.cart as never,
-          wishlist: lists.wishlist as never,
-          saved: lists.saved as never,
-          recently_viewed: lists.recentlyViewed as never,
-          cart_cleared_at: lists.cartClearedAt,
-        })
-        .then(({ error }) => {
-          if (error) console.error("Could not sync shopping lists", error.message);
-        });
+      timer.current = null;
+      void queueRemoteWrite(user.id, lists);
     }, 600);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [lists, user, ready]);
+  }, [lists, user, ready, queueRemoteWrite]);
 
   const update = useCallback((fn: (l: Lists) => Lists) => {
     setLists((prev) => {
@@ -254,22 +295,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         replaceLists(cleared);
         if (!user) return true;
-        const { error } = await supabase.from("user_lists").upsert({
-          profile_id: user.id,
-          cart: cleared.cart as never,
-          wishlist: cleared.wishlist as never,
-          saved: cleared.saved as never,
-          recently_viewed: cleared.recentlyViewed as never,
-          cart_cleared_at: cleared.cartClearedAt,
-        });
-        if (error) {
-          console.error("Could not clear the synced cart", error.message);
-          return false;
-        }
-        return true;
+        return queueRemoteWrite(user.id, cleared);
       },
     }),
-    [lists, ready, user, authReady, wishlistReady, update, replaceLists],
+    [lists, ready, user, authReady, wishlistReady, update, replaceLists, queueRemoteWrite],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

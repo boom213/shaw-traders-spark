@@ -25,6 +25,10 @@ describe("cart lifecycle", () => {
     }));
   });
 
+  it("always advances the clear timestamp beyond the previous clear", () => {
+    expect(withoutCart(lists({ cartClearedAt: 500 }), 500).cartClearedAt).toBe(501);
+  });
+
   it("preserves a guest cart when account lists are first merged", () => {
     const merged = mergeShoppingLists(
       lists({ cart: [{ productId: "guest-part", qty: 2 }] }),
@@ -50,6 +54,15 @@ describe("cart lifecycle", () => {
     expect(cleared.wishlist).toEqual(["wish"]);
     expect(cleared.saved).toEqual(["later"]);
     expect(cleared.cartClearedAt).not.toBeNull();
+  });
+
+  it("does not restore legacy saved lines after a timestamped local clear", () => {
+    const merged = mergeShoppingLists(
+      lists({ cartClearedAt: 500 }),
+      lists({ cart: [{ productId: "old-part", qty: 2 }] }),
+    );
+    expect(merged.cart).toEqual([]);
+    expect(merged.cartClearedAt).toBe(500);
   });
 });
 
