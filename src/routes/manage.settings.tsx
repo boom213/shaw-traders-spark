@@ -210,8 +210,16 @@ function GeneralSettings() {
         <Row label="Allow cash on delivery">
           <Switch checked={form.codEnabled} onCheckedChange={(v) => set("codEnabled", v)} />
         </Row>
+        <Field label="Minimum order value (₹)">
+          <Input type="number" min="0" value={String(form.minOrderValue)} onChange={(e) => set("minOrderValue", Number(e.target.value))} />
+          <p className="text-xs text-muted-foreground">Orders below this total cannot be placed. Leave at 0 for no minimum.</p>
+        </Field>
+        <Field label="Minimum order value for Cash on Delivery (₹)">
+          <Input type="number" min="0" value={String(form.codMinOrderValue)} onChange={(e) => set("codMinOrderValue", Number(e.target.value))} />
+          <p className="text-xs text-muted-foreground">A higher floor just for COD, on top of the general minimum. Leave at 0 to use only the general minimum.</p>
+        </Field>
         <Field label="Maximum order value for cash on delivery (₹)">
-          <Input type="number" value={String(form.codLimit)} onChange={(e) => set("codLimit", Number(e.target.value))} />
+          <Input type="number" min="0" value={String(form.codLimit)} onChange={(e) => set("codLimit", Number(e.target.value))} />
         </Field>
         <Field label="PIN codes where cash on delivery works (leave blank for everywhere)">
           <Textarea

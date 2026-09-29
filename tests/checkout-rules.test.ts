@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SETTINGS, codAllowed, withTax, type ShopSettings } from "@/lib/shop-settings";
+import { DEFAULT_SETTINGS, codAllowed, minimumOrderShortfall, withTax, type ShopSettings } from "@/lib/shop-settings";
 import { deliveryFor } from "@/lib/delivery";
 
 const settings = (patch: Partial<ShopSettings> = {}): ShopSettings => ({ ...DEFAULT_SETTINGS, ...patch });
@@ -45,6 +45,16 @@ describe("cash on delivery rules", () => {
     expect(codAllowed(100, "713403", settings({ codEnabled: false })).allowed).toBe(false);
   });
 
+  it("blocks cash on delivery below its configured minimum", () => {
+    const res = codAllowed(300, "713403", settings({ codMinOrderValue: 500 }));
+    expect(res.allowed).toBe(false);
+    expect(res.reason).toContain("₹500");
+  });
+
+  it("keeps cash on delivery minimum disabled at zero", () => {
+    expect(codAllowed(1, "713403", settings({ codMinOrderValue: 0 })).allowed).toBe(true);
+  });
+
   it("blocks a pincode outside the serviceable list", () => {
     const s = settings({ codPincodes: ["713403", "713101"] });
     expect(codAllowed(500, "110001", s).allowed).toBe(false);
@@ -53,6 +63,21 @@ describe("cash on delivery rules", () => {
 
   it("serves everywhere when no pincode list is set", () => {
     expect(codAllowed(500, "110001", settings({ codPincodes: [] })).allowed).toBe(true);
+  });
+});
+
+describe("minimum order value", () => {
+  it("calculates the remaining post-discount goods value", () => {
+    expect(minimumOrderShortfall(150, settings({ minOrderValue: 199 }))).toBe(49);
+  });
+
+  it("does not include a shortfall at or above the floor", () => {
+    expect(minimumOrderShortfall(199, settings({ minOrderValue: 199 }))).toBe(0);
+    expect(minimumOrderShortfall(500, settings({ minOrderValue: 199 }))).toBe(0);
+  });
+
+  it("keeps the store-wide minimum disabled at zero", () => {
+    expect(minimumOrderShortfall(1, settings({ minOrderValue: 0 }))).toBe(0);
   });
 });
 

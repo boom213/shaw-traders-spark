@@ -17,7 +17,7 @@ let settingsBackup: Record<string, unknown> | null = null;
 
 const address = { name: "Test Buyer", phone: "9999999999", line1: "1 Test Road", city: "Bud Bud", pincode: "713403" };
 
-async function makeProduct(price: number, stock: number) {
+async function makeProduct(price: number, stock: number, rules: { minOrderQty?: number; orderMultiple?: number } = {}) {
   const { data, error } = await sb
     .from("products")
     .insert({
@@ -28,6 +28,8 @@ async function makeProduct(price: number, stock: number) {
       price,
       stock,
       is_active: true,
+      min_order_qty: rules.minOrderQty ?? 1,
+      order_multiple: rules.orderMultiple ?? 1,
     })
     .select("id")
     .single();
@@ -66,7 +68,7 @@ beforeAll(async () => {
   settingsBackup = s ?? null;
   await sb
     .from("shop_settings")
-    .upsert({ id: true, gst_enabled: true, gst_rate: 18, prices_include_gst: true, cod_enabled: true, cod_limit: 2000, cod_pincodes: [] });
+    .upsert({ id: true, gst_enabled: true, gst_rate: 18, prices_include_gst: true, cod_enabled: true, cod_limit: 2000, min_order_value: 0, cod_min_order_value: 0, cod_pincodes: [] });
 });
 
 afterAll(async () => {
@@ -185,6 +187,30 @@ describe("create_order", () => {
     const id = await makeProduct(4500, 2);
     const res = await placeOrder([{ product_id: id, qty: 1 }], "UPI");
     expect(res.row.payment_status).toBe("pending");
+  });
+
+  it("enforces the general minimum after discounts", async () => {
+    await sb.from("shop_settings").update({ min_order_value: 199 }).eq("id", true);
+    const id = await makeProduct(150, 2);
+    const res = await placeOrder([{ product_id: id, qty: 1 }], "UPI");
+    expect(res.error).toMatch(/minimum order value/i);
+    await sb.from("shop_settings").update({ min_order_value: 0 }).eq("id", true);
+  });
+
+  it("blocks only COD below the COD minimum", async () => {
+    await sb.from("shop_settings").update({ cod_min_order_value: 500 }).eq("id", true);
+    const id = await makeProduct(300, 4);
+    const cod = await placeOrder([{ product_id: id, qty: 1 }], "Cash on Delivery");
+    expect(cod.error).toMatch(/orders of 500 or more/i);
+    const online = await placeOrder([{ product_id: id, qty: 1 }], "UPI");
+    expect(online.row.payment_status).toBe("pending");
+    await sb.from("shop_settings").update({ cod_min_order_value: 0 }).eq("id", true);
+  });
+
+  it("enforces product minimum quantity for retail orders", async () => {
+    const id = await makeProduct(100, 10, { minOrderQty: 5 });
+    const res = await placeOrder([{ product_id: id, qty: 2 }], "UPI");
+    expect(res.error).toMatch(/minimum order quantity of 5/i);
   });
 
   it("applies a valid coupon and ignores an invalid one", async () => {
