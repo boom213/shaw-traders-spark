@@ -7,7 +7,7 @@ export type CartLine = ShoppingListsState["cart"][number];
 
 export type Lists = ShoppingListsState;
 
-const EMPTY: Lists = { cart: [], wishlist: [], saved: [], recentlyViewed: [] };
+const EMPTY: Lists = { cart: [], wishlist: [], saved: [], recentlyViewed: [], cartClearedAt: null };
 const KEY = "shaw-ev-lists";
 
 function readLocal(): Lists {
@@ -34,6 +34,7 @@ function listsFromRow(data: {
   wishlist: unknown;
   saved: unknown;
   recently_viewed: unknown;
+  cart_cleared_at: number | null;
 } | null): Lists {
   return data
     ? {
@@ -41,6 +42,7 @@ function listsFromRow(data: {
         wishlist: (data.wishlist as string[]) ?? [],
         saved: (data.saved as string[]) ?? [],
         recentlyViewed: (data.recently_viewed as string[]) ?? [],
+        cartClearedAt: data.cart_cleared_at,
       }
     : EMPTY;
 }
@@ -94,6 +96,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const syncFromAnotherTab = (event: StorageEvent) => {
       if (event.key !== KEY) return;
       revision.current += 1;
+      if (timer.current) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
       const next = readLocal();
       listsRef.current = next;
       setLists(next);
@@ -131,7 +137,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (async () => {
       const { data } = await supabase
         .from("user_lists")
-        .select("cart, wishlist, saved, recently_viewed")
+        .select("cart, wishlist, saved, recently_viewed, cart_cleared_at")
         .eq("profile_id", user.id)
         .maybeSingle();
       const remote = listsFromRow(data);
@@ -162,6 +168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           wishlist: lists.wishlist as never,
           saved: lists.saved as never,
           recently_viewed: lists.recentlyViewed as never,
+          cart_cleared_at: lists.cartClearedAt,
         })
         .then(({ error }) => {
           if (error) console.error("Could not sync shopping lists", error.message);
@@ -253,6 +260,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           wishlist: cleared.wishlist as never,
           saved: cleared.saved as never,
           recently_viewed: cleared.recentlyViewed as never,
+          cart_cleared_at: cleared.cartClearedAt,
         });
         if (error) {
           console.error("Could not clear the synced cart", error.message);

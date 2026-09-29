@@ -18,7 +18,7 @@
 - Lazy-load iframe-free homepage social links below shopping content.
 - All brochure downloads use one validated enquiry and fixed-recipient notice.
 - Showroom visibility comes from shared shop settings.
-- Cart clears are immediate, cross-tab synchronized, and persisted before navigation; debounce only ordinary list sync.
+- Timestamp cart clears; sync tabs and persist before navigation; debounce ordinary sync only.
 - Bookings use owner-scoped reads and public-token tracking.
 - Retail-only online ordering; keep guest carts; wholesale/staff use separate flows; release unpaid stock at 30m; reconcile Razorpay via signed callbacks and 90s polling; quarantine late payments.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.

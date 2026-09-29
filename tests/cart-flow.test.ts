@@ -6,6 +6,7 @@ const lists = (overrides: Partial<ShoppingListsState> = {}): ShoppingListsState 
   wishlist: [],
   saved: [],
   recentlyViewed: [],
+  cartClearedAt: null,
   ...overrides,
 });
 
@@ -16,7 +17,12 @@ describe("cart lifecycle", () => {
       wishlist: ["wish-1"],
       saved: ["saved-1"],
       recentlyViewed: ["viewed-1"],
-    }))).toEqual(lists({ wishlist: ["wish-1"], saved: ["saved-1"], recentlyViewed: ["viewed-1"] }));
+    }), 123)).toEqual(lists({
+      wishlist: ["wish-1"],
+      saved: ["saved-1"],
+      recentlyViewed: ["viewed-1"],
+      cartClearedAt: 123,
+    }));
   });
 
   it("preserves a guest cart when account lists are first merged", () => {
@@ -43,6 +49,7 @@ describe("cart lifecycle", () => {
     expect(cleared.cart).toHaveLength(0);
     expect(cleared.wishlist).toEqual(["wish"]);
     expect(cleared.saved).toEqual(["later"]);
+    expect(cleared.cartClearedAt).not.toBeNull();
   });
 });
 

@@ -2233,6 +2233,7 @@ export type Database = {
       user_lists: {
         Row: {
           cart: Json
+          cart_cleared_at: number | null
           profile_id: string
           recently_viewed: Json
           reminded_at: string | null
@@ -2242,6 +2243,7 @@ export type Database = {
         }
         Insert: {
           cart?: Json
+          cart_cleared_at?: number | null
           profile_id: string
           recently_viewed?: Json
           reminded_at?: string | null
@@ -2251,6 +2253,7 @@ export type Database = {
         }
         Update: {
           cart?: Json
+          cart_cleared_at?: number | null
           profile_id?: string
           recently_viewed?: Json
           reminded_at?: string | null
