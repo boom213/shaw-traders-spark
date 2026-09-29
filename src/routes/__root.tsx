@@ -22,6 +22,7 @@ import { setupServiceWorker } from "@/lib/pwa";
 import { setupErrorReporting } from "@/lib/error-reporting";
 import { categoriesQuery } from "@/lib/queries";
 import { BUSINESS } from "@/lib/catalog";
+import { shopSettingsQuery } from "@/lib/shop-settings";
 
 /** Primary sections, emitted as SiteNavigationElement JSON-LD for sitelinks. */
 const SITE_SECTIONS = [
@@ -60,7 +61,10 @@ function NotFoundComponent() {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Prefetched on the server so the header category nav and footer Shop column
   // are present in the crawled HTML rather than filled in after hydration.
-  loader: ({ context }) => context.queryClient.ensureQueryData(categoriesQuery()),
+  loader: ({ context }) => Promise.all([
+    context.queryClient.ensureQueryData(categoriesQuery()),
+    context.queryClient.ensureQueryData(shopSettingsQuery()),
+  ]),
   head: () => ({
     meta: [
       { charSet: "utf-8" },

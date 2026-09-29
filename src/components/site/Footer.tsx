@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import { BUSINESS, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
@@ -8,8 +8,8 @@ import { reopenConsent } from "@/components/site/CookieConsent";
 import { SocialLinks } from "@/components/site/SocialLinks";
 
 export function Footer() {
-  const { data: categories } = useQuery(categoriesQuery());
-  const { data: settings } = useQuery(shopSettingsQuery());
+  const { data: categories } = useSuspenseQuery(categoriesQuery());
+  const { data: settings } = useSuspenseQuery(shopSettingsQuery());
   const legalName = settings?.legalName || BUSINESS.name;
 
   return (
