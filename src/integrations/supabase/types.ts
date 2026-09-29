@@ -3238,7 +3238,7 @@ export type Database = {
       product_kind: "part" | "vehicle"
       product_status: "draft" | "visible" | "hidden"
       review_status: "pending" | "approved" | "rejected"
-      staff_role: "super_admin" | "owner" | "manager" | "staff"
+      staff_role: "super_admin" | "owner" | "manager" | "staff" | "online_sales"
       supplier_category:
         | "stock_gst"
         | "stock_no_gst"
@@ -3415,7 +3415,7 @@ export const Constants = {
       product_kind: ["part", "vehicle"],
       product_status: ["draft", "visible", "hidden"],
       review_status: ["pending", "approved", "rejected"],
-      staff_role: ["super_admin", "owner", "manager", "staff"],
+      staff_role: ["super_admin", "owner", "manager", "staff", "online_sales"],
       supplier_category: [
         "stock_gst",
         "stock_no_gst",
