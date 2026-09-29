@@ -61,7 +61,10 @@ type Ctx = {
   clearCart: () => Promise<boolean>;
 };
 
-const StoreContext = createContext<Ctx | null>(null);
+// Preserve context identity when Vite hot-updates provider and consumer modules separately.
+const StoreContext = import.meta.hot?.data.storeContext as ReturnType<typeof createContext<Ctx | null>> | undefined
+  ?? createContext<Ctx | null>(null);
+if (import.meta.hot) import.meta.hot.data.storeContext = StoreContext;
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [lists, setLists] = useState<Lists>(EMPTY);
