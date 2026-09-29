@@ -35,5 +35,5 @@ export function mergeShoppingLists(local: ShoppingListsState, remote: ShoppingLi
 }
 
 export function withoutCart(lists: ShoppingListsState, cartClearedAt = Date.now()): ShoppingListsState {
-  return { ...lists, cart: [], cartClearedAt };
+  return { ...lists, cart: [], cartClearedAt: Math.max(cartClearedAt, (lists.cartClearedAt ?? 0) + 1) };
 }

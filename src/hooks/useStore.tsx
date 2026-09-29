@@ -82,17 +82,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const queueRemoteWrite = useCallback((profileId: string, next: Lists) => {
     const write = async () => {
-      const { error } = await supabase.from("user_lists").upsert({
-        profile_id: profileId,
+      const values = {
         cart: next.cart as never,
         wishlist: next.wishlist as never,
         saved: next.saved as never,
         recently_viewed: next.recentlyViewed as never,
         cart_cleared_at: next.cartClearedAt,
-      });
+      };
+      let update = supabase
+        .from("user_lists")
+        .update(values)
+        .eq("profile_id", profileId);
+      update = next.cartClearedAt === null
+        ? update.is("cart_cleared_at", null)
+        : update.or(`cart_cleared_at.is.null,cart_cleared_at.lte.${next.cartClearedAt}`);
+      const { data, error } = await update.select("profile_id");
       if (error) {
         console.error("Could not sync shopping lists", error.message);
         return false;
+      }
+      if ((data ?? []).length === 0) {
+        const { data: existing, error: readError } = await supabase
+          .from("user_lists")
+          .select("profile_id")
+          .eq("profile_id", profileId)
+          .maybeSingle();
+        if (readError) {
+          console.error("Could not verify shopping lists", readError.message);
+          return false;
+        }
+        if (existing) return true;
+        const { error: insertError } = await supabase.from("user_lists").insert({ profile_id: profileId, ...values });
+        if (insertError) {
+          console.error("Could not create shopping lists", insertError.message);
+          return false;
+        }
       }
       return true;
     };

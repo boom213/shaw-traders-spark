@@ -25,6 +25,10 @@ describe("cart lifecycle", () => {
     }));
   });
 
+  it("always advances the clear timestamp beyond the previous clear", () => {
+    expect(withoutCart(lists({ cartClearedAt: 500 }), 500).cartClearedAt).toBe(501);
+  });
+
   it("preserves a guest cart when account lists are first merged", () => {
     const merged = mergeShoppingLists(
       lists({ cart: [{ productId: "guest-part", qty: 2 }] }),

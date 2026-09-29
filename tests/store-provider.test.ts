@@ -87,5 +87,6 @@ describe("store provider stability", () => {
     expect(accountRead.indexOf("mirrored.current = true")).toBeGreaterThan(accountRead.indexOf("maybeSingle()"));
     expect(source).toContain("writeChain.current.then(write, write)");
     expect(source).toContain("return queueRemoteWrite(user.id, cleared)");
+    expect(source).toContain("cart_cleared_at.lte.");
   });
 });
