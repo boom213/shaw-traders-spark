@@ -15,7 +15,7 @@ export type StaffCapability =
 const RANK: Record<StaffRole, number> = { online_sales: 0, staff: 1, manager: 2, owner: 3, super_admin: 4 };
 
 export const ROLE_LABEL: Record<StaffRole, string> = {
-  online_sales: "Online Sales",
+  online_sales: "Sales Manager",
   staff: "Staff",
   manager: "Manager",
   owner: "Owner",

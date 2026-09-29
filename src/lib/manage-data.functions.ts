@@ -91,7 +91,7 @@ async function requireRetailOrder(sb: Awaited<ReturnType<typeof admin>>, role: s
   if (role !== "online_sales") return;
   const { data, error } = await sb.from("counter_sales").select("order_id").eq("order_id", orderId).maybeSingle();
   if (error) throw new Error(error.message);
-  if (data) throw new Error("Online Sales access is limited to retail online orders");
+  if (data) throw new Error("Sales Manager access is limited to retail online orders");
 }
 
 async function onlineOrderAdmin(orderId?: string) {
