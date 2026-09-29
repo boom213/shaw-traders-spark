@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ProductCard } from "@/components/site/ProductCard";
@@ -83,7 +84,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 function CartPage() {
   const { mode: siteMode } = useSiteOrdering();
   const purchase = usePurchaseAccess();
-  const { lists, setQty, removeFromCart, saveForLater, moveToCart } = useStore();
+  const { lists, setQty, removeFromCart, saveForLater, moveToCart, clearCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const { lines, savedProducts, loading, subtotal, discount, shipping, total } = useCartTotals(applied);
@@ -109,6 +110,15 @@ function CartPage() {
     window.localStorage.removeItem(COUPON_KEY);
   };
 
+  const clearEverything = async () => {
+    const synced = await clearCart();
+    setApplied(undefined);
+    setCode("");
+    window.localStorage.removeItem(COUPON_KEY);
+    if (synced) toast.success("Cart cleared");
+    else toast.warning("Cart cleared on this device, but account sync will retry when you make another change.");
+  };
+
   if (siteMode !== "full") {
     return (
       <div className="container-page py-16 text-center">
@@ -120,7 +130,24 @@ function CartPage() {
 
   return (
     <div className="container-page py-10">
-      <SectionHeading title="Your Cart" subtitle={loading ? "Loading your cart…" : `${lines.length} item(s)`} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <SectionHeading title="Your Cart" subtitle={loading ? "Loading your cart…" : `${lines.length} item(s)`} />
+        {!loading && lines.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild><Button variant="outline"><Trash2 className="size-4" /> Clear cart</Button></AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear your cart?</AlertDialogTitle>
+                <AlertDialogDescription>This removes every item and the applied coupon. Saved-for-later items will stay available.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep items</AlertDialogCancel>
+                <AlertDialogAction onClick={() => void clearEverything()}>Clear cart</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       {loading ? (
         <SparkCharge label="Loading your cart…" />

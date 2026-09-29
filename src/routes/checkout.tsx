@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Building2, Check, CreditCard, Landmark, MapPin, Plus, Truck, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,7 @@ const PAYMENT = [
 ] as const;
 
 type PendingOrder = { orderId: string; humanId: string; token: string; total: number };
+const PENDING_CHECKOUT_KEY = "shaw-ev-pending-checkout";
 const addressInput = (address: CheckoutAddress): CustomerAddressInput => ({
   name: address.name ?? "",
   phone: address.phone ?? "",
@@ -93,6 +94,7 @@ function CheckoutPage() {
   const [pending, setPending] = useState<PendingOrder | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [pollArmed, setPollArmed] = useState(false);
+  const recoveryStarted = useRef(false);
   const [addr, setAddr] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -131,9 +133,45 @@ function CheckoutPage() {
     }
     await clearCart();
     window.localStorage.removeItem(COUPON_KEY);
+    window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
     toast.success(message);
     void navigate({ to: "/order/$id", params: { id: order.orderId }, search: { t: order.token } });
   };
+
+  useEffect(() => {
+    if (!authReady || !user || recoveryStarted.current) return;
+    const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_KEY);
+    if (!raw) return;
+    recoveryStarted.current = true;
+    let stored: PendingOrder;
+    try {
+      stored = JSON.parse(raw) as PendingOrder;
+    } catch {
+      window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+      return;
+    }
+    if (!stored.orderId || !stored.humanId || !stored.token) {
+      window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+      return;
+    }
+    setPending(stored);
+    void readPaymentState({ data: { orderId: stored.orderId } }).then(async (latest) => {
+      if (latest.status === "paid") {
+        await clearCart();
+        window.localStorage.removeItem(COUPON_KEY);
+        window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+        toast.success(`Payment received · order ${stored.humanId}`);
+        void navigate({ to: "/order/$id", params: { id: stored.orderId }, search: { t: stored.token } });
+        return;
+      }
+      if (latest.status === "pending") {
+        setFailure("Your payment is not confirmed yet. You can try again or cancel this order.");
+        return;
+      }
+      window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
+      setPending(null);
+    });
+  }, [authReady, user, readPaymentState, clearCart, navigate]);
 
   const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
     armed: pollArmed && Boolean(pending),
@@ -181,6 +219,7 @@ function CheckoutPage() {
     rzp: { keyId: string; orderId: string; amountPaise: number },
   ) => {
     setFailure(null);
+    window.sessionStorage.setItem(PENDING_CHECKOUT_KEY, JSON.stringify(order));
     const result = await payWithRazorpay({
       keyId: rzp.keyId,
       orderId: rzp.orderId,
@@ -308,6 +347,7 @@ function CheckoutPage() {
     if (!pending) return;
     setPollArmed(false);
     await abandon({ data: { orderId: pending.orderId } });
+    window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
     setPending(null);
     setFailure(null);
     toast.message("Payment cancelled. Your cart is still here.");

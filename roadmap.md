@@ -1,4 +1,5 @@
 # Current task
+- [x] Make cart clearing reliable after completed checkout, add a confirmed Clear cart action, and cover standard cart flows.
 - [x] Separate customer-facing order and payment states, including payment mode and readable payment status.
 - [x] Restrict storefront cart actions and online checkout to signed-in non-staff retail customers while preserving guest carts.
 - [x] Add an Owner-only live Razorpay reconciliation view for pending, failed, unmatched, and mismatched online payments.
