@@ -89,6 +89,22 @@ export const ALL_STATUSES = [...ORDER_FLOW, ...ORDER_EXTRA];
 
 export const statusLabel = (s: string) => ALL_STATUSES.find((x) => x.value === s)?.label ?? s;
 
+export const paymentStatusLabel = (status: string) => ({
+  paid: "Paid",
+  pending: "Payment pending",
+  failed: "Payment failed",
+  refunded: "Refunded",
+  cod_pending: "Pay on delivery",
+}[status] ?? status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()));
+
+export const paymentHeadline = (status: string) => ({
+  paid: "Thank you, your order is confirmed",
+  pending: "Your order is awaiting payment confirmation",
+  failed: "Payment failed for this order",
+  refunded: "This payment has been refunded",
+  cod_pending: "Your order is confirmed — pay on delivery",
+}[status] ?? "Order payment status updated");
+
 export type OrderItemView = {
   id: string;
   productId: string | null;
