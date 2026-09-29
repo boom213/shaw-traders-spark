@@ -100,14 +100,6 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="inline-flex w-fit max-w-full items-center gap-1 truncate rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-semibold text-accent-foreground">
             <CheckCircle2 className="size-3 shrink-0" /> <span className="truncate">Fits your {vehicle?.model}</span>
           </span>
-        ) : !purchase.eligible ? (
-          <div className="mt-auto grid pt-3">
-            <Button size="sm" className="h-10 sm:h-9" asChild>
-              <Link to={purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
-                {purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
-              </Link>
-            </Button>
-          </div>
         ) : (
           product.model && <p className="line-clamp-1 text-xs text-muted-foreground">Fits: {product.model}</p>
         )}
@@ -149,6 +141,14 @@ export function ProductCard({ product }: { product: Product }) {
               >
                 {t("product.askPrice")}
               </a>
+            </Button>
+          </div>
+        ) : !purchase.eligible ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" className="h-10 sm:h-9" asChild>
+              <Link to={purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
+                {purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+              </Link>
             </Button>
           </div>
         ) : (
