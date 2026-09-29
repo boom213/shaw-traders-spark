@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { staffSession } from "@/lib/staff.functions";
-import { can, capabilityForManagePath, ROLE_LABEL, type StaffCapability, type StaffRole } from "@/lib/staff-permissions";
+import { can, capabilityForManagePath, manageFallbackForRole, ROLE_LABEL, type StaffCapability, type StaffRole } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage")({
   ssr: false,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/manage")({
     if (!session) throw new Error("Could not reach the server. Check your connection and try again.");
     if (!session.signedIn) throw redirect({ to: "/manage-login" });
     const capability = capabilityForManagePath(location.pathname);
-    if (!can(session.role, capability)) throw redirect({ to: "/manage", search: { denied: "1" } });
+    if (!can(session.role, capability)) throw redirect({ to: manageFallbackForRole(session.role), search: { denied: "1" } });
     return { staff: session };
   },
   errorComponent: ({ error, reset }) => (
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/manage")({
 
 const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAPABILITY; label: string; icon: typeof LayoutDashboard; exact: boolean; capability: StaffCapability; group: string }[] = [
   { to: "/manage", label: "Overview", icon: LayoutDashboard, exact: true, capability: "operations", group: "" },
-  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false, capability: "operations", group: "Sales" },
+  { to: "/manage/orders", label: "Orders", icon: Receipt, exact: false, capability: "online-orders", group: "Sales" },
   { to: "/manage/counter-sales", label: "Counter Sales", icon: Banknote, exact: false, capability: "counter-sales", group: "Sales" },
   { to: "/manage/vendors", label: "Vendor Payments", icon: QrCode, exact: false, capability: "vendor-finance", group: "Sales" },
   { to: "/manage/suppliers", label: "Suppliers & Purchases", icon: Truck, exact: false, capability: "vendor-finance", group: "Sales" },

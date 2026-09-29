@@ -8,7 +8,8 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { claimSuperAdmin, recordStaffSignIn, staffSignInAllowed } from "@/lib/staff.functions";
+import { claimSuperAdmin, recordStaffSignIn, staffSession, staffSignInAllowed } from "@/lib/staff.functions";
+import { manageFallbackForRole } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage-login")({
   ssr: false,
@@ -31,6 +32,7 @@ function ManageLogin() {
   const allowed = useServerFn(staffSignInAllowed);
   const record = useServerFn(recordStaffSignIn);
   const claim = useServerFn(claimSuperAdmin);
+  const session = useServerFn(staffSession);
 
   const [firstTime, setFirstTime] = useState(false);
   const [email, setEmail] = useState("");
@@ -60,7 +62,8 @@ function ManageLogin() {
       setError("That email and password do not match a staff account.");
       return;
     }
-    await router.navigate({ to: "/manage" });
+    const staff = await session();
+    await router.navigate({ to: staff.signedIn ? manageFallbackForRole(staff.role) : "/manage" });
   }
 
   async function setUpAccount(e: React.FormEvent) {
@@ -80,7 +83,8 @@ function ManageLogin() {
       setFirstTime(false);
       return;
     }
-    await router.navigate({ to: "/manage" });
+    const staff = await session();
+    await router.navigate({ to: staff.signedIn ? manageFallbackForRole(staff.role) : "/manage" });
   }
 
   return (

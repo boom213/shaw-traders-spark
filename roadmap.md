@@ -1,4 +1,5 @@
 # Current task
+- [ ] Add an Online Sales staff role with server-enforced access to retail online orders only.
 - [x] Add main-photo selection and persistent image reordering to the product editor.
 - [x] Restore list-photo clarity with cache-safe 480px card images while retaining 192px row and PDF thumbnails.
 - [x] Use compact product-photo thumbnails across all product lists while preserving full-size detail photos.
