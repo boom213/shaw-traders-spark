@@ -1,12 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
-import { useStore } from "@/hooks/useStore";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
@@ -28,8 +26,6 @@ export const Route = createFileRoute("/trade/pad")({
 });
 
 function PadPage() {
-  const navigate = useNavigate();
-  const { addToCart } = useStore();
   const { isTrade } = useTradeAccount();
   const [text, setText] = useState("");
   const [lines, setLines] = useState<PadLine[] | null>(null);
@@ -49,12 +45,6 @@ function PadPage() {
   };
 
   const ready = (lines ?? []).filter((l) => l.productId && !l.problem);
-  const addAll = () => {
-    ready.forEach((l) => addToCart(l.productId!, l.qty));
-    toast.success(`${ready.length} item(s) added to your cart`);
-    void navigate({ to: "/cart" });
-  };
-
   const total = ready.reduce((n, l) => n + (l.unitPrice ?? 0) * l.qty, 0);
 
   return (
@@ -120,7 +110,7 @@ function PadPage() {
       {ready.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
           <p className="text-sm">{ready.length} line(s) ready · {formatINR(total)}</p>
-          <Button onClick={addAll}><ShoppingCart className="size-4" /> Add all to cart</Button>
+          <Button asChild><Link to="/trade"><ShoppingCart className="size-4" /> Contact us to order</Link></Button>
         </div>
       )}
     </div>

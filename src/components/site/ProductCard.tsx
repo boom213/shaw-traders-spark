@@ -7,6 +7,7 @@ import { EnquiryDialog } from "@/components/site/EnquiryDialog";
 import { useStore } from "@/hooks/useStore";
 import { useT } from "@/lib/i18n";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
+import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { listImageFor } from "@/lib/placeholders";
@@ -27,6 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { vehicle } = useVehicle();
   const navigate = useNavigate();
   const mode = useProductOrdering(product);
+  const purchase = usePurchaseAccess();
   const [enquiry, setEnquiry] = useState(false);
   const off = discountPct(product.price, product.mrp);
   const wished = lists.wishlist.includes(product.id);
@@ -139,6 +141,14 @@ export function ProductCard({ product }: { product: Product }) {
               >
                 {t("product.askPrice")}
               </a>
+            </Button>
+          </div>
+        ) : !purchase.eligible ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" className="h-10 sm:h-9" asChild>
+              <Link to={purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
+                {purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+              </Link>
             </Button>
           </div>
         ) : (

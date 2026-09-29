@@ -20,7 +20,7 @@
 - Showroom visibility comes from shared shop settings.
 - Clear carts before navigation; debounce only ordinary list sync.
 - Bookings use owner-scoped reads and public-token tracking.
-- Require sign-in for orders; keep guest carts; release unpaid stock at 30 minutes; reconcile Razorpay through signed idempotent callbacks and 90-second polling; quarantine late payments for audited resolution.
+- Retail-only online ordering; keep guest carts; wholesale/staff use separate flows; release unpaid stock at 30m; reconcile Razorpay via signed callbacks and 90s polling; quarantine late payments.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
 - Sales Manager gets server-enforced online-order-only access; online queries exclude `counter_sales.order_id` and Counter Sales stays separate.
 - Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
