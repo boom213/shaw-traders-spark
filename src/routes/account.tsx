@@ -17,6 +17,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { AddressFields, EMPTY_ADDRESS, validateCustomerAddress, type CustomerAddressInput } from "@/components/site/AddressFields";
 import { useStore } from "@/hooks/useStore";
+import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { myOrders } from "@/lib/orders.functions";
@@ -170,6 +171,7 @@ function AuthPanel() {
 
 function Dashboard() {
   const { lists, user, addToCart } = useStore();
+  const purchase = usePurchaseAccess();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -375,7 +377,7 @@ function Dashboard() {
                   <p className="text-xs text-primary">{statusLabel(o.status)}</p>
                 </div>
               </Link>
-              <button
+              {purchase.eligible && <button
                 type="button"
                 className="text-xs text-primary underline"
                 onClick={async () => {
@@ -387,7 +389,7 @@ function Dashboard() {
                 }}
               >
                 Order these again
-              </button>
+              </button>}
               </div>
             ))}
           </div>

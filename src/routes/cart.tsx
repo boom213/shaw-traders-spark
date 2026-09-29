@@ -11,6 +11,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { useStore } from "@/hooks/useStore";
 import { useTierPrices } from "@/hooks/useTrade";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
+import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { canonical, formatINR, type Product } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
@@ -81,6 +82,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 
 function CartPage() {
   const { mode: siteMode } = useSiteOrdering();
+  const purchase = usePurchaseAccess();
   const { lists, setQty, removeFromCart, saveForLater, moveToCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
@@ -150,7 +152,7 @@ function CartPage() {
                   ) : l.qty > l.product.stock ? (
                     <p className="mt-1 text-xs font-medium text-destructive">Only {l.product.stock} available</p>
                   ) : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {purchase.eligible && <div className="mt-3 flex flex-wrap items-center gap-3">
                     <div className="flex items-center rounded-full border border-border">
                       <button onClick={() => setQty(l.productId, l.qty - 1)} className="grid size-8 place-items-center" aria-label="Decrease"><Minus className="size-3.5" /></button>
                       <span className="w-8 text-center text-sm font-semibold">{l.qty}</span>
@@ -170,7 +172,7 @@ function CartPage() {
                     </div>
                     <button onClick={() => saveForLater(l.productId)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Save for later</button>
                     <button onClick={() => removeFromCart(l.productId)} className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Trash2 className="size-3.5" /> Remove</button>
-                  </div>
+                  </div>}
                 </div>
               </div>
             ))}
@@ -182,7 +184,7 @@ function CartPage() {
                   {savedProducts.map((p) => (
                     <div key={p.id} className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-sm">
                       <span>{p.name}</span>
-                      <Button size="sm" variant="outline" onClick={() => moveToCart(p.id)}>Move to cart</Button>
+                      {purchase.eligible && <Button size="sm" variant="outline" onClick={() => moveToCart(p.id)}>Move to cart</Button>}
                     </div>
                   ))}
                 </div>
@@ -210,7 +212,12 @@ function CartPage() {
               <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{shipping === 0 ? "Free" : formatINR(shipping)}</dd></div>
               <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(total)}</dd></div>
             </dl>
-            <Button className="mt-5 w-full" size="lg" asChild><Link to="/checkout">Proceed to Checkout</Link></Button>
+            <Button className="mt-5 w-full" size="lg" asChild>
+              <Link to={purchase.eligible ? "/checkout" : purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
+                {purchase.eligible ? "Proceed to Checkout" : purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+              </Link>
+            </Button>
+            {!purchase.eligible && <p className="mt-2 text-xs text-muted-foreground">Your saved cart will stay here until an eligible retail account signs in.</p>}
             <p className="mt-3 text-xs text-muted-foreground">Items priced on request are not included in the total. We will confirm those prices on WhatsApp.</p>
           </aside>
         </div>

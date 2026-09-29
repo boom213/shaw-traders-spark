@@ -24,6 +24,7 @@ import { codAllowed, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
+import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { abandonPayment, getMyAddresses, paymentState, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
 
 export const Route = createFileRoute("/checkout")({
@@ -73,6 +74,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { mode: siteMode } = useSiteOrdering();
   const { authReady, clearCart, user } = useStore();
+  const purchase = usePurchaseAccess();
   const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const [couponCode, setCouponCode] = useState("");
   const { lines, loading, subtotal, discount } = useCartTotals(coupon);
@@ -148,11 +150,20 @@ function CheckoutPage() {
     },
   });
 
-  if (loading || !authReady) {
+  if (loading || !authReady || (user && !purchase.ready)) {
     return <div className="container-page"><SparkCharge label="Loading your cart…" /></div>;
   }
 
   if (!user) return <CheckoutSignIn />;
+
+  if (!purchase.eligible) {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title="Retail checkout only" subtitle="Online checkout is available only to retail customer accounts. Your saved cart has not been changed." />
+        <Button className="mt-5" asChild><Link to={purchase.reason === "trade" ? "/trade" : "/manage"}>{purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}</Link></Button>
+      </div>
+    );
+  }
 
   if (!pending && lines.length === 0) {
     return (
