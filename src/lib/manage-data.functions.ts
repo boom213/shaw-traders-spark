@@ -140,7 +140,7 @@ export const manageOrders = createServerFn({ method: "POST" })
 export const manageOrder = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
   .handler(async ({ data }): Promise<ManageOrder | null> => {
-    const { sb, actor } = await onlineOrderAdmin(data.orderId);
+    const { sb } = await onlineOrderAdmin(data.orderId);
     const { data: counterSale, error: counterError } = await sb.from("counter_sales").select("order_id").eq("order_id", data.orderId).maybeSingle();
     if (counterError) throw new Error(counterError.message);
     if (counterSale) return null;
