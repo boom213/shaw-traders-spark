@@ -111,11 +111,12 @@ function CartPage() {
   };
 
   const clearEverything = async () => {
-    await clearCart();
+    const synced = await clearCart();
     setApplied(undefined);
     setCode("");
     window.localStorage.removeItem(COUPON_KEY);
-    toast.success("Cart cleared");
+    if (synced) toast.success("Cart cleared");
+    else toast.warning("Cart cleared on this device, but account sync will retry when you make another change.");
   };
 
   if (siteMode !== "full") {

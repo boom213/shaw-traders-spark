@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Building2, Check, CreditCard, Landmark, MapPin, Plus, Truck, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,7 @@ function CheckoutPage() {
   const [pending, setPending] = useState<PendingOrder | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [pollArmed, setPollArmed] = useState(false);
+  const recoveryStarted = useRef(false);
   const [addr, setAddr] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
   const [saveAddress, setSaveAddress] = useState(false);
@@ -138,9 +139,10 @@ function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (!authReady || !user) return;
+    if (!authReady || !user || recoveryStarted.current) return;
     const raw = window.sessionStorage.getItem(PENDING_CHECKOUT_KEY);
     if (!raw) return;
+    recoveryStarted.current = true;
     let stored: PendingOrder;
     try {
       stored = JSON.parse(raw) as PendingOrder;
