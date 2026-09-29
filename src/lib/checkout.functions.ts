@@ -122,6 +122,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     const { currentUserId } = await import("@/lib/auth.server");
     const userId = await currentUserId();
     if (!userId) return { error: "Please sign in to place an order." };
+    const { retailPurchaseAccess } = await import("@/lib/purchase-access.server");
+    const purchase = await retailPurchaseAccess();
+    if (!purchase.eligible) return { error: "Online checkout is available only to retail customer accounts." };
 
     const { publicClient } = await import("@/lib/supabase-public.server");
 
@@ -274,11 +277,15 @@ export const retryPayment = createServerFn({ method: "POST" })
   .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
   .handler(async ({ data }) => {
     if (!/^[0-9a-f-]{36}$/i.test(data.orderId)) return { error: "Unknown order." };
+    const { retailPurchaseAccess } = await import("@/lib/purchase-access.server");
+    const purchase = await retailPurchaseAccess();
+    if (!purchase.eligible) return { error: "Online checkout is available only to retail customer accounts." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
       .select("id, human_id, total, payment_status")
       .eq("id", data.orderId)
+      .eq("profile_id", purchase.eligible ? (await import("@/lib/trade.server")).tradeAccount().then((account) => account.userId) : null)
       .maybeSingle();
     if (!order) return { error: "Unknown order." };
     if (order.payment_status === "paid") return { error: "This order is already paid." };

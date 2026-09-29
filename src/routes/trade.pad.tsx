@@ -1,12 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
-import { useStore } from "@/hooks/useStore";
 import { useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
@@ -28,8 +26,6 @@ export const Route = createFileRoute("/trade/pad")({
 });
 
 function PadPage() {
-  const navigate = useNavigate();
-  useStore();
   const { isTrade } = useTradeAccount();
   const [text, setText] = useState("");
   const [lines, setLines] = useState<PadLine[] | null>(null);

@@ -1,4 +1,5 @@
 # Current task
+- [ ] Restrict storefront cart actions and online checkout to signed-in non-staff retail customers while preserving guest carts.
 - [x] Add an Owner-only live Razorpay reconciliation view for pending, failed, unmatched, and mismatched online payments.
 - [x] Add an Online Sales staff role with server-enforced access to retail online orders only.
 - [x] Add main-photo selection and persistent image reordering to the product editor.
