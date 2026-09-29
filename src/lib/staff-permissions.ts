@@ -63,6 +63,7 @@ export const MANAGE_ROUTE_CAPABILITY = {
   "/manage/about": "settings",
   "/manage/summary": "reports",
   "/manage/payment-reports": "reports",
+  "/manage/razorpay-review": "reports",
   "/manage/domain": "settings",
   "/manage/settings": "settings",
   "/manage/brand-catalogue": "settings",

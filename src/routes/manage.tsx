@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
+import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileCheck2, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -65,6 +65,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Customers" },
   { to: "/manage/summary", label: "Reports", icon: BellRing, exact: false, capability: "reports", group: "Analytics" },
   { to: "/manage/payment-reports", label: "Payment Reports", icon: ChartNoAxesCombined, exact: false, capability: "reports", group: "Analytics" },
+  { to: "/manage/razorpay-review", label: "Razorpay Review", icon: FileCheck2, exact: false, capability: "reports", group: "Analytics" },
   { to: "/manage/domain", label: "Domain Health", icon: Globe, exact: false, capability: "settings", group: "Settings" },
   { to: "/manage/settings", label: "Site Settings", icon: Settings, exact: false, capability: "settings", group: "Settings" },
   { to: "/manage/staff", label: "Staff Access", icon: ShieldCheck, exact: false, capability: "staff.manage", group: "Settings" },
