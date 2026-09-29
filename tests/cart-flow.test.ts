@@ -17,7 +17,12 @@ describe("cart lifecycle", () => {
       wishlist: ["wish-1"],
       saved: ["saved-1"],
       recentlyViewed: ["viewed-1"],
-    }))).toEqual(lists({ wishlist: ["wish-1"], saved: ["saved-1"], recentlyViewed: ["viewed-1"] }));
+    }), 123)).toEqual(lists({
+      wishlist: ["wish-1"],
+      saved: ["saved-1"],
+      recentlyViewed: ["viewed-1"],
+      cartClearedAt: 123,
+    }));
   });
 
   it("preserves a guest cart when account lists are first merged", () => {
