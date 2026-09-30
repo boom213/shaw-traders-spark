@@ -103,6 +103,13 @@ function CounterSalesPage() {
     setCart((current) => current.some((item) => item.id === product.id) ? current.map((item) => item.id === product.id ? { ...item, qty: Math.min(item.stock, item.qty + 1) } : item) : [...current, { ...product, qty: 1, unitPrice: price }]);
   }
 
+  function submitUnpaidSale() {
+    if (!customerId) return toast.error("Select an approved wholesale customer first.");
+    if (cart.length === 0) return toast.error("Add at least one product to the sale.");
+    if (hasOverride && overrideReason.trim().length < 3) return toast.error("Add a reason for the price change.");
+    createMutation.mutate();
+  }
+
   async function downloadInvoice(sale: CounterSale, staffCopy = false) {
     try {
       const result = await (staffCopy ? counterSaleStaffInvoice : counterSaleInvoice)({ data: { orderId: sale.orderId } });
@@ -154,7 +161,7 @@ function CounterSalesPage() {
             <div className="my-4 space-y-2 border-y py-4 text-sm"><Total label="Subtotal" value={subtotal} /><Total label="Tax" value={tax} /><Total label="Total" value={total} strong /></div>
             {(creditWarning || customer?.overdue) && <Warning>{creditWarning ? `This sale would exceed the ₹${customer?.creditLimit.toLocaleString("en-IN")} credit limit.` : "This customer has an overdue balance."} This is a warning only.</Warning>}
             <label className="mt-3 block text-sm font-medium">Internal sale note</label><Textarea className="mt-1" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional reference or delivery note" />
-             <Button className="mt-4 w-full" size="lg" disabled={!customerId || cart.length === 0 || (hasOverride && overrideReason.length < 3) || createMutation.isPending} onClick={() => createMutation.mutate()}>{createMutation.isPending ? <SparkRing /> : null}{createMutation.isPending ? "Creating sale…" : `Create unpaid sale · ${money(total)}`}</Button>
+             <Button className="mt-4 w-full" size="lg" disabled={createMutation.isPending} onClick={submitUnpaidSale}>{createMutation.isPending ? <SparkRing /> : null}{createMutation.isPending ? "Creating sale…" : `Create unpaid sale · ${money(total)}`}</Button>
             <p className="mt-2 text-center text-xs text-muted-foreground">Stock reduces immediately. Payment is not collected online.</p>
           </Card>
         </aside>

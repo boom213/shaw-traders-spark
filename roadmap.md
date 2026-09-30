@@ -1,4 +1,5 @@
 # Current task
+- [x] Keep Counter Sales unpaid-sale creation available while customer Cash on Delivery is paused.
 - [x] Temporarily disable Cash on Delivery with a clear customer message and server-side enforcement.
 - [x] Add configurable retail and COD minimum order values and enforce product quantity rules for retail checkout.
 - [x] Keep deliberately cleared carts empty after refresh by ordering saved writes and making equal/newer clear timestamps authoritative.
