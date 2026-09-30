@@ -56,6 +56,8 @@ const EN = {
   "quote.statusAccepted": "Accepted",
   "quote.statusDeclined": "Declined",
   "quote.statusExpired": "Expired",
+  "quote.downloadPi": "Download PI",
+  "quote.proformaNotice": "Proforma invoice — not a tax invoice",
 } as const;
 
 export type TranslationKey = keyof typeof EN;
@@ -102,6 +104,8 @@ const BN: Record<TranslationKey, string> = {
   "quote.statusAccepted": "গৃহীত",
   "quote.statusDeclined": "প্রত্যাখ্যাত",
   "quote.statusExpired": "মেয়াদ শেষ",
+  "quote.downloadPi": "PI ডাউনলোড করুন",
+  "quote.proformaNotice": "প্রোফর্মা ইনভয়েস — ট্যাক্স ইনভয়েস নয়",
 };
 
 const HI: Record<TranslationKey, string> = {
@@ -146,6 +150,8 @@ const HI: Record<TranslationKey, string> = {
   "quote.statusAccepted": "स्वीकृत",
   "quote.statusDeclined": "अस्वीकृत",
   "quote.statusExpired": "समाप्त",
+  "quote.downloadPi": "PI डाउनलोड करें",
+  "quote.proformaNotice": "प्रोफॉर्मा इनवॉइस — टैक्स इनवॉइस नहीं",
 };
 
 const DICT: Record<Lang, Record<TranslationKey, string>> = { en: EN, bn: BN, hi: HI };
