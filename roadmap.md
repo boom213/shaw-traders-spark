@@ -1,4 +1,5 @@
 # Current task
+- [x] Allow Counter Sales above stock with warnings, zero-floor inventory, and accurate cancellation restoration.
 - [x] Allow manual quantity entry for Counter Sales review items while enforcing available stock.
 - [x] Keep Counter Sales unpaid-sale creation available while customer Cash on Delivery is paused.
 - [x] Temporarily disable Cash on Delivery with a clear customer message and server-side enforcement.
