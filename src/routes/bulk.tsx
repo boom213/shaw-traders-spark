@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VOLUME_OPTIONS } from "@/lib/trade-options";
 import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { createGeneralEnquiry } from "@/lib/enquiries.functions";
+import { errorCount, focusFirstInvalid, validateNameAndPhones, validationSummary, type FieldErrors } from "@/lib/form-validation";
 
 export const Route = createFileRoute("/bulk")({
   head: () => ({
@@ -36,6 +37,11 @@ function BulkPage() {
   const [requirement, setRequirement] = useState("");
   const [volume, setVolume] = useState("");
   const [sending, setSending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+  const errors: FieldErrors<"name" | "phone" | "alternatePhone" | "requirement"> = submitted
+    ? { ...validateNameAndPhones({ name, phone, alternatePhone }), ...(!requirement.trim() ? { requirement: "Tell us what parts you need." } : {}) }
+    : {};
 
   const message = `Bulk enquiry — Shaw Traders EV
 Name: ${name}
@@ -47,9 +53,13 @@ Requirement: ${requirement}`;
   const send = async () => {
     const cleanPhone = phone.replace(/\D/g, "");
     const cleanAlternate = alternatePhone.replace(/\D/g, "");
-    if (!name.trim() || !/^[6-9]\d{9}$/.test(cleanPhone)) return toast.error("Please add your name and a valid 10-digit phone number");
-    if (cleanAlternate && !/^[6-9]\d{9}$/.test(cleanAlternate)) return toast.error("Enter a valid 10-digit alternate mobile number.");
-    if (!requirement.trim()) return toast.error("Please tell us what parts you need.");
+    setSubmitted(true);
+    const validationErrors = { ...validateNameAndPhones({ name, phone, alternatePhone }), ...(!requirement.trim() ? { requirement: "Tell us what parts you need." } : {}) };
+    if (errorCount(validationErrors) > 0) {
+      toast.error(validationSummary(validationErrors));
+      focusFirstInvalid(formRef.current);
+      return;
+    }
     setSending(true);
     const res = await createGeneralEnquiry({ data: { source: "bulk", name, phone: cleanPhone, alternatePhone: cleanAlternate, subject: business || "Bulk & dealer enquiry", note: `Monthly purchase estimate: ${volume || "-"} — ${requirement}` } });
     setSending(false);
@@ -66,11 +76,11 @@ Requirement: ${requirement}`;
         </p>
       </header>
 
-      <div className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-        <Input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+      <div ref={formRef} className="space-y-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+        <FieldError message={errors.name}><Input placeholder="Your name" aria-label="Your name" value={name} onChange={(e) => setName(e.target.value)} /></FieldError>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} />
-          <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value.replace(/\D/g, "").slice(0, 10))} />
+          <FieldError message={errors.phone}><Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} /></FieldError>
+          <FieldError message={errors.alternatePhone}><Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={alternatePhone} onChange={(e) => setAlternatePhone(e.target.value.replace(/\D/g, "").slice(0, 10))} /></FieldError>
         </div>
         <Input placeholder="Business / workshop name" value={business} onChange={(e) => setBusiness(e.target.value)} />
         <Select value={volume || undefined} onValueChange={setVolume}>
@@ -79,14 +89,9 @@ Requirement: ${requirement}`;
             {VOLUME_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Textarea
-          rows={5}
-          placeholder="Parts needed and quantity (e.g. 20 x 60V charger, 10 x rear shocker)"
-          value={requirement}
-          onChange={(e) => setRequirement(e.target.value)}
-        />
+        <FieldError message={errors.requirement}><Textarea rows={5} aria-label="Parts needed and quantity" placeholder="Parts needed and quantity (e.g. 20 x 60V charger, 10 x rear shocker)" value={requirement} onChange={(e) => setRequirement(e.target.value)} /></FieldError>
         <div className="flex flex-wrap gap-3 pt-1">
-          <Button disabled={sending || !requirement.trim()} onClick={() => void send()}>{sending ? <SparkRing /> : null}{sending ? "Saving…" : "Send enquiry on WhatsApp"}</Button>
+          <Button disabled={sending} onClick={() => void send()}>{sending ? <SparkRing /> : null}{sending ? "Saving…" : "Send enquiry on WhatsApp"}</Button>
           <Button asChild variant="outline">
             <a href={`tel:${BUSINESS.phone}`}>Call {BUSINESS.phone}</a>
           </Button>
@@ -94,4 +99,9 @@ Requirement: ${requirement}`;
       </div>
     </div>
   );
+}
+
+function FieldError({ message, children }: { message?: string; children: React.ReactElement<{ "aria-invalid"?: boolean; "aria-describedby"?: string }> }) {
+  const id = `bulk-${children.props["aria-label"]?.toLowerCase().replace(/[^a-z]+/g, "-") ?? "field"}-error`;
+  return <div className="grid gap-1.5">{React.cloneElement(children, { "aria-invalid": message ? true : undefined, "aria-describedby": message ? id : undefined })}{message && <p id={id} role="alert" className="text-xs text-destructive">{message}</p>}</div>;
 }
