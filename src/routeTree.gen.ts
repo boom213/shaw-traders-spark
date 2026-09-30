@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as BulkRouteImport } from './routes/bulk'
@@ -28,6 +29,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
 import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
+import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/_customer/route'
 import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as ManageIndexRouteImport } from './routes/manage.index'
 import { Route as ManageAboutRouteImport } from './routes/manage.about'
@@ -84,6 +86,10 @@ import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/publi
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -176,6 +182,11 @@ const WarrantyRoute = WarrantyRouteImport.update({
   path: '/warranty',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedCustomerRouteRoute =
+  AuthenticatedCustomerRouteRouteImport.update({
+    id: '/_customer',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const BookingTokenRoute = BookingTokenRouteImport.update({
   id: '/booking/$token',
   path: '/booking/$token',
@@ -313,39 +324,39 @@ const TradePadRoute = TradePadRouteImport.update({
 } as any)
 const AuthenticatedCustomerBrandRoute =
   AuthenticatedCustomerBrandRouteImport.update({
-    id: '/_authenticated/_customer/brand',
+    id: '/brand',
     path: '/brand',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerCartRoute =
   AuthenticatedCustomerCartRouteImport.update({
-    id: '/_authenticated/_customer/cart',
+    id: '/cart',
     path: '/cart',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerCategoriesRoute =
   AuthenticatedCustomerCategoriesRouteImport.update({
-    id: '/_authenticated/_customer/categories',
+    id: '/categories',
     path: '/categories',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerCheckoutRoute =
   AuthenticatedCustomerCheckoutRouteImport.update({
-    id: '/_authenticated/_customer/checkout',
+    id: '/checkout',
     path: '/checkout',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerOffersRoute =
   AuthenticatedCustomerOffersRouteImport.update({
-    id: '/_authenticated/_customer/offers',
+    id: '/offers',
     path: '/offers',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerShopRoute =
   AuthenticatedCustomerShopRouteImport.update({
-    id: '/_authenticated/_customer/shop',
+    id: '/shop',
     path: '/shop',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const ApiPublicCatalogueRoute = ApiPublicCatalogueRouteImport.update({
   id: '/api/public/catalogue',
@@ -396,27 +407,27 @@ const ManageProductsProductIdRoute = ManageProductsProductIdRouteImport.update({
 } as any)
 const AuthenticatedCustomerCategorySlugRoute =
   AuthenticatedCustomerCategorySlugRouteImport.update({
-    id: '/_authenticated/_customer/category/$slug',
+    id: '/category/$slug',
     path: '/category/$slug',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerProductSlugRoute =
   AuthenticatedCustomerProductSlugRouteImport.update({
-    id: '/_authenticated/_customer/product/$slug',
+    id: '/product/$slug',
     path: '/product/$slug',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerScootersIndexRoute =
   AuthenticatedCustomerScootersIndexRouteImport.update({
-    id: '/_authenticated/_customer/scooters/',
+    id: '/scooters/',
     path: '/scooters/',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerScootersSlugRoute =
   AuthenticatedCustomerScootersSlugRouteImport.update({
-    id: '/_authenticated/_customer/scooters/$slug',
+    id: '/scooters/$slug',
     path: '/scooters/$slug',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const ApiPublicCronCartRemindersRoute =
   ApiPublicCronCartRemindersRouteImport.update({
@@ -600,6 +611,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/bulk': typeof BulkRoute
@@ -618,6 +630,7 @@ export interface FileRoutesById {
   '/track': typeof TrackRoute
   '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
+  '/_authenticated/_customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/booking/$token': typeof BookingTokenRoute
   '/manage/about': typeof ManageAboutRoute
   '/manage/all-products': typeof ManageAllProductsRoute
@@ -818,6 +831,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/about'
     | '/account'
     | '/bulk'
@@ -836,6 +850,7 @@ export interface FileRouteTypes {
     | '/track'
     | '/trade'
     | '/warranty'
+    | '/_authenticated/_customer'
     | '/booking/$token'
     | '/manage/about'
     | '/manage/all-products'
@@ -892,6 +907,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   BulkRoute: typeof BulkRoute
@@ -913,26 +929,16 @@ export interface RootRouteChildren {
   BookingTokenRoute: typeof BookingTokenRoute
   OrderIdRoute: typeof OrderIdRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
-  AuthenticatedCustomerBrandRoute: typeof AuthenticatedCustomerBrandRoute
-  AuthenticatedCustomerCartRoute: typeof AuthenticatedCustomerCartRoute
-  AuthenticatedCustomerCategoriesRoute: typeof AuthenticatedCustomerCategoriesRoute
-  AuthenticatedCustomerCheckoutRoute: typeof AuthenticatedCustomerCheckoutRoute
-  AuthenticatedCustomerOffersRoute: typeof AuthenticatedCustomerOffersRoute
-  AuthenticatedCustomerShopRoute: typeof AuthenticatedCustomerShopRoute
   ApiPublicCatalogueRoute: typeof ApiPublicCatalogueRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
-  AuthenticatedCustomerCategorySlugRoute: typeof AuthenticatedCustomerCategorySlugRoute
-  AuthenticatedCustomerProductSlugRoute: typeof AuthenticatedCustomerProductSlugRoute
-  AuthenticatedCustomerScootersSlugRoute: typeof AuthenticatedCustomerScootersSlugRoute
   ApiPublicCronCartRemindersRoute: typeof ApiPublicCronCartRemindersRoute
   ApiPublicCronDailySummaryRoute: typeof ApiPublicCronDailySummaryRoute
   ApiPublicCronReleaseStaleOrdersRoute: typeof ApiPublicCronReleaseStaleOrdersRoute
   ApiPublicCronServiceRemindersRoute: typeof ApiPublicCronServiceRemindersRoute
   ApiPublicPhotoSplatRoute: typeof ApiPublicPhotoSplatRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
-  AuthenticatedCustomerScootersIndexRoute: typeof AuthenticatedCustomerScootersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -942,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1069,6 +1082,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/warranty'
       preLoaderRoute: typeof WarrantyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_customer': {
+      id: '/_authenticated/_customer'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedCustomerRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/booking/$token': {
       id: '/booking/$token'
@@ -1264,42 +1284,42 @@ declare module '@tanstack/react-router' {
       path: '/brand'
       fullPath: '/brand'
       preLoaderRoute: typeof AuthenticatedCustomerBrandRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/cart': {
       id: '/_authenticated/_customer/cart'
       path: '/cart'
       fullPath: '/cart'
       preLoaderRoute: typeof AuthenticatedCustomerCartRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/categories': {
       id: '/_authenticated/_customer/categories'
       path: '/categories'
       fullPath: '/categories'
       preLoaderRoute: typeof AuthenticatedCustomerCategoriesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/checkout': {
       id: '/_authenticated/_customer/checkout'
       path: '/checkout'
       fullPath: '/checkout'
       preLoaderRoute: typeof AuthenticatedCustomerCheckoutRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/offers': {
       id: '/_authenticated/_customer/offers'
       path: '/offers'
       fullPath: '/offers'
       preLoaderRoute: typeof AuthenticatedCustomerOffersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/shop': {
       id: '/_authenticated/_customer/shop'
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof AuthenticatedCustomerShopRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/api/public/catalogue': {
       id: '/api/public/catalogue'
@@ -1369,28 +1389,28 @@ declare module '@tanstack/react-router' {
       path: '/category/$slug'
       fullPath: '/category/$slug'
       preLoaderRoute: typeof AuthenticatedCustomerCategorySlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/product/$slug': {
       id: '/_authenticated/_customer/product/$slug'
       path: '/product/$slug'
       fullPath: '/product/$slug'
       preLoaderRoute: typeof AuthenticatedCustomerProductSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/scooters/': {
       id: '/_authenticated/_customer/scooters/'
       path: '/scooters'
       fullPath: '/scooters/'
       preLoaderRoute: typeof AuthenticatedCustomerScootersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/_customer/scooters/$slug': {
       id: '/_authenticated/_customer/scooters/$slug'
       path: '/scooters/$slug'
       fullPath: '/scooters/$slug'
       preLoaderRoute: typeof AuthenticatedCustomerScootersSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/api/public/cron/cart-reminders': {
       id: '/api/public/cron/cart-reminders'
@@ -1436,6 +1456,53 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthenticatedCustomerRouteRouteChildren {
+  AuthenticatedCustomerBrandRoute: typeof AuthenticatedCustomerBrandRoute
+  AuthenticatedCustomerCartRoute: typeof AuthenticatedCustomerCartRoute
+  AuthenticatedCustomerCategoriesRoute: typeof AuthenticatedCustomerCategoriesRoute
+  AuthenticatedCustomerCheckoutRoute: typeof AuthenticatedCustomerCheckoutRoute
+  AuthenticatedCustomerOffersRoute: typeof AuthenticatedCustomerOffersRoute
+  AuthenticatedCustomerShopRoute: typeof AuthenticatedCustomerShopRoute
+  AuthenticatedCustomerCategorySlugRoute: typeof AuthenticatedCustomerCategorySlugRoute
+  AuthenticatedCustomerProductSlugRoute: typeof AuthenticatedCustomerProductSlugRoute
+  AuthenticatedCustomerScootersSlugRoute: typeof AuthenticatedCustomerScootersSlugRoute
+  AuthenticatedCustomerScootersIndexRoute: typeof AuthenticatedCustomerScootersIndexRoute
+}
+
+const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteChildren =
+  {
+    AuthenticatedCustomerBrandRoute: AuthenticatedCustomerBrandRoute,
+    AuthenticatedCustomerCartRoute: AuthenticatedCustomerCartRoute,
+    AuthenticatedCustomerCategoriesRoute: AuthenticatedCustomerCategoriesRoute,
+    AuthenticatedCustomerCheckoutRoute: AuthenticatedCustomerCheckoutRoute,
+    AuthenticatedCustomerOffersRoute: AuthenticatedCustomerOffersRoute,
+    AuthenticatedCustomerShopRoute: AuthenticatedCustomerShopRoute,
+    AuthenticatedCustomerCategorySlugRoute:
+      AuthenticatedCustomerCategorySlugRoute,
+    AuthenticatedCustomerProductSlugRoute:
+      AuthenticatedCustomerProductSlugRoute,
+    AuthenticatedCustomerScootersSlugRoute:
+      AuthenticatedCustomerScootersSlugRoute,
+    AuthenticatedCustomerScootersIndexRoute:
+      AuthenticatedCustomerScootersIndexRoute,
+  }
+
+const AuthenticatedCustomerRouteRouteWithChildren =
+  AuthenticatedCustomerRouteRoute._addFileChildren(
+    AuthenticatedCustomerRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCustomerRouteRoute: typeof AuthenticatedCustomerRouteRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCustomerRouteRoute: AuthenticatedCustomerRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface ManageCustomersRouteChildren {
   ManageCustomersCustomerIdRoute: typeof ManageCustomersCustomerIdRoute
@@ -1534,6 +1601,7 @@ const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   BulkRoute: BulkRoute,
@@ -1555,29 +1623,16 @@ const rootRouteChildren: RootRouteChildren = {
   BookingTokenRoute: BookingTokenRoute,
   OrderIdRoute: OrderIdRoute,
   QuoteTokenRoute: QuoteTokenRoute,
-  AuthenticatedCustomerBrandRoute: AuthenticatedCustomerBrandRoute,
-  AuthenticatedCustomerCartRoute: AuthenticatedCustomerCartRoute,
-  AuthenticatedCustomerCategoriesRoute: AuthenticatedCustomerCategoriesRoute,
-  AuthenticatedCustomerCheckoutRoute: AuthenticatedCustomerCheckoutRoute,
-  AuthenticatedCustomerOffersRoute: AuthenticatedCustomerOffersRoute,
-  AuthenticatedCustomerShopRoute: AuthenticatedCustomerShopRoute,
   ApiPublicCatalogueRoute: ApiPublicCatalogueRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
-  AuthenticatedCustomerCategorySlugRoute:
-    AuthenticatedCustomerCategorySlugRoute,
-  AuthenticatedCustomerProductSlugRoute: AuthenticatedCustomerProductSlugRoute,
-  AuthenticatedCustomerScootersSlugRoute:
-    AuthenticatedCustomerScootersSlugRoute,
   ApiPublicCronCartRemindersRoute: ApiPublicCronCartRemindersRoute,
   ApiPublicCronDailySummaryRoute: ApiPublicCronDailySummaryRoute,
   ApiPublicCronReleaseStaleOrdersRoute: ApiPublicCronReleaseStaleOrdersRoute,
   ApiPublicCronServiceRemindersRoute: ApiPublicCronServiceRemindersRoute,
   ApiPublicPhotoSplatRoute: ApiPublicPhotoSplatRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
-  AuthenticatedCustomerScootersIndexRoute:
-    AuthenticatedCustomerScootersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
