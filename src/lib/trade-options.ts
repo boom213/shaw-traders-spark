@@ -33,3 +33,28 @@ export function taxIdError(gstin: string): string | null {
   if (g && !GSTIN_RE.test(g)) return GSTIN_ERROR;
   return null;
 }
+
+export type TradeFormValues = {
+  businessName: string;
+  phone: string;
+  alternatePhone?: string;
+  gstin: string;
+  shopAddress: string;
+  businessType?: string;
+  monthlyVolume?: string;
+};
+
+export type TradeFormErrors = Partial<Record<keyof TradeFormValues, string>>;
+
+export function validateTradeForm(values: TradeFormValues): TradeFormErrors {
+  const errors: TradeFormErrors = {};
+  if (values.businessName.trim().length < 3) errors.businessName = "Enter a business name of at least 3 characters.";
+  if (!/^[6-9]\d{9}$/.test(values.phone.trim())) errors.phone = "Enter a valid 10-digit mobile number.";
+  if (values.alternatePhone && !/^[6-9]\d{9}$/.test(values.alternatePhone.trim())) errors.alternatePhone = "Enter a valid 10-digit alternate mobile number.";
+  const gstinError = taxIdError(values.gstin);
+  if (gstinError) errors.gstin = gstinError;
+  if (values.shopAddress.trim().length < 8) errors.shopAddress = "Enter a shop address of at least 8 characters.";
+  if (values.businessType !== undefined && !values.businessType) errors.businessType = "Choose your business type.";
+  if (values.monthlyVolume !== undefined && !values.monthlyVolume) errors.monthlyVolume = "Choose your monthly purchase estimate.";
+  return errors;
+}
