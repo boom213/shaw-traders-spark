@@ -29,7 +29,7 @@ import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
 import { staffSession } from "@/lib/staff.functions";
-import { downloadMyProforma, myQuoteRequests, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
+import { downloadMyProforma, myQuoteRequests, quoteGrandTotal, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
 import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 import { customerQuoteStatus } from "@/lib/quote-draft";
 import { useT } from "@/lib/i18n";
@@ -528,7 +528,7 @@ function CustomerQuoteCard({ quote, busy, onRespond }: { quote: CustomerQuoteReq
   const [downloading, setDownloading] = useState(false);
   const expired = quote.status === "expired" || (quote.status === "priced" && quote.expiresAt !== null && Date.parse(quote.expiresAt) <= Date.now());
   const status = t(customerQuoteStatus(expired ? "expired" : quote.status));
-  const total = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const total = quoteGrandTotal(quote.items, quote.gstRate, quote.gstIncluded);
   const canDownload = ["priced", "accepted"].includes(quote.status) && !expired;
   const download = async () => {
     setDownloading(true);

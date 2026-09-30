@@ -76,7 +76,8 @@ describe("invoice PDF", () => {
       gstRate: 0,
       gstIncluded: false,
       taxAmount: 0,
-      total: 10169.49,
+      subtotal: 12000,
+      total: 12000,
       validUntil: "2026-10-31T18:29:59.000Z",
     }));
     await saveQaPdf("proforma-no-gst-invoice.pdf", bytes);

@@ -272,6 +272,10 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     text(fitText(line, index === 0 ? bold : font, 9, 320), MARGIN, 9, index === 0 ? bold : font, index === 0 ? INK : MUTED);
     y -= 13;
   }
+  if (isProforma && clean(document.gstin)) {
+    text(fitText(`GSTIN: ${clean(document.gstin)}`, font, 9, 320), MARGIN, 9, font, MUTED);
+    y -= 13;
+  }
   y -= 8;
   drawTableHeader();
 

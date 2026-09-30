@@ -13,7 +13,7 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { formatINR } from "@/lib/catalog";
-import { downloadStaffProforma, listQuoteRequests, priceQuoteRequest, type StaffQuoteRequest } from "@/lib/quote-requests.functions";
+import { downloadStaffProforma, listQuoteRequests, priceQuoteRequest, quoteGrandTotal, type StaffQuoteRequest } from "@/lib/quote-requests.functions";
 import { downloadPdf } from "@/components/manage/order-tools";
 
 export const Route = createFileRoute("/manage/quotes")({
@@ -72,7 +72,8 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
   const [gstTreatment, setGstTreatment] = useState<"inclusive" | "exclusive">(quote.gstIncluded ? "inclusive" : "exclusive");
   const [busy, setBusy] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const total = quote.items.reduce((sum, item) => sum + (Number(prices[item.id]) || 0) * item.qty, 0);
+  const draftItems = quote.items.map((item) => ({ qty: item.qty, unitPrice: Number(prices[item.id]) || 0 }));
+  const total = quoteGrandTotal(draftItems, gstRate.trim() ? Number(gstRate) : null, gstTreatment === "inclusive");
 
   const send = async () => {
     if (!expiry) return toast.error("Choose an expiry date.");
@@ -93,7 +94,7 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
     void queryClient.invalidateQueries({ queryKey: ["manage-quotes"] });
   };
 
-  const pricedTotal = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const pricedTotal = quoteGrandTotal(quote.items, quote.gstRate, quote.gstIncluded);
   const expired = Boolean(quote.expiresAt && Date.parse(quote.expiresAt) <= Date.now());
   const canDownload = ["priced", "accepted"].includes(quote.status) && !expired;
   const download = async () => {

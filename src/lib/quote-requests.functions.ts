@@ -33,6 +33,12 @@ export type StaffQuoteRequest = CustomerQuoteRequest & {
   pricedBy: string | null;
 };
 
+export function quoteGrandTotal(items: Array<{ qty: number; unitPrice: number | null }>, gstRate: number | null, gstIncluded: boolean) {
+  const lineTotal = items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const rate = Math.max(0, Number(gstRate ?? 0));
+  return rate > 0 && !gstIncluded ? lineTotal * (1 + rate / 100) : lineTotal;
+}
+
 const clean = (value: unknown, max: number) => String(value ?? "").trim().slice(0, max);
 const uuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value ?? ""));
 
