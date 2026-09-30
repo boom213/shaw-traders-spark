@@ -1,4 +1,5 @@
 # Current task
+- [x] Allow manual quantity entry for Counter Sales review items while enforcing available stock.
 - [x] Keep Counter Sales unpaid-sale creation available while customer Cash on Delivery is paused.
 - [x] Temporarily disable Cash on Delivery with a clear customer message and server-side enforcement.
 - [x] Add configurable retail and COD minimum order values and enforce product quantity rules for retail checkout.
