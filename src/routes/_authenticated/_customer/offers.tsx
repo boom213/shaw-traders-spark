@@ -8,7 +8,7 @@ import { breadcrumbLd, canonical, type Product } from "@/lib/catalog";
 
 const offersQuery = () => queryOptions({ queryKey: ["offers"], queryFn: () => offersFeed(), staleTime: 60_000 });
 
-export const Route = createFileRoute("/offers")({
+export const Route = createFileRoute("/_authenticated/_customer/offers")({
   head: () => ({
     meta: [
       { title: "Offers & Deals — Shaw Traders EV" },

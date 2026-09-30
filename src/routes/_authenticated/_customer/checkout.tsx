@@ -27,7 +27,7 @@ import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { abandonPayment, getMyAddresses, paymentState, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
 
-export const Route = createFileRoute("/checkout")({
+export const Route = createFileRoute("/_authenticated/_customer/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Shaw Traders EV" },
