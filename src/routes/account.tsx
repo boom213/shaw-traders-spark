@@ -26,6 +26,7 @@ import { reorderItems } from "@/lib/trade.functions";
 import { BUSINESS, canonical, formatINR, paymentStatusLabel, statusLabel } from "@/lib/catalog";
 import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
+import { customerShoppingPath } from "@/lib/customer-shopping-access";
 
 export const Route = createFileRoute("/account")({
   head: () => ({
@@ -39,7 +40,10 @@ export const Route = createFileRoute("/account")({
     ],
     links: [{ rel: "canonical", href: canonical("/account") }],
   }),
-  validateSearch: (s: Record<string, unknown>): { next?: "/trade" } => (s.next === "/trade" ? { next: "/trade" } : {}),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const next = s.next === "/trade" ? "/trade" : customerShoppingPath(s.next);
+    return next ? { next } : {};
+  },
   component: AccountPage,
 });
 
@@ -48,7 +52,8 @@ function AccountPage() {
   const { next } = Route.useSearch();
   const navigate = useNavigate();
   useEffect(() => {
-    if (user && next) void navigate({ to: next });
+    if (user && next === "/trade") void navigate({ to: "/trade" });
+    else if (user && customerShoppingPath(next)) window.location.assign(next);
   }, [user, next, navigate]);
   if (!authReady) return <div className="container-page"><SparkCharge label="Loading your account…" /></div>;
   return user ? <Dashboard /> : <AuthPanel />;
