@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
-import { useCatalogueRateVisibility, useTradeAccount } from "@/hooks/useTrade";
+import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
-import { useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/trade/pad")({
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/trade/pad")({
 
 function PadPage() {
   const t = useT();
-  const { isTrade } = useTradeAccount();
+  const quoteAccess = useQuoteAccess();
   const quoteList = useQuoteList();
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ function PadPage() {
         subtitle="One part per line: part number, then quantity. For example “STE-CHG-60V, 20”."
       />
 
-      {!isTrade && (
+      {quoteAccess.ready && !quoteAccess.allowed && (
         <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-muted-foreground">
           You are seeing retail prices. <Link className="underline" to="/trade">Open a wholesale account</Link> for trade rates.
         </p>
@@ -124,7 +124,7 @@ function PadPage() {
       {ready.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
           <p className="text-sm">{ready.length} line(s) ready{hideCatalogueRates ? "" : ` · ${formatINR(total)}`}</p>
-          {isTrade ? (
+          {quoteAccess.allowed ? (
             <Button onClick={addToQuoteList}>
               <FileText className="size-4" /> {t("product.addToQuote")}
             </Button>
