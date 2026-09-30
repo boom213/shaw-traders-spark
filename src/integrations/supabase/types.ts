@@ -1461,6 +1461,8 @@ export type Database = {
           customer_note: string | null
           decision_note: string | null
           expires_at: string | null
+          gst_included: boolean
+          gst_rate: number | null
           human_id: string
           id: string
           priced_at: string | null
@@ -1476,6 +1478,8 @@ export type Database = {
           customer_note?: string | null
           decision_note?: string | null
           expires_at?: string | null
+          gst_included?: boolean
+          gst_rate?: number | null
           human_id: string
           id?: string
           priced_at?: string | null
@@ -1491,6 +1495,8 @@ export type Database = {
           customer_note?: string | null
           decision_note?: string | null
           expires_at?: string | null
+          gst_included?: boolean
+          gst_rate?: number | null
           human_id?: string
           id?: string
           priced_at?: string | null
