@@ -10,6 +10,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { StoreProvider } from "@/hooks/useStore";
+import { QuoteListProvider } from "@/hooks/useQuoteList";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { AnalyticsGate, CookieConsent } from "@/components/site/CookieConsent";
@@ -189,6 +190,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
       <StoreProvider>
+      <QuoteListProvider>
         <div className="flex min-h-screen flex-col">
           <a
             href="#main"
@@ -209,6 +211,7 @@ function RootComponent() {
         <CookieConsent />
         <AnalyticsGate />
         <Toaster position="top-center" />
+      </QuoteListProvider>
       </StoreProvider>
       </LanguageProvider>
     </QueryClientProvider>

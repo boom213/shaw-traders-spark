@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { useTradeAccount } from "@/hooks/useTrade";
+import { useStore } from "@/hooks/useStore";
 import { addQuoteLines, EMPTY_QUOTE_DRAFT, normalizeQuoteDraft, normalizeQuoteQty, QUOTE_DRAFT_KEY, type QuoteDraft, type QuoteDraftLine } from "@/lib/quote-draft";
 
 type QuoteListContextValue = QuoteDraft & {
@@ -67,9 +68,10 @@ export function useQuoteList() {
 }
 
 export function useQuoteAccess() {
+  const { authReady, user } = useStore();
   const purchase = usePurchaseAccess();
-  const trade = useTradeAccount();
-  const controlReady = purchase.ready && trade.ready;
+  const trade = useTradeAccount(authReady && Boolean(user));
+  const controlReady = authReady && (!user || (purchase.ready && trade.ready));
   return {
     ready: controlReady,
     allowed: controlReady && purchase.reason === "trade" && trade.isTrade,
