@@ -1,4 +1,5 @@
 # Current task
+- [x] Recover carts from temporary catalogue lookup failures without deleting saved items or enabling unverified checkout.
 - [x] Repair guest cart restoration by pruning deleted catalogue IDs after successful validation and blocking zero-value checkout.
 - [x] Let guests add and manage parts in their cart, requiring sign-in only after they enter checkout.
 - [x] Hide catalogue prices, MRP, and discounts from approved wholesale customers while preserving staff, retail, metadata, and agreed-record prices.

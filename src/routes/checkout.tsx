@@ -79,7 +79,7 @@ function CheckoutPage() {
   const purchase = usePurchaseAccess();
   const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const [couponCode, setCouponCode] = useState("");
-  const { lines, loading, loadError, retry: retryCart, subtotal, discount } = useCartTotals(coupon);
+  const { lines, loading, loadError, recovering: cartRecovering, retry: retryCart, subtotal, discount } = useCartTotals(coupon);
   const { data: settings } = useQuery(shopSettingsQuery());
   const online = useServerFn(paymentsAvailable);
   const { data: availability } = useQuery({ queryKey: ["payments-available"], queryFn: () => online() });
@@ -201,7 +201,9 @@ function CheckoutPage() {
     return (
       <div className="container-page py-16 text-center">
         <SectionHeading title="We could not load your cart" subtitle="Your items are still saved. Check your connection and try again before checkout." />
-        <Button className="mt-5" variant="outline" onClick={() => void retryCart()}>Try again</Button>
+        <Button className="mt-5" variant="outline" disabled={cartRecovering} onClick={() => void retryCart()}>
+          {cartRecovering ? "Trying again…" : "Try again"}
+        </Button>
       </div>
     );
   }

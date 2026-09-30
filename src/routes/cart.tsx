@@ -83,7 +83,8 @@ export function useCartTotals(coupon?: AppliedCoupon, notifyOnReconcile = false)
     savedProducts: lists.saved.map((productId) => ({ productId, product: byId.get(productId) ?? null })),
     loading: ids.length > 0 && productsQuery.isPending,
     loadError: ids.length > 0 && productsQuery.isError,
-    retry: productsQuery.refetch,
+    recovering: ids.length > 0 && productsQuery.isFetching && productsQuery.isError,
+    retry: () => productsQuery.refetch({ cancelRefetch: true }),
     subtotal,
     discount,
     shipping,
@@ -108,7 +109,7 @@ function CartPage() {
   const { lists, setQty, removeFromCart, saveForLater, moveToCart, removeSaved, clearCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
-  const { lines, savedProducts, loading, loadError, retry, subtotal, discount, shipping, total } = useCartTotals(applied, true);
+  const { lines, savedProducts, loading, loadError, recovering, retry, subtotal, discount, shipping, total } = useCartTotals(applied, true);
   const canCheckout = canBuildCart && !loading && !loadError && lines.some((line) => line.product) && total > 0;
   const { data: home } = useQuery(homeQuery());
   const recommended = (home?.latest ?? []).filter((p) => !lists.cart.some((c) => c.productId === p.id)).slice(0, 4);
@@ -177,7 +178,9 @@ function CartPage() {
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-6 py-10 text-center">
           <p className="text-sm font-semibold text-destructive">We could not load your cart items.</p>
           <p className="mt-1 text-sm text-muted-foreground">Your cart is still saved. Check your connection and try again.</p>
-          <Button className="mt-5" variant="outline" onClick={() => void retry()}>Try again</Button>
+          <Button className="mt-5" variant="outline" disabled={recovering} onClick={() => void retry()}>
+            {recovering ? "Trying again…" : "Try again"}
+          </Button>
         </div>
       ) : lines.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border bg-surface px-6 py-14 text-center">
