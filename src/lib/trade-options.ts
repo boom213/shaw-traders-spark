@@ -42,6 +42,8 @@ export type TradeFormValues = {
   shopAddress: string;
   businessType?: string;
   monthlyVolume?: string;
+  yearsInBusiness?: string;
+  staffCount?: string;
 };
 
 export type TradeFormErrors = Partial<Record<keyof TradeFormValues, string>>;
