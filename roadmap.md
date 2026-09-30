@@ -1,4 +1,5 @@
 # Current task
+- [x] Restrict the complete shopping journey and Shopping account menu to signed-in non-staff customers.
 - [x] Add CSV row references, duplicate-SKU blocking, and paginated import history.
 - [x] Protect reviewed products from accidental deletion and show unavailable saved products to customers.
 - [x] Allow Counter Sales above stock with warnings, zero-floor inventory, and accurate cancellation restoration.

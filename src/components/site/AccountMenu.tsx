@@ -123,23 +123,15 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
             <DropdownMenuItem asChild>
               <Link to="/track"><PackageSearch className="size-4" /> Track an order</Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Shopping</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link to="/shop"><ShoppingBag className="size-4" /> All products</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/brand"><Tags className="size-4" /> EV brands</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/scooters"><Bike className="size-4" /> Electric scooters</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/cart"><ShoppingCart className="size-4" /> My cart</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/offers"><BadgePercent className="size-4" /> Offers</Link>
-            </DropdownMenuItem>
+            {staff && !staff.signedIn && <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Shopping</DropdownMenuLabel>
+              <DropdownMenuItem asChild><Link to="/shop"><ShoppingBag className="size-4" /> All products</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/brand"><Tags className="size-4" /> EV brands</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/scooters"><Bike className="size-4" /> Electric scooters</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/cart"><ShoppingCart className="size-4" /> My cart</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link to="/offers"><BadgePercent className="size-4" /> Offers</Link></DropdownMenuItem>
+            </>}
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Trade & wholesale</DropdownMenuLabel>
             {isTrade ? (
