@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bike, CheckCircle2, ChevronDown, ChevronUp, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Bike, CheckCircle2, ChevronDown, ChevronUp, Download, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,10 +29,11 @@ import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
 import { staffSession } from "@/lib/staff.functions";
-import { myQuoteRequests, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
+import { downloadMyProforma, myQuoteRequests, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
 import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 import { customerQuoteStatus } from "@/lib/quote-draft";
 import { useT } from "@/lib/i18n";
+import { downloadPdf } from "@/components/manage/order-tools";
 
 export const Route = createFileRoute("/account")({
   ssr: false,
@@ -522,10 +523,20 @@ function QuotesSection() {
 
 function CustomerQuoteCard({ quote, busy, onRespond }: { quote: CustomerQuoteRequest; busy: boolean; onRespond: (id: string, decision: "accepted" | "rejected") => Promise<void> }) {
   const t = useT();
+  const getProforma = useServerFn(downloadMyProforma);
   const [open, setOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const expired = quote.status === "expired" || (quote.status === "priced" && quote.expiresAt !== null && Date.parse(quote.expiresAt) <= Date.now());
   const status = t(customerQuoteStatus(expired ? "expired" : quote.status));
   const total = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const canDownload = ["priced", "accepted"].includes(quote.status) && !expired;
+  const download = async () => {
+    setDownloading(true);
+    const result = await getProforma({ data: { quoteId: quote.id } });
+    setDownloading(false);
+    if ("error" in result) return toast.error(result.error);
+    downloadPdf(result.base64, result.fileName);
+  };
   return <article className={`rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] ${expired ? "border-destructive/40" : "border-border"}`}>
     <Button type="button" variant="ghost" className="h-auto w-full justify-between gap-4 p-0 text-left hover:bg-transparent" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
       <span><span className="block font-semibold">{quote.humanId}</span><span className="block text-xs font-normal text-muted-foreground">{new Date(quote.createdAt).toLocaleDateString("en-IN")} · {quote.items.length} line(s)</span></span>
@@ -536,6 +547,7 @@ function CustomerQuoteCard({ quote, busy, onRespond }: { quote: CustomerQuoteReq
       <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left"><th className="py-2">Part</th><th className="py-2">Qty</th><th className="py-2 text-right">Unit price</th></tr></thead><tbody>{quote.items.map((item) => <tr key={item.id} className="border-b border-border/60"><td className="py-2"><span className="font-medium">{item.name}</span>{item.sku && <span className="block text-xs text-muted-foreground">{item.sku}</span>}{item.lineNote && <span className="block text-xs text-muted-foreground">{item.lineNote}</span>}</td><td className="py-2">{item.qty}</td><td className="py-2 text-right">{item.unitPrice === null ? "Pending" : formatINR(item.unitPrice)}</td></tr>)}</tbody></table></div>
       {quote.expiresAt && <p className={`text-sm ${expired ? "font-medium text-destructive" : "text-muted-foreground"}`}>{expired ? "This quote has expired" : `Valid until ${new Date(quote.expiresAt).toLocaleDateString("en-IN")}`}</p>}
       {quote.decisionNote && <p className="rounded-lg bg-surface px-3 py-2 text-sm">Your response note: {quote.decisionNote}</p>}
+      {canDownload && <div><Button variant="outline" disabled={downloading} onClick={() => void download()}>{downloading ? <SparkRing /> : <Download className="size-4" />}{downloading ? "Preparing…" : t("quote.downloadPi")}</Button><p className="mt-1 text-xs text-muted-foreground">{t("quote.proformaNotice")}</p></div>}
       {quote.status === "priced" && !expired && <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => void onRespond(quote.id, "accepted")}><CheckCircle2 className="size-4" /> Accept quote</Button><Button disabled={busy} variant="outline" onClick={() => void onRespond(quote.id, "rejected")}>Reject quote</Button></div>}
     </div>}
   </article>;
