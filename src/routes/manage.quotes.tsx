@@ -86,10 +86,10 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
 
   const pricedTotal = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
   return <article className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
-    <button type="button" className="flex w-full items-start justify-between gap-4 text-left" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+    <Button type="button" variant="ghost" className="h-auto w-full justify-between gap-4 p-0 text-left hover:bg-transparent" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
       <div><p className="font-semibold">{quote.humanId} · {quote.customerName}</p><p className="text-xs text-muted-foreground">{quote.customerPhone} · {new Date(quote.createdAt).toLocaleString("en-IN")} · {quote.items.length} line(s)</p></div>
       <div className="flex items-center gap-2"><span className="text-right text-sm"><strong className="capitalize">{quote.status}</strong>{pricedTotal > 0 && <span className="block">{formatINR(pricedTotal)}</span>}</span>{open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</div>
-    </button>
+    </Button>
     {open && <div className="mt-4 space-y-4 border-t border-border pt-4">
       {quote.customerNote && <p className="rounded-lg bg-surface px-3 py-2 text-sm">Customer note: {quote.customerNote}</p>}
       <div className="space-y-3">{quote.items.map((item) => <div key={item.id} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_10rem_1fr]">

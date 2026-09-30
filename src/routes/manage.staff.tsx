@@ -124,6 +124,7 @@ const CAPABILITY_LABEL: Record<StaffCapability, string> = {
   trade: "Trade & Credit",
   "counter-sales": "Counter sales",
   "vendor-finance": "Vendor finance",
+  quotes: "Quotes",
   content: "Content",
   reports: "Reports",
   settings: "Settings",
