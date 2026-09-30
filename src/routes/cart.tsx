@@ -85,6 +85,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 function CartPage() {
   const { mode: siteMode } = useSiteOrdering();
   const purchase = usePurchaseAccess();
+  const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { lists, setQty, removeFromCart, saveForLater, moveToCart, removeSaved, clearCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
@@ -182,7 +183,7 @@ function CartPage() {
                   ) : line.qty > product.stock ? (
                     <p className="mt-1 text-xs font-medium text-destructive">Only {product.stock} available</p>
                   ) : null}
-                  {purchase.eligible && <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {canBuildCart && <div className="mt-3 flex flex-wrap items-center gap-3">
                     <div className="flex items-center rounded-full border border-border">
                       <button onClick={() => setQty(line.productId, line.qty - 1)} className="grid size-8 place-items-center" aria-label="Decrease"><Minus className="size-3.5" /></button>
                       <span className="w-8 text-center text-sm font-semibold">{line.qty}</span>
@@ -219,7 +220,7 @@ function CartPage() {
                   {savedProducts.map(({ productId, product }) => (
                     <div key={productId} className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm">
                       <span className={product ? "" : "text-muted-foreground"}>{product?.name ?? "This part is no longer available"}</span>
-                      {product && purchase.eligible ? <Button size="sm" variant="outline" onClick={() => moveToCart(product.id)}>Move to cart</Button> : !product ? <Button size="sm" variant="ghost" onClick={() => removeSaved(productId)}>Remove</Button> : null}
+                      {product && canBuildCart ? <Button size="sm" variant="outline" onClick={() => moveToCart(product.id)}>Move to cart</Button> : !product ? <Button size="sm" variant="ghost" onClick={() => removeSaved(productId)}>Remove</Button> : null}
                     </div>
                   ))}
                 </div>
@@ -248,11 +249,11 @@ function CartPage() {
               <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(total)}</dd></div>
             </dl>
             <Button className="mt-5 w-full" size="lg" asChild>
-              <Link to={purchase.eligible ? "/checkout" : purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
-                {purchase.eligible ? "Proceed to Checkout" : purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+              <Link to={canBuildCart ? "/checkout" : purchase.reason === "trade" ? "/trade" : "/manage"}>
+                {canBuildCart ? "Proceed to Checkout" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
               </Link>
             </Button>
-            {!purchase.eligible && <p className="mt-2 text-xs text-muted-foreground">Your saved cart will stay here until an eligible retail account signs in.</p>}
+            {!purchase.eligible && purchase.reason !== "guest" && <p className="mt-2 text-xs text-muted-foreground">Online checkout is available only to retail customer accounts.</p>}
             <p className="mt-3 text-xs text-muted-foreground">Items priced on request are not included in the total. We will confirm those prices on WhatsApp.</p>
           </aside>
         </div>
