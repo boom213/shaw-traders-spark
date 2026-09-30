@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileCheck2, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
+import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileCheck2, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, ReceiptText, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -55,6 +55,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/vendors", label: "Vendor Payments", icon: QrCode, exact: false, capability: "vendor-finance", group: "Sales" },
   { to: "/manage/suppliers", label: "Suppliers & Purchases", icon: Truck, exact: false, capability: "vendor-finance", group: "Sales" },
   { to: "/manage/enquiries", label: "Enquiries", icon: PhoneCall, exact: false, capability: "operations", group: "Sales" },
+  { to: "/manage/quotes", label: "Quotes", icon: ReceiptText, exact: false, capability: "quotes", group: "Sales" },
   { to: "/manage/all-products", label: "All Products", icon: PackageSearch, exact: false, capability: "operations", group: "Catalog" },
   { to: "/manage/catalogue", label: "Products & Stock", icon: Boxes, exact: false, capability: "catalogue", group: "Catalog" },
   { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Catalog" },

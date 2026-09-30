@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   PackageSearch,
+  ReceiptText,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -41,6 +42,7 @@ const STAFF_LINKS = [
   { to: "/manage", label: "Overview", icon: LayoutDashboard, capability: "operations" },
   { to: "/manage/orders", label: "Orders", icon: ClipboardList, capability: "online-orders" },
   { to: "/manage/enquiries", label: "Enquiries", icon: PackageSearch, capability: "operations" },
+  { to: "/manage/quotes", label: "Quotes", icon: ReceiptText, capability: "quotes" },
   { to: "/manage/bookings", label: "Bookings & service", icon: Wrench, capability: "operations" },
   { to: "/manage/customers", label: "Customers", icon: Users, capability: "operations" },
   { to: "/manage/all-products", label: "All products", icon: ShoppingBag, capability: "operations" },
@@ -116,7 +118,9 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
             </DropdownMenuItem>
             {staff && !staff.signedIn && <>
               <DropdownMenuItem asChild>
-                <Link to="/account" hash="orders"><ClipboardList className="size-4" /> My orders</Link>
+                {isTrade
+                  ? <Link to="/account" hash="quotes"><ReceiptText className="size-4" /> My quotes</Link>
+                  : <Link to="/account" hash="orders"><ClipboardList className="size-4" /> My orders</Link>}
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/account" hash="wishlist"><Heart className="size-4" /> Wishlist</Link>
