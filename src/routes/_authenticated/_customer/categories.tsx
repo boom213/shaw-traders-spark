@@ -3,7 +3,7 @@ import { CategoryGrid } from "@/components/site/CategoryGrid";
 import { SectionHeading } from "@/components/site/Empty";
 import { breadcrumbLd, canonical } from "@/lib/catalog";
 
-export const Route = createFileRoute("/categories")({
+export const Route = createFileRoute("/_authenticated/_customer/categories")({
   head: () => ({
     meta: [
       { title: "Part Categories" },

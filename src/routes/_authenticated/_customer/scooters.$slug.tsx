@@ -16,7 +16,7 @@ import { payWithRazorpay } from "@/lib/razorpay-client";
 import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
 import { SPEC_ROWS, TEST_RIDE_SLOTS, emi, priceLines } from "@/lib/vehicles";
 
-export const Route = createFileRoute("/scooters/$slug")({
+export const Route = createFileRoute("/_authenticated/_customer/scooters/$slug")({
   loader: async ({ params }) => {
     const found = await getVehicle({ data: { slug: params.slug } });
     if (!found) throw notFound();

@@ -34,7 +34,7 @@ type ShopSearch = {
 
 const PAGE_SIZE = 24;
 
-export const Route = createFileRoute("/shop")({
+export const Route = createFileRoute("/_authenticated/_customer/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => ({
     q: typeof search['q'] === "string" ? search['q'] : undefined,
     category: typeof search['category'] === "string" ? search['category'] : undefined,

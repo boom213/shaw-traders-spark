@@ -48,7 +48,7 @@ describe("catalogue safety wiring", () => {
 
   it("keeps missing cart and saved-list entries visible and removable", async () => {
     const [cart, account] = await Promise.all([
-      import("node:fs/promises").then((fs) => fs.readFile("src/routes/cart.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/routes/_authenticated/_customer/cart.tsx", "utf8")),
       import("node:fs/promises").then((fs) => fs.readFile("src/routes/account.tsx", "utf8")),
     ]);
     expect(cart).toContain("This part is no longer available");

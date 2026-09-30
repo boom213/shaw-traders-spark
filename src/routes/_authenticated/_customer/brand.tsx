@@ -15,7 +15,7 @@ const TITLE = "ST Brand Spare Parts — Shaw Traders Own Brand";
 const DESC =
   "Shop the ST (Shaw Traders) own-brand range of electric scooter spare parts and batteries. Retail sign-in, wholesale trade accounts and a downloadable catalogue.";
 
-export const Route = createFileRoute("/brand")({
+export const Route = createFileRoute("/_authenticated/_customer/brand")({
   head: () => ({
     meta: [
       { title: TITLE },
