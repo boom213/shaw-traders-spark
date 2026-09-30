@@ -27,7 +27,7 @@ import {
   type TradeDocField,
 } from "@/lib/trade.functions";
 
-export const Route = createFileRoute("/trade")({
+export const Route = createFileRoute("/trade/")({
   head: () => ({
     meta: [
       { title: "Register for a Trade & Wholesale Account — Shaw Traders EV" },
