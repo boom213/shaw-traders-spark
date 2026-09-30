@@ -1,4 +1,5 @@
 # Current task
+- [x] Keep the customer account content aligned to the site width without horizontal overflow.
 - [x] Add secure Proforma Invoice PDFs with optional GST for priced wholesale quotes.
 - [x] Recover carts from temporary catalogue lookup failures without deleting saved items or enabling unverified checkout.
 - [x] Repair guest cart restoration by pruning deleted catalogue IDs after successful validation and blocking zero-value checkout.
