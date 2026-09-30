@@ -9,7 +9,7 @@ import { useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
 
-export const Route = createFileRoute("/_authenticated/_customer/trade/pad")({
+export const Route = createFileRoute("/trade/pad")({
   head: () => ({
     meta: [
       { title: "Bulk Order Pad — Shaw Traders EV" },

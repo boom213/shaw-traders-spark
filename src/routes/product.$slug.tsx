@@ -27,7 +27,7 @@ import { uploadReviewPhoto } from "@/lib/photo-upload";
 import { notifyWhenInStock, submitReview } from "@/lib/shop-extras.functions";
 import { imageFor, isPlaceholder } from "@/lib/placeholders";
 
-export const Route = createFileRoute("/_authenticated/_customer/product/$slug")({
+export const Route = createFileRoute("/product/$slug")({
   loader: async ({ context, params }) => {
     const data = await context.queryClient.ensureQueryData(productQuery(params.slug));
     if (!data) throw notFound();

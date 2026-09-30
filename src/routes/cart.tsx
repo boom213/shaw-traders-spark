@@ -22,7 +22,7 @@ export const COUPON_KEY = "shaw-ev-coupon";
 
 export type AppliedCoupon = { code: string; discount: number };
 
-export const Route = createFileRoute("/_authenticated/_customer/cart")({
+export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
       { title: "Your Cart — Shaw Traders EV" },

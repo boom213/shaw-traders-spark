@@ -8,7 +8,7 @@ import { listVehicles } from "@/lib/vehicles.functions";
 import { SPEC_ROWS, type VehicleModel } from "@/lib/vehicles";
 import { productThumbnailUrl } from "@/lib/product-photo";
 
-export const Route = createFileRoute("/_authenticated/_customer/scooters/")({
+export const Route = createFileRoute("/scooters/")({
   loader: async () => await listVehicles(),
   head: () => ({
     meta: [

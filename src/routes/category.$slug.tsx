@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { canonical } from "@/lib/catalog";
 import { categoriesQuery, categoryQuery, productsQuery } from "@/lib/queries";
 
-export const Route = createFileRoute("/_authenticated/_customer/category/$slug")({
+export const Route = createFileRoute("/category/$slug")({
   loader: async ({ context, params }) => {
     const category = await context.queryClient.ensureQueryData(categoryQuery(params.slug));
     if (!category) throw notFound();
