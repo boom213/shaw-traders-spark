@@ -78,7 +78,7 @@ function PadPage() {
       <Textarea
         rows={8}
         value={text}
-        onChange={(e) => { setText(e.target.value); setSubmittedKey(null); }}
+        onChange={(e) => setText(e.target.value)}
         placeholder={"STE-CHG-60V, 20\nSTE-BRK-PAD, 50\nrear shocker x 10"}
         aria-label="Part numbers and quantities"
       />
