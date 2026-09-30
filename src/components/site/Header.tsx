@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +13,7 @@ import { BUSINESS, NAV_CATEGORIES, whatsappLink, type Category } from "@/lib/cat
 import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { categoryIcon } from "@/components/site/category-icons";
+import { staffSession } from "@/lib/staff.functions";
 
 function CategoryNavigation({ categories }: { categories: Category[] }) {
   const railRef = useRef<HTMLDivElement>(null);
@@ -127,6 +128,8 @@ export function Header() {
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const { mode: siteMode } = useSiteOrdering();
   const { data: categories } = useSuspenseQuery(categoriesQuery());
+  const { data: staff } = useQuery({ queryKey: ["account-staff-session", user?.id], queryFn: () => staffSession(), enabled: Boolean(user), retry: false });
+  const isStaff = Boolean(staff?.signedIn);
   const navCategories = NAV_CATEGORIES.map((slug) => (categories ?? []).find((c) => c.slug === slug)).filter(
     (c): c is NonNullable<typeof c> => Boolean(c),
   );
@@ -149,7 +152,7 @@ export function Header() {
 
             <nav className="grid gap-1 text-sm">
               {[
-                { to: "/shop", label: t("nav.shop") },
+                ...(!isStaff ? [{ to: "/shop" as const, label: t("nav.shop") }] : []),
                 { to: "/trade", label: "Trade Account" },
                 { to: "/bulk", label: t("nav.bulk") },
                 { to: "/service", label: "Service" },
@@ -167,7 +170,7 @@ export function Header() {
                 </Link>
               ))}
             </nav>
-            {(categories ?? []).length > 0 && <><p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
+            {!isStaff && (categories ?? []).length > 0 && <><p className="mt-6 mb-2 px-3 text-xs font-semibold uppercase text-muted-foreground">
               {t("nav.categories")}
             </p>
             <nav className="grid gap-0.5 text-sm">
@@ -198,7 +201,7 @@ export function Header() {
         <div className="flex shrink-0 items-center justify-end gap-1">
           <LanguageSwitch className="hidden lg:block" />
           <AccountMenu />
-          {user && wishlistReady && (
+          {user && wishlistReady && !isStaff && (
             <Link
               to="/account"
               hash="wishlist"
@@ -222,7 +225,7 @@ export function Header() {
           >
             <MessageCircle className="size-5" />
           </a>
-          {siteMode === "full" && (
+          {siteMode === "full" && !isStaff && (
             <Link
               to="/cart"
               className="relative grid size-9 place-items-center rounded-lg hover:bg-muted"
@@ -246,7 +249,7 @@ export function Header() {
       <nav className="hidden border-t border-border lg:block" aria-label="Store navigation">
         <div className="container-page flex h-11 items-center justify-center gap-4">
           {[
-            { to: "/shop", label: "Shop" },
+            ...(!isStaff ? [{ to: "/shop" as const, label: "Shop" }] : []),
             { to: "/trade", label: "Trade" },
             { to: "/bulk", label: "Bulk Orders" },
             { to: "/service", label: "Service" },
@@ -264,7 +267,7 @@ export function Header() {
         </div>
       </nav>
 
-      {navCategories.length > 0 && <CategoryNavigation categories={navCategories} />}
+      {!isStaff && navCategories.length > 0 && <CategoryNavigation categories={navCategories} />}
     </header>
   );
 }
