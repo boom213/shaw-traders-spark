@@ -168,7 +168,7 @@ function ImportPage() {
                         </table>
                       </div>
                     )}
-                    {entry.saved > entry.changes.length && <p className="mt-2 text-xs text-muted-foreground">Showing the first {entry.changes.length} of {entry.saved} changes.</p>}
+                    {entry.changes.length === 50 && <p className="mt-2 text-xs text-muted-foreground">Showing the first 50 of {Math.max(entry.saved, 50)} changes.</p>}
                   </AccordionContent>
                 </AccordionItem>
               ))}
