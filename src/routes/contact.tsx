@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MapPin, Navigation, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { BUSINESS, breadcrumbLd, canonical, whatsappLink } from "@/lib/catalog";
 import { useQuery } from "@tanstack/react-query";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 import { createGeneralEnquiry } from "@/lib/enquiries.functions";
+import { errorCount, focusFirstInvalid, validateNameAndPhones, validationSummary, type FieldErrors } from "@/lib/form-validation";
 
 export const Route = createFileRoute("/contact")({
   head: () => ({
@@ -37,12 +38,20 @@ function ContactPage() {
   const { data: settings } = useQuery(shopSettingsQuery());
   const [f, setF] = useState({ name: "", phone: "", alternatePhone: "", email: "", product: "", message: "" });
   const [sending, setSending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+  const errors: FieldErrors<"name" | "phone" | "alternatePhone"> = submitted ? validateNameAndPhones(f) : {};
 
   const send = async () => {
     const phone = f.phone.replace(/\D/g, "");
     const alternatePhone = f.alternatePhone.replace(/\D/g, "");
-    if (!f.name.trim() || !/^[6-9]\d{9}$/.test(phone)) return toast.error("Please add your name and a valid 10-digit phone number");
-    if (alternatePhone && !/^[6-9]\d{9}$/.test(alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
+    setSubmitted(true);
+    const validationErrors = validateNameAndPhones(f);
+    if (errorCount(validationErrors) > 0) {
+      toast.error(validationSummary(validationErrors));
+      focusFirstInvalid(formRef.current);
+      return;
+    }
     setSending(true);
     const res = await createGeneralEnquiry({ data: { source: "contact", name: f.name, phone, alternatePhone, subject: f.product || "Contact enquiry", note: [f.email ? `Email: ${f.email}` : "", f.message].filter(Boolean).join(" — ") } });
     setSending(false);
@@ -137,11 +146,11 @@ function ContactPage() {
 
         <div className="h-fit rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <h3 className="font-display text-base font-bold">Send an enquiry</h3>
-          <div className="mt-4 grid gap-3">
-            <Row label="Your name" v={f.name} on={(v) => setF({ ...f, name: v })} />
+          <div ref={formRef} className="mt-4 grid gap-3">
+            <Row label="Your name" v={f.name} on={(v) => setF({ ...f, name: v })} error={errors.name} />
             <div className="grid gap-3 sm:grid-cols-2">
-              <Row label="Phone number" v={f.phone} on={(v) => setF({ ...f, phone: v })} numeric />
-              <Row label="Alternate Number (optional)" v={f.alternatePhone} on={(v) => setF({ ...f, alternatePhone: v })} numeric />
+              <Row label="Phone number" v={f.phone} on={(v) => setF({ ...f, phone: v })} numeric error={errors.phone} />
+              <Row label="Alternate Number (optional)" v={f.alternatePhone} on={(v) => setF({ ...f, alternatePhone: v })} numeric error={errors.alternatePhone} />
             </div>
             <Row label="Email (optional)" v={f.email} on={(v) => setF({ ...f, email: v })} />
             <Row label="Part / product enquiry" v={f.product} on={(v) => setF({ ...f, product: v })} />
@@ -158,11 +167,14 @@ function ContactPage() {
   );
 }
 
-function Row({ label, v, on, numeric = false }: { label: string; v: string; on: (v: string) => void; numeric?: boolean }) {
+function Row({ label, v, on, numeric = false, error }: { label: string; v: string; on: (v: string) => void; numeric?: boolean; error?: string }) {
+  const id = `contact-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+  const errorId = `${id}-error`;
   return (
     <div className="grid gap-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Input inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 10 : undefined} value={v} onChange={(e) => on(numeric ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value)} />
+      <Label htmlFor={id} className="text-xs">{label}</Label>
+      <Input id={id} inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 10 : undefined} value={v} aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined} onChange={(e) => on(numeric ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value)} />
+      {error && <p id={errorId} role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

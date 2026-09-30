@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { cloneElement, useEffect, useRef, useState, type ReactElement } from "react";
 import { Check, Download, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ import { uploadTradeDoc } from "@/lib/trade-upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MultiSelectDropdown } from "@/components/site/MultiSelectDropdown";
 import { categoriesQuery } from "@/lib/queries";
-import { BUSINESS_TYPES, EV_BRANDS, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS, taxIdError } from "@/lib/trade-options";
+import { BUSINESS_TYPES, EV_BRANDS, STAFF_OPTIONS, VOLUME_OPTIONS, YEARS_OPTIONS, validateTradeForm, type TradeFormErrors } from "@/lib/trade-options";
+import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 import {
   DOC_FIELDS,
   deleteTradeDocument,
@@ -66,6 +67,9 @@ function TradePage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const formRef = useRef<HTMLDivElement>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const errors: TradeFormErrors = submitted ? validateTradeForm(form) : {};
 
   useEffect(() => {
     const app = account?.application;
@@ -109,11 +113,14 @@ function TradePage() {
     toast.success("Document removed");
   };
 
-  const taxErr = taxIdError(form.gstin);
   const submit = async () => {
-    const err = taxIdError(form.gstin);
-    if (err) return toast.error(err);
-    if (form.alternatePhone && !/^[6-9]\d{9}$/.test(form.alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
+    setSubmitted(true);
+    const validationErrors = validateTradeForm(form);
+    if (errorCount(validationErrors) > 0) {
+      toast.error(validationSummary(validationErrors));
+      focusFirstInvalid(formRef.current);
+      return;
+    }
     setSaving(true);
     const res = await submitTradeApplication({ data: { ...form, brands, partCategories, documents: docs } });
     setSaving(false);
@@ -256,17 +263,16 @@ function TradePage() {
           )}
 
           {!approved && (
-            <div className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <div ref={formRef} className="space-y-4 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
               <h2 className="font-display text-lg font-semibold">Your shop details</h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input placeholder="Business / shop name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
+                <ValidatedField id="trade-business-name-error" message={errors.businessName}><Input placeholder="Business / shop name" aria-label="Business / shop name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} /></ValidatedField>
                 <Input placeholder="Person we should speak to" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
-                <Input placeholder="GSTIN (if you have one)" maxLength={15} aria-invalid={taxErr?.includes("GSTIN") || undefined} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} />
-                <Input placeholder="Mobile number" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
-                <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+                <ValidatedField id="trade-gstin-error" message={errors.gstin}><Input placeholder="GSTIN (if you have one)" aria-label="GSTIN" maxLength={15} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} /></ValidatedField>
+                <ValidatedField id="trade-phone-error" message={errors.phone}><Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></ValidatedField>
+                <ValidatedField id="trade-alternate-phone-error" message={errors.alternatePhone}><Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></ValidatedField>
               </div>
-              {taxErr && <p role="alert" className="-mt-1 text-sm text-destructive">{taxErr}</p>}
-              <Textarea rows={3} placeholder="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} />
+              <ValidatedField id="trade-shop-address-error" message={errors.shopAddress}><Textarea rows={3} placeholder="Shop address" aria-label="Shop address" value={form.shopAddress} onChange={(e) => setForm({ ...form, shopAddress: e.target.value })} /></ValidatedField>
 
               <h2 className="pt-2 font-display text-lg font-semibold">About your business</h2>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -276,12 +282,15 @@ function TradePage() {
                   ["yearsInBusiness", "Years in business", YEARS_OPTIONS],
                   ["staffCount", "Mechanics / staff", STAFF_OPTIONS],
                 ] as const).map(([key, label, opts]) => (
-                  <Select key={key} value={form[key] || undefined} onValueChange={(v) => setForm({ ...form, [key]: v })}>
-                    <SelectTrigger className="min-h-10" aria-label={label}><SelectValue placeholder={label} /></SelectTrigger>
-                    <SelectContent>
-                      {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div key={key} className="grid gap-1.5">
+                    <Select value={form[key] || undefined} onValueChange={(v) => setForm({ ...form, [key]: v })}>
+                      <SelectTrigger className="min-h-10" aria-label={label} aria-invalid={errors[key] ? true : undefined} aria-describedby={errors[key] ? `trade-${key}-error` : undefined}><SelectValue placeholder={label} /></SelectTrigger>
+                      <SelectContent>
+                        {opts.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                    {errors[key] && <p id={`trade-${key}-error`} role="alert" className="text-xs text-destructive">{errors[key]}</p>}
+                  </div>
                 ))}
                 <MultiSelectDropdown label="Scooter brands you service" options={brandOptions} value={brands} onChange={setBrands} />
                 <MultiSelectDropdown label="Parts you need most" options={categoryOptions} value={partCategories} onChange={setPartCategories} />
@@ -338,4 +347,8 @@ function TradePage() {
       )}
     </div>
   );
+}
+
+function ValidatedField({ id, message, children }: { id: string; message?: string; children: ReactElement<{ "aria-invalid"?: boolean; "aria-describedby"?: string }> }) {
+  return <div className="grid gap-1.5">{cloneElement(children, { "aria-invalid": message ? true : undefined, "aria-describedby": message ? id : undefined })}{message && <p id={id} role="alert" className="text-xs text-destructive">{message}</p>}</div>;
 }

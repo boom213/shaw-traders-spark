@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 - All Products is Staff-read-only; Manager+ edits the catalogue.
-- Keep receipts auditable; vendor links atomic; corrections never delete payments.
+- Keep receipts auditable; vendor links atomic; never delete payments.
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings are allowlisted; never expose operations fields.
@@ -24,10 +24,10 @@
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
 - Sales Manager gets server-enforced online-order-only access; online queries exclude `counter_sales.order_id` and Counter Sales stays separate.
 - Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
-- Router events never mutate history/grid state; log errors. Use Spark loaders.
+- Router events don't mutate state; log errors. Use Spark loaders.
 - Owner controls settings/reports/trade; audit grants; invite Sales Manager/Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
-- Wholesale reviews are manual/atomic; no AI. Collect GSTIN, not PAN; retain old PAN/export.
+- Wholesale reviews: manual/atomic, no AI; GSTIN not PAN; retain old PAN/export. Form errors: post-submit, per-field, accessible, live-clearing; focus first invalid.
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
 - Razorpay review is Owner+ read-only. Counter Sales can exceed stock; floor at zero and restore only deducted stock.

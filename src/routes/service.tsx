@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { cloneElement, useRef, useState, type ReactElement } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +9,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { BUSINESS, breadcrumbLd, canonical, formatINR } from "@/lib/catalog";
 import { requestService, serviceHistory, type ServiceHistoryView } from "@/lib/vehicles.functions";
 import { TEST_RIDE_SLOTS } from "@/lib/vehicles";
+import { errorCount, focusFirstInvalid, validateNameAndPhones, validationSummary } from "@/lib/form-validation";
 
 export const Route = createFileRoute("/service")({
   head: () => ({
@@ -35,9 +37,12 @@ export const Route = createFileRoute("/service")({
 function ServicePage() {
   const [book, setBook] = useState({ name: "", phone: "", alternatePhone: "", date: "", slot: TEST_RIDE_SLOTS[0]!, issue: "", registrationNumber: "" });
   const [bookMsg, setBookMsg] = useState<string | null>(null);
+  const [bookSubmitted, setBookSubmitted] = useState(false);
+  const bookingRef = useRef<HTMLElement>(null);
   const [look, setLook] = useState({ phone: "", reference: "" });
   const [history, setHistory] = useState<ServiceHistoryView | null>(null);
   const [lookMsg, setLookMsg] = useState<string | null>(null);
+  const bookErrors = bookSubmitted ? validateNameAndPhones(book) : {};
 
   return (
     <div className="container-page py-8">
@@ -48,12 +53,12 @@ function ServicePage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+        <section ref={bookingRef} className="grid gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
           <h2 className="font-display text-lg font-bold">Book a service slot</h2>
-          <Input placeholder="Your name" aria-label="Your name" value={book.name} onChange={(e) => setBook({ ...book, name: e.target.value })} />
+          <ValidationField id="service-name-error" message={bookErrors.name}><Input placeholder="Your name" aria-label="Your name" value={book.name} onChange={(e) => setBook({ ...book, name: e.target.value })} /></ValidationField>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={book.phone} onChange={(e) => setBook({ ...book, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
-            <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={book.alternatePhone} onChange={(e) => setBook({ ...book, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
+            <ValidationField id="service-phone-error" message={bookErrors.phone}><Input placeholder="Mobile number" aria-label="Mobile number" inputMode="numeric" maxLength={10} value={book.phone} onChange={(e) => setBook({ ...book, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></ValidationField>
+            <ValidationField id="service-alternate-phone-error" message={bookErrors.alternatePhone}><Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={book.alternatePhone} onChange={(e) => setBook({ ...book, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} /></ValidationField>
           </div>
           <Input placeholder="Registration number (if you have one)" aria-label="Registration number" value={book.registrationNumber} onChange={(e) => setBook({ ...book, registrationNumber: e.target.value })} />
           <Input type="date" aria-label="Preferred date" value={book.date} onChange={(e) => setBook({ ...book, date: e.target.value })} />
@@ -64,8 +69,11 @@ function ServicePage() {
           <Textarea rows={3} placeholder="What is the problem?" aria-label="What is the problem" value={book.issue} onChange={(e) => setBook({ ...book, issue: e.target.value })} />
           <Button
             onClick={async () => {
-              if (book.alternatePhone && !/^[6-9]\d{9}$/.test(book.alternatePhone)) {
-                setBookMsg("Enter a valid 10-digit alternate mobile number.");
+              setBookSubmitted(true);
+              const validationErrors = validateNameAndPhones(book);
+              if (errorCount(validationErrors) > 0) {
+                toast.error(validationSummary(validationErrors));
+                focusFirstInvalid(bookingRef.current);
                 return;
               }
               const r = await requestService({ data: book });
@@ -142,4 +150,8 @@ function ServicePage() {
       </div>
     </div>
   );
+}
+
+function ValidationField({ id, message, children }: { id: string; message?: string; children: ReactElement<{ "aria-invalid"?: boolean; "aria-describedby"?: string }> }) {
+  return <div className="grid gap-1.5">{cloneElement(children, { "aria-invalid": message ? true : undefined, "aria-describedby": message ? id : undefined })}{message && <p id={id} role="alert" className="text-xs text-destructive">{message}</p>}</div>;
 }
