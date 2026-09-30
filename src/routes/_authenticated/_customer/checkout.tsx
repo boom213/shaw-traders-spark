@@ -16,7 +16,7 @@ import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/cart";
+import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/_authenticated/_customer/cart";
 import { previewCoupon } from "@/lib/shop-extras.functions";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";

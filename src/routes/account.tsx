@@ -53,7 +53,10 @@ function AccountPage() {
   const navigate = useNavigate();
   useEffect(() => {
     if (user && next === "/trade") void navigate({ to: "/trade" });
-    else if (user && customerShoppingPath(next)) window.location.assign(next);
+    else if (user) {
+      const destination = customerShoppingPath(next);
+      if (destination) window.location.assign(destination);
+    }
   }, [user, next, navigate]);
   if (!authReady) return <div className="container-page"><SparkCharge label="Loading your account…" /></div>;
   return user ? <Dashboard /> : <AuthPanel />;
