@@ -125,6 +125,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     const { retailPurchaseAccess } = await import("@/lib/purchase-access.server");
     const purchase = await retailPurchaseAccess();
     if (!purchase.eligible) return { error: "Online checkout is available only to retail customer accounts." };
+    if (data.paymentMethod === "Cash on Delivery") {
+      return { error: "Cash on Delivery is currently not available. Please pay online." };
+    }
 
     const { publicClient } = await import("@/lib/supabase-public.server");
 

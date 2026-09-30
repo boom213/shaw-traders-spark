@@ -71,6 +71,10 @@ function QuotePage() {
 
   const pay = async (method: "UPI" | "Cash on Delivery") => {
     if (!quote) return;
+    if (method === "Cash on Delivery") {
+      toast.info("Cash on Delivery is currently not available. Please pay online.");
+      return;
+    }
     setBusy(true);
     const res = await startCheckout({
       data: {
@@ -204,9 +208,10 @@ function QuotePage() {
             <div className="grid gap-1.5"><Label htmlFor="q-pin">PIN code</Label><Input id="q-pin" inputMode="numeric" value={addr.pincode} onChange={set("pincode")} required /></div>
           </div>
           <Button type="submit" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Please wait…" : `Pay ${formatINR(total)}`}</Button>
-          <Button type="button" variant="outline" disabled={busy} onClick={() => void pay("Cash on Delivery")}>
-            Pay cash on delivery
+          <Button type="button" variant="outline" disabled aria-describedby="cod-unavailable">
+            Cash on Delivery unavailable
           </Button>
+          <p id="cod-unavailable" className="text-center text-xs text-muted-foreground">Cash on Delivery is currently not available. Please pay online.</p>
         </form>
       )}
     </div>
