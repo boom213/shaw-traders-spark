@@ -14,9 +14,9 @@
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
 - Public settings are allowlisted; never expose operations fields.
-- Photos: 480px cards, 192px rows/PDFs, originals in details; retain PDF fallback/5s limit.
+- Photos: 480px cards, 192px rows/PDFs; originals in details.
 - Lazy-load iframe-free homepage social links below shopping content.
-- Brochure downloads require one validated enquiry and fixed-recipient notice.
+- Brochures download directly.
 - Showroom visibility uses shared shop settings.
 - Timestamp cart clears; sync tabs and persist before navigation; debounce ordinary sync only.
 - Bookings use owner-scoped reads and public tokens.
@@ -30,4 +30,4 @@
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
 - Wholesale reviews: manual/atomic, no AI; GSTIN not PAN; retain old PAN/export. Form errors: post-submit, per-field, accessible, live-clearing; focus first invalid.
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
-- Razorpay review is Owner+ read-only. Counter Sales can exceed stock; floor at zero and restore only deducted stock.
+- Razorpay review is Owner+ read-only. Counter Sales may exceed stock. Wholesale quote writes are atomic/service-only; customers never set prices.

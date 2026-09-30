@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bike, CheckCircle2, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
+import { Bike, CheckCircle2, ChevronDown, ChevronUp, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { AddressFields, EMPTY_ADDRESS, validateCustomerAddress, type CustomerAddressInput } from "@/components/site/AddressFields";
 import { useStore } from "@/hooks/useStore";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useTradeAccount } from "@/hooks/useTrade";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { myOrders } from "@/lib/orders.functions";
@@ -28,6 +29,7 @@ import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
 import { staffSession } from "@/lib/staff.functions";
+import { myQuoteRequests, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
 import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 
 export const Route = createFileRoute("/account")({
@@ -182,6 +184,7 @@ function AuthPanel() {
 function Dashboard() {
   const { lists, user, addToCart, toggleWishlist, removeSaved } = useStore();
   const purchase = usePurchaseAccess();
+  const { isTrade } = useTradeAccount();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -202,6 +205,7 @@ function Dashboard() {
   });
   const isStaff = Boolean(staff?.signedIn);
   const customerAccountReady = Boolean(user) && staff !== undefined && !isStaff;
+  const showOrders = customerAccountReady && !isTrade;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -224,7 +228,7 @@ function Dashboard() {
   const { data: orders, isPending: ordersPending } = useQuery({
     queryKey: ["my-orders", user?.id],
     queryFn: () => myOrders(),
-    enabled: customerAccountReady,
+    enabled: showOrders,
   });
 
   const { data: bookings, isPending: bookingsPending } = useQuery({
@@ -366,7 +370,9 @@ function Dashboard() {
 
       <AddressBook userId={user.id} />
 
-      {!isStaff && staff !== undefined && <section id="orders" className="scroll-mt-52 space-y-3">
+      {isTrade && customerAccountReady && <QuotesSection />}
+
+      {showOrders && <section id="orders" className="scroll-mt-52 space-y-3">
         <SectionHeading title="Your orders" subtitle="Every order placed with your account" />
         {ordersPending ? (
           <div className="grid gap-2">{[0, 1].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />)}</div>
@@ -487,6 +493,46 @@ function Dashboard() {
       )}
     </div>
   );
+}
+
+function QuotesSection() {
+  const queryClient = useQueryClient();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const { data: quotes, isPending } = useQuery({ queryKey: ["my-quote-requests"], queryFn: () => myQuoteRequests() });
+  const respond = async (quoteId: string, decision: "accepted" | "rejected") => {
+    setBusyId(quoteId);
+    const result = await respondToQuote({ data: { quoteId, decision } });
+    setBusyId(null);
+    if (!result.ok) return toast.error(result.error ?? "Could not update this quote.");
+    toast.success(decision === "accepted" ? "Quote accepted" : "Quote rejected");
+    void queryClient.invalidateQueries({ queryKey: ["my-quote-requests"] });
+  };
+  return <section id="quotes" className="scroll-mt-52 space-y-3">
+    <SectionHeading title="My quotes" subtitle="Your wholesale price requests and replies" />
+    {isPending ? <div className="grid gap-2">{[0, 1].map((index) => <div key={index} className="h-20 animate-pulse rounded-2xl bg-muted" />)}</div>
+      : !quotes?.length ? <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">No quotes yet. <Link to="/trade/pad" className="font-medium text-primary underline">Request prices from the bulk order pad</Link></p>
+      : <div className="space-y-3">{quotes.map((quote) => <CustomerQuoteCard key={quote.id} quote={quote} busy={busyId === quote.id} onRespond={respond} />)}</div>}
+  </section>;
+}
+
+function CustomerQuoteCard({ quote, busy, onRespond }: { quote: CustomerQuoteRequest; busy: boolean; onRespond: (id: string, decision: "accepted" | "rejected") => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const expired = quote.status === "expired" || (quote.status === "priced" && quote.expiresAt !== null && Date.parse(quote.expiresAt) <= Date.now());
+  const status = expired ? "Expired" : quote.status.charAt(0).toUpperCase() + quote.status.slice(1);
+  const total = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  return <article className={`rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] ${expired ? "border-destructive/40" : "border-border"}`}>
+    <Button type="button" variant="ghost" className="h-auto w-full justify-between gap-4 p-0 text-left hover:bg-transparent" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
+      <span><span className="block font-semibold">{quote.humanId}</span><span className="block text-xs font-normal text-muted-foreground">{new Date(quote.createdAt).toLocaleDateString("en-IN")} · {quote.items.length} line(s)</span></span>
+      <span className="flex items-center gap-2"><span className="text-right"><span className={`block text-sm font-semibold ${expired ? "text-destructive" : ""}`}>{status}</span>{total > 0 && <span className="block text-sm font-semibold">{formatINR(total)}</span>}</span>{open ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}</span>
+    </Button>
+    {open && <div className="mt-4 space-y-3 border-t border-border pt-4">
+      {quote.customerNote && <p className="text-sm text-muted-foreground">Your note: {quote.customerNote}</p>}
+      <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-border text-left"><th className="py-2">Part</th><th className="py-2">Qty</th><th className="py-2 text-right">Unit price</th></tr></thead><tbody>{quote.items.map((item) => <tr key={item.id} className="border-b border-border/60"><td className="py-2"><span className="font-medium">{item.name}</span>{item.sku && <span className="block text-xs text-muted-foreground">{item.sku}</span>}{item.lineNote && <span className="block text-xs text-muted-foreground">{item.lineNote}</span>}</td><td className="py-2">{item.qty}</td><td className="py-2 text-right">{item.unitPrice === null ? "Pending" : formatINR(item.unitPrice)}</td></tr>)}</tbody></table></div>
+      {quote.expiresAt && <p className={`text-sm ${expired ? "font-medium text-destructive" : "text-muted-foreground"}`}>{expired ? "This quote has expired" : `Valid until ${new Date(quote.expiresAt).toLocaleDateString("en-IN")}`}</p>}
+      {quote.decisionNote && <p className="rounded-lg bg-surface px-3 py-2 text-sm">Your response note: {quote.decisionNote}</p>}
+      {quote.status === "priced" && !expired && <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={() => void onRespond(quote.id, "accepted")}><CheckCircle2 className="size-4" /> Accept quote</Button><Button disabled={busy} variant="outline" onClick={() => void onRespond(quote.id, "rejected")}>Reject quote</Button></div>}
+    </div>}
+  </article>;
 }
 
 function UnavailableSavedItem({ onRemove }: { onRemove: () => void }) {

@@ -1,4 +1,5 @@
 # Current task
+- [x] Add multi-line wholesale quotes and Manager+ pricing; hide trade retail orders.
 - [x] Add accessible field-by-field submit validation to checkout addresses, wholesale, contact, bulk, service booking, and Add Wholesaler; make the GST certificate optional.
 - [x] Stop collecting PAN in wholesale forms while preserving historical PAN display and exports.
 - [x] Keep Shop visible in desktop and mobile navigation for every role while retaining all purchase restrictions.

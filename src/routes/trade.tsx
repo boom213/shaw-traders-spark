@@ -256,7 +256,7 @@ function TradePage() {
                   <Button size="sm" variant="outline" onClick={downloadList}>
                     <Download className="size-4" /> Download my price list
                   </Button>
-                  <Button asChild size="sm" variant="outline"><Link to="/account">My orders &amp; reorder</Link></Button>
+                  <Button asChild size="sm" variant="outline"><Link to="/account" hash="quotes">My quotes</Link></Button>
                 </div>
               )}
             </div>
