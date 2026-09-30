@@ -8,6 +8,7 @@ import { useStore } from "@/hooks/useStore";
 import { useT } from "@/lib/i18n";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
 import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
@@ -30,6 +31,8 @@ export function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
   const mode = useProductOrdering(product);
   const purchase = usePurchaseAccess();
+  const quoteAccess = useQuoteAccess();
+  const quoteList = useQuoteList();
   const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const [enquiry, setEnquiry] = useState(false);
@@ -51,6 +54,11 @@ export function ProductCard({ product }: { product: Product }) {
     if (!ok) toast.error(`Only ${product.stock} in stock`);
     else toast.success("Added to cart");
     return ok;
+  };
+
+  const addToQuote = () => {
+    quoteList.add(product.id, 1);
+    toast.success(t("quote.added"));
   };
 
   return (
@@ -129,7 +137,13 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
 
-        {mode === "browse" ? null : mode === "enquiry" ? (
+        {!quoteAccess.ready ? (
+          <div className="mt-auto pt-3"><div className="h-10 animate-pulse rounded-md bg-muted sm:h-9" aria-hidden="true" /></div>
+        ) : quoteAccess.allowed ? (
+          <div className="mt-auto grid pt-3">
+            <Button size="sm" className="h-10 sm:h-9" onClick={addToQuote}>{t("product.addToQuote")}</Button>
+          </div>
+        ) : mode === "browse" ? null : mode === "enquiry" ? (
           <div className="mt-auto grid pt-3">
             <Button size="sm" className="h-10 sm:h-9" onClick={() => setEnquiry(true)}>
               Check availability

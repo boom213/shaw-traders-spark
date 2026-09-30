@@ -66,6 +66,8 @@ import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
 import { Route as ScootersIndexRouteImport } from './routes/scooters.index'
 import { Route as ScootersSlugRouteImport } from './routes/scooters.$slug'
 import { Route as TradePadRouteImport } from './routes/trade.pad'
+import { Route as TradeQuoteListRouteImport } from './routes/trade.quote-list'
+import { Route as TradeQuoteSubmitRouteImport } from './routes/trade.quote-submit'
 import { Route as ApiPublicCatalogueRouteImport } from './routes/api/public/catalogue'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -367,6 +369,16 @@ const TradePadRoute = TradePadRouteImport.update({
   path: '/pad',
   getParentRoute: () => TradeRoute,
 } as any)
+const TradeQuoteListRoute = TradeQuoteListRouteImport.update({
+  id: '/quote-list',
+  path: '/quote-list',
+  getParentRoute: () => TradeRoute,
+} as any)
+const TradeQuoteSubmitRoute = TradeQuoteSubmitRouteImport.update({
+  id: '/quote-submit',
+  path: '/quote-submit',
+  getParentRoute: () => TradeRoute,
+} as any)
 const ApiPublicCatalogueRoute = ApiPublicCatalogueRouteImport.update({
   id: '/api/public/catalogue',
   path: '/api/public/catalogue',
@@ -506,6 +518,8 @@ export interface FileRoutesByFullPath {
   '/quote/$token': typeof QuoteTokenRoute
   '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
+  '/trade/quote-list': typeof TradeQuoteListRoute
+  '/trade/quote-submit': typeof TradeQuoteSubmitRoute
   '/manage/': typeof ManageIndexRoute
   '/scooters/': typeof ScootersIndexRoute
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
@@ -577,6 +591,8 @@ export interface FileRoutesByTo {
   '/quote/$token': typeof QuoteTokenRoute
   '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
+  '/trade/quote-list': typeof TradeQuoteListRoute
+  '/trade/quote-submit': typeof TradeQuoteSubmitRoute
   '/manage': typeof ManageIndexRoute
   '/scooters': typeof ScootersIndexRoute
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
@@ -652,6 +668,8 @@ export interface FileRoutesById {
   '/quote/$token': typeof QuoteTokenRoute
   '/scooters/$slug': typeof ScootersSlugRoute
   '/trade/pad': typeof TradePadRoute
+  '/trade/quote-list': typeof TradeQuoteListRoute
+  '/trade/quote-submit': typeof TradeQuoteSubmitRoute
   '/manage/': typeof ManageIndexRoute
   '/scooters/': typeof ScootersIndexRoute
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
@@ -728,6 +746,8 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/scooters/$slug'
     | '/trade/pad'
+    | '/trade/quote-list'
+    | '/trade/quote-submit'
     | '/manage/'
     | '/scooters/'
     | '/api/public/catalogue'
@@ -799,6 +819,8 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/scooters/$slug'
     | '/trade/pad'
+    | '/trade/quote-list'
+    | '/trade/quote-submit'
     | '/manage'
     | '/scooters'
     | '/api/public/catalogue'
@@ -873,6 +895,8 @@ export interface FileRouteTypes {
     | '/quote/$token'
     | '/scooters/$slug'
     | '/trade/pad'
+    | '/trade/quote-list'
+    | '/trade/quote-submit'
     | '/manage/'
     | '/scooters/'
     | '/api/public/catalogue'
@@ -1338,6 +1362,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TradePadRouteImport
       parentRoute: typeof TradeRoute
     }
+    '/trade/quote-list': {
+      id: '/trade/quote-list'
+      path: '/quote-list'
+      fullPath: '/trade/quote-list'
+      preLoaderRoute: typeof TradeQuoteListRouteImport
+      parentRoute: typeof TradeRoute
+    }
+    '/trade/quote-submit': {
+      id: '/trade/quote-submit'
+      path: '/quote-submit'
+      fullPath: '/trade/quote-submit'
+      preLoaderRoute: typeof TradeQuoteSubmitRouteImport
+      parentRoute: typeof TradeRoute
+    }
     '/api/public/catalogue': {
       id: '/api/public/catalogue'
       path: '/api/public/catalogue'
@@ -1535,10 +1573,14 @@ const ManageRouteWithChildren =
 
 interface TradeRouteChildren {
   TradePadRoute: typeof TradePadRoute
+  TradeQuoteListRoute: typeof TradeQuoteListRoute
+  TradeQuoteSubmitRoute: typeof TradeQuoteSubmitRoute
 }
 
 const TradeRouteChildren: TradeRouteChildren = {
   TradePadRoute: TradePadRoute,
+  TradeQuoteListRoute: TradeQuoteListRoute,
+  TradeQuoteSubmitRoute: TradeQuoteSubmitRoute,
 }
 
 const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)

@@ -1,14 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
+import { FileText, Home, ShoppingBag, ShoppingCart, User } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { useT, type TranslationKey } from "@/lib/i18n";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { staffSession } from "@/lib/staff.functions";
+import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
 
 const cartItem = { to: "/cart", key: "nav.cart" as TranslationKey, icon: ShoppingCart } as const;
 const accountItem = { to: "/account", key: "nav.account" as TranslationKey, icon: User } as const;
+const quoteItem = { to: "/trade/quote-list", key: "nav.quoteList" as TranslationKey, icon: FileText } as const;
 
 export function MobileTabBar() {
   const t = useT();
@@ -17,10 +19,13 @@ export function MobileTabBar() {
   const { data: staff } = useQuery({ queryKey: ["account-staff-session", user?.id], queryFn: () => staffSession(), enabled: Boolean(user), retry: false });
   const isStaff = Boolean(staff?.signedIn);
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
+  const quoteAccess = useQuoteAccess();
+  const quoteList = useQuoteList();
+  const commerceItem = quoteAccess.allowed ? quoteItem : mode === "full" && quoteAccess.reason !== "staff" && quoteAccess.reason !== "trade" ? cartItem : null;
   const items = [
     { to: "/", key: "nav.home" as TranslationKey, icon: Home },
     { to: "/shop" as const, key: "nav.shop" as TranslationKey, shortLabel: "Products", icon: ShoppingBag },
-    ...(mode === "full" && !isStaff ? [cartItem] : []),
+    ...(quoteAccess.ready && !isStaff && commerceItem ? [commerceItem] : []),
     accountItem,
   ];
   const gridColumns = items.length === 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2";
@@ -42,9 +47,9 @@ export function MobileTabBar() {
             >
               <Icon className="size-5 shrink-0" aria-hidden="true" />
               <span className="max-w-full truncate">{label}</span>
-              {key === "nav.cart" && cartCount > 0 && (
+              {(key === "nav.cart" ? cartCount : key === "nav.quoteList" ? quoteList.lines.length : 0) > 0 && (
                 <span className="absolute right-1/4 top-1 grid min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                  {cartCount}
+                  {key === "nav.cart" ? cartCount : quoteList.lines.length}
                 </span>
               )}
             </Link>}

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Heart, Menu, MessageCircle, ShoppingCart } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { categoryIcon } from "@/components/site/category-icons";
 import { staffSession } from "@/lib/staff.functions";
+import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
 
 function CategoryNavigation({ categories }: { categories: Category[] }) {
   const railRef = useRef<HTMLDivElement>(null);
@@ -126,6 +127,8 @@ export function Header() {
   const t = useT();
   const { lists, user, wishlistReady } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
+  const quoteAccess = useQuoteAccess();
+  const quoteList = useQuoteList();
   const { mode: siteMode } = useSiteOrdering();
   const { data: categories } = useSuspenseQuery(categoriesQuery());
   const { data: staff } = useQuery({ queryKey: ["account-staff-session", user?.id], queryFn: () => staffSession(), enabled: Boolean(user), retry: false });
@@ -225,7 +228,20 @@ export function Header() {
           >
             <MessageCircle className="size-5" />
           </a>
-          {siteMode === "full" && !isStaff && (
+          {quoteAccess.ready && quoteAccess.allowed ? (
+            <Link
+              to="/trade/quote-list"
+              className="relative grid size-9 place-items-center rounded-lg hover:bg-muted"
+              aria-label={t("nav.quoteList")}
+            >
+              <FileText className="size-5" />
+              {quoteList.lines.length > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {quoteList.lines.length}
+                </span>
+              )}
+            </Link>
+          ) : quoteAccess.ready && siteMode === "full" && !isStaff && quoteAccess.reason !== "staff" && quoteAccess.reason !== "trade" ? (
             <Link
               to="/cart"
               className="relative grid size-9 place-items-center rounded-lg hover:bg-muted"
@@ -238,7 +254,7 @@ export function Header() {
                 </span>
               )}
             </Link>
-          )}
+          ) : user && !quoteAccess.ready ? <span className="size-9 animate-pulse rounded-lg bg-muted" aria-hidden="true" /> : null}
         </div>
       </div>
 

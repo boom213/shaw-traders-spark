@@ -4,13 +4,13 @@ import { FileText, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { useCatalogueRateVisibility, useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
-import { submitQuoteRequest } from "@/lib/quote-requests.functions";
+import { useQuoteList } from "@/hooks/useQuoteList";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/trade/pad")({
   head: () => ({
@@ -29,50 +29,36 @@ export const Route = createFileRoute("/trade/pad")({
 });
 
 function PadPage() {
+  const t = useT();
   const { isTrade } = useTradeAccount();
+  const quoteList = useQuoteList();
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [lines, setLines] = useState<PadLine[] | null>(null);
   const [busy, setBusy] = useState(false);
-  const [quoteOpen, setQuoteOpen] = useState(false);
-  const [quoteNote, setQuoteNote] = useState("");
-  const [quoteBusy, setQuoteBusy] = useState(false);
-  const [submittedKey, setSubmittedKey] = useState<string | null>(null);
 
   const check = async () => {
     setBusy(true);
     const res = await bulkLookup({ data: { text } });
     setBusy(false);
     setLines(res.lines);
-    setSubmittedKey(null);
   };
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     const content = await file.text();
     setText(content.slice(0, 20000));
-    setSubmittedKey(null);
   };
 
   const ready = (lines ?? []).filter((l) => l.productId && !l.problem);
   const total = ready.reduce((n, l) => n + (l.unitPrice ?? 0) * l.qty, 0);
-  const readyKey = ready.map((line) => `${line.productId}:${line.qty}`).join(",");
-
-  const requestQuote = async () => {
-    setQuoteBusy(true);
-    const result = await submitQuoteRequest({
-      data: {
-        lines: ready.flatMap((line) => line.productId ? [{ productId: line.productId, qty: line.qty }] : []),
-        customerNote: quoteNote,
-      },
-    });
-    setQuoteBusy(false);
-    if (!result.ok) return toast.error(result.error);
-    setSubmittedKey(readyKey);
-    setQuoteOpen(false);
-    toast.success(`Quote request ${result.humanId} submitted`);
-    void navigate({ to: "/account", hash: "quotes" });
+  const addToQuoteList = () => {
+    const problems = (lines ?? []).filter((line) => line.problem).map((line) => `${line.input} — ${line.problem}`);
+    const problemNote = problems.length > 0 ? `Unmatched bulk lines:\n${problems.join("\n")}` : undefined;
+    quoteList.addMany(ready.flatMap((line) => line.productId ? [{ productId: line.productId, qty: line.qty }] : []), problemNote);
+    toast.success(t("quote.added"));
+    void navigate({ to: "/trade/quote-list" });
   };
 
   return (
@@ -92,7 +78,7 @@ function PadPage() {
       <Textarea
         rows={8}
         value={text}
-        onChange={(e) => { setText(e.target.value); setSubmittedKey(null); }}
+        onChange={(e) => setText(e.target.value)}
         placeholder={"STE-CHG-60V, 20\nSTE-BRK-PAD, 50\nrear shocker x 10"}
         aria-label="Part numbers and quantities"
       />
@@ -139,8 +125,8 @@ function PadPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
           <p className="text-sm">{ready.length} line(s) ready{hideCatalogueRates ? "" : ` · ${formatINR(total)}`}</p>
           {isTrade ? (
-            <Button disabled={quoteBusy || submittedKey === readyKey} onClick={() => setQuoteOpen(true)}>
-              <FileText className="size-4" /> {submittedKey === readyKey ? "Quote requested" : "Request a quote"}
+            <Button onClick={addToQuoteList}>
+              <FileText className="size-4" /> {t("product.addToQuote")}
             </Button>
           ) : (
             <Button asChild><Link to="/trade"><ShoppingCart className="size-4" /> Contact us to order</Link></Button>
@@ -148,24 +134,6 @@ function PadPage() {
         </div>
       )}
 
-      <Dialog open={quoteOpen} onOpenChange={setQuoteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request a price quote</DialogTitle>
-            <DialogDescription>{ready.length} line(s) will be sent to Shaw Traders EV for current market pricing.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label htmlFor="quote-note" className="text-sm font-medium">Note (optional)</label>
-            <Textarea id="quote-note" rows={4} maxLength={500} value={quoteNote} onChange={(event) => setQuoteNote(event.target.value)} placeholder="Delivery timing, preferred brand, or other details" />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setQuoteOpen(false)} disabled={quoteBusy}>Cancel</Button>
-            <Button type="button" onClick={() => void requestQuote()} disabled={quoteBusy || ready.length === 0}>
-              {quoteBusy ? <SparkRing /> : <FileText className="size-4" />}{quoteBusy ? "Submitting…" : "Submit quote request"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

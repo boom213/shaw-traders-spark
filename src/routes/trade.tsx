@@ -253,6 +253,7 @@ function TradePage() {
               {approved && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button asChild size="sm"><Link to="/trade/pad">Bulk order pad</Link></Button>
+                  <Button asChild size="sm" variant="outline"><Link to="/trade/quote-list">Quote list</Link></Button>
                   <Button size="sm" variant="outline" onClick={downloadList}>
                     <Download className="size-4" /> Download my price list
                   </Button>
