@@ -13,7 +13,7 @@ import { useStore } from "@/hooks/useStore";
 import { useTierPrices } from "@/hooks/useTrade";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
-import { canonical, formatINR, type Product } from "@/lib/catalog";
+import { canonical, formatINR } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
 import { productThumbnailUrl } from "@/lib/product-photo";
@@ -85,7 +85,7 @@ export function readCoupon(): AppliedCoupon | undefined {
 function CartPage() {
   const { mode: siteMode } = useSiteOrdering();
   const purchase = usePurchaseAccess();
-  const { lists, setQty, removeFromCart, saveForLater, moveToCart, clearCart } = useStore();
+  const { lists, setQty, removeFromCart, saveForLater, moveToCart, removeSaved, clearCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const { lines, savedProducts, loading, subtotal, discount, shipping, total } = useCartTotals(applied);
@@ -160,40 +160,37 @@ function CartPage() {
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="grid gap-3">
-            {lines.map((l) => (
-               l.product ? <div key={l.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
+            {lines.map((line) => line.product ? (
+              <div key={line.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-surface">
-                  {l.product.images[0] ? (
-                    <img src={productThumbnailUrl(l.product.images[0]) ?? l.product.images[0]} alt={l.product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
+                  {line.product.images[0] ? (
+                    <img src={productThumbnailUrl(line.product.images[0]) ?? line.product.images[0]} alt={line.product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
                   ) : (
                     <span className="grid size-full place-items-center text-muted-foreground"><ImageIcon className="size-5" /></span>
                   )}
-               </div> : <div key={l.productId} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
-                 <div><p className="text-sm font-semibold text-muted-foreground">This part is no longer available</p><p className="mt-1 text-xs text-muted-foreground">Remove it to update your cart.</p></div>
-                 <Button type="button" size="sm" variant="outline" onClick={() => removeFromCart(l.productId)}><Trash2 className="size-3.5" /> Remove</Button>
-               </div>
+                </div>
                 <div className="flex-1">
-                  <Link to="/product/$slug" params={{ slug: l.product.slug }} className="text-sm font-semibold hover:text-primary">{l.product.name}</Link>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{l.product.brand}</p>
+                  <Link to="/product/$slug" params={{ slug: line.product.slug }} className="text-sm font-semibold hover:text-primary">{line.product.name}</Link>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{line.product.brand}</p>
                   <p className="mt-1 font-display font-bold">
-                    {l.product.price !== undefined ? formatINR(l.product.price) : "Price on request"}
+                    {line.product.price !== undefined ? formatINR(line.product.price) : "Price on request"}
                   </p>
-                  {l.product.stock <= 0 ? (
+                  {line.product.stock <= 0 ? (
                     <p className="mt-1 text-xs font-medium text-destructive">Out of stock — remove to continue</p>
-                  ) : l.qty > l.product.stock ? (
-                    <p className="mt-1 text-xs font-medium text-destructive">Only {l.product.stock} available</p>
+                  ) : line.qty > line.product.stock ? (
+                    <p className="mt-1 text-xs font-medium text-destructive">Only {line.product.stock} available</p>
                   ) : null}
                   {purchase.eligible && <div className="mt-3 flex flex-wrap items-center gap-3">
                     <div className="flex items-center rounded-full border border-border">
-                      <button onClick={() => setQty(l.productId, l.qty - 1)} className="grid size-8 place-items-center" aria-label="Decrease"><Minus className="size-3.5" /></button>
-                      <span className="w-8 text-center text-sm font-semibold">{l.qty}</span>
+                      <button onClick={() => setQty(line.productId, line.qty - 1)} className="grid size-8 place-items-center" aria-label="Decrease"><Minus className="size-3.5" /></button>
+                      <span className="w-8 text-center text-sm font-semibold">{line.qty}</span>
                       <button
                         onClick={() => {
-                          if (l.qty + 1 > l.product.stock) {
-                            toast.error(`Only ${l.product.stock} in stock`);
+                          if (line.qty + 1 > line.product.stock) {
+                            toast.error(`Only ${line.product.stock} in stock`);
                             return;
                           }
-                          setQty(l.productId, l.qty + 1);
+                          setQty(line.productId, line.qty + 1);
                         }}
                         className="grid size-8 place-items-center"
                         aria-label="Increase"
@@ -201,10 +198,15 @@ function CartPage() {
                         <Plus className="size-3.5" />
                       </button>
                     </div>
-                    <button onClick={() => saveForLater(l.productId)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Save for later</button>
-                    <button onClick={() => removeFromCart(l.productId)} className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Trash2 className="size-3.5" /> Remove</button>
+                    <button onClick={() => saveForLater(line.productId)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Save for later</button>
+                    <button onClick={() => removeFromCart(line.productId)} className="inline-flex items-center gap-1 text-xs font-medium text-destructive"><Trash2 className="size-3.5" /> Remove</button>
                   </div>}
                 </div>
+              </div>
+            ) : (
+              <div key={line.productId} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
+                <div><p className="text-sm font-semibold text-muted-foreground">This part is no longer available</p><p className="mt-1 text-xs text-muted-foreground">Remove it to update your cart.</p></div>
+                <Button type="button" size="sm" variant="outline" onClick={() => removeFromCart(line.productId)}><Trash2 className="size-3.5" /> Remove</Button>
               </div>
             ))}
 
