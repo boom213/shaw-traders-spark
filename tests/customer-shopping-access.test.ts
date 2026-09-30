@@ -39,11 +39,13 @@ describe("customer shopping access", () => {
     expect(menu).toContain(">Shopping</DropdownMenuLabel>");
   });
 
-  it("hides header shopping entry points from staff without hiding service links", () => {
+  it("keeps Shop visible to staff while hiding their other customer-shopping shortcuts", () => {
     const header = readFileSync("src/components/site/Header.tsx", "utf8");
     expect(header).toContain('queryKey: ["account-staff-session", user?.id]');
     expect(header).toContain("const isStaff = Boolean(staff?.signedIn)");
-    expect(header).toContain('...(!isStaff ? [{ to: "/shop" as const');
+    expect(header).toContain('{ to: "/shop", label: t("nav.shop") }');
+    expect(header).toContain('{ to: "/shop", label: "Shop" }');
+    expect(header).not.toContain('...(!isStaff ? [{ to: "/shop" as const');
     expect(header).toContain("!isStaff && (categories ?? []).length > 0");
     expect(header).toContain("user && wishlistReady && !isStaff");
     expect(header).toContain('siteMode === "full" && !isStaff');
@@ -53,11 +55,12 @@ describe("customer shopping access", () => {
     }
   });
 
-  it("shows only Home and Account tabs to staff", () => {
+  it("shows Home, Shop, and Account tabs to staff", () => {
     const tabs = readFileSync("src/components/site/MobileTabBar.tsx", "utf8");
     expect(tabs).toContain('queryKey: ["account-staff-session", user?.id]');
     expect(tabs).toContain("const isStaff = Boolean(staff?.signedIn)");
-    expect(tabs).toContain('...(!isStaff ? [{ to: "/shop" as const');
+    expect(tabs).toContain('{ to: "/shop" as const, key: "nav.shop" as TranslationKey');
+    expect(tabs).not.toContain('...(!isStaff ? [{ to: "/shop" as const');
     expect(tabs).toContain('mode === "full" && !isStaff ? [cartItem]');
     expect(tabs).toContain('items.length === 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2"');
   });

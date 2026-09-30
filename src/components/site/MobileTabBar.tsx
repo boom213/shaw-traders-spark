@@ -19,7 +19,7 @@ export function MobileTabBar() {
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const items = [
     { to: "/", key: "nav.home" as TranslationKey, icon: Home },
-    ...(!isStaff ? [{ to: "/shop" as const, key: "nav.shop" as TranslationKey, shortLabel: "Products", icon: ShoppingBag }] : []),
+    { to: "/shop" as const, key: "nav.shop" as TranslationKey, shortLabel: "Products", icon: ShoppingBag },
     ...(mode === "full" && !isStaff ? [cartItem] : []),
     accountItem,
   ];
