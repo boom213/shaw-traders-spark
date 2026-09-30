@@ -463,6 +463,13 @@
       "when": 1790753390271,
       "tag": "0065_allow_counter_sales_above_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1790785381847,
+      "tag": "0066_multi_line_wholesale_quotes",
+      "breakpoints": true
     }
   ]
 }

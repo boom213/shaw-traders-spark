@@ -1404,6 +1404,120 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          line_note: string | null
+          name_snapshot: string
+          product_id: string | null
+          qty: number
+          quote_request_id: string
+          sku_snapshot: string | null
+          unit_price: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          line_note?: string | null
+          name_snapshot: string
+          product_id?: string | null
+          qty: number
+          quote_request_id: string
+          sku_snapshot?: string | null
+          unit_price?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          line_note?: string | null
+          name_snapshot?: string
+          product_id?: string | null
+          qty?: number
+          quote_request_id?: string
+          sku_snapshot?: string | null
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_request_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_request_items_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_requests: {
+        Row: {
+          created_at: string
+          customer_note: string | null
+          decision_note: string | null
+          expires_at: string | null
+          human_id: string
+          id: string
+          priced_at: string | null
+          priced_by: string | null
+          profile_id: string
+          staff_note: string | null
+          status: string
+          supersedes_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_note?: string | null
+          decision_note?: string | null
+          expires_at?: string | null
+          human_id: string
+          id?: string
+          priced_at?: string | null
+          priced_by?: string | null
+          profile_id: string
+          staff_note?: string | null
+          status?: string
+          supersedes_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_note?: string | null
+          decision_note?: string | null
+          expires_at?: string | null
+          human_id?: string
+          id?: string
+          priced_at?: string | null
+          priced_by?: string | null
+          profile_id?: string
+          staff_note?: string | null
+          status?: string
+          supersedes_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refunds: {
         Row: {
           amount: number
@@ -2808,6 +2922,13 @@ export type Database = {
           total: number
         }[]
       }
+      create_quote_request: {
+        Args: { p_customer_note?: string; p_lines: Json; p_profile_id: string }
+        Returns: {
+          human_id: string
+          quote_id: string
+        }[]
+      }
       customer_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["price_tier"]
@@ -2985,6 +3106,16 @@ export type Database = {
           valid: boolean
         }[]
       }
+      price_quote_request: {
+        Args: {
+          p_expires_at: string
+          p_lines: Json
+          p_priced_by: string
+          p_quote_id: string
+          p_staff_note: string
+        }
+        Returns: boolean
+      }
       quote_by_token: {
         Args: { p_token: string }
         Returns: {
@@ -3097,6 +3228,15 @@ export type Database = {
       }
       resolve_payment_review: {
         Args: { p_actor: string; p_note: string; p_order_id: string }
+        Returns: boolean
+      }
+      respond_to_quote_request: {
+        Args: {
+          p_decision: string
+          p_note?: string
+          p_profile_id: string
+          p_quote_id: string
+        }
         Returns: boolean
       }
       schema_health: {
