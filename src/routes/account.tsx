@@ -31,6 +31,8 @@ import { customerShoppingPath } from "@/lib/customer-shopping-access";
 import { staffSession } from "@/lib/staff.functions";
 import { myQuoteRequests, respondToQuote, type CustomerQuoteRequest } from "@/lib/quote-requests.functions";
 import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
+import { customerQuoteStatus } from "@/lib/quote-draft";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/account")({
   ssr: false,
@@ -519,9 +521,10 @@ function QuotesSection() {
 }
 
 function CustomerQuoteCard({ quote, busy, onRespond }: { quote: CustomerQuoteRequest; busy: boolean; onRespond: (id: string, decision: "accepted" | "rejected") => Promise<void> }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const expired = quote.status === "expired" || (quote.status === "priced" && quote.expiresAt !== null && Date.parse(quote.expiresAt) <= Date.now());
-  const status = expired ? "Expired" : quote.status.charAt(0).toUpperCase() + quote.status.slice(1);
+  const status = t(customerQuoteStatus(expired ? "expired" : quote.status));
   const total = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
   return <article className={`rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] ${expired ? "border-destructive/40" : "border-border"}`}>
     <Button type="button" variant="ghost" className="h-auto w-full justify-between gap-4 p-0 text-left hover:bg-transparent" onClick={() => setOpen((value) => !value)} aria-expanded={open}>

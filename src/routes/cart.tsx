@@ -13,6 +13,8 @@ import { useStore } from "@/hooks/useStore";
 import { useTierPrices } from "@/hooks/useTrade";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useQuoteAccess } from "@/hooks/useQuoteList";
+import { useT } from "@/lib/i18n";
 import { canonical, formatINR } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
@@ -103,7 +105,9 @@ export function readCoupon(): AppliedCoupon | undefined {
 }
 
 function CartPage() {
+  const t = useT();
   const { mode: siteMode } = useSiteOrdering();
+  const quoteAccess = useQuoteAccess();
   const purchase = usePurchaseAccess();
   const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { lists, setQty, removeFromCart, saveForLater, moveToCart, removeSaved, clearCart } = useStore();
@@ -141,6 +145,17 @@ function CartPage() {
     if (synced) toast.success("Cart cleared");
     else toast.warning("Cart cleared on this device, but account sync will retry when you make another change.");
   };
+
+  if (!quoteAccess.ready) return <div className="container-page"><SparkCharge label="Loading your cart…" /></div>;
+
+  if (quoteAccess.allowed) {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title={t("quote.wholesaleOnly")} subtitle={t("quote.subtitle")} />
+        <Button className="mt-4" asChild><Link to="/trade/quote-list">{t("quote.goToList")}</Link></Button>
+      </div>
+    );
+  }
 
   if (siteMode !== "full") {
     return (
