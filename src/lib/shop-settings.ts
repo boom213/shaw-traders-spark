@@ -46,6 +46,8 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   policyUpdatedAt: null,
 };
 
+export const COD_UNAVAILABLE_MESSAGE = "Cash on Delivery is currently not available. Please pay online.";
+
 export const shopSettingsQuery = () =>
   queryOptions({
     queryKey: ["shop-settings"],
@@ -90,6 +92,11 @@ export function withTax(base: number, s: ShopSettings) {
 
 /** Can this order be paid in cash on delivery? */
 export function codAllowed(total: number, pincode: string, s: ShopSettings) {
+  return codRules(total, pincode, s, false);
+}
+
+export function codRules(total: number, pincode: string, s: ShopSettings, available = true) {
+  if (!available) return { allowed: false, reason: COD_UNAVAILABLE_MESSAGE };
   if (!s.codEnabled) return { allowed: false, reason: "Cash on delivery is currently switched off." };
   if (s.codMinOrderValue > 0 && total < s.codMinOrderValue)
     return { allowed: false, reason: `Cash on delivery needs a minimum order of ₹${s.codMinOrderValue.toLocaleString("en-IN")}.` };

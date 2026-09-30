@@ -54,7 +54,7 @@ const PAYMENT = [
   { id: "UPI", note: "Google Pay, PhonePe, Paytm", icon: Wallet, online: true },
   { id: "Card", note: "Debit or credit card", icon: CreditCard, online: true },
   { id: "Netbanking", note: "All major Indian banks", icon: Landmark, online: true },
-  { id: "Cash on Delivery", note: "Pay when it arrives", icon: Truck, online: false },
+  { id: "Cash on Delivery", note: "Currently not available — please pay online", icon: Truck, online: false },
   { id: "Credit (account)", note: "Added to your wholesale account", icon: Truck, online: false },
 ] as const;
 
@@ -272,7 +272,7 @@ function CheckoutPage() {
     if (payment === "Cash on Delivery" && !cod.allowed) return toast.error(cod.reason);
     if (payment === "Credit (account)" && !isTrade) return toast.error("Credit is only for approved trade accounts.");
     if (payment !== "Cash on Delivery" && payment !== "Credit (account)" && !onlineReady) {
-      return toast.error("Online payment is not switched on yet. Please choose cash on delivery.");
+      return toast.error("Online payment is not switched on yet. Please try again later.");
     }
 
     setPlacing(true);

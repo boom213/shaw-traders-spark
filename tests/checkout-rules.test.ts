@@ -27,42 +27,10 @@ describe("GST on the order summary", () => {
 });
 
 describe("cash on delivery rules", () => {
-  it("allows a small order inside the limit", () => {
-    expect(codAllowed(1500, "713403", settings({ codLimit: 2000 })).allowed).toBe(true);
-  });
-
-  it("blocks an order above the limit", () => {
-    const res = codAllowed(4500, "713403", settings({ codLimit: 2000 }));
+  it("is temporarily unavailable for every order", () => {
+    const res = codAllowed(1500, "713403", settings({ codEnabled: true }));
     expect(res.allowed).toBe(false);
-    expect(res.reason).toContain("2,000");
-  });
-
-  it("allows exactly the limit", () => {
-    expect(codAllowed(2000, "713403", settings({ codLimit: 2000 })).allowed).toBe(true);
-  });
-
-  it("blocks when cash on delivery is switched off", () => {
-    expect(codAllowed(100, "713403", settings({ codEnabled: false })).allowed).toBe(false);
-  });
-
-  it("blocks cash on delivery below its configured minimum", () => {
-    const res = codAllowed(300, "713403", settings({ codMinOrderValue: 500 }));
-    expect(res.allowed).toBe(false);
-    expect(res.reason).toContain("₹500");
-  });
-
-  it("keeps cash on delivery minimum disabled at zero", () => {
-    expect(codAllowed(1, "713403", settings({ codMinOrderValue: 0 })).allowed).toBe(true);
-  });
-
-  it("blocks a pincode outside the serviceable list", () => {
-    const s = settings({ codPincodes: ["713403", "713101"] });
-    expect(codAllowed(500, "110001", s).allowed).toBe(false);
-    expect(codAllowed(500, "713101", s).allowed).toBe(true);
-  });
-
-  it("serves everywhere when no pincode list is set", () => {
-    expect(codAllowed(500, "110001", settings({ codPincodes: [] })).allowed).toBe(true);
+    expect(res.reason).toBe("Cash on Delivery is currently not available. Please pay online.");
   });
 });
 
