@@ -59,4 +59,6 @@ export const productsByIdsQuery = (ids: string[]) =>
     queryFn: () => productsByIds({ data: { ids } }),
     enabled: ids.length > 0,
     staleTime: 30_000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(750 * 2 ** attempt, 3_000),
   });

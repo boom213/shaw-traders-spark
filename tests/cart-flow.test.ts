@@ -102,6 +102,20 @@ describe("checkout cart-clear wiring", () => {
     expect(cart).toContain("lines.some((line) => line.product) && total > 0");
     expect(store).toContain("withoutUnavailable(l, productIds)");
     expect(catalogue).toContain("if (error) throw new Error(error.message)");
+    expect(catalogue).toContain("^[0-9a-f]{8}");
     expect(checkout).toContain("lines.length === 0 || subtotal <= 0");
+  });
+
+  it("retries temporary cart catalogue failures without removing saved items", async () => {
+    const [cart, queries] = await Promise.all([
+      import("node:fs/promises").then((fs) => fs.readFile("src/routes/cart.tsx", "utf8")),
+      import("node:fs/promises").then((fs) => fs.readFile("src/lib/queries.ts", "utf8")),
+    ]);
+    expect(queries).toContain("retry: 2");
+    expect(queries).toContain("retryDelay:");
+    expect(cart).toContain("productsQuery.isSuccess");
+    expect(cart).toContain("productsQuery.isFetching && productsQuery.isError");
+    expect(cart).toContain("refetch({ cancelRefetch: true })");
+    expect(cart).toContain("disabled={recovering}");
   });
 });
