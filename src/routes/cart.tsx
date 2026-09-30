@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ImageIcon, Minus, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,11 +38,28 @@ export const Route = createFileRoute("/cart")({
   component: CartPage,
 });
 
-export function useCartTotals(coupon?: AppliedCoupon) {
-  const { lists } = useStore();
+export function useCartTotals(coupon?: AppliedCoupon, notifyOnReconcile = false) {
+  const { lists, removeUnavailable } = useStore();
   const ids = Array.from(new Set([...lists.cart.map((c) => c.productId), ...lists.saved]));
-  const { data: products, isPending } = useQuery(productsByIdsQuery(ids));
+  const productsQuery = useQuery(productsByIdsQuery(ids));
+  const products = productsQuery.data;
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
+  const reconciled = useRef("");
+
+  useEffect(() => {
+    if (ids.length === 0 || !productsQuery.isSuccess) return;
+    const available = new Set((products ?? []).map((product) => product.id));
+    const unavailable = ids.filter((id) => !available.has(id));
+    if (unavailable.length === 0) return;
+    const key = [...unavailable].sort().join(",");
+    if (reconciled.current === key) return;
+    reconciled.current = key;
+    removeUnavailable(unavailable);
+    if (notifyOnReconcile) {
+      const count = unavailable.length;
+      toast.info(`${count} unavailable ${count === 1 ? "item was" : "items were"} removed from your cart.`);
+    }
+  }, [ids, products, productsQuery.isSuccess, removeUnavailable, notifyOnReconcile]);
 
   // Trade customers see their own rate card; the server recalculates it anyway.
   const { tier, priceFor } = useTierPrices(lists.cart.map((c) => ({ productId: c.productId, qty: c.qty })));
@@ -64,7 +81,9 @@ export function useCartTotals(coupon?: AppliedCoupon) {
     tier,
     lines,
     savedProducts: lists.saved.map((productId) => ({ productId, product: byId.get(productId) ?? null })),
-    loading: ids.length > 0 && isPending,
+    loading: ids.length > 0 && productsQuery.isPending,
+    loadError: ids.length > 0 && productsQuery.isError,
+    retry: productsQuery.refetch,
     subtotal,
     discount,
     shipping,
@@ -89,7 +108,8 @@ function CartPage() {
   const { lists, setQty, removeFromCart, saveForLater, moveToCart, removeSaved, clearCart } = useStore();
   const [code, setCode] = useState("");
   const [applied, setApplied] = useState<AppliedCoupon | undefined>(() => readCoupon());
-  const { lines, savedProducts, loading, subtotal, discount, shipping, total } = useCartTotals(applied);
+  const { lines, savedProducts, loading, loadError, retry, subtotal, discount, shipping, total } = useCartTotals(applied, true);
+  const canCheckout = canBuildCart && !loading && !loadError && lines.some((line) => line.product) && total > 0;
   const { data: home } = useQuery(homeQuery());
   const recommended = (home?.latest ?? []).filter((p) => !lists.cart.some((c) => c.productId === p.id)).slice(0, 4);
 
@@ -153,6 +173,12 @@ function CartPage() {
 
       {loading ? (
         <SparkCharge label="Loading your cart…" />
+      ) : loadError ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-6 py-10 text-center">
+          <p className="text-sm font-semibold text-destructive">We could not load your cart items.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Your cart is still saved. Check your connection and try again.</p>
+          <Button className="mt-5" variant="outline" onClick={() => void retry()}>Try again</Button>
+        </div>
       ) : lines.length === 0 ? (
         <div className="rounded-3xl border border-dashed border-border bg-surface px-6 py-14 text-center">
           <p className="text-sm text-muted-foreground">Your cart is empty.</p>
@@ -248,11 +274,15 @@ function CartPage() {
               <div className="flex justify-between"><dt className="text-muted-foreground">Shipping</dt><dd>{shipping === 0 ? "Free" : formatINR(shipping)}</dd></div>
               <div className="mt-2 flex justify-between border-t border-border pt-3 font-display text-lg font-bold"><dt>Total</dt><dd>{formatINR(total)}</dd></div>
             </dl>
-            <Button className="mt-5 w-full" size="lg" asChild>
-              <Link to={canBuildCart ? "/checkout" : purchase.reason === "trade" ? "/trade" : "/manage"}>
-                {canBuildCart ? "Proceed to Checkout" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
-              </Link>
-            </Button>
+            {canCheckout ? (
+              <Button className="mt-5 w-full" size="lg" asChild><Link to="/checkout">Proceed to Checkout</Link></Button>
+            ) : canBuildCart ? (
+              <Button className="mt-5 w-full" size="lg" disabled>Proceed to Checkout</Button>
+            ) : (
+              <Button className="mt-5 w-full" size="lg" asChild>
+                <Link to={purchase.reason === "trade" ? "/trade" : "/manage"}>{purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}</Link>
+              </Button>
+            )}
             {!purchase.eligible && purchase.reason !== "guest" && <p className="mt-2 text-xs text-muted-foreground">Online checkout is available only to retail customer accounts.</p>}
             <p className="mt-3 text-xs text-muted-foreground">Items priced on request are not included in the total. We will confirm those prices on WhatsApp.</p>
           </aside>

@@ -1,4 +1,5 @@
 # Current task
+- [x] Repair guest cart restoration by pruning deleted catalogue IDs after successful validation and blocking zero-value checkout.
 - [x] Let guests add and manage parts in their cart, requiring sign-in only after they enter checkout.
 - [x] Hide catalogue prices, MRP, and discounts from approved wholesale customers while preserving staff, retail, metadata, and agreed-record prices.
 - [x] Add multi-line wholesale quotes and Manager+ pricing; hide trade retail orders.

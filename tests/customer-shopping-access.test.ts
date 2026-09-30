@@ -43,7 +43,8 @@ describe("customer shopping access", () => {
     expect(productCard).not.toContain("Sign in to buy");
     expect(product).not.toContain("Sign in to buy");
     expect(cart).not.toContain("Sign in to buy");
-    expect(cart).toContain('canBuildCart ? "/checkout"');
+    expect(cart).toContain('<Link to="/checkout">Proceed to Checkout</Link>');
+    expect(cart).toContain("const canCheckout = canBuildCart");
   });
 
   it("shows Shopping only after a non-staff result", () => {

@@ -46,13 +46,13 @@ describe("catalogue safety wiring", () => {
     expect(page).toContain("Delete anyway");
   });
 
-  it("keeps missing cart and saved-list entries visible and removable", async () => {
+  it("removes missing cart entries while keeping account saved-list entries manually removable", async () => {
     const [cart, account] = await Promise.all([
       import("node:fs/promises").then((fs) => fs.readFile("src/routes/cart.tsx", "utf8")),
       import("node:fs/promises").then((fs) => fs.readFile("src/routes/account.tsx", "utf8")),
     ]);
-    expect(cart).toContain("This part is no longer available");
-    expect(cart).toContain("removeFromCart(line.productId)");
+    expect(cart).toContain("removeUnavailable(unavailable)");
+    expect(cart).toContain('count === 1 ? "item was" : "items were"');
     expect(account).toContain("UnavailableSavedItem");
     expect(account).toContain("removeSaved(productId)");
   });
