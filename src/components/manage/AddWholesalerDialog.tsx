@@ -10,7 +10,7 @@ import { createTradeAccountManually } from "@/lib/trade-admin.functions";
 import { taxIdError } from "@/lib/trade-options";
 
 type Props = { onDone: (created: { profileId: string; status: "pending" | "approved" }) => Promise<void> };
-const EMPTY_FORM = { businessName: "", contactPerson: "", phone: "", gstin: "", pan: "", shopAddress: "" };
+const EMPTY_FORM = { businessName: "", contactPerson: "", phone: "", gstin: "", shopAddress: "" };
 
 export function AddWholesalerDialog({ onDone }: Props) {
   const [open, setOpen] = useState(false);
@@ -19,7 +19,7 @@ export function AddWholesalerDialog({ onDone }: Props) {
   const [submitAs, setSubmitAs] = useState<"pending" | "approved">("approved");
   const [tier, setTier] = useState("trade");
   const [busy, setBusy] = useState(false);
-  const taxError = taxIdError(form.gstin, form.pan, false);
+  const taxError = taxIdError(form.gstin);
 
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button type="button"><Plus className="size-4" /> Add wholesaler</Button></DialogTrigger>
@@ -30,7 +30,6 @@ export function AddWholesalerDialog({ onDone }: Props) {
         <Input aria-label="Contact person" placeholder="Contact person" value={form.contactPerson} onChange={(event) => setForm({ ...form, contactPerson: event.target.value })} />
         <Input aria-label="Mobile number" placeholder="10-digit mobile" inputMode="numeric" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} />
         <Input aria-label="GSTIN" placeholder="GSTIN (optional)" maxLength={15} value={form.gstin} onChange={(event) => setForm({ ...form, gstin: event.target.value.toUpperCase() })} />
-        <Input aria-label="PAN" placeholder="PAN" maxLength={10} value={form.pan} onChange={(event) => setForm({ ...form, pan: event.target.value.toUpperCase() })} />
         <Textarea aria-label="Shop address" className="sm:col-span-2" rows={2} placeholder="Shop address" value={form.shopAddress} onChange={(event) => setForm({ ...form, shopAddress: event.target.value })} />
       </div>
       {taxError && <p role="alert" className="text-sm text-destructive">{taxError}</p>}
@@ -40,7 +39,7 @@ export function AddWholesalerDialog({ onDone }: Props) {
         <label className="text-sm">Rate card<select className="mt-1 h-10 w-full rounded-md border border-border bg-background px-2" value={tier} onChange={(event) => setTier(event.target.value)} disabled={submitAs !== "approved"}><option value="trade">Trade</option><option value="distributor">Distributor</option></select></label>
       </div>
       <div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button type="button" disabled={busy} onClick={async () => {
-        const validationError = taxIdError(form.gstin, form.pan);
+        const validationError = taxIdError(form.gstin);
         if (validationError) return toast.error(validationError);
         setBusy(true);
         const result = await createTradeAccountManually({ data: { ...form, docsVerifiedInPerson: verified, submitAs, tier } });

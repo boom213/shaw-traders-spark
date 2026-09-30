@@ -233,7 +233,7 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
             {app.contactPerson} · {app.phone}{app.alternatePhone ? ` · Alt: ${app.alternatePhone}` : ""} · {app.status}
           </p>
           <p className="text-sm text-muted-foreground">{app.shopAddress}</p>
-          <p className="text-xs text-muted-foreground">GSTIN {app.gstin ?? "—"} · PAN {app.pan ?? "—"}</p>
+          <p className="text-xs text-muted-foreground">GSTIN {app.gstin ?? "—"}{app.pan ? ` · PAN ${app.pan}` : ""}</p>
           {app.monthlyVolume && (
             <span className="mt-1.5 inline-flex rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
               {app.monthlyVolume} / month

@@ -102,7 +102,6 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
   .inputValidator((data: {
     businessName: string;
     gstin?: string;
-    pan?: string;
     shopAddress: string;
     contactPerson: string;
     phone: string;
@@ -117,7 +116,6 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
   }) => ({
     businessName: text(data?.businessName, 160),
     gstin: text(data?.gstin, 20).toUpperCase(),
-    pan: text(data?.pan, 12).toUpperCase(),
     shopAddress: text(data?.shopAddress, 400),
     contactPerson: text(data?.contactPerson, 120),
     phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
@@ -140,7 +138,7 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
     if (data.alternatePhone && !/^[6-9]\d{9}$/.test(data.alternatePhone)) return { ok: false as const, message: "Enter a valid 10-digit alternate mobile number." };
     if (!data.businessType) return { ok: false as const, message: "Please choose your business type." };
     if (!data.monthlyVolume) return { ok: false as const, message: "Please choose your monthly purchase estimate." };
-    const taxErr = taxIdError(data.gstin, data.pan);
+    const taxErr = taxIdError(data.gstin);
     if (taxErr) return { ok: false as const, message: taxErr };
 
     const docs: Record<string, string | null> = {};
@@ -163,7 +161,6 @@ export const submitTradeApplication = createServerFn({ method: "POST" })
       profile_id: account.userId,
       business_name: data.businessName,
       gstin: data.gstin || null,
-      pan: data.pan || null,
       shop_address: data.shopAddress,
       contact_person: data.contactPerson || data.businessName,
       phone: data.phone,
