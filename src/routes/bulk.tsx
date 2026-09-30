@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { cloneElement, useRef, useState, type ReactElement } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkRing } from "@/components/site/SparkLoaders";
@@ -101,7 +101,7 @@ Requirement: ${requirement}`;
   );
 }
 
-function FieldError({ message, children }: { message?: string; children: React.ReactElement<{ "aria-invalid"?: boolean; "aria-describedby"?: string }> }) {
+function FieldError({ message, children }: { message?: string; children: ReactElement<{ "aria-label"?: string; "aria-invalid"?: boolean; "aria-describedby"?: string }> }) {
   const id = `bulk-${children.props["aria-label"]?.toLowerCase().replace(/[^a-z]+/g, "-") ?? "field"}-error`;
-  return <div className="grid gap-1.5">{React.cloneElement(children, { "aria-invalid": message ? true : undefined, "aria-describedby": message ? id : undefined })}{message && <p id={id} role="alert" className="text-xs text-destructive">{message}</p>}</div>;
+  return <div className="grid gap-1.5">{cloneElement(children, { "aria-invalid": message ? true : undefined, "aria-describedby": message ? id : undefined })}{message && <p id={id} role="alert" className="text-xs text-destructive">{message}</p>}</div>;
 }
