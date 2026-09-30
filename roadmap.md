@@ -1,4 +1,5 @@
 # Current task
+- [x] Keep Shop visible in desktop and mobile navigation for every role while retaining all purchase restrictions.
 - [x] Restore public storefront and trade browsing while retaining retail-only checkout enforcement.
 - [x] Hide customer Trade & wholesale links from staff without blocking direct browsing.
 - [x] Hide customer order, wishlist, saved-item, and tracking links and sections from staff accounts while preserving profile access.

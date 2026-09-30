@@ -152,7 +152,7 @@ export function Header() {
 
             <nav className="grid gap-1 text-sm">
               {[
-                ...(!isStaff ? [{ to: "/shop" as const, label: t("nav.shop") }] : []),
+                { to: "/shop", label: t("nav.shop") },
                 { to: "/trade", label: "Trade Account" },
                 { to: "/bulk", label: t("nav.bulk") },
                 { to: "/service", label: "Service" },
@@ -249,7 +249,7 @@ export function Header() {
       <nav className="hidden border-t border-border lg:block" aria-label="Store navigation">
         <div className="container-page flex h-11 items-center justify-center gap-4">
           {[
-            ...(!isStaff ? [{ to: "/shop" as const, label: "Shop" }] : []),
+            { to: "/shop", label: "Shop" },
             { to: "/trade", label: "Trade" },
             { to: "/bulk", label: "Bulk Orders" },
             { to: "/service", label: "Service" },
