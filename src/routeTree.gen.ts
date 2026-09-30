@@ -32,6 +32,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
+import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as BookingTokenRouteImport } from './routes/booking.$token'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
@@ -199,6 +200,11 @@ const TrackRoute = TrackRouteImport.update({
   path: '/track',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradeRoute = TradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WarrantyRoute = WarrantyRouteImport.update({
   id: '/warranty',
   path: '/warranty',
@@ -360,24 +366,24 @@ const ScootersSlugRoute = ScootersSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TradeIndexRoute = TradeIndexRouteImport.update({
-  id: '/trade/',
-  path: '/trade/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => TradeRoute,
 } as any)
 const TradePadRoute = TradePadRouteImport.update({
-  id: '/trade/pad',
-  path: '/trade/pad',
-  getParentRoute: () => rootRouteImport,
+  id: '/pad',
+  path: '/pad',
+  getParentRoute: () => TradeRoute,
 } as any)
 const TradeQuoteListRoute = TradeQuoteListRouteImport.update({
-  id: '/trade/quote-list',
-  path: '/trade/quote-list',
-  getParentRoute: () => rootRouteImport,
+  id: '/quote-list',
+  path: '/quote-list',
+  getParentRoute: () => TradeRoute,
 } as any)
 const TradeQuoteSubmitRoute = TradeQuoteSubmitRouteImport.update({
-  id: '/trade/quote-submit',
-  path: '/trade/quote-submit',
-  getParentRoute: () => rootRouteImport,
+  id: '/quote-submit',
+  path: '/quote-submit',
+  getParentRoute: () => TradeRoute,
 } as any)
 const ApiPublicCatalogueRoute = ApiPublicCatalogueRouteImport.update({
   id: '/api/public/catalogue',
@@ -486,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -636,6 +643,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
+  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -714,6 +722,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/booking/$token'
     | '/category/$slug'
@@ -863,6 +872,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
+    | '/trade'
     | '/warranty'
     | '/booking/$token'
     | '/category/$slug'
@@ -940,6 +950,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
+  TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
   BookingTokenRoute: typeof BookingTokenRoute
   CategorySlugRoute: typeof CategorySlugRoute
@@ -947,11 +958,7 @@ export interface RootRouteChildren {
   ProductSlugRoute: typeof ProductSlugRoute
   QuoteTokenRoute: typeof QuoteTokenRoute
   ScootersSlugRoute: typeof ScootersSlugRoute
-  TradePadRoute: typeof TradePadRoute
-  TradeQuoteListRoute: typeof TradeQuoteListRoute
-  TradeQuoteSubmitRoute: typeof TradeQuoteSubmitRoute
   ScootersIndexRoute: typeof ScootersIndexRoute
-  TradeIndexRoute: typeof TradeIndexRoute
   ApiPublicCatalogueRoute: typeof ApiPublicCatalogueRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -1125,6 +1132,13 @@ declare module '@tanstack/react-router' {
       path: '/track'
       fullPath: '/track'
       preLoaderRoute: typeof TrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trade': {
+      id: '/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof TradeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/warranty': {
@@ -1353,31 +1367,31 @@ declare module '@tanstack/react-router' {
     }
     '/trade/': {
       id: '/trade/'
-      path: '/trade'
+      path: '/'
       fullPath: '/trade/'
       preLoaderRoute: typeof TradeIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/trade/pad': {
       id: '/trade/pad'
-      path: '/trade/pad'
+      path: '/pad'
       fullPath: '/trade/pad'
       preLoaderRoute: typeof TradePadRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/trade/quote-list': {
       id: '/trade/quote-list'
-      path: '/trade/quote-list'
+      path: '/quote-list'
       fullPath: '/trade/quote-list'
       preLoaderRoute: typeof TradeQuoteListRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/trade/quote-submit': {
       id: '/trade/quote-submit'
-      path: '/trade/quote-submit'
+      path: '/quote-submit'
       fullPath: '/trade/quote-submit'
       preLoaderRoute: typeof TradeQuoteSubmitRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/api/public/catalogue': {
       id: '/api/public/catalogue'
@@ -1574,6 +1588,22 @@ const ManageRouteChildren: ManageRouteChildren = {
 const ManageRouteWithChildren =
   ManageRoute._addFileChildren(ManageRouteChildren)
 
+interface TradeRouteChildren {
+  TradePadRoute: typeof TradePadRoute
+  TradeQuoteListRoute: typeof TradeQuoteListRoute
+  TradeQuoteSubmitRoute: typeof TradeQuoteSubmitRoute
+  TradeIndexRoute: typeof TradeIndexRoute
+}
+
+const TradeRouteChildren: TradeRouteChildren = {
+  TradePadRoute: TradePadRoute,
+  TradeQuoteListRoute: TradeQuoteListRoute,
+  TradeQuoteSubmitRoute: TradeQuoteSubmitRoute,
+  TradeIndexRoute: TradeIndexRoute,
+}
+
+const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1598,6 +1628,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
+  TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
   BookingTokenRoute: BookingTokenRoute,
   CategorySlugRoute: CategorySlugRoute,
@@ -1605,11 +1636,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductSlugRoute: ProductSlugRoute,
   QuoteTokenRoute: QuoteTokenRoute,
   ScootersSlugRoute: ScootersSlugRoute,
-  TradePadRoute: TradePadRoute,
-  TradeQuoteListRoute: TradeQuoteListRoute,
-  TradeQuoteSubmitRoute: TradeQuoteSubmitRoute,
   ScootersIndexRoute: ScootersIndexRoute,
-  TradeIndexRoute: TradeIndexRoute,
   ApiPublicCatalogueRoute: ApiPublicCatalogueRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
