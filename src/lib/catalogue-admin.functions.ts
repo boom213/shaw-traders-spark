@@ -432,7 +432,10 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
 
 /** Permanently remove one product. Restricted to Super Admins. */
 export const deleteCatalogueProduct = createServerFn({ method: "POST" })
-  .inputValidator((data: { id: string }) => ({ id: String(data?.id ?? "").trim() }))
+  .inputValidator((data: { id: string; confirmDeleteReviews?: boolean }) => ({
+    id: String(data?.id ?? "").trim(),
+    confirmDeleteReviews: data?.confirmDeleteReviews === true,
+  }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const actor = await requireStaff({ superAdmin: true });
@@ -446,6 +449,22 @@ export const deleteCatalogueProduct = createServerFn({ method: "POST" })
       .maybeSingle();
     if (readError) return { ok: false as const, error: readError.message };
     if (!product) return { ok: false as const, error: "This product has already been deleted." };
+
+    if (!data.confirmDeleteReviews) {
+      const { count: reviewCount, error: reviewError } = await sb
+        .from("reviews")
+        .select("id", { count: "exact", head: true })
+        .eq("product_id", data.id);
+      if (reviewError) return { ok: false as const, error: reviewError.message };
+      if ((reviewCount ?? 0) > 0) {
+        const count = reviewCount ?? 0;
+        return {
+          ok: false as const,
+          reviewCount: count,
+          error: `This product has ${count} review${count === 1 ? "" : "s"} that would be permanently deleted along with it. Set it to Hidden instead to keep them.`,
+        };
+      }
+    }
 
     const { error } = await sb.from("products").delete().eq("id", data.id);
     if (error) {
@@ -549,11 +568,12 @@ export const exportCatalogueCsv = createServerFn({ method: "POST" }).handler(asy
     .order("name")
     .limit(5000);
   if (error) throw new Error(error.message);
-  const header = ["sku", "name", "category", "brand", "price", "mrp", "stock", "reorder_threshold", "hsn_code"];
+  const header = ["row", "sku", "name", "category", "brand", "price", "mrp", "stock", "reorder_threshold", "hsn_code"];
   const lines = [header.join(",")];
-  for (const r of (rows ?? []) as Row[]) {
+  for (const [index, r] of ((rows ?? []) as Row[]).entries()) {
     lines.push(
       [
+        index + 1,
         r['sku'],
         r['name'],
         r['categories']?.['slug'],
@@ -572,6 +592,7 @@ export const exportCatalogueCsv = createServerFn({ method: "POST" }).handler(asy
 });
 
 export type CsvChange = {
+  row?: number;
   sku: string;
   name: string;
   field: string;
@@ -582,15 +603,16 @@ export type CsvChange = {
 export type CsvPreview = {
   changes: CsvChange[];
   unknownSkus: string[];
+  duplicates: { sku: string; rows: number[] }[];
   unchanged: number;
   rows: number;
   error?: string;
 };
 
-type ParsedRow = { sku: string; price?: number | null; mrp?: number | null; stock?: number; brand?: string | null; reorder?: number | null; hsn?: string | null };
+type ParsedRow = { sourceRow: number; sku: string; price?: number | null; mrp?: number | null; stock?: number; brand?: string | null; reorder?: number | null; hsn?: string | null };
 
-function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+export function parseCatalogueCsv(text: string): { rows: ParsedRow[]; error?: string } {
+  const lines = text.split(/\r?\n/);
   if (lines.length < 2) return { rows: [], error: "The file has no product rows." };
 
   const split = (line: string) => {
@@ -611,7 +633,7 @@ function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
     return out.map((s) => s.trim());
   };
 
-  const header = split(lines[0]!).map((h) => h.toLowerCase().replace(/\s+/g, "_"));
+  const header = split(lines[0]!).map((h) => h.replace(/^\uFEFF/, "").toLowerCase().replace(/\s+/g, "_"));
   const idx = (name: string) => header.indexOf(name);
   const skuAt = idx("sku");
   if (skuAt < 0) return { rows: [], error: "The file needs a column called sku." };
@@ -625,11 +647,12 @@ function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
   };
 
   const rows: ParsedRow[] = [];
-  for (const line of lines.slice(1, 5001)) {
+  for (const [offset, line] of lines.slice(1, 5001).entries()) {
+    if (!line.trim()) continue;
     const cells = split(line);
     const sku = cells[skuAt] ?? "";
     if (!sku) continue;
-    const row: ParsedRow = { sku };
+    const row: ParsedRow = { sourceRow: offset + 1, sku };
     const price = numAt(cells, idx("price"));
     if (price !== undefined) row.price = price;
     const mrp = numAt(cells, idx("mrp"));
@@ -649,8 +672,13 @@ function parseCsv(text: string): { rows: ParsedRow[]; error?: string } {
 
 async function diffCsv(text: string) {
   const { sb } = await adminAs();
-  const { rows, error } = parseCsv(text);
-  if (error) return { error, rows: [] as ParsedRow[], byId: new Map<string, Row>(), changes: [] as CsvChange[], unknown: [] as string[], unchanged: 0 };
+  const { rows, error } = parseCatalogueCsv(text);
+  if (error) return { error, rows: [] as ParsedRow[], byId: new Map<string, Row>(), changes: [] as CsvChange[], unknown: [] as string[], duplicates: [] as { sku: string; rows: number[] }[], unchanged: 0 };
+
+  const duplicateRows = new Map<string, number[]>();
+  for (const row of rows) duplicateRows.set(row.sku, [...(duplicateRows.get(row.sku) ?? []), row.sourceRow]);
+  const duplicates = Array.from(duplicateRows, ([sku, sourceRows]) => ({ sku, rows: sourceRows }))
+    .filter((duplicate) => duplicate.rows.length > 1);
 
   const skus = rows.map((r) => r.sku);
   const existing: Row[] = [];
@@ -678,7 +706,7 @@ async function diffCsv(text: string) {
       const a = current === null || current === undefined ? null : String(Number.isFinite(Number(current)) && current !== "" ? Number(current) : current);
       const b = next === null ? null : String(Number.isFinite(Number(next)) && next !== "" ? Number(next) : next);
       if (a !== b) {
-        changes.push({ sku: r.sku, name: String(p['name']), field, from: show(current), to: show(next) });
+        changes.push({ row: r.sourceRow, sku: r.sku, name: String(p['name']), field, from: show(current), to: show(next) });
         touched = true;
       }
     };
@@ -691,7 +719,7 @@ async function diffCsv(text: string) {
     if (!touched) unchanged++;
   }
 
-  return { rows, byId: bySku, changes, unknown, unchanged };
+  return { rows, byId: bySku, changes, unknown, duplicates, unchanged };
 }
 
 /** Show what a CSV would change, without touching anything. */
@@ -699,10 +727,11 @@ export const previewCatalogueCsv = createServerFn({ method: "POST" })
   .inputValidator((data: { csv: string }) => ({ csv: String(data?.csv ?? "").slice(0, 4_000_000) }))
   .handler(async ({ data }): Promise<CsvPreview> => {
     const res = await diffCsv(data.csv);
-    if (res.error) return { changes: [], unknownSkus: [], unchanged: 0, rows: 0, error: res.error };
+    if (res.error) return { changes: [], unknownSkus: [], duplicates: [], unchanged: 0, rows: 0, error: res.error };
     return {
       changes: res.changes.slice(0, 500),
       unknownSkus: res.unknown.slice(0, 50),
+      duplicates: res.duplicates,
       unchanged: res.unchanged,
       rows: res.rows.length,
     };
@@ -715,6 +744,10 @@ export const applyCatalogueCsv = createServerFn({ method: "POST" })
     const { sb, actor, logAudit } = await adminAs();
     const res = await diffCsv(data.csv);
     if (res.error) return { ok: false as const, error: res.error };
+    if (res.duplicates.length > 0) {
+      const details = res.duplicates.map((duplicate) => `${duplicate.sku} (rows ${duplicate.rows.join(", ")})`).join("; ");
+      return { ok: false as const, error: `Duplicate product codes must be fixed before importing: ${details}.` };
+    }
 
     const touched = new Set(res.changes.map((c) => c.sku));
     let saved = 0;
@@ -738,4 +771,44 @@ export const applyCatalogueCsv = createServerFn({ method: "POST" })
       changes: res.changes.slice(0, 50),
     });
     return { ok: true as const, saved, skipped: res.unknown.length };
+  });
+
+export type CatalogueImport = {
+  id: string;
+  actor: string | null;
+  createdAt: string;
+  saved: number;
+  changes: CsvChange[];
+};
+
+/** Recent audited price-list imports for catalogue managers. */
+export const listCatalogueImports = createServerFn({ method: "POST" })
+  .inputValidator((data: { page?: number; pageSize?: number } | undefined) => ({
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+    pageSize: Math.min(50, Math.max(1, Math.floor(Number(data?.pageSize ?? 8)))),
+  }))
+  .handler(async ({ data }): Promise<{ items: CatalogueImport[]; total: number }> => {
+    const { sb } = await adminAs();
+    const from = data.page * data.pageSize;
+    const { data: rows, count, error } = await sb
+      .from("audit_log")
+      .select("id, actor, created_at, diff", { count: "exact" })
+      .eq("action", "products.csv_import")
+      .order("created_at", { ascending: false })
+      .range(from, from + data.pageSize - 1);
+    if (error) throw new Error(error.message);
+    const items = ((rows ?? []) as Row[]).map((row) => {
+      const diff = row['diff'] && typeof row['diff'] === "object" ? row['diff'] as Row : {};
+      const changes = Array.isArray(diff['changes'])
+        ? diff['changes'].filter((change): change is CsvChange => Boolean(change) && typeof change === "object")
+        : [];
+      return {
+        id: String(row['id']),
+        actor: row['actor'] ? String(row['actor']) : null,
+        createdAt: String(row['created_at']),
+        saved: Math.max(0, Number(diff['saved'] ?? 0)),
+        changes,
+      };
+    });
+    return { items, total: count ?? 0 };
   });
