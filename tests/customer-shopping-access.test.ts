@@ -33,6 +33,19 @@ describe("customer shopping access", () => {
     expect(checkout).toContain('title="Retail checkout only"');
   });
 
+  it("lets guests build a cart and defers sign-in until checkout", () => {
+    const productCard = readFileSync("src/components/site/ProductCard.tsx", "utf8");
+    const product = readFileSync("src/routes/product.$slug.tsx", "utf8");
+    const cart = readFileSync("src/routes/cart.tsx", "utf8");
+    for (const source of [productCard, product, cart]) {
+      expect(source).toContain('purchase.eligible || purchase.reason === "guest"');
+    }
+    expect(productCard).not.toContain("Sign in to buy");
+    expect(product).not.toContain("Sign in to buy");
+    expect(cart).not.toContain("Sign in to buy");
+    expect(cart).toContain('canBuildCart ? "/checkout"');
+  });
+
   it("shows Shopping only after a non-staff result", () => {
     const menu = readFileSync("src/components/site/AccountMenu.tsx", "utf8");
     expect(menu).toContain("staff && !staff.signedIn");

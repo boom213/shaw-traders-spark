@@ -174,6 +174,7 @@ function ProductPage() {
   const product = data?.product;
   const mode = useProductOrdering({ orderingMode: product?.orderingMode ?? null, categoryOrderingMode: product?.categoryOrderingMode ?? null });
   const purchase = usePurchaseAccess();
+  const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const { data: staffMeta } = useQuery({
     queryKey: ["staff-product-meta", product?.id],
@@ -359,7 +360,7 @@ function ProductPage() {
 
             {mode === "full" && product.price !== undefined && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                {purchase.eligible ? (
+                {canBuildCart ? (
                   <>
                     <Button variant="outline" className="w-full" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
                     <Button
@@ -374,8 +375,8 @@ function ProductPage() {
                   </>
                 ) : (
                   <Button className="sm:col-span-2" asChild>
-                    <Link to={purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
-                      {purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+                    <Link to={purchase.reason === "trade" ? "/trade" : "/manage"}>
+                      {purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
                     </Link>
                   </Button>
                 )}

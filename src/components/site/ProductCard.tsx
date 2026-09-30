@@ -30,6 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
   const mode = useProductOrdering(product);
   const purchase = usePurchaseAccess();
+  const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const [enquiry, setEnquiry] = useState(false);
   const off = discountPct(product.price, product.mrp);
@@ -149,11 +150,11 @@ export function ProductCard({ product }: { product: Product }) {
               </a>
             </Button>
           </div>
-        ) : !purchase.eligible ? (
+        ) : !canBuildCart ? (
           <div className="mt-auto grid pt-3">
             <Button size="sm" className="h-10 sm:h-9" asChild>
-              <Link to={purchase.reason === "guest" ? "/account" : purchase.reason === "trade" ? "/trade" : "/manage"}>
-                {purchase.reason === "guest" ? "Sign in to buy" : purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
+              <Link to={purchase.reason === "trade" ? "/trade" : "/manage"}>
+                {purchase.reason === "trade" ? "Wholesale ordering" : "Open staff portal"}
               </Link>
             </Button>
           </div>
