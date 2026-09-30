@@ -27,6 +27,7 @@ import { BUSINESS, canonical, formatINR, paymentStatusLabel, statusLabel } from 
 import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
+import { staffSession } from "@/lib/staff.functions";
 
 export const Route = createFileRoute("/account")({
   ssr: false,
@@ -193,6 +194,14 @@ function Dashboard() {
   const providers = Array.isArray(user?.app_metadata?.providers) ? user.app_metadata.providers : [];
   const hasEmailPassword = providers.includes("email");
   const loadBookings = useServerFn(bookingsByUser);
+  const { data: staff } = useQuery({
+    queryKey: ["account-staff-session", user?.id],
+    queryFn: () => staffSession(),
+    enabled: Boolean(user),
+    retry: false,
+  });
+  const isStaff = Boolean(staff?.signedIn);
+  const customerAccountReady = Boolean(user) && staff !== undefined && !isStaff;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -215,7 +224,7 @@ function Dashboard() {
   const { data: orders, isPending: ordersPending } = useQuery({
     queryKey: ["my-orders", user?.id],
     queryFn: () => myOrders(),
-    enabled: Boolean(user),
+    enabled: customerAccountReady,
   });
 
   const { data: bookings, isPending: bookingsPending } = useQuery({
@@ -224,7 +233,8 @@ function Dashboard() {
     enabled: Boolean(user),
   });
 
-  const ids = Array.from(new Set([...lists.wishlist, ...lists.saved, ...lists.recentlyViewed]));
+  const customerListIds = customerAccountReady ? [...lists.wishlist, ...lists.saved] : [];
+  const ids = Array.from(new Set([...customerListIds, ...lists.recentlyViewed]));
   const { data: products } = useQuery(productsByIdsQuery(ids));
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
   const wishlist = lists.wishlist.map((productId) => ({ productId, product: byId.get(productId) ?? null }));
@@ -356,7 +366,7 @@ function Dashboard() {
 
       <AddressBook userId={user.id} />
 
-      <section id="orders" className="scroll-mt-52 space-y-3">
+      {!isStaff && staff !== undefined && <section id="orders" className="scroll-mt-52 space-y-3">
         <SectionHeading title="Your orders" subtitle="Every order placed with your account" />
         {ordersPending ? (
           <div className="grid gap-2">{[0, 1].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-muted" />)}</div>
@@ -405,7 +415,7 @@ function Dashboard() {
             ))}
           </div>
         )}
-      </section>
+      </section>}
 
       <section id="bookings" className="scroll-mt-52 space-y-3">
         <SectionHeading title="My Bookings" subtitle="Track your electric scooter bookings" />
@@ -441,7 +451,7 @@ function Dashboard() {
         )}
       </section>
 
-      <section id="wishlist" className="scroll-mt-52 space-y-3">
+      {!isStaff && staff !== undefined && <section id="wishlist" className="scroll-mt-52 space-y-3">
         <SectionHeading title="Your wishlist" subtitle="Parts you want to keep for later" />
         {wishlist.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -454,9 +464,9 @@ function Dashboard() {
             Your wishlist is empty. <Link to="/shop" className="font-medium text-primary underline">Browse products</Link>
           </p>
         )}
-      </section>
+      </section>}
 
-      {saved.length > 0 && (
+      {!isStaff && staff !== undefined && saved.length > 0 && (
         <section className="space-y-3">
           <SectionHeading title="Saved from your cart" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

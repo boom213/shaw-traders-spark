@@ -51,4 +51,34 @@ describe("customer shopping access", () => {
     expect(tabs).toContain('mode === "full" && !isStaff ? [cartItem]');
     expect(tabs).toContain('items.length === 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2"');
   });
+
+  it("hides customer account links from staff while keeping profile details", () => {
+    const menu = readFileSync("src/components/site/AccountMenu.tsx", "utf8");
+    const profileIndex = menu.indexOf('hash="details"');
+    const customerLinksGate = menu.indexOf("{staff && !staff.signedIn && <>", profileIndex);
+    expect(profileIndex).toBeGreaterThan(-1);
+    expect(customerLinksGate).toBeGreaterThan(profileIndex);
+    for (const label of ["My orders", "Wishlist", "Track an order"]) {
+      expect(menu.indexOf(label)).toBeGreaterThan(customerLinksGate);
+    }
+  });
+
+  it("hides customer account sections and skips their requests for staff", () => {
+    const account = readFileSync("src/routes/account.tsx", "utf8");
+    expect(account).toContain('queryKey: ["account-staff-session", user?.id]');
+    expect(account).toContain("const isStaff = Boolean(staff?.signedIn)");
+    expect(account).toContain("const customerAccountReady = Boolean(user) && staff !== undefined && !isStaff");
+    expect(account).toContain("enabled: customerAccountReady");
+    expect(account).toContain('{!isStaff && staff !== undefined && <section id="orders"');
+    expect(account).toContain('{!isStaff && staff !== undefined && <section id="wishlist"');
+    expect(account).toContain("!isStaff && staff !== undefined && saved.length > 0");
+    expect(account).toContain('<section id="details"');
+    expect(account).toContain("<AddressBook userId={user.id} />");
+  });
+
+  it("keeps tracking outside the customer shopping route guard", () => {
+    const access = readFileSync("src/lib/customer-shopping-access.ts", "utf8");
+    expect(access).not.toContain('"/track"');
+    expect(customerShoppingPath("/track")).toBeNull();
+  });
 });
