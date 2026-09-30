@@ -16,7 +16,7 @@ import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
-import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/_authenticated/_customer/cart";
+import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/routes/cart";
 import { previewCoupon } from "@/lib/shop-extras.functions";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
 import { abandonPayment, getMyAddresses, paymentState, paymentsAvailable, retryPayment, startCheckout, verifyPayment, type CheckoutAddress } from "@/lib/checkout.functions";
 
-export const Route = createFileRoute("/_authenticated/_customer/checkout")({
+export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
       { title: "Checkout — Shaw Traders EV" },

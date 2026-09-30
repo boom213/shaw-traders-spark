@@ -68,7 +68,7 @@ describe("cart lifecycle", () => {
 
 describe("checkout cart-clear wiring", () => {
   it("clears only confirmed order outcomes and preserves failed or cancelled payments", async () => {
-    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/routes/_authenticated/_customer/checkout.tsx", "utf8"));
+    const source = await import("node:fs/promises").then((fs) => fs.readFile("src/routes/checkout.tsx", "utf8"));
     expect(source).toContain("await clearCart()");
     expect(source).toContain('result.status === "success"');
     expect(source).toContain("if (check.paid)");

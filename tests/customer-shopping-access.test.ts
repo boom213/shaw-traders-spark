@@ -14,15 +14,23 @@ describe("customer shopping access", () => {
     expect(customerShoppingPath("https://evil.example/shop")).toBeNull();
   });
 
-  it("guards every shopping route with the customer layout", () => {
+  it("keeps every storefront route public without auth layouts", () => {
     const routes = ["shop", "brand", "categories", "category.$slug", "product.$slug", "scooters.index", "scooters.$slug", "cart", "checkout", "offers", "trade", "trade.pad"];
     for (const route of routes) {
-      const source = readFileSync(`src/routes/_authenticated/_customer/${route}.tsx`, "utf8");
-      expect(source).toContain('createFileRoute("/_authenticated/_customer/');
+      const source = readFileSync(`src/routes/${route}.tsx`, "utf8");
+      expect(source).not.toContain("/_authenticated");
+      expect(source).not.toContain("beforeLoad:");
     }
-    const guard = readFileSync("src/routes/_authenticated/_customer/route.tsx", "utf8");
-    expect(guard).toContain('access.kind === "staff"');
-    expect(guard).toContain("access.fallback");
+    expect(() => readFileSync("src/routes/_authenticated/route.tsx", "utf8")).toThrow();
+    expect(() => readFileSync("src/routes/_authenticated/_customer/route.tsx", "utf8")).toThrow();
+  });
+
+  it("keeps guest, staff, and trade ordering blocked inside checkout", () => {
+    const checkout = readFileSync("src/routes/checkout.tsx", "utf8");
+    expect(checkout).toContain("if (!user) return <CheckoutSignIn />");
+    expect(checkout).toContain("if (!purchase.eligible)");
+    expect(checkout).toContain('purchase.reason === "trade" ? "/trade" : "/manage"');
+    expect(checkout).toContain('title="Retail checkout only"');
   });
 
   it("shows Shopping only after a non-staff result", () => {
