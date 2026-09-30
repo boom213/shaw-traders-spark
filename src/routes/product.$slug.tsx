@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { BellRing, CheckCircle2, MessageCircle, Package, ShieldCheck, Star, Truck, ZoomIn } from "lucide-react";
+import { BellRing, CheckCircle2, MessageCircle, Minus, Package, Plus, ShieldCheck, Star, Truck, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import { RouteError } from "@/components/site/RouteError";
 import { useStore } from "@/hooks/useStore";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
+import { normalizeQuoteQty } from "@/lib/quote-draft";
 import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { staffProductMeta } from "@/lib/enquiries.functions";
 import { useQuery } from "@tanstack/react-query";
@@ -170,10 +172,13 @@ function ProductPage() {
   const [alertContact, setAlertContact] = useState("");
   const [alertDone, setAlertDone] = useState(false);
   const [enquiry, setEnquiry] = useState(false);
+  const [quoteQty, setQuoteQty] = useState(1);
 
   const product = data?.product;
   const mode = useProductOrdering({ orderingMode: product?.orderingMode ?? null, categoryOrderingMode: product?.categoryOrderingMode ?? null });
   const purchase = usePurchaseAccess();
+  const quoteAccess = useQuoteAccess();
+  const quoteList = useQuoteList();
   const canBuildCart = purchase.ready && (purchase.eligible || purchase.reason === "guest");
   const { hideCatalogueRates } = useCatalogueRateVisibility();
   const { data: staffMeta } = useQuery({
@@ -209,6 +214,11 @@ function ProductPage() {
     if (!ok) toast.error(`Only ${product.stock} in stock`);
     else toast.success("Added to cart");
     return ok;
+  };
+
+  const addToQuote = () => {
+    quoteList.add(product.id, quoteQty);
+    toast.success(t("quote.added"));
   };
 
   const pickPhotos = async (files: FileList | null) => {
@@ -349,7 +359,7 @@ function ProductPage() {
                 : "Out of stock"}
             </p>
 
-            {mode === "enquiry" && (
+            {quoteAccess.ready && !quoteAccess.allowed && mode === "enquiry" && (
               <div className="mt-5 grid gap-2">
                 <Button onClick={() => setEnquiry(true)}>Check availability</Button>
                 <Button variant="secondary" asChild>
@@ -358,7 +368,26 @@ function ProductPage() {
               </div>
             )}
 
-            {mode === "full" && product.price !== undefined && (
+            {!quoteAccess.ready ? (
+              <div className="mt-5 h-10 animate-pulse rounded-md bg-muted" aria-hidden="true" />
+            ) : quoteAccess.allowed ? (
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <div className="flex h-10 w-full items-center rounded-md border border-input sm:w-40">
+                  <Button type="button" variant="ghost" size="icon" className="h-9 shrink-0" onClick={() => setQuoteQty((qty) => Math.max(1, qty - 1))} aria-label="Decrease quantity"><Minus className="size-4" /></Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={9999}
+                    value={quoteQty}
+                    onChange={(event) => setQuoteQty(normalizeQuoteQty(event.target.value))}
+                    className="h-9 min-w-0 border-0 px-1 text-center shadow-none focus-visible:ring-0"
+                    aria-label="Quote quantity"
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="h-9 shrink-0" onClick={() => setQuoteQty((qty) => normalizeQuoteQty(qty + 1))} aria-label="Increase quantity"><Plus className="size-4" /></Button>
+                </div>
+                <Button className="flex-1" onClick={addToQuote}>{t("product.addToQuote")}</Button>
+              </div>
+            ) : mode === "full" && product.price !== undefined && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 {canBuildCart ? (
                   <>
