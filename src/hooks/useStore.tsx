@@ -61,6 +61,7 @@ type Ctx = {
   removeSaved: (productId: string) => void;
   toggleWishlist: (productId: string) => void;
   removeRecentlyViewed: (productId: string) => void;
+  removeUnavailable: (productIds: string[]) => void;
   markViewed: (productId: string) => void;
   clearCart: () => Promise<boolean>;
 };
@@ -275,6 +276,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           cart: l.cart.some((c) => c.productId === productId) ? l.cart : [...l.cart, { productId, qty: 1 }],
         })),
       removeSaved: (productId) => update((l) => ({ ...l, saved: l.saved.filter((id) => id !== productId) })),
+      removeUnavailable: (productIds) => {
+        const unavailable = new Set(productIds);
+        if (unavailable.size === 0) return;
+        update((l) => ({
+          ...l,
+          cart: l.cart.filter((line) => !unavailable.has(line.productId)),
+          saved: l.saved.filter((id) => !unavailable.has(id)),
+        }));
+      },
       toggleWishlist: (productId) =>
         user
           ? update((l) => ({

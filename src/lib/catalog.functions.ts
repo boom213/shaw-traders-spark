@@ -318,7 +318,8 @@ export const productsByIds = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Product[]> => {
     if (data.ids.length === 0) return [];
     const sb = publicClient();
-    const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", data.ids);
+    const { data: rows, error } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", data.ids);
+    if (error) throw new Error(error.message);
     return (rows ?? []).map(mapProduct);
   });
 

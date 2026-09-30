@@ -79,7 +79,7 @@ function CheckoutPage() {
   const purchase = usePurchaseAccess();
   const [coupon, setCoupon] = useState<AppliedCoupon | undefined>(() => readCoupon());
   const [couponCode, setCouponCode] = useState("");
-  const { lines, loading, subtotal, discount } = useCartTotals(coupon);
+  const { lines, loading, loadError, retry: retryCart, subtotal, discount } = useCartTotals(coupon);
   const { data: settings } = useQuery(shopSettingsQuery());
   const online = useServerFn(paymentsAvailable);
   const { data: availability } = useQuery({ queryKey: ["payments-available"], queryFn: () => online() });
@@ -197,6 +197,15 @@ function CheckoutPage() {
     return <div className="container-page"><SparkCharge label="Loading your cart…" /></div>;
   }
 
+  if (loadError) {
+    return (
+      <div className="container-page py-16 text-center">
+        <SectionHeading title="We could not load your cart" subtitle="Your items are still saved. Check your connection and try again before checkout." />
+        <Button className="mt-5" variant="outline" onClick={() => void retryCart()}>Try again</Button>
+      </div>
+    );
+  }
+
   if (!user) return <CheckoutSignIn />;
 
   if (!purchase.eligible) {
@@ -260,6 +269,9 @@ function CheckoutPage() {
   };
 
   const placeOrder = async () => {
+    if (loading || loadError || lines.length === 0 || subtotal <= 0) {
+      return toast.error("Your cart does not have any purchasable items yet.");
+    }
     if (minimumShortfall > 0 && settings) {
       return toast.error(`Add ${formatINR(minimumShortfall)} more to reach the ${formatINR(settings.minOrderValue)} minimum order value.`);
     }
