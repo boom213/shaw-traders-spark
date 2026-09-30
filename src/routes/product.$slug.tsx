@@ -17,6 +17,7 @@ import { RouteError } from "@/components/site/RouteError";
 import { useStore } from "@/hooks/useStore";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { staffProductMeta } from "@/lib/enquiries.functions";
 import { useQuery } from "@tanstack/react-query";
 import { useVehicle } from "@/hooks/useVehicle";
@@ -26,6 +27,7 @@ import { productQuery } from "@/lib/queries";
 import { uploadReviewPhoto } from "@/lib/photo-upload";
 import { notifyWhenInStock, submitReview } from "@/lib/shop-extras.functions";
 import { imageFor, isPlaceholder } from "@/lib/placeholders";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/product/$slug")({
   loader: async ({ context, params }) => {
@@ -153,6 +155,7 @@ export const Route = createFileRoute("/product/$slug")({
 });
 
 function ProductPage() {
+  const t = useT();
   const { slug } = Route.useParams();
   const { data } = useSuspenseQuery(productQuery(slug));
   const { lists, user, wishlistReady, addToCart, markViewed, toggleWishlist } = useStore();
@@ -171,6 +174,7 @@ function ProductPage() {
   const product = data?.product;
   const mode = useProductOrdering({ orderingMode: product?.orderingMode ?? null, categoryOrderingMode: product?.categoryOrderingMode ?? null });
   const purchase = usePurchaseAccess();
+  const { hideCatalogueRates } = useCatalogueRateVisibility();
   const { data: staffMeta } = useQuery({
     queryKey: ["staff-product-meta", product?.id],
     queryFn: () => staffProductMeta({ data: { productId: String(product?.id) } }),
@@ -316,7 +320,9 @@ function ProductPage() {
           </div>
 
           <div className="mt-5 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-            {product.price !== undefined ? (
+            {hideCatalogueRates ? (
+              <p className="font-medium">{t("product.rateOnRequest")}</p>
+            ) : product.price !== undefined ? (
               <div className="flex flex-wrap items-baseline gap-3">
                 <span className="font-display text-3xl font-bold">{formatINR(product.price)}</span>
                 {product.mrp && product.mrp > product.price && <span className="text-sm text-muted-foreground line-through">{formatINR(product.mrp)}</span>}

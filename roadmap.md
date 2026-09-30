@@ -1,4 +1,5 @@
 # Current task
+- [x] Hide catalogue prices, MRP, and discounts from approved wholesale customers while preserving staff, retail, metadata, and agreed-record prices.
 - [x] Add multi-line wholesale quotes and Manager+ pricing; hide trade retail orders.
 - [x] Add accessible field-by-field submit validation to checkout addresses, wholesale, contact, bulk, service booking, and Add Wholesaler; make the GST certificate optional.
 - [x] Stop collecting PAN in wholesale forms while preserving historical PAN display and exports.

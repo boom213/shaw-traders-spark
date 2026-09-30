@@ -30,4 +30,4 @@
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
 - Wholesale reviews: manual/atomic, no AI; GSTIN not PAN; retain old PAN/export. Form errors: post-submit, per-field, accessible, live-clearing; focus first invalid.
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
-- Razorpay review is Owner+ read-only. Counter Sales may exceed stock. Wholesale quote writes are atomic/service-only; customers never set prices.
+- Razorpay review is Owner+ read-only. Counter Sales may exceed stock. Wholesale quote writes are atomic/service-only; negotiated rates stay out of trade catalogues.

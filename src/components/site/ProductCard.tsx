@@ -8,6 +8,7 @@ import { useStore } from "@/hooks/useStore";
 import { useT } from "@/lib/i18n";
 import { useProductOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
+import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { listImageFor } from "@/lib/placeholders";
@@ -29,6 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
   const navigate = useNavigate();
   const mode = useProductOrdering(product);
   const purchase = usePurchaseAccess();
+  const { hideCatalogueRates } = useCatalogueRateVisibility();
   const [enquiry, setEnquiry] = useState(false);
   const off = discountPct(product.price, product.mrp);
   const wished = lists.wishlist.includes(product.id);
@@ -67,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
           <Heart className={cn("size-4", wished && "fill-sale text-sale")} strokeWidth={1.75} />
         </Button>
       )}
-      {off > 0 && (
+      {!hideCatalogueRates && off > 0 && (
         <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-sale px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-sale-foreground">
           −{off}%
         </span>
@@ -105,7 +107,11 @@ export function ProductCard({ product }: { product: Product }) {
         )}
 
         <div className="mt-2 flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
-          {product.price !== undefined ? (
+          {hideCatalogueRates ? (
+            <p className="basis-full text-sm font-semibold leading-snug text-foreground">
+              {t("product.rateOnRequest")}
+            </p>
+          ) : product.price !== undefined ? (
             <div className="min-w-0">
               <span className="block font-display text-xl font-semibold tabular-nums leading-none tracking-tight">{formatINR(product.price)}</span>
               {product.mrp && product.mrp > product.price && (
