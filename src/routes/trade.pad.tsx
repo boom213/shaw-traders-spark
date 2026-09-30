@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkRing } from "@/components/site/SparkLoaders";
-import { useTradeAccount } from "@/hooks/useTrade";
+import { useCatalogueRateVisibility, useTradeAccount } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
 import { submitQuoteRequest } from "@/lib/quote-requests.functions";
@@ -30,6 +30,7 @@ export const Route = createFileRoute("/trade/pad")({
 
 function PadPage() {
   const { isTrade } = useTradeAccount();
+  const { hideCatalogueRates } = useCatalogueRateVisibility();
   const navigate = useNavigate();
   const [text, setText] = useState("");
   const [lines, setLines] = useState<PadLine[] | null>(null);
@@ -115,7 +116,7 @@ function PadPage() {
                 <th scope="col" className="px-3 py-2">Line</th>
                 <th scope="col" className="px-3 py-2">Part</th>
                 <th scope="col" className="px-3 py-2">Qty</th>
-                {!isTrade && <th scope="col" className="px-3 py-2">Your price</th>}
+                {!hideCatalogueRates && <th scope="col" className="px-3 py-2">Your price</th>}
                 <th scope="col" className="px-3 py-2">Status</th>
               </tr>
             </thead>
@@ -125,7 +126,7 @@ function PadPage() {
                   <td className="px-3 py-2 text-muted-foreground">{l.input}</td>
                   <td className="px-3 py-2">{l.name ?? "—"}{l.sku ? <span className="block text-xs text-muted-foreground">{l.sku}</span> : null}</td>
                   <td className="px-3 py-2">{l.qty}</td>
-                  {!isTrade && <td className="px-3 py-2">{l.unitPrice ? formatINR(l.unitPrice * l.qty) : "Price on request"}</td>}
+                  {!hideCatalogueRates && <td className="px-3 py-2">{l.unitPrice ? formatINR(l.unitPrice * l.qty) : "Price on request"}</td>}
                   <td className={`px-3 py-2 ${l.problem ? "text-destructive" : "text-primary"}`}>{l.problem ?? "Available"}</td>
                 </tr>
               ))}
@@ -136,7 +137,7 @@ function PadPage() {
 
       {ready.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-          <p className="text-sm">{ready.length} line(s) ready{isTrade ? "" : ` · ${formatINR(total)}`}</p>
+          <p className="text-sm">{ready.length} line(s) ready{hideCatalogueRates ? "" : ` · ${formatINR(total)}`}</p>
           {isTrade ? (
             <Button disabled={quoteBusy || submittedKey === readyKey} onClick={() => setQuoteOpen(true)}>
               <FileText className="size-4" /> {submittedKey === readyKey ? "Quote requested" : "Request a quote"}

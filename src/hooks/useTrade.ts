@@ -4,10 +4,11 @@ import { staffSession } from "@/lib/staff.functions";
 import { myPrices, myTradeAccount } from "@/lib/trade.functions";
 
 /** The signed-in customer's trade status, tier and credit position. */
-export function useTradeAccount() {
+export function useTradeAccount(enabled = true) {
   const query = useQuery({
     queryKey: ["trade-account"],
     queryFn: () => myTradeAccount(),
+    enabled,
     staleTime: 60_000,
   });
   return {
@@ -33,7 +34,7 @@ export function shouldHideCatalogueRates(input: {
 /** Hide public catalogue rates only from approved, non-staff wholesale customers. */
 export function useCatalogueRateVisibility() {
   const { authReady, user } = useStore();
-  const trade = useTradeAccount();
+  const trade = useTradeAccount(authReady && Boolean(user));
   const staff = useQuery({
     queryKey: ["account-staff-session", user?.id],
     queryFn: () => staffSession(),
