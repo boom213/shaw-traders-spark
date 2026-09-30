@@ -29,6 +29,7 @@ import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
 
 export const Route = createFileRoute("/account")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Sign In / Register — Shaw Traders EV" },
