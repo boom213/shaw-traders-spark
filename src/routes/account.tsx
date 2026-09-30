@@ -503,7 +503,10 @@ function QuotesSection() {
     setBusyId(quoteId);
     const result = await respondToQuote({ data: { quoteId, decision } });
     setBusyId(null);
-    if (!result.ok) return toast.error(result.error ?? "Could not update this quote.");
+    if (!result.ok) {
+      toast.error(result.error ?? "Could not update this quote.");
+      return;
+    }
     toast.success(decision === "accepted" ? "Quote accepted" : "Quote rejected");
     void queryClient.invalidateQueries({ queryKey: ["my-quote-requests"] });
   };

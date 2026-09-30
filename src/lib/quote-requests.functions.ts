@@ -218,7 +218,7 @@ export const priceQuoteRequest = createServerFn({ method: "POST" })
       p_quote_id: data.quoteId,
       p_lines: data.lines.map((line) => ({ item_id: line.itemId, unit_price: line.unitPrice, line_note: line.lineNote })),
       p_expires_at: new Date(expiresAt).toISOString(),
-      p_staff_note: data.staffNote || undefined,
+      p_staff_note: data.staffNote,
       p_priced_by: actor.name,
     });
     if (error) return { ok: false, error: error.message };

@@ -81,7 +81,8 @@ describe("customer shopping access", () => {
     expect(account).toContain('queryKey: ["account-staff-session", user?.id]');
     expect(account).toContain("const isStaff = Boolean(staff?.signedIn)");
     expect(account).toContain("const customerAccountReady = Boolean(user) && staff !== undefined && !isStaff");
-    expect(account).toContain("enabled: customerAccountReady");
+    expect(account).toContain("const showOrders = customerAccountReady && !isTrade");
+    expect(account).toContain("enabled: showOrders");
     expect(account).toContain('{!isStaff && staff !== undefined && <section id="orders"');
     expect(account).toContain('{!isStaff && staff !== undefined && <section id="wishlist"');
     expect(account).toContain("!isStaff && staff !== undefined && saved.length > 0");
