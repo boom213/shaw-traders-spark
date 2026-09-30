@@ -3,10 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Bike, Search } from "lucide-react";
 import { useRef, useState } from "react";
 import { formatINR } from "@/lib/catalog";
+import { useCatalogueRateVisibility } from "@/hooks/useTrade";
+import { useT } from "@/lib/i18n";
 import { suggestQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export function SearchBox({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
+  const t = useT();
+  const { hideCatalogueRates } = useCatalogueRateVisibility();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -67,7 +71,11 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
                 >
                   <Search className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="flex-1 truncate">{p.name}</span>
-                  {p.price !== undefined && <span className="text-xs text-muted-foreground">{formatINR(p.price)}</span>}
+                  {hideCatalogueRates ? (
+                    <span className="text-xs text-muted-foreground">{t("product.rateOnRequest")}</span>
+                  ) : p.price !== undefined ? (
+                    <span className="text-xs text-muted-foreground">{formatINR(p.price)}</span>
+                  ) : null}
                 </button>
               </li>
             ))}

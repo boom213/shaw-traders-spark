@@ -1,17 +1,55 @@
 import { useQuery } from "@tanstack/react-query";
+import { useStore } from "@/hooks/useStore";
+import { staffSession } from "@/lib/staff.functions";
 import { myPrices, myTradeAccount } from "@/lib/trade.functions";
 
 /** The signed-in customer's trade status, tier and credit position. */
 export function useTradeAccount() {
-  const { data } = useQuery({
+  const query = useQuery({
     queryKey: ["trade-account"],
     queryFn: () => myTradeAccount(),
     staleTime: 60_000,
   });
   return {
-    account: data,
-    isTrade: data?.approved === true,
-    tier: data?.tier ?? "retail",
+    account: query.data,
+    isTrade: query.data?.approved === true,
+    tier: query.data?.tier ?? "retail",
+    ready: !query.isPending,
+  };
+}
+
+export function shouldHideCatalogueRates(input: {
+  signedIn: boolean;
+  tradeReady: boolean;
+  staffReady: boolean;
+  approvedTrade: boolean;
+  staff: boolean;
+}) {
+  if (!input.signedIn) return false;
+  if (!input.tradeReady || !input.staffReady) return true;
+  return input.approvedTrade && !input.staff;
+}
+
+/** Hide public catalogue rates only from approved, non-staff wholesale customers. */
+export function useCatalogueRateVisibility() {
+  const { authReady, user } = useStore();
+  const trade = useTradeAccount();
+  const staff = useQuery({
+    queryKey: ["account-staff-session", user?.id],
+    queryFn: () => staffSession(),
+    enabled: authReady && Boolean(user),
+    retry: false,
+    staleTime: 60_000,
+  });
+
+  return {
+    hideCatalogueRates: shouldHideCatalogueRates({
+      signedIn: Boolean(user),
+      tradeReady: trade.ready,
+      staffReady: !staff.isPending,
+      approvedTrade: trade.isTrade,
+      staff: Boolean(staff.data?.signedIn),
+    }),
   };
 }
 

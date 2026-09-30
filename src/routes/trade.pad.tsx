@@ -115,7 +115,7 @@ function PadPage() {
                 <th scope="col" className="px-3 py-2">Line</th>
                 <th scope="col" className="px-3 py-2">Part</th>
                 <th scope="col" className="px-3 py-2">Qty</th>
-                <th scope="col" className="px-3 py-2">Your price</th>
+                {!isTrade && <th scope="col" className="px-3 py-2">Your price</th>}
                 <th scope="col" className="px-3 py-2">Status</th>
               </tr>
             </thead>
@@ -125,7 +125,7 @@ function PadPage() {
                   <td className="px-3 py-2 text-muted-foreground">{l.input}</td>
                   <td className="px-3 py-2">{l.name ?? "—"}{l.sku ? <span className="block text-xs text-muted-foreground">{l.sku}</span> : null}</td>
                   <td className="px-3 py-2">{l.qty}</td>
-                  <td className="px-3 py-2">{l.unitPrice ? formatINR(l.unitPrice * l.qty) : "Price on request"}</td>
+                  {!isTrade && <td className="px-3 py-2">{l.unitPrice ? formatINR(l.unitPrice * l.qty) : "Price on request"}</td>}
                   <td className={`px-3 py-2 ${l.problem ? "text-destructive" : "text-primary"}`}>{l.problem ?? "Available"}</td>
                 </tr>
               ))}
@@ -136,7 +136,7 @@ function PadPage() {
 
       {ready.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
-          <p className="text-sm">{ready.length} line(s) ready · {formatINR(total)}</p>
+          <p className="text-sm">{ready.length} line(s) ready{isTrade ? "" : ` · ${formatINR(total)}`}</p>
           {isTrade ? (
             <Button disabled={quoteBusy || submittedKey === readyKey} onClick={() => setQuoteOpen(true)}>
               <FileText className="size-4" /> {submittedKey === readyKey ? "Quote requested" : "Request a quote"}
