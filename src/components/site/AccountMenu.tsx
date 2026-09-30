@@ -114,15 +114,17 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
             <DropdownMenuItem asChild>
               <Link to="/account" hash="details"><User className="size-4" /> Profile & details</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/account" hash="orders"><ClipboardList className="size-4" /> My orders</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/account" hash="wishlist"><Heart className="size-4" /> Wishlist</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/track"><PackageSearch className="size-4" /> Track an order</Link>
-            </DropdownMenuItem>
+            {staff && !staff.signedIn && <>
+              <DropdownMenuItem asChild>
+                <Link to="/account" hash="orders"><ClipboardList className="size-4" /> My orders</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/account" hash="wishlist"><Heart className="size-4" /> Wishlist</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/track"><PackageSearch className="size-4" /> Track an order</Link>
+              </DropdownMenuItem>
+            </>}
             {staff && !staff.signedIn && <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Shopping</DropdownMenuLabel>
