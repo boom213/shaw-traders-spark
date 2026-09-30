@@ -47,13 +47,14 @@ export function useCartTotals(coupon?: AppliedCoupon) {
   // Trade customers see their own rate card; the server recalculates it anyway.
   const { tier, priceFor } = useTierPrices(lists.cart.map((c) => ({ productId: c.productId, qty: c.qty })));
 
-  const lines = lists.cart
-    .map((c) => ({ ...c, product: byId.get(c.productId) }))
-    .filter((l): l is { productId: string; qty: number; product: Product } => Boolean(l.product))
-    .map((l) => ({
-      ...l,
-      unitPrice: (tier === "retail" ? l.product.price : priceFor(l.productId)?.unitPrice ?? l.product.price) ?? 0,
-    }));
+  const lines = lists.cart.map((c) => {
+    const product = byId.get(c.productId) ?? null;
+    return {
+      ...c,
+      product,
+      unitPrice: product ? (tier === "retail" ? product.price : priceFor(c.productId)?.unitPrice ?? product.price) ?? 0 : 0,
+    };
+  });
 
   const subtotal = lines.reduce((n, l) => n + l.unitPrice * l.qty, 0);
   // The final discount is always recalculated on the server when the order is placed.
@@ -62,7 +63,7 @@ export function useCartTotals(coupon?: AppliedCoupon) {
   return {
     tier,
     lines,
-    savedProducts: lists.saved.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p)),
+    savedProducts: lists.saved.map((productId) => ({ productId, product: byId.get(productId) ?? null })),
     loading: ids.length > 0 && isPending,
     subtotal,
     discount,
@@ -160,14 +161,17 @@ function CartPage() {
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="grid gap-3">
             {lines.map((l) => (
-              <div key={l.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
+               l.product ? <div key={l.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-surface">
                   {l.product.images[0] ? (
                     <img src={productThumbnailUrl(l.product.images[0]) ?? l.product.images[0]} alt={l.product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
                   ) : (
                     <span className="grid size-full place-items-center text-muted-foreground"><ImageIcon className="size-5" /></span>
                   )}
-                </div>
+               </div> : <div key={l.productId} className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 p-4">
+                 <div><p className="text-sm font-semibold text-muted-foreground">This part is no longer available</p><p className="mt-1 text-xs text-muted-foreground">Remove it to update your cart.</p></div>
+                 <Button type="button" size="sm" variant="outline" onClick={() => removeFromCart(l.productId)}><Trash2 className="size-3.5" /> Remove</Button>
+               </div>
                 <div className="flex-1">
                   <Link to="/product/$slug" params={{ slug: l.product.slug }} className="text-sm font-semibold hover:text-primary">{l.product.name}</Link>
                   <p className="mt-0.5 text-xs text-muted-foreground">{l.product.brand}</p>
@@ -208,10 +212,10 @@ function CartPage() {
               <div className="mt-6">
                 <h3 className="mb-3 font-display text-base font-bold">Saved for later</h3>
                 <div className="grid gap-2">
-                  {savedProducts.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-sm">
-                      <span>{p.name}</span>
-                      {purchase.eligible && <Button size="sm" variant="outline" onClick={() => moveToCart(p.id)}>Move to cart</Button>}
+                  {savedProducts.map(({ productId, product }) => (
+                    <div key={productId} className="flex items-center justify-between rounded-lg border border-border bg-surface px-4 py-3 text-sm">
+                      <span className={product ? "" : "text-muted-foreground"}>{product?.name ?? "This part is no longer available"}</span>
+                      {product && purchase.eligible ? <Button size="sm" variant="outline" onClick={() => moveToCart(product.id)}>Move to cart</Button> : !product ? <Button size="sm" variant="ghost" onClick={() => removeSaved(productId)}>Remove</Button> : null}
                     </div>
                   ))}
                 </div>
