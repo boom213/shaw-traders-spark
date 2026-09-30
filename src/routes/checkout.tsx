@@ -260,7 +260,10 @@ function CheckoutPage() {
     if (minimumShortfall > 0 && settings) {
       return toast.error(`Add ${formatINR(minimumShortfall)} more to reach the ${formatINR(settings.minOrderValue)} minimum order value.`);
     }
-    const short = lines.find((l) => l.product.stock < l.qty);
+    const unavailable = lines.find((line) => !line.product);
+    if (unavailable) return toast.error("A product in your cart is no longer available. Please remove it before checkout.");
+    const availableLines = lines.flatMap((line) => line.product ? [{ ...line, product: line.product }] : []);
+    const short = availableLines.find((line) => line.product.stock < line.qty);
     if (short) {
       toast.error(
         short.product.stock <= 0
@@ -278,7 +281,7 @@ function CheckoutPage() {
     setPlacing(true);
     const res = await start({
       data: {
-        items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+        items: availableLines.map((line) => ({ productId: line.productId, qty: line.qty })),
         address: addr,
         shippingCode: delivery.code,
         paymentMethod: payment,
@@ -571,10 +574,10 @@ function CheckoutPage() {
         <aside className="h-fit rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)] lg:sticky lg:top-32">
           <h3 className="font-display text-base font-bold">Order summary</h3>
           <ul className="mt-4 grid gap-2 text-sm">
-            {lines.map((l) => (
-              <li key={l.productId} className="flex justify-between gap-3">
-                <span className="line-clamp-1 text-muted-foreground">{l.qty} × {l.product.name}</span>
-                <span>{l.product.price !== undefined ? formatINR(l.product.price * l.qty) : "On request"}</span>
+            {lines.map((line) => (
+              <li key={line.productId} className="flex justify-between gap-3">
+                <span className="line-clamp-1 text-muted-foreground">{line.qty} × {line.product?.name ?? "This part is no longer available"}</span>
+                <span>{line.product?.price !== undefined ? formatINR(line.product.price * line.qty) : line.product ? "On request" : "—"}</span>
               </li>
             ))}
           </ul>

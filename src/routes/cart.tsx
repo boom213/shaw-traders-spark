@@ -160,25 +160,27 @@ function CartPage() {
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
           <div className="grid gap-3">
-            {lines.map((line) => line.product ? (
+            {lines.map((line) => {
+              const product = line.product;
+              return product ? (
               <div key={line.productId} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
                 <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-surface">
-                  {line.product.images[0] ? (
-                    <img src={productThumbnailUrl(line.product.images[0]) ?? line.product.images[0]} alt={line.product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
+                  {product.images[0] ? (
+                    <img src={productThumbnailUrl(product.images[0]) ?? product.images[0]} alt={product.name} width={80} height={80} loading="lazy" decoding="async" className="size-full object-cover" />
                   ) : (
                     <span className="grid size-full place-items-center text-muted-foreground"><ImageIcon className="size-5" /></span>
                   )}
                 </div>
                 <div className="flex-1">
-                  <Link to="/product/$slug" params={{ slug: line.product.slug }} className="text-sm font-semibold hover:text-primary">{line.product.name}</Link>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{line.product.brand}</p>
+                  <Link to="/product/$slug" params={{ slug: product.slug }} className="text-sm font-semibold hover:text-primary">{product.name}</Link>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{product.brand}</p>
                   <p className="mt-1 font-display font-bold">
-                    {line.product.price !== undefined ? formatINR(line.product.price) : "Price on request"}
+                    {product.price !== undefined ? formatINR(product.price) : "Price on request"}
                   </p>
-                  {line.product.stock <= 0 ? (
+                  {product.stock <= 0 ? (
                     <p className="mt-1 text-xs font-medium text-destructive">Out of stock — remove to continue</p>
-                  ) : line.qty > line.product.stock ? (
-                    <p className="mt-1 text-xs font-medium text-destructive">Only {line.product.stock} available</p>
+                  ) : line.qty > product.stock ? (
+                    <p className="mt-1 text-xs font-medium text-destructive">Only {product.stock} available</p>
                   ) : null}
                   {purchase.eligible && <div className="mt-3 flex flex-wrap items-center gap-3">
                     <div className="flex items-center rounded-full border border-border">
@@ -186,8 +188,8 @@ function CartPage() {
                       <span className="w-8 text-center text-sm font-semibold">{line.qty}</span>
                       <button
                         onClick={() => {
-                          if (line.qty + 1 > line.product.stock) {
-                            toast.error(`Only ${line.product.stock} in stock`);
+                          if (line.qty + 1 > product.stock) {
+                            toast.error(`Only ${product.stock} in stock`);
                             return;
                           }
                           setQty(line.productId, line.qty + 1);
@@ -208,7 +210,7 @@ function CartPage() {
                 <div><p className="text-sm font-semibold text-muted-foreground">This part is no longer available</p><p className="mt-1 text-xs text-muted-foreground">Remove it to update your cart.</p></div>
                 <Button type="button" size="sm" variant="outline" onClick={() => removeFromCart(line.productId)}><Trash2 className="size-3.5" /> Remove</Button>
               </div>
-            ))}
+            );})}
 
             {savedProducts.length > 0 && (
               <div className="mt-6">
