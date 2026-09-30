@@ -1,17 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { formatINR } from "@/lib/catalog";
-import { listQuoteRequests, priceQuoteRequest, type StaffQuoteRequest } from "@/lib/quote-requests.functions";
+import { downloadStaffProforma, listQuoteRequests, priceQuoteRequest, quoteGrandTotal, type StaffQuoteRequest } from "@/lib/quote-requests.functions";
+import { downloadPdf } from "@/components/manage/order-tools";
 
 export const Route = createFileRoute("/manage/quotes")({
   head: () => ({ meta: [
@@ -59,13 +62,18 @@ function QuotesPage() {
 
 function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
   const queryClient = useQueryClient();
+  const getProforma = useServerFn(downloadStaffProforma);
   const [open, setOpen] = useState(quote.status === "submitted");
   const [prices, setPrices] = useState<Record<string, string>>(() => Object.fromEntries(quote.items.map((item) => [item.id, item.unitPrice ? String(item.unitPrice) : ""])));
   const [notes, setNotes] = useState<Record<string, string>>(() => Object.fromEntries(quote.items.map((item) => [item.id, item.lineNote ?? ""])));
   const [expiry, setExpiry] = useState(quote.expiresAt ? quote.expiresAt.slice(0, 10) : "");
   const [staffNote, setStaffNote] = useState(quote.staffNote ?? "");
+  const [gstRate, setGstRate] = useState(quote.gstRate ? String(quote.gstRate) : "");
+  const [gstTreatment, setGstTreatment] = useState<"inclusive" | "exclusive">(quote.gstIncluded ? "inclusive" : "exclusive");
   const [busy, setBusy] = useState(false);
-  const total = quote.items.reduce((sum, item) => sum + (Number(prices[item.id]) || 0) * item.qty, 0);
+  const [downloading, setDownloading] = useState(false);
+  const draftItems = quote.items.map((item) => ({ qty: item.qty, unitPrice: Number(prices[item.id]) || 0 }));
+  const total = quoteGrandTotal(draftItems, gstRate.trim() ? Number(gstRate) : null, gstTreatment === "inclusive");
 
   const send = async () => {
     if (!expiry) return toast.error("Choose an expiry date.");
@@ -77,6 +85,8 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
       lines: quote.items.map((item) => ({ itemId: item.id, unitPrice: Number(prices[item.id]), lineNote: notes[item.id] })),
       expiresAt,
       staffNote,
+      gstRate: gstRate.trim() ? Number(gstRate) : null,
+      gstIncluded: gstTreatment === "inclusive",
     } });
     setBusy(false);
     if (!result.ok) return toast.error(result.error ?? "Could not price this quote.");
@@ -84,7 +94,16 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
     void queryClient.invalidateQueries({ queryKey: ["manage-quotes"] });
   };
 
-  const pricedTotal = quote.items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const pricedTotal = quoteGrandTotal(quote.items, quote.gstRate, quote.gstIncluded);
+  const expired = Boolean(quote.expiresAt && Date.parse(quote.expiresAt) <= Date.now());
+  const canDownload = ["priced", "accepted"].includes(quote.status) && !expired;
+  const download = async () => {
+    setDownloading(true);
+    const result = await getProforma({ data: { quoteId: quote.id } });
+    setDownloading(false);
+    if ("error" in result) return toast.error(result.error);
+    downloadPdf(result.base64, result.fileName);
+  };
   return <article className="rounded-2xl border border-border bg-card p-4 shadow-[var(--shadow-card)]">
     <Button type="button" variant="ghost" className="h-auto w-full justify-between gap-4 p-0 text-left hover:bg-transparent" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
       <div><p className="font-semibold">{quote.humanId} · {quote.customerName}</p><p className="text-xs text-muted-foreground">{quote.customerPhone} · {new Date(quote.createdAt).toLocaleString("en-IN")} · {quote.items.length} line(s)</p></div>
@@ -97,11 +116,13 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
         <div><Label htmlFor={`price-${item.id}`}>Unit price</Label><Input id={`price-${item.id}`} type="number" min="0.01" step="0.01" value={prices[item.id] ?? ""} onChange={(event) => setPrices({ ...prices, [item.id]: event.target.value })} /></div>
         <div><Label htmlFor={`note-${item.id}`}>Line note (optional)</Label><Input id={`note-${item.id}`} maxLength={300} value={notes[item.id] ?? ""} onChange={(event) => setNotes({ ...notes, [item.id]: event.target.value })} /></div>
       </div>)}</div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div><Label htmlFor={`expiry-${quote.id}`}>Quote valid until</Label><Input id={`expiry-${quote.id}`} type="date" required value={expiry} onChange={(event) => setExpiry(event.target.value)} /></div>
+        <div><Label htmlFor={`gst-${quote.id}`}>GST rate (optional)</Label><Input id={`gst-${quote.id}`} type="number" min="0" max="100" step="0.01" placeholder="No GST" value={gstRate} onChange={(event) => setGstRate(event.target.value)} /></div>
+        <div><Label htmlFor={`gst-treatment-${quote.id}`}>GST treatment</Label><Select value={gstTreatment} onValueChange={(value) => setGstTreatment(value as "inclusive" | "exclusive")} disabled={!gstRate.trim()}><SelectTrigger id={`gst-treatment-${quote.id}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="exclusive">Exclusive</SelectItem><SelectItem value="inclusive">Inclusive</SelectItem></SelectContent></Select></div>
         <div><Label htmlFor={`staff-note-${quote.id}`}>Internal staff note</Label><Textarea id={`staff-note-${quote.id}`} rows={2} maxLength={1000} value={staffNote} onChange={(event) => setStaffNote(event.target.value)} /></div>
       </div>
-      <div className="flex items-center justify-between gap-3"><p className="font-semibold">Quote total: {formatINR(total)}</p><Button onClick={() => void send()} disabled={busy}>{busy && <SparkRing />}{busy ? "Sending…" : "Send priced quote"}</Button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">Quote total: {formatINR(total)}</p><div className="flex flex-wrap gap-2">{canDownload && <Button variant="outline" onClick={() => void download()} disabled={downloading}>{downloading ? <SparkRing /> : <Download className="size-4" />}{downloading ? "Preparing…" : "Download PI"}</Button>}<Button onClick={() => void send()} disabled={busy}>{busy && <SparkRing />}{busy ? "Sending…" : "Send priced quote"}</Button></div></div>
     </div>}
   </article>;
 }

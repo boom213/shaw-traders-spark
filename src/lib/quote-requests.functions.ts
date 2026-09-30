@@ -21,6 +21,8 @@ export type CustomerQuoteRequest = {
   pricedAt: string | null;
   expiresAt: string | null;
   createdAt: string;
+  gstRate: number | null;
+  gstIncluded: boolean;
   items: QuoteRequestItem[];
 };
 
@@ -30,6 +32,12 @@ export type StaffQuoteRequest = CustomerQuoteRequest & {
   staffNote: string | null;
   pricedBy: string | null;
 };
+
+export function quoteGrandTotal(items: Array<{ qty: number; unitPrice: number | null }>, gstRate: number | null, gstIncluded: boolean) {
+  const lineTotal = items.reduce((sum, item) => sum + (item.unitPrice ?? 0) * item.qty, 0);
+  const rate = Math.max(0, Number(gstRate ?? 0));
+  return rate > 0 && !gstIncluded ? lineTotal * (1 + rate / 100) : lineTotal;
+}
 
 const clean = (value: unknown, max: number) => String(value ?? "").trim().slice(0, max);
 const uuid = (value: unknown) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value ?? ""));
@@ -87,7 +95,7 @@ export const myQuoteRequests = createServerFn({ method: "GET" }).handler(async (
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: quotes } = await supabaseAdmin
     .from("quote_requests")
-    .select("id, human_id, status, customer_note, decision_note, priced_at, expires_at, created_at")
+    .select("id, human_id, status, customer_note, decision_note, priced_at, expires_at, created_at, gst_rate, gst_included")
     .eq("profile_id", account.userId)
     .order("created_at", { ascending: false });
   const quoteIds = (quotes ?? []).map((quote) => quote.id);
@@ -108,6 +116,8 @@ export const myQuoteRequests = createServerFn({ method: "GET" }).handler(async (
     pricedAt: quote.priced_at,
     expiresAt: quote.expires_at,
     createdAt: quote.created_at,
+    gstRate: quote.gst_rate === null ? null : Number(quote.gst_rate),
+    gstIncluded: quote.gst_included,
     items: byQuote.get(quote.id) ?? [],
   }));
 });
@@ -153,7 +163,7 @@ export const listQuoteRequests = createServerFn({ method: "POST" })
     }
     let query = supabaseAdmin
       .from("quote_requests")
-      .select("id, human_id, profile_id, status, customer_note, staff_note, decision_note, priced_by, priced_at, expires_at, created_at", { count: "exact" })
+      .select("id, human_id, profile_id, status, customer_note, staff_note, decision_note, priced_by, priced_at, expires_at, created_at, gst_rate, gst_included", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(data.page * 8, data.page * 8 + 7);
     if (data.status === "expired") query = query.eq("status", "priced").lte("expires_at", new Date().toISOString());
@@ -190,6 +200,8 @@ export const listQuoteRequests = createServerFn({ method: "POST" })
           pricedAt: quote.priced_at,
           expiresAt: quote.expires_at,
           createdAt: quote.created_at,
+          gstRate: quote.gst_rate === null ? null : Number(quote.gst_rate),
+          gstIncluded: quote.gst_included,
           customerName: profile?.full_name ?? "Wholesale customer",
           customerPhone: profile?.phone ?? "",
           items: itemMap.get(quote.id) ?? [],
@@ -200,11 +212,13 @@ export const listQuoteRequests = createServerFn({ method: "POST" })
 
 /** Atomically price every line and publish the quote to the customer. */
 export const priceQuoteRequest = createServerFn({ method: "POST" })
-  .inputValidator((input: { quoteId: string; lines: Array<{ itemId: string; unitPrice: number; lineNote?: string }>; expiresAt: string; staffNote?: string }) => ({
+  .inputValidator((input: { quoteId: string; lines: Array<{ itemId: string; unitPrice: number; lineNote?: string }>; expiresAt: string; staffNote?: string; gstRate?: number | null; gstIncluded?: boolean }) => ({
     quoteId: clean(input?.quoteId, 40),
     lines: Array.isArray(input?.lines) ? input.lines.slice(0, 101).map((line) => ({ itemId: clean(line?.itemId, 40), unitPrice: Number(line?.unitPrice), lineNote: clean(line?.lineNote, 300) })) : [],
     expiresAt: clean(input?.expiresAt, 40),
     staffNote: clean(input?.staffNote, 1000),
+    gstRate: input?.gstRate === null || input?.gstRate === undefined || input.gstRate === 0 ? null : Number(input.gstRate),
+    gstIncluded: Boolean(input?.gstIncluded),
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
@@ -212,8 +226,11 @@ export const priceQuoteRequest = createServerFn({ method: "POST" })
     const expiresAt = Date.parse(data.expiresAt);
     if (!uuid(data.quoteId) || !data.lines.length || data.lines.length > 100) return { ok: false, error: "Price every quote line." };
     if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return { ok: false, error: "Choose a future expiry date." };
+    if (data.gstRate !== null && (!Number.isFinite(data.gstRate) || data.gstRate <= 0 || data.gstRate > 100)) return { ok: false, error: "Enter a valid GST rate or leave it blank." };
     if (data.lines.some((line) => !uuid(line.itemId) || !Number.isFinite(line.unitPrice) || line.unitPrice <= 0 || line.unitPrice > 10_000_000)) return { ok: false, error: "Enter a valid price for every line." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: gstError } = await supabaseAdmin.from("quote_requests").update({ gst_rate: data.gstRate, gst_included: data.gstRate === null ? false : data.gstIncluded }).eq("id", data.quoteId);
+    if (gstError) return { ok: false, error: gstError.message };
     const { error } = await supabaseAdmin.rpc("price_quote_request", {
       p_quote_id: data.quoteId,
       p_lines: data.lines.map((line) => ({ item_id: line.itemId, unit_price: line.unitPrice, line_note: line.lineNote })),
@@ -222,6 +239,32 @@ export const priceQuoteRequest = createServerFn({ method: "POST" })
       p_priced_by: actor.name,
     });
     if (error) return { ok: false, error: error.message };
-    await logAudit(supabaseAdmin as never, actor, "quote.priced", "quote_requests", data.quoteId, { expiresAt: new Date(expiresAt).toISOString(), lineCount: data.lines.length });
+    await logAudit(supabaseAdmin as never, actor, "quote.priced", "quote_requests", data.quoteId, { expiresAt: new Date(expiresAt).toISOString(), lineCount: data.lines.length, gstRate: data.gstRate, gstIncluded: data.gstRate === null ? false : data.gstIncluded });
     return { ok: true };
+  });
+
+/** Download only the signed-in wholesale customer's own current priced quote. */
+export const downloadMyProforma = createServerFn({ method: "POST" })
+  .inputValidator((input: { quoteId: string }) => ({ quoteId: clean(input?.quoteId, 40) }))
+  .handler(async ({ data }) => {
+    if (!uuid(data.quoteId)) return { error: "Quote request not found." };
+    const { tradeAccount } = await import("@/lib/trade.server");
+    const account = await tradeAccount();
+    if (!account.userId || !account.approved) return { error: "An approved wholesale account is required." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: quote } = await supabaseAdmin.from("quote_requests").select("id").eq("id", data.quoteId).eq("profile_id", account.userId).maybeSingle();
+    if (!quote) return { error: "Quote request not found." };
+    const { proformaPdfBase64 } = await import("@/lib/invoice.server");
+    return proformaPdfBase64(quote.id);
+  });
+
+/** Manager+ download of a current priced wholesale quote. */
+export const downloadStaffProforma = createServerFn({ method: "POST" })
+  .inputValidator((input: { quoteId: string }) => ({ quoteId: clean(input?.quoteId, 40) }))
+  .handler(async ({ data }) => {
+    if (!uuid(data.quoteId)) return { error: "Quote request not found." };
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "quotes" });
+    const { proformaPdfBase64 } = await import("@/lib/invoice.server");
+    return proformaPdfBase64(data.quoteId);
   });

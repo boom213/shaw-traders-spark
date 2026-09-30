@@ -470,6 +470,13 @@
       "when": 1790785381847,
       "tag": "0066_multi_line_wholesale_quotes",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1790793796880,
+      "tag": "0067_add_quote_gst_fields",
+      "breakpoints": true
     }
   ]
 }

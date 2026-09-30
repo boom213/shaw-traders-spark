@@ -20,6 +20,9 @@ export type InvoiceItem = {
 };
 
 export type InvoiceDocument = {
+  docType?: "tax_invoice" | "proforma";
+  validUntil?: string | null;
+  documentNote?: string | null;
   humanId: string;
   placedAt: string;
   subtotal: number;
@@ -174,9 +177,15 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   }));
   const dateText = new Date(document.placedAt).toLocaleString("en-IN");
   const gstin = clean(document.business.gstin) || clean(document.gstin);
-  const disclaimer = document.taxAmount > 0
-    ? `Amounts are ${document.gstIncluded ? "inclusive" : "exclusive"} of GST at ${document.gstRate}%. This is a computer generated invoice.`
-    : "This order carries no GST charge. This is a computer generated invoice.";
+  const isProforma = document.docType === "proforma";
+  const documentTitle = isProforma ? "PROFORMA INVOICE" : "TAX INVOICE";
+  const disclaimer = isProforma
+    ? document.taxAmount > 0
+      ? `Amounts are ${document.gstIncluded ? "inclusive" : "exclusive"} of GST at ${document.gstRate}%. This is not a tax invoice.`
+      : "Quoted without GST. This is not a tax invoice."
+    : document.taxAmount > 0
+      ? `Amounts are ${document.gstIncluded ? "inclusive" : "exclusive"} of GST at ${document.gstRate}%. This is a computer generated invoice.`
+      : "This order carries no GST charge. This is a computer generated invoice.";
 
   let page: PDFPage = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   let y = 0;
@@ -209,9 +218,9 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
     }
     text(fitText(`Phone ${BUSINESS.phone}  |  ${BUSINESS.site}`, font, 8.5, leftBlockWidth), detailsX, 8.5, font, MUTED);
     y = PAGE_HEIGHT - MARGIN - 2;
-    right(continued ? "TAX INVOICE — CONTINUED" : "TAX INVOICE", CONTENT_RIGHT, continued ? 11 : 15, bold);
+    right(continued ? `${documentTitle} — CONTINUED` : documentTitle, CONTENT_RIGHT, continued ? 11 : 15, bold);
     y -= 18;
-    right(`Invoice / Order No: ${document.humanId}`, CONTENT_RIGHT, 9, bold);
+    right(`${isProforma ? "Quote No" : "Invoice / Order No"}: ${document.humanId}`, CONTENT_RIGHT, 9, bold);
     y -= 14;
     right(dateText, CONTENT_RIGHT, 8.5, font, MUTED);
     if (gstin) {
@@ -261,6 +270,10 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   const recipientLines = billToLines(document.address, document.contactPhone);
   for (const [index, line] of (recipientLines.length ? recipientLines : ["Customer details not provided"]).entries()) {
     text(fitText(line, index === 0 ? bold : font, 9, 320), MARGIN, 9, index === 0 ? bold : font, index === 0 ? INK : MUTED);
+    y -= 13;
+  }
+  if (isProforma && clean(document.gstin)) {
+    text(fitText(`GSTIN: ${clean(document.gstin)}`, font, 9, 320), MARGIN, 9, font, MUTED);
     y -= 13;
   }
   y -= 8;
@@ -324,9 +337,19 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
 
   const detailsY = y - 30;
   y = detailsY;
-  text(`Payment: ${clean(document.paymentMethod) || "-"} (${document.paymentStatus})`, MARGIN, 8.5, font, MUTED);
-  y -= 14;
-  text(`Delivery: ${clean(document.shippingMethod) || "-"}`, MARGIN, 8.5, font, MUTED);
+  if (isProforma) {
+    text("This is not a tax invoice.", MARGIN, 8.5, bold, MUTED);
+    y -= 14;
+    if (document.validUntil) text(`Rates valid until ${new Date(document.validUntil).toLocaleDateString("en-IN")}.`, MARGIN, 8.5, font, MUTED);
+    if (document.documentNote) {
+      y -= 14;
+      text(fitText(clean(document.documentNote), font, 8.5, 310), MARGIN, 8.5, font, MUTED);
+    }
+  } else {
+    text(`Payment: ${clean(document.paymentMethod) || "-"} (${document.paymentStatus})`, MARGIN, 8.5, font, MUTED);
+    y -= 14;
+    text(`Delivery: ${clean(document.shippingMethod) || "-"}`, MARGIN, 8.5, font, MUTED);
+  }
 
   const signatureY = detailsY - 30;
   page.drawLine({ start: { x: 404, y: signatureY }, end: { x: CONTENT_RIGHT, y: signatureY }, thickness: 0.7, color: INK });
@@ -338,9 +361,9 @@ export async function createInvoicePdf(document: InvoiceDocument): Promise<Uint8
   y = footerY + 13;
   text(fitText(disclaimer, font, 7.5, CONTENT_RIGHT - MARGIN - 16), MARGIN + 8, 7.5, font, MUTED);
 
-  pdf.setTitle(`Tax Invoice ${document.humanId}`);
+  pdf.setTitle(`${isProforma ? "Proforma Invoice" : "Tax Invoice"} ${document.humanId}`);
   pdf.setAuthor(document.business.legalName);
-  pdf.setSubject(document.staffCopy ? "Staff Invoice — Internal Use Only" : "Tax Invoice");
+  pdf.setSubject(isProforma ? "Proforma Invoice — Not a Tax Invoice" : document.staffCopy ? "Staff Invoice — Internal Use Only" : "Tax Invoice");
   pdf.setCreator("Shaw Traders EV");
   return pdf.save();
 }
@@ -412,4 +435,78 @@ export async function invoicePdfBase64(orderId: string, staffCopy = false): Prom
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return { base64: btoa(binary), fileName: `${staffCopy ? "Staff-Invoice" : "Invoice"}-${document.humanId}.pdf` };
+}
+
+/** Build a customer-facing proforma invoice from a priced wholesale quote. */
+export async function proformaPdfBase64(quoteId: string): Promise<{ base64: string; fileName: string } | { error: string }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: quote } = await supabaseAdmin
+    .from("quote_requests")
+    .select("id, human_id, profile_id, status, customer_note, priced_at, expires_at, created_at, gst_rate, gst_included, quote_request_items(product_id, name_snapshot, qty, unit_price)")
+    .eq("id", quoteId)
+    .maybeSingle();
+  if (!quote) return { error: "Quote request not found." };
+  if (!(["priced", "accepted"].includes(quote.status)) || !quote.expires_at || Date.parse(quote.expires_at) <= Date.now()) {
+    return { error: "A proforma invoice is available only for a current priced quote." };
+  }
+
+  const items = (quote.quote_request_items ?? []) as Array<{ product_id: string | null; name_snapshot: string; qty: number; unit_price: number | null }>;
+  if (!items.length || items.some((item) => item.unit_price === null)) return { error: "This quote has not been fully priced." };
+
+  const [{ data: application }, { data: profile }, { data: settings }] = await Promise.all([
+    supabaseAdmin.from("trade_applications").select("business_name, contact_person, phone, gstin, shop_address").eq("profile_id", quote.profile_id).eq("status", "approved").order("decided_at", { ascending: false }).limit(1).maybeSingle(),
+    supabaseAdmin.from("profiles").select("full_name, phone").eq("id", quote.profile_id).maybeSingle(),
+    supabaseAdmin.from("shop_settings").select("gstin, legal_name, billing_address, default_hsn").maybeSingle(),
+  ]);
+
+  const productIds = items.map((item) => item.product_id).filter((id): id is string => Boolean(id));
+  const hsnById = new Map<string, string>();
+  if (productIds.length) {
+    const { data: products } = await supabaseAdmin.from("products").select("id, hsn_code").in("id", productIds);
+    for (const product of products ?? []) hsnById.set(product.id, String(product.hsn_code ?? settings?.default_hsn ?? "8507"));
+  }
+
+  const gstRate = Math.max(0, Number(quote.gst_rate ?? 0));
+  const gstIncluded = gstRate > 0 && Boolean(quote.gst_included);
+  const lineTotal = items.reduce((sum, item) => sum + Number(item.unit_price ?? 0) * Number(item.qty), 0);
+  const taxableTotal = gstIncluded ? lineTotal / (1 + gstRate / 100) : lineTotal;
+  const taxAmount = gstRate > 0 ? (gstIncluded ? lineTotal - taxableTotal : taxableTotal * gstRate / 100) : 0;
+  const total = gstIncluded ? lineTotal : taxableTotal + taxAmount;
+  const customerName = application?.business_name || application?.contact_person || profile?.full_name || "Wholesale customer";
+  const customerPhone = application?.phone || profile?.phone || null;
+  const document: InvoiceDocument = {
+    docType: "proforma",
+    validUntil: quote.expires_at,
+    documentNote: quote.customer_note,
+    humanId: quote.human_id,
+    placedAt: quote.priced_at ?? quote.created_at,
+    subtotal: taxableTotal,
+    shippingFee: 0,
+    discount: 0,
+    total,
+    taxAmount,
+    gstRate,
+    gstIncluded,
+    gstin: application?.gstin ?? null,
+    paymentStatus: "",
+    address: { name: customerName, line1: application?.shop_address ?? "", phone: customerPhone ?? "" },
+    contactPhone: customerPhone,
+    items: items.map((item) => ({
+      name: item.name_snapshot,
+      qty: Number(item.qty),
+      price: Number(item.unit_price),
+      productId: item.product_id,
+    })),
+    hsnById,
+    defaultHsn: String(settings?.default_hsn ?? "8507"),
+    business: {
+      legalName: String(settings?.legal_name ?? BUSINESS.name),
+      billingAddress: String(settings?.billing_address ?? BUSINESS.address),
+      gstin: settings?.gstin ?? null,
+    },
+  };
+  const bytes = await createInvoicePdf(document);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return { base64: btoa(binary), fileName: `Proforma-${document.humanId}.pdf` };
 }

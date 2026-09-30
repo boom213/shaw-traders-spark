@@ -53,6 +53,37 @@ describe("invoice PDF", () => {
     expect(pdf.getTitle()).toBe("Tax Invoice CS-260925-1001");
   });
 
+  it("creates a legally distinct proforma invoice without changing the tax invoice default", async () => {
+    const bytes = await createInvoicePdf(invoice({
+      docType: "proforma",
+      humanId: "QT-260930-1001",
+      validUntil: "2026-10-31T18:29:59.000Z",
+      paymentMethod: null,
+      paymentStatus: "",
+      shippingMethod: null,
+    }));
+    await saveQaPdf("proforma-gst-invoice.pdf", bytes);
+    const pdf = await PDFDocument.load(bytes);
+    expect(pdf.getTitle()).toBe("Proforma Invoice QT-260930-1001");
+    expect(pdf.getSubject()).toBe("Proforma Invoice — Not a Tax Invoice");
+    expect(pdf.getPageCount()).toBe(1);
+  });
+
+  it("creates a no-GST proforma invoice", async () => {
+    const bytes = await createInvoicePdf(invoice({
+      docType: "proforma",
+      humanId: "QT-260930-1002",
+      gstRate: 0,
+      gstIncluded: false,
+      taxAmount: 0,
+      subtotal: 12000,
+      total: 12000,
+      validUntil: "2026-10-31T18:29:59.000Z",
+    }));
+    await saveQaPdf("proforma-no-gst-invoice.pdf", bytes);
+    expect((await PDFDocument.load(bytes)).getTitle()).toBe("Proforma Invoice QT-260930-1002");
+  });
+
   it("paginates long item lists instead of dropping rows", async () => {
     const items = Array.from({ length: 55 }, (_, index) => ({
       name: `Workshop component ${index + 1}`,
