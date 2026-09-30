@@ -1,8 +1,9 @@
 # Current task
-- [x] Hide customer Trade & wholesale links from staff and protect `/trade` and `/trade/pad` with the shared customer guard.
+- [x] Restore public storefront and trade browsing while retaining retail-only checkout enforcement.
+- [x] Hide customer Trade & wholesale links from staff without blocking direct browsing.
 - [x] Hide customer order, wishlist, saved-item, and tracking links and sections from staff accounts while preserving profile access.
 - [x] Hide customer shopping links in the main header and mobile tabs for every staff role.
-- [x] Restrict the complete shopping journey and Shopping account menu to signed-in non-staff customers.
+- [x] Hide Shopping account shortcuts from staff while keeping direct storefront browsing public.
 - [x] Add CSV row references, duplicate-SKU blocking, and paginated import history.
 - [x] Protect reviewed products from accidental deletion and show unavailable saved products to customers.
 - [x] Allow Counter Sales above stock with warnings, zero-floor inventory, and accurate cancellation restoration.

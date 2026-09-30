@@ -20,7 +20,7 @@
 - Showroom visibility uses shared shop settings.
 - Timestamp cart clears; sync tabs and persist before navigation; debounce ordinary sync only.
 - Bookings use owner-scoped reads and public tokens.
-- Shopping pages are signed-in customer-only; wholesale may browse, retail orders online, staff use separate flows; release unpaid stock at 30m and reconcile Razorpay securely.
+- Storefront browsing is public; only signed-in retail customers order online, while wholesale and staff use separate flows. Release unpaid stock at 30m.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
 - Sales Manager gets server-enforced online-order-only access; online queries exclude `counter_sales.order_id` and Counter Sales stays separate.
 - Keep the online-order index compact; full fulfilment, refund, and review controls live on its Manager detail route.
