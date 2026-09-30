@@ -27,7 +27,6 @@ import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TrackRouteImport } from './routes/track'
-import { Route as TradeRouteImport } from './routes/trade'
 import { Route as WarrantyRouteImport } from './routes/warranty'
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/_customer/route'
 import { Route as BookingTokenRouteImport } from './routes/booking.$token'
@@ -56,13 +55,13 @@ import { Route as ManageTradeRouteImport } from './routes/manage.trade'
 import { Route as ManageVendorsRouteImport } from './routes/manage.vendors'
 import { Route as OrderIdRouteImport } from './routes/order.$id'
 import { Route as QuoteTokenRouteImport } from './routes/quote.$token'
-import { Route as TradePadRouteImport } from './routes/trade.pad'
 import { Route as AuthenticatedCustomerBrandRouteImport } from './routes/_authenticated/_customer/brand'
 import { Route as AuthenticatedCustomerCartRouteImport } from './routes/_authenticated/_customer/cart'
 import { Route as AuthenticatedCustomerCategoriesRouteImport } from './routes/_authenticated/_customer/categories'
 import { Route as AuthenticatedCustomerCheckoutRouteImport } from './routes/_authenticated/_customer/checkout'
 import { Route as AuthenticatedCustomerOffersRouteImport } from './routes/_authenticated/_customer/offers'
 import { Route as AuthenticatedCustomerShopRouteImport } from './routes/_authenticated/_customer/shop'
+import { Route as AuthenticatedCustomerTradeRouteImport } from './routes/_authenticated/_customer/trade'
 import { Route as ApiPublicCatalogueRouteImport } from './routes/api/public/catalogue'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -76,6 +75,7 @@ import { Route as AuthenticatedCustomerCategorySlugRouteImport } from './routes/
 import { Route as AuthenticatedCustomerProductSlugRouteImport } from './routes/_authenticated/_customer/product.$slug'
 import { Route as AuthenticatedCustomerScootersIndexRouteImport } from './routes/_authenticated/_customer/scooters.index'
 import { Route as AuthenticatedCustomerScootersSlugRouteImport } from './routes/_authenticated/_customer/scooters.$slug'
+import { Route as AuthenticatedCustomerTradePadRouteImport } from './routes/_authenticated/_customer/trade.pad'
 import { Route as ApiPublicCronCartRemindersRouteImport } from './routes/api/public/cron/cart-reminders'
 import { Route as ApiPublicCronDailySummaryRouteImport } from './routes/api/public/cron/daily-summary'
 import { Route as ApiPublicCronReleaseStaleOrdersRouteImport } from './routes/api/public/cron/release-stale-orders'
@@ -170,11 +170,6 @@ const TermsRoute = TermsRouteImport.update({
 const TrackRoute = TrackRouteImport.update({
   id: '/track',
   path: '/track',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TradeRoute = TradeRouteImport.update({
-  id: '/trade',
-  path: '/trade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WarrantyRoute = WarrantyRouteImport.update({
@@ -317,11 +312,6 @@ const QuoteTokenRoute = QuoteTokenRouteImport.update({
   path: '/quote/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TradePadRoute = TradePadRouteImport.update({
-  id: '/pad',
-  path: '/pad',
-  getParentRoute: () => TradeRoute,
-} as any)
 const AuthenticatedCustomerBrandRoute =
   AuthenticatedCustomerBrandRouteImport.update({
     id: '/brand',
@@ -356,6 +346,12 @@ const AuthenticatedCustomerShopRoute =
   AuthenticatedCustomerShopRouteImport.update({
     id: '/shop',
     path: '/shop',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
+const AuthenticatedCustomerTradeRoute =
+  AuthenticatedCustomerTradeRouteImport.update({
+    id: '/trade',
+    path: '/trade',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const ApiPublicCatalogueRoute = ApiPublicCatalogueRouteImport.update({
@@ -429,6 +425,12 @@ const AuthenticatedCustomerScootersSlugRoute =
     path: '/scooters/$slug',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
+const AuthenticatedCustomerTradePadRoute =
+  AuthenticatedCustomerTradePadRouteImport.update({
+    id: '/pad',
+    path: '/pad',
+    getParentRoute: () => AuthenticatedCustomerTradeRoute,
+  } as any)
 const ApiPublicCronCartRemindersRoute =
   ApiPublicCronCartRemindersRouteImport.update({
     id: '/api/public/cron/cart-reminders',
@@ -483,7 +485,6 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/manage/about': typeof ManageAboutRoute
@@ -510,7 +511,6 @@ export interface FileRoutesByFullPath {
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/quote/$token': typeof QuoteTokenRoute
-  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/brand': typeof AuthenticatedCustomerBrandRoute
   '/cart': typeof AuthenticatedCustomerCartRoute
@@ -518,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof AuthenticatedCustomerCheckoutRoute
   '/offers': typeof AuthenticatedCustomerOffersRoute
   '/shop': typeof AuthenticatedCustomerShopRoute
+  '/trade': typeof AuthenticatedCustomerTradeRouteWithChildren
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -530,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/category/$slug': typeof AuthenticatedCustomerCategorySlugRoute
   '/product/$slug': typeof AuthenticatedCustomerProductSlugRoute
   '/scooters/$slug': typeof AuthenticatedCustomerScootersSlugRoute
+  '/trade/pad': typeof AuthenticatedCustomerTradePadRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -555,7 +557,6 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/booking/$token': typeof BookingTokenRoute
   '/manage/about': typeof ManageAboutRoute
@@ -580,7 +581,6 @@ export interface FileRoutesByTo {
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/quote/$token': typeof QuoteTokenRoute
-  '/trade/pad': typeof TradePadRoute
   '/manage': typeof ManageIndexRoute
   '/brand': typeof AuthenticatedCustomerBrandRoute
   '/cart': typeof AuthenticatedCustomerCartRoute
@@ -588,6 +588,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof AuthenticatedCustomerCheckoutRoute
   '/offers': typeof AuthenticatedCustomerOffersRoute
   '/shop': typeof AuthenticatedCustomerShopRoute
+  '/trade': typeof AuthenticatedCustomerTradeRouteWithChildren
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -600,6 +601,7 @@ export interface FileRoutesByTo {
   '/category/$slug': typeof AuthenticatedCustomerCategorySlugRoute
   '/product/$slug': typeof AuthenticatedCustomerProductSlugRoute
   '/scooters/$slug': typeof AuthenticatedCustomerScootersSlugRoute
+  '/trade/pad': typeof AuthenticatedCustomerTradePadRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -628,7 +630,6 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/track': typeof TrackRoute
-  '/trade': typeof TradeRouteWithChildren
   '/warranty': typeof WarrantyRoute
   '/_authenticated/_customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/booking/$token': typeof BookingTokenRoute
@@ -656,7 +657,6 @@ export interface FileRoutesById {
   '/manage/vendors': typeof ManageVendorsRoute
   '/order/$id': typeof OrderIdRoute
   '/quote/$token': typeof QuoteTokenRoute
-  '/trade/pad': typeof TradePadRoute
   '/manage/': typeof ManageIndexRoute
   '/_authenticated/_customer/brand': typeof AuthenticatedCustomerBrandRoute
   '/_authenticated/_customer/cart': typeof AuthenticatedCustomerCartRoute
@@ -664,6 +664,7 @@ export interface FileRoutesById {
   '/_authenticated/_customer/checkout': typeof AuthenticatedCustomerCheckoutRoute
   '/_authenticated/_customer/offers': typeof AuthenticatedCustomerOffersRoute
   '/_authenticated/_customer/shop': typeof AuthenticatedCustomerShopRoute
+  '/_authenticated/_customer/trade': typeof AuthenticatedCustomerTradeRouteWithChildren
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
@@ -676,6 +677,7 @@ export interface FileRoutesById {
   '/_authenticated/_customer/category/$slug': typeof AuthenticatedCustomerCategorySlugRoute
   '/_authenticated/_customer/product/$slug': typeof AuthenticatedCustomerProductSlugRoute
   '/_authenticated/_customer/scooters/$slug': typeof AuthenticatedCustomerScootersSlugRoute
+  '/_authenticated/_customer/trade/pad': typeof AuthenticatedCustomerTradePadRoute
   '/api/public/cron/cart-reminders': typeof ApiPublicCronCartRemindersRoute
   '/api/public/cron/daily-summary': typeof ApiPublicCronDailySummaryRoute
   '/api/public/cron/release-stale-orders': typeof ApiPublicCronReleaseStaleOrdersRoute
@@ -704,7 +706,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
-    | '/trade'
     | '/warranty'
     | '/booking/$token'
     | '/manage/about'
@@ -731,7 +732,6 @@ export interface FileRouteTypes {
     | '/manage/vendors'
     | '/order/$id'
     | '/quote/$token'
-    | '/trade/pad'
     | '/manage/'
     | '/brand'
     | '/cart'
@@ -739,6 +739,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/offers'
     | '/shop'
+    | '/trade'
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -751,6 +752,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/product/$slug'
     | '/scooters/$slug'
+    | '/trade/pad'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -776,7 +778,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
-    | '/trade'
     | '/warranty'
     | '/booking/$token'
     | '/manage/about'
@@ -801,7 +802,6 @@ export interface FileRouteTypes {
     | '/manage/vendors'
     | '/order/$id'
     | '/quote/$token'
-    | '/trade/pad'
     | '/manage'
     | '/brand'
     | '/cart'
@@ -809,6 +809,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/offers'
     | '/shop'
+    | '/trade'
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -821,6 +822,7 @@ export interface FileRouteTypes {
     | '/category/$slug'
     | '/product/$slug'
     | '/scooters/$slug'
+    | '/trade/pad'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -848,7 +850,6 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/track'
-    | '/trade'
     | '/warranty'
     | '/_authenticated/_customer'
     | '/booking/$token'
@@ -876,7 +877,6 @@ export interface FileRouteTypes {
     | '/manage/vendors'
     | '/order/$id'
     | '/quote/$token'
-    | '/trade/pad'
     | '/manage/'
     | '/_authenticated/_customer/brand'
     | '/_authenticated/_customer/cart'
@@ -884,6 +884,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_customer/checkout'
     | '/_authenticated/_customer/offers'
     | '/_authenticated/_customer/shop'
+    | '/_authenticated/_customer/trade'
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
@@ -896,6 +897,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_customer/category/$slug'
     | '/_authenticated/_customer/product/$slug'
     | '/_authenticated/_customer/scooters/$slug'
+    | '/_authenticated/_customer/trade/pad'
     | '/api/public/cron/cart-reminders'
     | '/api/public/cron/daily-summary'
     | '/api/public/cron/release-stale-orders'
@@ -924,7 +926,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrackRoute: typeof TrackRoute
-  TradeRoute: typeof TradeRouteWithChildren
   WarrantyRoute: typeof WarrantyRoute
   BookingTokenRoute: typeof BookingTokenRoute
   OrderIdRoute: typeof OrderIdRoute
@@ -1067,13 +1068,6 @@ declare module '@tanstack/react-router' {
       path: '/track'
       fullPath: '/track'
       preLoaderRoute: typeof TrackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trade': {
-      id: '/trade'
-      path: '/trade'
-      fullPath: '/trade'
-      preLoaderRoute: typeof TradeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/warranty': {
@@ -1272,13 +1266,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuoteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trade/pad': {
-      id: '/trade/pad'
-      path: '/pad'
-      fullPath: '/trade/pad'
-      preLoaderRoute: typeof TradePadRouteImport
-      parentRoute: typeof TradeRoute
-    }
     '/_authenticated/_customer/brand': {
       id: '/_authenticated/_customer/brand'
       path: '/brand'
@@ -1319,6 +1306,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof AuthenticatedCustomerShopRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
+    '/_authenticated/_customer/trade': {
+      id: '/_authenticated/_customer/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof AuthenticatedCustomerTradeRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/api/public/catalogue': {
@@ -1412,6 +1406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerScootersSlugRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
+    '/_authenticated/_customer/trade/pad': {
+      id: '/_authenticated/_customer/trade/pad'
+      path: '/pad'
+      fullPath: '/trade/pad'
+      preLoaderRoute: typeof AuthenticatedCustomerTradePadRouteImport
+      parentRoute: typeof AuthenticatedCustomerTradeRoute
+    }
     '/api/public/cron/cart-reminders': {
       id: '/api/public/cron/cart-reminders'
       path: '/api/public/cron/cart-reminders'
@@ -1457,6 +1458,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedCustomerTradeRouteChildren {
+  AuthenticatedCustomerTradePadRoute: typeof AuthenticatedCustomerTradePadRoute
+}
+
+const AuthenticatedCustomerTradeRouteChildren: AuthenticatedCustomerTradeRouteChildren =
+  {
+    AuthenticatedCustomerTradePadRoute: AuthenticatedCustomerTradePadRoute,
+  }
+
+const AuthenticatedCustomerTradeRouteWithChildren =
+  AuthenticatedCustomerTradeRoute._addFileChildren(
+    AuthenticatedCustomerTradeRouteChildren,
+  )
+
 interface AuthenticatedCustomerRouteRouteChildren {
   AuthenticatedCustomerBrandRoute: typeof AuthenticatedCustomerBrandRoute
   AuthenticatedCustomerCartRoute: typeof AuthenticatedCustomerCartRoute
@@ -1464,6 +1479,7 @@ interface AuthenticatedCustomerRouteRouteChildren {
   AuthenticatedCustomerCheckoutRoute: typeof AuthenticatedCustomerCheckoutRoute
   AuthenticatedCustomerOffersRoute: typeof AuthenticatedCustomerOffersRoute
   AuthenticatedCustomerShopRoute: typeof AuthenticatedCustomerShopRoute
+  AuthenticatedCustomerTradeRoute: typeof AuthenticatedCustomerTradeRouteWithChildren
   AuthenticatedCustomerCategorySlugRoute: typeof AuthenticatedCustomerCategorySlugRoute
   AuthenticatedCustomerProductSlugRoute: typeof AuthenticatedCustomerProductSlugRoute
   AuthenticatedCustomerScootersSlugRoute: typeof AuthenticatedCustomerScootersSlugRoute
@@ -1478,6 +1494,8 @@ const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteCh
     AuthenticatedCustomerCheckoutRoute: AuthenticatedCustomerCheckoutRoute,
     AuthenticatedCustomerOffersRoute: AuthenticatedCustomerOffersRoute,
     AuthenticatedCustomerShopRoute: AuthenticatedCustomerShopRoute,
+    AuthenticatedCustomerTradeRoute:
+      AuthenticatedCustomerTradeRouteWithChildren,
     AuthenticatedCustomerCategorySlugRoute:
       AuthenticatedCustomerCategorySlugRoute,
     AuthenticatedCustomerProductSlugRoute:
@@ -1589,16 +1607,6 @@ const ManageRouteChildren: ManageRouteChildren = {
 const ManageRouteWithChildren =
   ManageRoute._addFileChildren(ManageRouteChildren)
 
-interface TradeRouteChildren {
-  TradePadRoute: typeof TradePadRoute
-}
-
-const TradeRouteChildren: TradeRouteChildren = {
-  TradePadRoute: TradePadRoute,
-}
-
-const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -1618,7 +1626,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrackRoute: TrackRoute,
-  TradeRoute: TradeRouteWithChildren,
   WarrantyRoute: WarrantyRoute,
   BookingTokenRoute: BookingTokenRoute,
   OrderIdRoute: OrderIdRoute,
