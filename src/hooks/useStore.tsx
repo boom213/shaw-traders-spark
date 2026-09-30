@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { mergeShoppingLists, withoutCart, type ShoppingListsState } from "@/lib/cart-state";
+import { mergeShoppingLists, withoutCart, withoutUnavailable, type ShoppingListsState } from "@/lib/cart-state";
 
 export type CartLine = ShoppingListsState["cart"][number];
 
@@ -277,13 +277,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         })),
       removeSaved: (productId) => update((l) => ({ ...l, saved: l.saved.filter((id) => id !== productId) })),
       removeUnavailable: (productIds) => {
-        const unavailable = new Set(productIds);
-        if (unavailable.size === 0) return;
-        update((l) => ({
-          ...l,
-          cart: l.cart.filter((line) => !unavailable.has(line.productId)),
-          saved: l.saved.filter((id) => !unavailable.has(id)),
-        }));
+        if (productIds.length === 0) return;
+        update((l) => withoutUnavailable(l, productIds));
       },
       toggleWishlist: (productId) =>
         user

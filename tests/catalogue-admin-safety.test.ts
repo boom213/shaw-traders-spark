@@ -52,7 +52,7 @@ describe("catalogue safety wiring", () => {
       import("node:fs/promises").then((fs) => fs.readFile("src/routes/account.tsx", "utf8")),
     ]);
     expect(cart).toContain("removeUnavailable(unavailable)");
-    expect(cart).toContain("unavailable item was");
+    expect(cart).toContain('count === 1 ? "item was" : "items were"');
     expect(account).toContain("UnavailableSavedItem");
     expect(account).toContain("removeSaved(productId)");
   });

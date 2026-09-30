@@ -37,3 +37,13 @@ export function mergeShoppingLists(local: ShoppingListsState, remote: ShoppingLi
 export function withoutCart(lists: ShoppingListsState, cartClearedAt = Date.now()): ShoppingListsState {
   return { ...lists, cart: [], cartClearedAt: Math.max(cartClearedAt, (lists.cartClearedAt ?? 0) + 1) };
 }
+
+export function withoutUnavailable(lists: ShoppingListsState, productIds: string[]): ShoppingListsState {
+  const unavailable = new Set(productIds);
+  if (unavailable.size === 0) return lists;
+  return {
+    ...lists,
+    cart: lists.cart.filter((line) => !unavailable.has(line.productId)),
+    saved: lists.saved.filter((id) => !unavailable.has(id)),
+  };
+}

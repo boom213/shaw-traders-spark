@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeShoppingLists, withoutCart, type ShoppingListsState } from "@/lib/cart-state";
+import { mergeShoppingLists, withoutCart, withoutUnavailable, type ShoppingListsState } from "@/lib/cart-state";
 
 const lists = (overrides: Partial<ShoppingListsState> = {}): ShoppingListsState => ({
   cart: [],
@@ -64,6 +64,17 @@ describe("cart lifecycle", () => {
     expect(merged.cart).toEqual([]);
     expect(merged.cartClearedAt).toBe(500);
   });
+
+  it("removes only unavailable cart and saved items", () => {
+    const reconciled = withoutUnavailable(lists({
+      cart: [{ productId: "available", qty: 2 }, { productId: "deleted", qty: 1 }],
+      saved: ["saved-available", "deleted"],
+      wishlist: ["deleted"],
+    }), ["deleted"]);
+    expect(reconciled.cart).toEqual([{ productId: "available", qty: 2 }]);
+    expect(reconciled.saved).toEqual(["saved-available"]);
+    expect(reconciled.wishlist).toEqual(["deleted"]);
+  });
 });
 
 describe("checkout cart-clear wiring", () => {
@@ -89,7 +100,7 @@ describe("checkout cart-clear wiring", () => {
     expect(cart).toContain("removeUnavailable(unavailable)");
     expect(cart).toContain("We could not load your cart items.");
     expect(cart).toContain("lines.some((line) => line.product) && total > 0");
-    expect(store).toContain("removeUnavailable: (productIds)");
+    expect(store).toContain("withoutUnavailable(l, productIds)");
     expect(catalogue).toContain("if (error) throw new Error(error.message)");
     expect(checkout).toContain("lines.length === 0 || subtotal <= 0");
   });
