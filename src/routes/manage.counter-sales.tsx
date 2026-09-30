@@ -64,6 +64,7 @@ function CounterSalesPage() {
   const total = setup?.gst.included || invoiceKind === "non_gst" ? subtotal : subtotal + tax;
   const hasOverride = cart.some((item) => Math.abs(item.unitPrice - (item.wholesalePrice ?? item.retailPrice ?? 0)) > 0.009);
   const stockShortages = cart.filter((item) => counterSaleShortage(item.qty, item.stock) > 0);
+  const firstStockShortage = stockShortages[0];
   const warningBalance = (customer?.balance ?? 0) + total;
   const creditWarning = customer && customer.creditLimit > 0 && warningBalance > customer.creditLimit;
   useEffect(() => { setCart([]); setSearchTerm(""); setProductQuery(""); }, [customerId]);
@@ -161,7 +162,7 @@ function CounterSalesPage() {
             <label className="text-sm font-medium">Document type</label><div className="mt-2 grid grid-cols-2 gap-2"><Button type="button" variant={invoiceKind === "gst" ? "default" : "outline"} onClick={() => setInvoiceKind("gst")} disabled={!setup?.gst.enabled}>GST invoice</Button><Button type="button" variant={invoiceKind === "non_gst" ? "default" : "outline"} onClick={() => setInvoiceKind("non_gst")}>Non-GST bill</Button></div>
             {invoiceKind === "gst" && setup?.gst.enabled && <p className="mt-2 text-xs text-muted-foreground">GST {setup.gst.rate}% · {setup.gst.included ? "included in prices" : "added to prices"}</p>}
             <div className="my-4 space-y-2 border-y py-4 text-sm"><Total label="Subtotal" value={subtotal} /><Total label="Tax" value={tax} /><Total label="Total" value={total} strong /></div>
-            {stockShortages.length > 0 && <Warning>{stockShortages.length === 1 ? `${stockShortages[0].name} exceeds recorded stock by ${counterSaleShortage(stockShortages[0].qty, stockShortages[0].stock)}.` : `${stockShortages.length} products exceed recorded stock.`} The sale will continue and affected stock will stop at zero.</Warning>}
+            {firstStockShortage && <Warning>{stockShortages.length === 1 ? `${firstStockShortage.name} exceeds recorded stock by ${counterSaleShortage(firstStockShortage.qty, firstStockShortage.stock)}.` : `${stockShortages.length} products exceed recorded stock.`} The sale will continue and affected stock will stop at zero.</Warning>}
             {(creditWarning || customer?.overdue) && <Warning>{creditWarning ? `This sale would exceed the ₹${customer?.creditLimit.toLocaleString("en-IN")} credit limit.` : "This customer has an overdue balance."} This is a warning only.</Warning>}
             <label className="mt-3 block text-sm font-medium">Internal sale note</label><Textarea className="mt-1" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional reference or delivery note" />
              <Button className="mt-4 w-full" size="lg" disabled={createMutation.isPending} onClick={submitUnpaidSale}>{createMutation.isPending ? <SparkRing /> : null}{createMutation.isPending ? "Creating sale…" : `Create unpaid sale · ${money(total)}`}</Button>
