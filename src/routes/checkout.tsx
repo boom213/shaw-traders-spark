@@ -20,6 +20,7 @@ import { COUPON_KEY, readCoupon, useCartTotals, type AppliedCoupon } from "@/rou
 import { previewCoupon } from "@/lib/shop-extras.functions";
 import { canonical, formatINR } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
+import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 import { codAllowed, minimumOrderShortfall, shopSettingsQuery, withTax } from "@/lib/shop-settings";
 import { payWithRazorpay } from "@/lib/razorpay-client";
 import { useTradeAccount } from "@/hooks/useTrade";
@@ -96,6 +97,7 @@ function CheckoutPage() {
   const [pollArmed, setPollArmed] = useState(false);
   const recoveryStarted = useRef(false);
   const [addr, setAddr] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
+  const [addressSubmitted, setAddressSubmitted] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
   const [saveAddress, setSaveAddress] = useState(false);
   const [makeDefault, setMakeDefault] = useState(false);
@@ -128,6 +130,7 @@ function CheckoutPage() {
   const onlineReady = availability?.online === true;
   const cod = settings ? codAllowed(grand, addr.pincode, settings) : { allowed: true, reason: "" };
   const minimumShortfall = settings ? minimumOrderShortfall(goodsTotal, settings) : 0;
+  const addressErrors = addressSubmitted ? validateCustomerAddress(addr) : {};
 
   const finish = async (order: PendingOrder, message: string) => {
     if (user) {
@@ -437,18 +440,18 @@ function CheckoutPage() {
                   <p className="text-sm font-medium">Choose a saved address</p>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {savedAddresses.map((address) => (
-                      <Button key={address.id} type="button" variant="outline" className={cn("h-auto min-h-24 items-start justify-start whitespace-normal p-3 text-left", selectedAddressId === address.id && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(address.id); setAddr(addressInput(address)); setSaveAddress(false); setMakeDefault(false); }}>
+                      <Button key={address.id} type="button" variant="outline" className={cn("h-auto min-h-24 items-start justify-start whitespace-normal p-3 text-left", selectedAddressId === address.id && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(address.id); setAddr(addressInput(address)); setAddressSubmitted(false); setSaveAddress(false); setMakeDefault(false); }}>
                         <MapPin className="mt-0.5 size-4 shrink-0" />
                         <span><span className="block font-semibold">{address.name}{address.is_default ? " · Default" : ""}</span><span className="block text-xs text-muted-foreground">{address.phone}</span><span className="block text-xs text-muted-foreground">{[address.line1, address.city, address.state, address.pincode].filter(Boolean).join(", ")}</span></span>
                       </Button>
                     ))}
-                    <Button type="button" variant="outline" className={cn("h-auto min-h-24 justify-start p-3", selectedAddressId === null && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(null); setAddr(EMPTY_ADDRESS); setSaveAddress(false); setMakeDefault(false); }}>
+                    <Button type="button" variant="outline" className={cn("h-auto min-h-24 justify-start p-3", selectedAddressId === null && "border-primary bg-accent")} onClick={() => { setSelectedAddressId(null); setAddr(EMPTY_ADDRESS); setAddressSubmitted(false); setSaveAddress(false); setMakeDefault(false); }}>
                       <Plus className="size-4" /> Use a new address
                     </Button>
                   </div>
                 </div>
               )}
-              <AddressFields value={addr} onChange={setAddr} />
+              <AddressFields value={addr} onChange={setAddr} errors={addressErrors} />
               {selectedAddressId === null && (
                 <div className="grid gap-2 rounded-lg border border-border bg-surface p-3">
                   <label className="flex cursor-pointer items-center gap-2 text-sm"><Checkbox checked={saveAddress} onCheckedChange={(checked) => { setSaveAddress(checked === true); if (checked !== true) setMakeDefault(false); }} />Save this address for next time</label>
@@ -458,8 +461,14 @@ function CheckoutPage() {
               <Button
                 className="mt-1 w-fit"
                 onClick={() => {
-                  const validationError = validateCustomerAddress(addr);
-                  if (validationError) return toast.error(validationError);
+                  setAddressSubmitted(true);
+                  const validationErrors = validateCustomerAddress(addr);
+                  if (errorCount(validationErrors) > 0) {
+                    toast.error(validationSummary(validationErrors));
+                    focusFirstInvalid();
+                    return;
+                  }
+                  setAddressSubmitted(false);
                   setStep(2);
                 }}
               >

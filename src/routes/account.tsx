@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Bike, CheckCircle2, Eye, EyeOff, LogOut, Mail, MapPin, Pencil, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ import { productsByIdsQuery } from "@/lib/queries";
 import { bookingStatusLabel } from "@/lib/vehicles";
 import { customerShoppingPath } from "@/lib/customer-shopping-access";
 import { staffSession } from "@/lib/staff.functions";
+import { errorCount, focusFirstInvalid, validationSummary } from "@/lib/form-validation";
 
 export const Route = createFileRoute("/account")({
   ssr: false,
@@ -512,11 +513,13 @@ type SavedAddress = {
 
 function AddressBook({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<CustomerAddressInput>(EMPTY_ADDRESS);
   const [makeDefault, setMakeDefault] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [deleting, setDeleting] = useState<SavedAddress | null>(null);
 
   const { data: addresses = [], isPending } = useQuery({
@@ -538,6 +541,7 @@ function AddressBook({ userId }: { userId: string }) {
     setEditingId(null);
     setForm(EMPTY_ADDRESS);
     setMakeDefault(addresses.length === 0);
+    setSubmitted(false);
     setDialogOpen(true);
   };
   const openEdit = (address: SavedAddress) => {
@@ -553,11 +557,17 @@ function AddressBook({ userId }: { userId: string }) {
       pincode: address.pincode ?? "",
     });
     setMakeDefault(address.is_default);
+    setSubmitted(false);
     setDialogOpen(true);
   };
   const save = async () => {
-    const validationError = validateCustomerAddress(form);
-    if (validationError) return toast.error(validationError);
+    setSubmitted(true);
+    const validationErrors = validateCustomerAddress(form);
+    if (errorCount(validationErrors) > 0) {
+      toast.error(validationSummary(validationErrors));
+      focusFirstInvalid(dialogRef.current);
+      return;
+    }
     setSaving(true);
     if (makeDefault) {
       const { error } = await supabase.from("addresses").update({ is_default: false }).eq("profile_id", userId).eq("is_default", true);
@@ -583,6 +593,7 @@ function AddressBook({ userId }: { userId: string }) {
       : await supabase.from("addresses").insert(row);
     setSaving(false);
     if (result.error) return toast.error("Could not save this address");
+    setSubmitted(false);
     setDialogOpen(false);
     await refresh();
     toast.success(editingId ? "Address updated" : "Address saved");
@@ -640,13 +651,13 @@ function AddressBook({ userId }: { userId: string }) {
         </div>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setSubmitted(false); }}>
+        <DialogContent ref={dialogRef} className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit address" : "Add new address"}</DialogTitle>
             <DialogDescription>Save an address you can select during checkout.</DialogDescription>
           </DialogHeader>
-          <AddressFields value={form} onChange={setForm} />
+          <AddressFields value={form} onChange={setForm} errors={submitted ? validateCustomerAddress(form) : {}} />
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <Checkbox checked={makeDefault} onCheckedChange={(checked) => setMakeDefault(checked === true)} />
             Make this my default address
