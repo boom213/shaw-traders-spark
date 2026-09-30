@@ -43,7 +43,7 @@ export const Route = createFileRoute("/account")({
     links: [{ rel: "canonical", href: canonical("/account") }],
   }),
   validateSearch: (s: Record<string, unknown>): { next?: string } => {
-    const next = s.next === "/trade" ? "/trade" : customerShoppingPath(s.next);
+    const next = customerShoppingPath(s.next);
     return next ? { next } : {};
   },
   component: AccountPage,
@@ -54,8 +54,7 @@ function AccountPage() {
   const { next } = Route.useSearch();
   const navigate = useNavigate();
   useEffect(() => {
-    if (user && next === "/trade") void navigate({ to: "/trade" });
-    else if (user) {
+    if (user) {
       const destination = customerShoppingPath(next);
       if (destination) window.location.assign(destination);
     }

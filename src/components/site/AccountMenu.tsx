@@ -134,26 +134,28 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
               <DropdownMenuItem asChild><Link to="/cart"><ShoppingCart className="size-4" /> My cart</Link></DropdownMenuItem>
               <DropdownMenuItem asChild><Link to="/offers"><BadgePercent className="size-4" /> Offers</Link></DropdownMenuItem>
             </>}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Trade & wholesale</DropdownMenuLabel>
-            {isTrade ? (
-              <>
+            {staff && !staff.signedIn && <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="pb-1 text-[11px] font-semibold uppercase text-muted-foreground">Trade & wholesale</DropdownMenuLabel>
+              {isTrade ? (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/trade"><BriefcaseBusiness className="size-4" /> Trade dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/trade/pad"><ClipboardList className="size-4" /> Bulk order pad</Link>
+                  </DropdownMenuItem>
+                </>
+              ) : pending ? (
                 <DropdownMenuItem asChild>
-                  <Link to="/trade"><BriefcaseBusiness className="size-4" /> Trade dashboard</Link>
+                  <Link to="/trade"><BriefcaseBusiness className="size-4" /> Trade application: pending</Link>
                 </DropdownMenuItem>
+              ) : (
                 <DropdownMenuItem asChild>
-                  <Link to="/trade/pad"><ClipboardList className="size-4" /> Bulk order pad</Link>
+                  <Link to="/trade"><BriefcaseBusiness className="size-4" /> Register for a Wholesale Account</Link>
                 </DropdownMenuItem>
-              </>
-            ) : pending ? (
-              <DropdownMenuItem asChild>
-                <Link to="/trade"><BriefcaseBusiness className="size-4" /> Trade application: pending</Link>
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem asChild>
-                <Link to="/trade"><BriefcaseBusiness className="size-4" /> Register for a Wholesale Account</Link>
-              </DropdownMenuItem>
-            )}
+              )}
+            </>}
             {staffRole && <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="flex items-center justify-between pb-1 text-[11px] font-semibold uppercase text-muted-foreground">

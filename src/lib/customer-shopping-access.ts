@@ -8,6 +8,7 @@ const CUSTOMER_SHOPPING_PREFIXES = [
   "/cart",
   "/checkout",
   "/offers",
+  "/trade",
 ] as const;
 
 /** Keep only same-site shopping paths through a sign-in round trip. */

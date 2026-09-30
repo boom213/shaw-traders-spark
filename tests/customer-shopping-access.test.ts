@@ -7,13 +7,15 @@ describe("customer shopping access", () => {
     expect(customerShoppingPath("/shop?q=motor&page=2")).toBe("/shop?q=motor&page=2");
     expect(customerShoppingPath("/product/front-fork")).toBe("/product/front-fork");
     expect(customerShoppingPath("/scooters/model-one")).toBe("/scooters/model-one");
+    expect(customerShoppingPath("/trade")).toBe("/trade");
+    expect(customerShoppingPath("/trade/pad?draft=1")).toBe("/trade/pad?draft=1");
     expect(customerShoppingPath("/manage/orders")).toBeNull();
     expect(customerShoppingPath("//evil.example/shop")).toBeNull();
     expect(customerShoppingPath("https://evil.example/shop")).toBeNull();
   });
 
   it("guards every shopping route with the customer layout", () => {
-    const routes = ["shop", "brand", "categories", "category.$slug", "product.$slug", "scooters.index", "scooters.$slug", "cart", "checkout", "offers"];
+    const routes = ["shop", "brand", "categories", "category.$slug", "product.$slug", "scooters.index", "scooters.$slug", "cart", "checkout", "offers", "trade", "trade.pad"];
     for (const route of routes) {
       const source = readFileSync(`src/routes/_authenticated/_customer/${route}.tsx`, "utf8");
       expect(source).toContain('createFileRoute("/_authenticated/_customer/');
@@ -80,5 +82,16 @@ describe("customer shopping access", () => {
     const access = readFileSync("src/lib/customer-shopping-access.ts", "utf8");
     expect(access).not.toContain('"/track"');
     expect(customerShoppingPath("/track")).toBeNull();
+  });
+
+  it("hides customer trade links from staff and leaves staff trade administration separate", () => {
+    const menu = readFileSync("src/components/site/AccountMenu.tsx", "utf8");
+    const tradeLabel = menu.indexOf(">Trade & wholesale</DropdownMenuLabel>");
+    const tradeGate = menu.lastIndexOf("{staff && !staff.signedIn && <>", tradeLabel);
+    expect(tradeGate).toBeGreaterThan(-1);
+    expect(tradeLabel).toBeGreaterThan(tradeGate);
+
+    const staffTrade = readFileSync("src/routes/manage.trade.tsx", "utf8");
+    expect(staffTrade).toContain('createFileRoute("/manage/trade")');
   });
 });
