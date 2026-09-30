@@ -10,16 +10,16 @@
 <!-- LOVABLE:END -->
 
 - All Products is Staff-read-only; Manager+ edits the catalogue.
-- Keep receipts auditable; vendor links are atomic and corrections never delete payments.
+- Keep receipts auditable; vendor links atomic; corrections never delete payments.
 - Customers own saved addresses; checkout snapshots without silent overwrites.
 - Expose only the restricted Maps browser key; keep server credentials private.
-- Public settings use a server allowlist; never expose operations fields.
+- Public settings are allowlisted; never expose operations fields.
 - Photos: 480px cards, 192px rows/PDFs, originals in details; retain PDF fallback/5s limit.
 - Lazy-load iframe-free homepage social links below shopping content.
-- All brochure downloads use one validated enquiry and fixed-recipient notice.
-- Showroom visibility comes from shared shop settings.
+- Brochure downloads require one validated enquiry and fixed-recipient notice.
+- Showroom visibility uses shared shop settings.
 - Timestamp cart clears; sync tabs and persist before navigation; debounce ordinary sync only.
-- Bookings use owner-scoped reads and public-token tracking.
+- Bookings use owner-scoped reads and public tokens.
 - Retail-only online ordering; keep guest carts; wholesale/staff use separate flows; release unpaid stock at 30m; reconcile Razorpay via signed callbacks and 90s polling; quarantine late payments.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.
 - Sales Manager gets server-enforced online-order-only access; online queries exclude `counter_sales.order_id` and Counter Sales stays separate.
@@ -28,6 +28,6 @@
 - Owner controls settings/reports/trade; audit grants; invite Sales Manager/Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
-- Wholesale reviews are manual and decisions atomic; never run AI document checks.
+- Wholesale reviews are manual and atomic; never run AI checks.
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
-- Razorpay review is Owner+ read-only, server-side, and never changes money or stock.
+- Razorpay review is Owner+ read-only. Counter Sales can exceed stock; floor at zero and restore only deducted stock.
