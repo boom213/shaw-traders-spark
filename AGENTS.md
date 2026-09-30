@@ -28,6 +28,6 @@
 - Owner controls settings/reports/trade; audit grants; invite Sales Manager/Staff/Manager.
 - Reset requests use `/forgot-password`; recovery sessions set new passwords.
 - Supplier purchases use a separate auditable, void-only ledger; never mix supplier payouts with customer QR collections.
-- Wholesale reviews are manual and atomic; never run AI checks.
+- Wholesale reviews are manual/atomic; no AI. Collect GSTIN, not PAN; retain old PAN/export.
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
 - Razorpay review is Owner+ read-only. Counter Sales can exceed stock; floor at zero and restore only deducted stock.

@@ -167,14 +167,13 @@ async function runTradeDecision(actor: import("@/lib/staff.server").StaffContext
 /** Staff open a trade account for a dealer who came in by phone or WhatsApp. */
 export const createTradeAccountManually = createServerFn({ method: "POST" })
   .inputValidator((data: {
-    businessName: string; contactPerson?: string; phone: string; gstin?: string; pan?: string; shopAddress: string;
+    businessName: string; contactPerson?: string; phone: string; gstin?: string; shopAddress: string;
     docsVerifiedInPerson?: boolean; submitAs?: "pending" | "approved"; tier?: string;
   }) => ({
     businessName: text(data?.businessName, 120),
     contactPerson: text(data?.contactPerson, 80),
     phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
     gstin: text(data?.gstin, 20).toUpperCase(),
-    pan: text(data?.pan, 12).toUpperCase(),
     shopAddress: text(data?.shopAddress, 400),
     docsVerifiedInPerson: data?.docsVerifiedInPerson === true,
     submitAs: data?.submitAs === "approved" ? ("approved" as const) : ("pending" as const),
@@ -187,7 +186,7 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
     if (data.businessName.length < 3) return { ok: false as const, error: "Please give the business name." };
     if (data.phone.length !== 10) return { ok: false as const, error: "Enter a 10-digit mobile number." };
     if (data.shopAddress.length < 8) return { ok: false as const, error: "Please give the shop address." };
-    const taxErr = taxIdError(data.gstin, data.pan);
+    const taxErr = taxIdError(data.gstin);
     if (taxErr) return { ok: false as const, error: taxErr };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -226,7 +225,6 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
       contact_person: data.contactPerson || data.businessName,
       phone: data.phone,
       gstin: data.gstin || null,
-      pan: data.pan || null,
       shop_address: data.shopAddress,
       status: "pending" as const,
       decision_note: note,

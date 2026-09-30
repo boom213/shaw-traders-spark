@@ -54,7 +54,7 @@ function TradePage() {
   const { data: account, isPending } = useQuery({ queryKey: ["trade-account"], queryFn: () => myTradeAccount() });
 
   const [form, setForm] = useState({
-    businessName: "", gstin: "", pan: "", shopAddress: "", contactPerson: "", phone: "", alternatePhone: "",
+    businessName: "", gstin: "", shopAddress: "", contactPerson: "", phone: "", alternatePhone: "",
     businessType: "", yearsInBusiness: "", staffCount: "", monthlyVolume: "",
   });
   const [brands, setBrands] = useState<string[]>([]);
@@ -73,7 +73,6 @@ function TradePage() {
     setForm({
       businessName: app.businessName,
       gstin: app.gstin ?? "",
-      pan: app.pan ?? "",
       shopAddress: app.shopAddress,
       contactPerson: app.contactPerson,
       phone: app.phone,
@@ -110,9 +109,9 @@ function TradePage() {
     toast.success("Document removed");
   };
 
-  const taxErr = taxIdError(form.gstin, form.pan, false);
+  const taxErr = taxIdError(form.gstin);
   const submit = async () => {
-    const err = taxIdError(form.gstin, form.pan);
+    const err = taxIdError(form.gstin);
     if (err) return toast.error(err);
     if (form.alternatePhone && !/^[6-9]\d{9}$/.test(form.alternatePhone)) return toast.error("Enter a valid 10-digit alternate mobile number.");
     setSaving(true);
@@ -184,7 +183,7 @@ function TradePage() {
           </div>
           <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
             <h2 className="font-display text-lg font-semibold">What you'll need</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Business name, contact person, GSTIN (if any), PAN and shop address, plus these papers (photo or PDF):</p>
+            <p className="mt-2 text-sm text-muted-foreground">Business name, contact person, GSTIN (if any) and shop address, plus these papers (photo or PDF):</p>
             <ul className="mt-3 space-y-2 text-sm">
               {DOC_FIELDS.map((d) => (
                 <li key={d.field} className="flex gap-2"><FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />{d.label}</li>
@@ -263,7 +262,6 @@ function TradePage() {
                 <Input placeholder="Business / shop name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
                 <Input placeholder="Person we should speak to" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
                 <Input placeholder="GSTIN (if you have one)" maxLength={15} aria-invalid={taxErr?.includes("GSTIN") || undefined} value={form.gstin} onChange={(e) => setForm({ ...form, gstin: e.target.value.toUpperCase() })} />
-                <Input placeholder="PAN (e.g. ABCDE1234F)" maxLength={10} aria-invalid={taxErr?.includes("PAN") || undefined} value={form.pan} onChange={(e) => setForm({ ...form, pan: e.target.value.toUpperCase() })} />
                 <Input placeholder="Mobile number" inputMode="numeric" maxLength={10} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
                 <Input placeholder="Alternate Number (optional)" aria-label="Alternate Number (optional)" inputMode="numeric" maxLength={10} value={form.alternatePhone} onChange={(e) => setForm({ ...form, alternatePhone: e.target.value.replace(/\D/g, "").slice(0, 10) })} />
               </div>
