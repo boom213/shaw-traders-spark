@@ -18,7 +18,7 @@
 - Lazy-load iframe-free homepage social links below shopping content.
 - Brochures download directly.
 - Showroom visibility uses shared shop settings.
-- Timestamp cart clears; sync tabs and persist before navigation; debounce ordinary sync only.
+- Timestamp cart clears; retry catalogue reads; prune IDs only after success; block unresolved checkout.
 - Bookings use owner-scoped reads and public tokens.
 - Storefront browsing is public; only signed-in retail customers order online, while wholesale and staff use separate flows. Release unpaid stock at 30m.
 - Refresh manager data centrally; page by 8; aggregate in SQL; warn on schema drift.

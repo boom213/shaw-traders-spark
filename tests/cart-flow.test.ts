@@ -102,6 +102,7 @@ describe("checkout cart-clear wiring", () => {
     expect(cart).toContain("lines.some((line) => line.product) && total > 0");
     expect(store).toContain("withoutUnavailable(l, productIds)");
     expect(catalogue).toContain("if (error) throw new Error(error.message)");
+    expect(catalogue).toContain("^[0-9a-f]{8}");
     expect(checkout).toContain("lines.length === 0 || subtotal <= 0");
   });
 
