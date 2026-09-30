@@ -170,7 +170,7 @@ function AuthPanel() {
 }
 
 function Dashboard() {
-  const { lists, user, addToCart } = useStore();
+  const { lists, user, addToCart, toggleWishlist, removeSaved } = useStore();
   const purchase = usePurchaseAccess();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -218,8 +218,8 @@ function Dashboard() {
   const ids = Array.from(new Set([...lists.wishlist, ...lists.saved, ...lists.recentlyViewed]));
   const { data: products } = useQuery(productsByIdsQuery(ids));
   const byId = new Map((products ?? []).map((p) => [p.id, p]));
-  const wishlist = lists.wishlist.map((id) => byId.get(id)).filter(Boolean);
-  const saved = lists.saved.map((id) => byId.get(id)).filter(Boolean);
+  const wishlist = lists.wishlist.map((productId) => ({ productId, product: byId.get(productId) ?? null }));
+  const saved = lists.saved.map((productId) => ({ productId, product: byId.get(productId) ?? null }));
   const viewed = lists.recentlyViewed.map((id) => byId.get(id)).filter(Boolean);
 
   const saveProfile = async () => {
@@ -436,7 +436,9 @@ function Dashboard() {
         <SectionHeading title="Your wishlist" subtitle="Parts you want to keep for later" />
         {wishlist.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {wishlist.map((p) => p && <ProductCard key={p.id} product={p} />)}
+            {wishlist.map(({ productId, product }) => product ? <ProductCard key={productId} product={product} /> : (
+              <UnavailableSavedItem key={productId} onRemove={() => toggleWishlist(productId)} />
+            ))}
           </div>
         ) : (
           <p className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground">
@@ -449,7 +451,9 @@ function Dashboard() {
         <section className="space-y-3">
           <SectionHeading title="Saved from your cart" />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {saved.map((p) => p && <ProductCard key={p.id} product={p} />)}
+            {saved.map(({ productId, product }) => product ? <ProductCard key={productId} product={product} /> : (
+              <UnavailableSavedItem key={productId} onRemove={() => removeSaved(productId)} />
+            ))}
           </div>
         </section>
       )}
@@ -462,6 +466,15 @@ function Dashboard() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function UnavailableSavedItem({ onRemove }: { onRemove: () => void }) {
+  return (
+    <div className="flex min-h-36 flex-col justify-between rounded-lg border border-border bg-muted/40 p-4">
+      <div><p className="text-sm font-semibold text-muted-foreground">This part is no longer available</p><p className="mt-1 text-xs text-muted-foreground">You can remove it from this list.</p></div>
+      <Button type="button" size="sm" variant="outline" className="mt-4 w-fit" onClick={onRemove}><Trash2 className="size-3.5" /> Remove</Button>
     </div>
   );
 }

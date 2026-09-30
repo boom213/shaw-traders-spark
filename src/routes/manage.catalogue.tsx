@@ -334,6 +334,8 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
   const [status, setStatus] = useState<ProductStatus>(isProductStatus(product.status) ? product.status : "visible");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reviewCount, setReviewCount] = useState<number | null>(null);
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
   const low = product.stock <= (product.reorderThreshold ?? 3);
@@ -359,13 +361,40 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
     void queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] });
   };
 
-  const remove = async () => {
-    setDeleting(true);
-    const result = await deleteCatalogueProduct({ data: { id: product.id } });
-    setDeleting(false);
-    if (!result.ok) return toast.error(result.error);
+  const refreshAfterDelete = async () => {
     toast.success(`${product.name} deleted`);
+    setDeleteOpen(false);
+    setReviewCount(null);
     onDeleted();
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
+      queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] }),
+      queryClient.invalidateQueries({ queryKey: ["home"] }),
+      queryClient.invalidateQueries({ queryKey: ["products"] }),
+    ]);
+  };
+
+  const remove = async (confirmDeleteReviews = false) => {
+    setDeleting(true);
+    const result = await deleteCatalogueProduct({ data: { id: product.id, confirmDeleteReviews } });
+    setDeleting(false);
+    if (!result.ok && "reviewCount" in result && result.reviewCount) {
+      setReviewCount(result.reviewCount);
+      return;
+    }
+    if (!result.ok) return toast.error(result.error);
+    await refreshAfterDelete();
+  };
+
+  const hideInstead = async () => {
+    setSaving(true);
+    const result = await quickSaveProduct({ data: { id: product.id, status: "hidden" } });
+    setSaving(false);
+    if (!result.ok) return toast.error(result.error ?? "Could not hide this product");
+    setStatus("hidden");
+    setDeleteOpen(false);
+    setReviewCount(null);
+    toast.success(`${product.name} is now hidden`);
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["catalogue-admin"] }),
       queryClient.invalidateQueries({ queryKey: ["manage-dashboard"] }),
@@ -417,7 +446,7 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
           {saving ? <SparkRing /> : null}{saving ? "Saving…" : "Save"}
         </Button>
         {canDelete && (
-          <AlertDialog>
+          <AlertDialog open={deleteOpen} onOpenChange={(open) => { setDeleteOpen(open); if (!open) setReviewCount(null); }}>
             <AlertDialogTrigger asChild>
               <Button className="w-full sm:w-auto" variant="destructive" disabled={saving || deleting}>
                 <Trash2 className="size-4" /> {deleting ? "Deleting…" : "Delete"}
@@ -425,22 +454,24 @@ function ProductCard({ product, canDelete, onDeleted }: { product: CatalogueRow;
             </AlertDialogTrigger>
             <AlertDialogContent className="w-[calc(100%-2rem)] max-w-md rounded-lg">
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete {product.name}?</AlertDialogTitle>
+                <AlertDialogTitle>{reviewCount ? `Delete ${reviewCount} customer review${reviewCount === 1 ? "" : "s"}?` : `Delete ${product.name}?`}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This permanently deletes the product and its related photos. This action cannot be undone.
+                  {reviewCount
+                    ? `This will permanently delete ${reviewCount} customer review${reviewCount === 1 ? "" : "s"} along with the product. This cannot be undone. Are you sure you don't want to use Hidden instead?`
+                    : "This permanently deletes the product and its related photos. This action cannot be undone."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-2 sm:gap-0">
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                {reviewCount ? <Button type="button" variant="outline" disabled={saving || deleting} onClick={() => void hideInstead()}>Use Hidden instead</Button> : <AlertDialogCancel>Cancel</AlertDialogCancel>}
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={(event) => {
                     event.preventDefault();
-                    void remove();
+                    void remove(Boolean(reviewCount));
                   }}
                   disabled={deleting}
                 >
-                  {deleting ? "Deleting…" : "Delete permanently"}
+                  {deleting ? "Deleting…" : reviewCount ? "Delete anyway" : "Delete permanently"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

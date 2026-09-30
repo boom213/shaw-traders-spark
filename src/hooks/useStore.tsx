@@ -58,7 +58,9 @@ type Ctx = {
   removeFromCart: (productId: string) => void;
   saveForLater: (productId: string) => void;
   moveToCart: (productId: string) => void;
+  removeSaved: (productId: string) => void;
   toggleWishlist: (productId: string) => void;
+  removeRecentlyViewed: (productId: string) => void;
   markViewed: (productId: string) => void;
   clearCart: () => Promise<boolean>;
 };
@@ -272,6 +274,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           saved: l.saved.filter((s) => s !== productId),
           cart: l.cart.some((c) => c.productId === productId) ? l.cart : [...l.cart, { productId, qty: 1 }],
         })),
+      removeSaved: (productId) => update((l) => ({ ...l, saved: l.saved.filter((id) => id !== productId) })),
       toggleWishlist: (productId) =>
         user
           ? update((l) => ({
@@ -286,6 +289,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ...l,
           recentlyViewed: [productId, ...l.recentlyViewed.filter((r) => r !== productId)].slice(0, 12),
         })),
+      removeRecentlyViewed: (productId) => update((l) => ({ ...l, recentlyViewed: l.recentlyViewed.filter((id) => id !== productId) })),
       clearCart: async () => {
         revision.current += 1;
         const cleared = withoutCart(listsRef.current);

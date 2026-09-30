@@ -1,4 +1,6 @@
 # Current task
+- [x] Add CSV row references, duplicate-SKU blocking, and paginated import history.
+- [x] Protect reviewed products from accidental deletion and show unavailable saved products to customers.
 - [x] Allow Counter Sales above stock with warnings, zero-floor inventory, and accurate cancellation restoration.
 - [x] Allow manual quantity entry for Counter Sales review items while enforcing available stock.
 - [x] Keep Counter Sales unpaid-sale creation available while customer Cash on Delivery is paused.
