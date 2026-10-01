@@ -1,5 +1,5 @@
 # Current task
-- [ ] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.
+- [x] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.
 - [x] Keep the customer account content aligned to the site width without horizontal overflow.
 - [x] Add secure Proforma Invoice PDFs with optional GST for priced wholesale quotes.
 - [x] Recover carts from temporary catalogue lookup failures without deleting saved items or enabling unverified checkout.
