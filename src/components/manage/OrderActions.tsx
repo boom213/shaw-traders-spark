@@ -6,9 +6,11 @@ import { Check, MapPin, MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SparkRing } from "@/components/site/SparkLoaders";
 import { customerWhatsApp, deliveryMapUrl, downloadPdf, printPackingSlip } from "@/components/manage/order-tools";
 import { ALL_STATUSES, formatINR, ORDER_FLOW, statusLabel, type OrderStatus } from "@/lib/catalog";
+import { COURIERS, courierByName, trackingUrlFor } from "@/lib/couriers";
 import { decideOrderRequest, recordRefund, resolvePaymentReview, setOrderStatus, setTracking, staffInvoice, staffPickingInvoice, type ManageOrder } from "@/lib/manage-data.functions";
 
 function nextStatus(current: OrderStatus): OrderStatus | null {
@@ -78,11 +80,40 @@ function Requests({ order, onDone }: { order: ManageOrder; onDone: () => void })
 
 function TrackingForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
   const save = useServerFn(setTracking);
-  const [courier, setCourier] = useState(order.courierName ?? "");
+  const existingCourier = courierByName(order.courierName ?? "");
+  const [selectedCourierId, setSelectedCourierId] = useState(existingCourier?.id ?? (order.courierName ? "other" : ""));
+  const [customCourier, setCustomCourier] = useState(existingCourier ? "" : order.courierName ?? "");
   const [number, setNumber] = useState(order.trackingNumber ?? "");
   const [url, setUrl] = useState(order.trackingUrl ?? "");
+  const [urlEdited, setUrlEdited] = useState(Boolean(order.trackingUrl));
   const [busy, setBusy] = useState(false);
-  return <section className="grid gap-2 rounded-lg border border-border bg-surface p-4"><p className="font-semibold">Courier &amp; tracking</p><Input placeholder="Courier name (e.g. Delhivery)" value={courier} onChange={(event) => setCourier(event.target.value)} /><Input placeholder="Tracking number" value={number} onChange={(event) => setNumber(event.target.value)} /><Input placeholder="Tracking link (optional)" value={url} onChange={(event) => setUrl(event.target.value)} /><Button size="sm" className="w-fit" disabled={busy} onClick={async () => { setBusy(true); const result = await save({ data: { id: order.id, courier, trackingNumber: number, trackingUrl: url, markShipped: true } }); setBusy(false); if (!result.ok) return toast.error(result.error ?? "Could not save"); toast.success("Tracking saved, order marked shipped and the customer told"); onDone(); }}>{busy && <SparkRing />}{busy ? "Saving…" : "Save & mark shipped"}</Button></section>;
+  const selectedCourier = COURIERS.find((courier) => courier.id === selectedCourierId);
+  const courierName = selectedCourierId === "other" ? customCourier : selectedCourier?.name ?? "";
+  const generatedUrl = trackingUrlFor(courierName, number);
+
+  const updateAutomaticUrl = (nextCourierName: string, nextNumber: string) => {
+    if (!urlEdited) setUrl(trackingUrlFor(nextCourierName, nextNumber) ?? "");
+  };
+
+  return <section className="grid min-w-0 gap-2 rounded-lg border border-border bg-surface p-4">
+    <p className="font-semibold">Courier &amp; tracking</p>
+    <Select value={selectedCourierId} onValueChange={(value) => {
+      setSelectedCourierId(value);
+      const nextCourier = COURIERS.find((courier) => courier.id === value)?.name ?? customCourier;
+      updateAutomaticUrl(nextCourier, number);
+    }}>
+      <SelectTrigger aria-label="Courier"><SelectValue placeholder="Choose courier" /></SelectTrigger>
+      <SelectContent>
+        {COURIERS.map((courier) => <SelectItem key={courier.id} value={courier.id}>{courier.name}</SelectItem>)}
+        <SelectItem value="other">Other</SelectItem>
+      </SelectContent>
+    </Select>
+    {selectedCourierId === "other" && <Input placeholder="Courier name" value={customCourier} onChange={(event) => { setCustomCourier(event.target.value); updateAutomaticUrl(event.target.value, number); }} />}
+    <Input placeholder="Tracking number" value={number} onChange={(event) => { setNumber(event.target.value); updateAutomaticUrl(courierName, event.target.value); }} />
+    {generatedUrl && <p className="min-w-0 break-all text-xs text-muted-foreground">Customer tracking link: {generatedUrl}</p>}
+    <Input placeholder="Tracking link (optional)" value={url} onChange={(event) => { setUrl(event.target.value); setUrlEdited(true); }} />
+    <Button size="sm" className="w-fit" disabled={busy} onClick={async () => { setBusy(true); const result = await save({ data: { id: order.id, courier: courierName, trackingNumber: number, trackingUrl: url, markShipped: true } }); setBusy(false); if (!result.ok) return toast.error(result.error ?? "Could not save"); toast.success("Tracking saved, order marked shipped and the customer told"); onDone(); }}>{busy && <SparkRing />}{busy ? "Saving…" : "Save & mark shipped"}</Button>
+  </section>;
 }
 
 function RefundForm({ order, onDone }: { order: ManageOrder; onDone: () => void }) {
