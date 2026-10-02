@@ -18,7 +18,7 @@ export function RouteError({
   reset,
   boundary = "default_error_component",
 }: {
-  error: Error;
+  error: unknown;
   reset?: () => void;
   boundary?: string;
 }) {

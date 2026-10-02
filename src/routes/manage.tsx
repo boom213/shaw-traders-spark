@@ -30,7 +30,7 @@ export const Route = createFileRoute("/manage")({
   errorComponent: ({ error, reset }) => (
     <div className="container-page py-16 text-center">
       <h1 className="font-display text-xl font-bold">Manager panel couldn't load</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : "Something went wrong."}</p>
       <Button className="mt-4" onClick={() => { reset(); window.location.reload(); }}>Try again</Button>
     </div>
   ),

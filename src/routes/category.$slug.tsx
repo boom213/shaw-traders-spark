@@ -44,7 +44,7 @@ export const Route = createFileRoute("/category/$slug")({
 
   component: CategoryPage,
   errorComponent: ({ error }) => (
-    <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error.message}</div>
+    <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">{error instanceof Error ? error.message : "This category could not be loaded."}</div>
   ),
   notFoundComponent: () => (
     <div className="container-page py-16 text-center">

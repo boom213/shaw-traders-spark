@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { OrderStatus, Product } from "@/lib/catalog";
-import { trackingUrlFor } from "@/lib/couriers";
+import { resolvedTrackingUrl } from "@/lib/couriers";
 
 type Row = Record<string, any>;
 
@@ -636,7 +636,7 @@ export const setTracking = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await onlineOrderAdmin(data.id);
     if (!data.courier || !data.trackingNumber) return { ok: false as const, error: "Add both the courier and the tracking number." };
-    const trackingUrl = data.trackingUrl || trackingUrlFor(data.courier, data.trackingNumber);
+    const trackingUrl = resolvedTrackingUrl(data.courier, data.trackingNumber, data.trackingUrl);
 
     const patch: Record<string, unknown> = {
       courier_name: data.courier,

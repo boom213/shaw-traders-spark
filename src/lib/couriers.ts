@@ -38,3 +38,8 @@ export function trackingUrlFor(courierName: string, awb: string): string | null 
   if (!courier?.trackingUrlTemplate || !trackingNumber) return null;
   return courier.trackingUrlTemplate.replace("{awb}", encodeURIComponent(trackingNumber));
 }
+
+export function resolvedTrackingUrl(courierName: string, awb: string, suppliedUrl?: string): string | null {
+  const manualUrl = suppliedUrl?.trim();
+  return manualUrl || trackingUrlFor(courierName, awb);
+}

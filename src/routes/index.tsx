@@ -89,7 +89,7 @@ export const Route = createFileRoute("/")({
 
   errorComponent: ({ error }) => (
     <div role="alert" className="container-page py-20 text-center text-sm text-muted-foreground">
-      {error.message}
+      {error instanceof Error ? error.message : "The home page could not be loaded."}
     </div>
   ),
   notFoundComponent: () => <div className="container-page py-20 text-center">Page not found.</div>,
