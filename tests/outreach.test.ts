@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseOutreachCsv } from "../src/lib/outreach.server";
 import { buildOutreachWhatsAppUrl } from "../src/lib/outreach.functions";
+import { buildOutreachTemplateCsv } from "../src/lib/outreach-template";
 import { can, capabilityForManagePath } from "../src/lib/staff-permissions";
 
 describe("staff outreach", () => {
@@ -26,6 +27,23 @@ describe("staff outreach", () => {
   it("builds an encoded WhatsApp handoff with a link on its own line", () => {
     const url = buildOutreachWhatsAppUrl("919876543210", "Hello A", "https://shawtradersev.com/product/a");
     expect(url).toBe(`https://wa.me/919876543210?text=${encodeURIComponent("Hello A\n\nhttps://shawtradersev.com/product/a")}`);
+  });
+
+  it("round-trips the UTF-8 CSV template with three valid contacts", () => {
+    const csv = buildOutreachTemplateCsv();
+    const result = parseOutreachCsv(csv);
+    expect(csv.startsWith("\uFEFFname,phone,message,link\r\n")).toBe(true);
+    expect(csv).toContain('"Hello Meera, brake pads and lighting parts are back in stock."');
+    expect(result.error).toBeUndefined();
+    expect(result.contacts).toHaveLength(3);
+    expect(result.rejected).toEqual([]);
+    expect(result.contacts[1]?.link_url).toBe("https://shawtradersev.com/shop");
+  });
+
+  it("preserves non-ASCII names and reports a missing required column", () => {
+    const unicode = parseOutreachCsv("\uFEFFname,phone,message,link\r\nআশা,9800000004,নতুন যন্ত্রাংশ এসেছে,");
+    expect(unicode.contacts[0]?.name).toBe("আশা");
+    expect(parseOutreachCsv("name,message\nAsha,Hello").error).toBe("The file needs phone and message columns.");
   });
 
   it("allows Staff and above but not Online Sales", () => {
