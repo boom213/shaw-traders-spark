@@ -84,7 +84,7 @@ function CounterSalesPage() {
   const creditWarning = customer && customer.creditLimit > 0 && warningBalance > customer.creditLimit;
   useEffect(() => {
     if (preserveImportedCart.current) preserveImportedCart.current = false;
-    else setCart([]);
+    else { setCart([]); setSkippedQuoteLines([]); }
     setSearchTerm(""); setProductQuery("");
   }, [customerId]);
   useEffect(() => {
@@ -119,7 +119,7 @@ function CounterSalesPage() {
   ]);
   const createMutation = useMutation({
     mutationFn: () => createCounterSale({ data: { customerId, invoiceKind, overrideReason, note, items: cart.map((item) => ({ productId: item.id, qty: item.qty, unitPrice: item.unitPrice })) } }),
-    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success(`${result.humanId} created for ${money(result.total)}`); setCart([]); setOverrideReason(""); setNote(""); await refresh(); },
+    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success(`${result.humanId} created for ${money(result.total)}`); setCart([]); setSkippedQuoteLines([]); setOverrideReason(""); setNote(""); await refresh(); },
     onError: (error) => toast.error(error.message),
   });
   const paymentMutation = useMutation({
