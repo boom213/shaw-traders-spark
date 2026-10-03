@@ -1,0 +1,72 @@
+-- public.products uses a COLUMN ALLOWLIST. When a column is added, grant it explicitly here. Never run a table-wide GRANT SELECT ON public.products; it silently re-exposes rack_location and every future private column.
+REVOKE SELECT ON public.products FROM anon;
+REVOKE SELECT ON public.products FROM authenticated;
+
+GRANT SELECT (
+  ah,
+  box_contents,
+  brand,
+  category_id,
+  created_at,
+  description,
+  dimensions,
+  hsn_code,
+  id,
+  is_active,
+  model,
+  mrp,
+  name,
+  ordering_mode,
+  price,
+  product_kind,
+  reorder_threshold,
+  shipping_info,
+  sku,
+  slug,
+  specs,
+  status,
+  stock,
+  subcategory,
+  updated_at,
+  voltage,
+  warranty,
+  wattage,
+  weight
+) ON public.products TO anon;
+
+GRANT SELECT (
+  ah,
+  box_contents,
+  brand,
+  category_id,
+  created_at,
+  description,
+  dimensions,
+  hsn_code,
+  id,
+  is_active,
+  min_order_qty,
+  model,
+  mrp,
+  name,
+  order_multiple,
+  ordering_mode,
+  price,
+  product_kind,
+  reorder_threshold,
+  shipping_info,
+  sku,
+  slug,
+  specs,
+  status,
+  stock,
+  subcategory,
+  trade_only,
+  updated_at,
+  voltage,
+  warranty,
+  wattage,
+  weight
+) ON public.products TO authenticated;
+
+NOTIFY pgrst, 'reload schema';

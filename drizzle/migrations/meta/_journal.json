@@ -477,6 +477,13 @@
       "when": 1790793796880,
       "tag": "0067_add_quote_gst_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1791010935426,
+      "tag": "0068_reassert_product_column_grants",
+      "breakpoints": true
     }
   ]
 }
