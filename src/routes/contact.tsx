@@ -32,7 +32,10 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
-const MAPS_QUERY = encodeURIComponent(BUSINESS.address);
+// const MAPS_QUERY = encodeURIComponent(BUSINESS.address);
+
+const MAPS_PLACE_URL = "https://maps.app.goo.gl/oM8Y9hAGqytZiHj99";
+const MAPS_COORDINATES = "23.3975466,87.5584964";
 
 function ContactPage() {
   const { data: settings } = useQuery(shopSettingsQuery());
@@ -77,7 +80,13 @@ function ContactPage() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Button asChild><a href={`tel:${BUSINESS.phone}`}>Call now</a></Button>
               <Button variant="outline" asChild>
-                <a href={whatsappLink(`Hello ${BUSINESS.name}, I have a question about EV parts.`)} target="_blank" rel="noreferrer">WhatsApp</a>
+                {/* <a href={whatsappLink(`Hello ${BUSINESS.name}, I have a question about EV parts.`)} target="_blank" rel="noreferrer">WhatsApp</a> */}
+                <a
+  href={MAPS_PLACE_URL}
+  target="_blank"
+  rel="noreferrer"
+>
+
               </Button>
               <Button variant="ghost" asChild>
                 <a href={`https://www.google.com/maps/dir/?api=1&destination=${MAPS_QUERY}`} target="_blank" rel="noreferrer">
@@ -136,7 +145,9 @@ function ContactPage() {
           <div className="mt-4 overflow-hidden rounded-2xl border border-border shadow-[var(--shadow-card)]">
             <iframe
               title="Shaw Traders EV location map"
-              src={`https://www.google.com/maps?q=${MAPS_QUERY}&output=embed`}
+              {/* src={`https://www.google.com/maps?q=${MAPS_QUERY}&output=embed`} */}
+            src={`https://www.google.com/maps?q=${MAPS_COORDINATES}&z=17&output=embed`}
+
               className="h-72 w-full border-0"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
