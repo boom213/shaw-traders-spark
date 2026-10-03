@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Banknote, Download, Minus, MoreVertical, PackagePlus, Plus, ReceiptText, RotateCcw, Search, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -20,8 +21,15 @@ import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { exportCounterSalesCsv } from "@/lib/manage-exports.functions";
 import { can } from "@/lib/staff-permissions";
 import { counterSaleQuantity, counterSaleShortage } from "@/lib/counter-sale-stock";
+import { counterSaleDraftFromQuote, type CounterSaleQuoteDraft } from "@/lib/quote-requests.functions";
+
+type CounterSalesSearch = { quote?: string };
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/manage/counter-sales")({
+  validateSearch: (search: Record<string, unknown>): CounterSalesSearch => ({
+    quote: typeof search.quote === "string" && UUID_PATTERN.test(search.quote) ? search.quote : undefined,
+  }),
   head: () => ({ meta: [{ title: "Counter Sales — Shaw Traders EV Manager" }, { name: "description", content: "Create and manage in-house wholesale counter sales." }, { property: "og:title", content: "Counter Sales — Shaw Traders EV Manager" }, { property: "og:description", content: "Create and manage in-house wholesale counter sales." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   component: CounterSalesPage,
 });
@@ -32,6 +40,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function CounterSalesPage() {
   const { staff } = Route.useRouteContext();
+  const { quote } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const loadQuoteDraft = useServerFn(counterSaleDraftFromQuote);
   const queryClient = useQueryClient();
   const [customerId, setCustomerId] = useState("");
   const [customerQuery, setCustomerQuery] = useState("");
@@ -39,6 +50,10 @@ function CounterSalesPage() {
   const [productQuery, setProductQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [skippedQuoteLines, setSkippedQuoteLines] = useState<CounterSaleQuoteDraft['skipped']>([]);
+  const [pendingQuoteDraft, setPendingQuoteDraft] = useState<CounterSaleQuoteDraft | null>(null);
+  const handledQuote = useRef<string | null>(null);
+  const preserveImportedCart = useRef(false);
   const [invoiceKind, setInvoiceKind] = useState<"gst" | "non_gst">("gst");
   const [overrideReason, setOverrideReason] = useState("");
   const [note, setNote] = useState("");
@@ -67,7 +82,30 @@ function CounterSalesPage() {
   const firstStockShortage = stockShortages[0];
   const warningBalance = (customer?.balance ?? 0) + total;
   const creditWarning = customer && customer.creditLimit > 0 && warningBalance > customer.creditLimit;
-  useEffect(() => { setCart([]); setSearchTerm(""); setProductQuery(""); }, [customerId]);
+  useEffect(() => {
+    if (preserveImportedCart.current) preserveImportedCart.current = false;
+    else { setCart([]); setSkippedQuoteLines([]); }
+    setSearchTerm(""); setProductQuery("");
+  }, [customerId]);
+  useEffect(() => {
+    if (!quote || handledQuote.current === quote) return;
+    handledQuote.current = quote;
+    void loadQuoteDraft({ data: { quoteId: quote } }).then((result) => {
+      if (!result.ok) {
+        toast.error(result.error);
+        void navigate({ search: {}, replace: true });
+        return;
+      }
+      if (cart.length > 0) {
+        setPendingQuoteDraft(result.draft);
+        return;
+      }
+      applyQuoteDraft(result.draft);
+    }).catch((error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "The quote could not be copied.");
+      void navigate({ search: {}, replace: true });
+    });
+  }, [quote]);
   useEffect(() => {
     if (selectedSale) setSelectedSale(sales.find((sale) => sale.orderId === selectedSale.orderId) ?? null);
     if (paymentSale) setPaymentSale(sales.find((sale) => sale.orderId === paymentSale.orderId) ?? null);
@@ -81,7 +119,7 @@ function CounterSalesPage() {
   ]);
   const createMutation = useMutation({
     mutationFn: () => createCounterSale({ data: { customerId, invoiceKind, overrideReason, note, items: cart.map((item) => ({ productId: item.id, qty: item.qty, unitPrice: item.unitPrice })) } }),
-    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success(`${result.humanId} created for ${money(result.total)}`); setCart([]); setOverrideReason(""); setNote(""); await refresh(); },
+    onSuccess: async (result) => { if (!result.ok) return toast.error(result.error); toast.success(`${result.humanId} created for ${money(result.total)}`); setCart([]); setSkippedQuoteLines([]); setOverrideReason(""); setNote(""); await refresh(); },
     onError: (error) => toast.error(error.message),
   });
   const paymentMutation = useMutation({
@@ -104,6 +142,17 @@ function CounterSalesPage() {
     const price = product.wholesalePrice ?? product.retailPrice;
     if (price == null) return toast.error("This product has no wholesale or retail price.");
     setCart((current) => current.some((item) => item.id === product.id) ? current.map((item) => item.id === product.id ? { ...item, qty: item.qty + 1 } : item) : [...current, { ...product, qty: 1, unitPrice: price }]);
+  }
+
+  function applyQuoteDraft(draft: CounterSaleQuoteDraft) {
+    preserveImportedCart.current = draft.customerId !== customerId;
+    setCustomerId(draft.customerId);
+    setCart(draft.lines);
+    setSkippedQuoteLines(draft.skipped);
+    setOverrideReason(`Rates from quote ${draft.humanId}`);
+    setPendingQuoteDraft(null);
+    void navigate({ search: {}, replace: true });
+    toast.success(`${draft.humanId} copied for review`);
   }
 
   function submitUnpaidSale() {
@@ -152,6 +201,7 @@ function CounterSalesPage() {
           </Card>
 
           <Card title="3. Review items" icon={<ReceiptText className="size-4" />}>
+            {skippedQuoteLines.length > 0 && <div className="mb-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3" role="alert"><p className="font-semibold text-destructive">Some quote lines were not copied</p><ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{skippedQuoteLines.map((line, index) => <li key={`${line.name}-${index}`}><strong>{line.name}:</strong> {line.reason}</li>)}</ul></div>}
             {cart.length === 0 ? <p className="text-sm text-muted-foreground">No products added yet.</p> : <div className="max-h-[32rem] divide-y overflow-y-auto rounded-lg border">{cart.map((item) => { const shortage = counterSaleShortage(item.qty, item.stock); return <div key={item.id} className="grid gap-3 p-3 sm:grid-cols-[minmax(10rem,1fr)_7rem_9rem_7rem] sm:items-center"><div><p className="text-sm font-semibold">{item.name}</p><p className="text-xs text-muted-foreground">Default wholesale: {money(item.wholesalePrice ?? item.retailPrice ?? 0)}</p>{shortage > 0 && <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700"><AlertTriangle className="size-3.5 shrink-0" /> Only {item.stock} in stock · shortage {shortage}</p>}</div><div className="flex items-center rounded-md border"><Button type="button" variant="ghost" size="icon" className="size-8 rounded-none" aria-label={`Reduce ${item.name}`} onClick={() => setCart((current) => current.flatMap((line) => line.id !== item.id ? [line] : line.qty <= 1 ? [] : [{ ...line, qty: line.qty - 1 }]))}><Minus className="size-3" /></Button><Input aria-label={`${item.name} quantity`} type="number" inputMode="numeric" min={1} step={1} value={item.qty} className="h-8 min-w-0 flex-1 rounded-none border-y-0 px-1 text-center shadow-none focus-visible:ring-0" onChange={(event) => { const quantity = event.currentTarget.valueAsNumber; if (!Number.isFinite(quantity)) return; setCart((current) => current.map((line) => line.id === item.id ? { ...line, qty: counterSaleQuantity(quantity) } : line)); }} onBlur={(event) => { const quantity = counterSaleQuantity(event.currentTarget.valueAsNumber); setCart((current) => current.map((line) => line.id === item.id ? { ...line, qty: quantity } : line)); }} /><Button type="button" variant="ghost" size="icon" className="size-8 rounded-none" aria-label={`Increase ${item.name}`} onClick={() => setCart((current) => current.map((line) => line.id === item.id ? { ...line, qty: line.qty + 1 } : line))}><Plus className="size-3" /></Button></div><label className="text-xs text-muted-foreground">Unit price<Input aria-label={`${item.name} unit price`} type="number" min="0.01" step="0.01" value={item.unitPrice} onChange={(event) => setCart((current) => current.map((line) => line.id === item.id ? { ...line, unitPrice: Number(event.target.value) } : line))} /></label><p className="text-right text-sm font-bold">{money(item.qty * item.unitPrice)}</p></div>; })}</div>}
             {hasOverride && <div className="mt-3"><label className="text-sm font-medium">Price change reason <span className="text-destructive">*</span></label><Input className="mt-1" value={overrideReason} onChange={(event) => setOverrideReason(event.target.value)} placeholder="Required for audit trail" /></div>}
           </Card>
@@ -184,6 +234,8 @@ function CounterSalesPage() {
       <AlertDialog open={Boolean(correction)} onOpenChange={(open) => { if (!open) { setCorrection(null); setCorrectionReason(""); } }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{correction?.action === "cleared" ? "Mark cheque cleared?" : correction?.action === "bounced" ? "Mark cheque bounced?" : "Void this payment?"}</AlertDialogTitle><AlertDialogDescription>{correction?.action === "cleared" ? "This moves the cheque into received funds." : "This restores the invoice balance and keeps the original receipt in its audit history."}</AlertDialogDescription></AlertDialogHeader>{correction?.action !== "cleared" && <label className="text-sm font-medium">Reason<Input className="mt-1" value={correctionReason} onChange={(event) => setCorrectionReason(event.target.value)} placeholder="Required for audit trail" /></label>}<AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction disabled={correctionMutation.isPending || (correction?.action !== "cleared" && correctionReason.trim().length < 3)} onClick={(event) => { event.preventDefault(); correctionMutation.mutate(); }}>{correctionMutation.isPending ? <SparkRing /> : null}Confirm</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
 
       <AlertDialog open={Boolean(cancelSale)} onOpenChange={(open) => !open && setCancelSale(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Cancel {cancelSale?.humanId}?</AlertDialogTitle><AlertDialogDescription>This restores all stock and reverses the receivable. Sales with a payment cannot be cancelled.</AlertDialogDescription></AlertDialogHeader><label className="text-sm font-medium">Cancellation reason<Input className="mt-1" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Required for audit trail" /></label><AlertDialogFooter><AlertDialogCancel>Keep sale</AlertDialogCancel><AlertDialogAction disabled={cancelMutation.isPending || cancelReason.length < 3} onClick={(event) => { event.preventDefault(); cancelMutation.mutate(); }}>{cancelMutation.isPending ? <SparkRing /> : null}{cancelMutation.isPending ? "Cancelling…" : "Cancel sale and restore stock"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+
+      <AlertDialog open={Boolean(pendingQuoteDraft)} onOpenChange={(open) => { if (!open) { setPendingQuoteDraft(null); void navigate({ search: {}, replace: true }); } }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Replace the current counter sale draft?</AlertDialogTitle><AlertDialogDescription>Your current customer and cart items will be replaced with {pendingQuoteDraft?.humanId}. This cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep current draft</AlertDialogCancel><AlertDialogAction onClick={(event) => { event.preventDefault(); if (pendingQuoteDraft) applyQuoteDraft(pendingQuoteDraft); }}>Replace with quote</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </section>
   );
 }

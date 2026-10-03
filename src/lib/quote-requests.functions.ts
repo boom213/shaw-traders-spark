@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { mapCounterProduct, type CounterProduct } from "@/lib/counter-sales.functions";
 
 export type QuoteRequestStatus = "submitted" | "priced" | "accepted" | "rejected" | "expired";
 
@@ -31,6 +32,13 @@ export type StaffQuoteRequest = CustomerQuoteRequest & {
   customerPhone: string;
   staffNote: string | null;
   pricedBy: string | null;
+};
+
+export type CounterSaleQuoteDraft = {
+  customerId: string;
+  humanId: string;
+  lines: Array<CounterProduct & { qty: number; unitPrice: number }>;
+  skipped: Array<{ name: string; reason: string }>;
 };
 
 export function quoteGrandTotal(items: Array<{ qty: number; unitPrice: number | null }>, gstRate: number | null, gstIncluded: boolean) {
@@ -208,6 +216,58 @@ export const listQuoteRequests = createServerFn({ method: "POST" })
         };
       }),
     };
+  });
+
+/** Rebuild an accepted quote as a reviewable Counter Sales draft. */
+export const counterSaleDraftFromQuote = createServerFn({ method: "POST" })
+  .inputValidator((input: { quoteId: string }) => ({ quoteId: clean(input?.quoteId, 40) }))
+  .handler(async ({ data }): Promise<{ ok: true; draft: CounterSaleQuoteDraft } | { ok: false; error: string }> => {
+    if (!uuid(data.quoteId)) return { ok: false, error: "Quote request not found." };
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "counter-sales" });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: quote, error: quoteError } = await supabaseAdmin
+      .from("quote_requests")
+      .select("id, human_id, profile_id, status")
+      .eq("id", data.quoteId)
+      .maybeSingle();
+    if (quoteError || !quote) return { ok: false, error: "Quote request not found." };
+    if (quote.status !== "accepted") return { ok: false, error: "Only an accepted quote can be copied to Counter Sales." };
+
+    const [{ data: items, error: itemError }, { data: customer, error: customerError }] = await Promise.all([
+      supabaseAdmin.from("quote_request_items").select("id, product_id, name_snapshot, qty, unit_price, created_at").eq("quote_request_id", quote.id).order("created_at"),
+      supabaseAdmin.from("profiles").select("price_tier").eq("id", quote.profile_id).maybeSingle(),
+    ]);
+    if (itemError || customerError || !customer) return { ok: false, error: "The quote customer or items could not be loaded." };
+
+    const productIds = [...new Set((items ?? []).flatMap((item) => item.product_id ? [item.product_id] : []))];
+    const { data: products, error: productError } = productIds.length
+      ? await supabaseAdmin.from("products").select("id, sku, name, price, stock, rack_location, product_images(url, sort_order), price_tiers(tier, price, min_qty)").in("id", productIds)
+      : { data: [], error: null };
+    if (productError) return { ok: false, error: "Current product details could not be loaded." };
+    const productMap = new Map((products ?? []).map((row) => [String(row.id), row as unknown as Record<string, unknown>]));
+    const lines: CounterSaleQuoteDraft['lines'] = [];
+    const skipped: CounterSaleQuoteDraft['skipped'] = [];
+
+    for (const item of items ?? []) {
+      const name = String(item.name_snapshot ?? "Part");
+      if (!item.product_id) {
+        skipped.push({ name, reason: "The product was deleted after the quote was created." });
+        continue;
+      }
+      if (item.unit_price === null) {
+        skipped.push({ name, reason: "This quote line has no agreed price." });
+        continue;
+      }
+      const product = productMap.get(String(item.product_id));
+      if (!product) {
+        skipped.push({ name, reason: "The current product record is no longer available." });
+        continue;
+      }
+      lines.push({ ...mapCounterProduct(product, customer.price_tier), qty: Number(item.qty), unitPrice: Number(item.unit_price) });
+    }
+
+    return { ok: true, draft: { customerId: quote.profile_id, humanId: quote.human_id, lines, skipped } };
   });
 
 /** Atomically price every line and publish the quote to the customer. */
