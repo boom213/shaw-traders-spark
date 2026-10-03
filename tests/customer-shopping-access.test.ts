@@ -75,7 +75,8 @@ describe("customer shopping access", () => {
     expect(tabs).toContain("const isStaff = Boolean(staff?.signedIn)");
     expect(tabs).toContain('{ to: "/shop" as const, key: "nav.shop" as TranslationKey');
     expect(tabs).not.toContain('...(!isStaff ? [{ to: "/shop" as const');
-    expect(tabs).toContain('mode === "full" && !isStaff ? [cartItem]');
+    expect(tabs).toContain("quoteAccess.ready && !isStaff && commerceItem");
+    expect(tabs).toContain("quoteAccess.allowed ? quoteItem");
     expect(tabs).toContain('items.length === 4 ? "grid-cols-4" : items.length === 3 ? "grid-cols-3" : "grid-cols-2"');
   });
 
