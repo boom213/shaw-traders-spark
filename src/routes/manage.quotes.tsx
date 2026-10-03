@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Download } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,7 @@ function QuoteCard({ quote }: { quote: StaffQuoteRequest }) {
         <div><Label htmlFor={`gst-treatment-${quote.id}`}>GST treatment</Label><Select value={gstTreatment} onValueChange={(value) => setGstTreatment(value as "inclusive" | "exclusive")} disabled={!gstRate.trim()}><SelectTrigger id={`gst-treatment-${quote.id}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="exclusive">Exclusive</SelectItem><SelectItem value="inclusive">Inclusive</SelectItem></SelectContent></Select></div>
         <div><Label htmlFor={`staff-note-${quote.id}`}>Internal staff note</Label><Textarea id={`staff-note-${quote.id}`} rows={2} maxLength={1000} value={staffNote} onChange={(event) => setStaffNote(event.target.value)} /></div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">Quote total: {formatINR(total)}</p><div className="flex flex-wrap gap-2">{canDownload && <Button variant="outline" onClick={() => void download()} disabled={downloading}>{downloading ? <SparkRing /> : <Download className="size-4" />}{downloading ? "Preparing…" : "Download PI"}</Button>}<Button onClick={() => void send()} disabled={busy}>{busy && <SparkRing />}{busy ? "Sending…" : "Send priced quote"}</Button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">Quote total: {formatINR(total)}</p><div className="flex flex-wrap gap-2">{quote.status === "accepted" && <Button variant="outline" asChild><Link to="/manage/counter-sales" search={{ quote: quote.id }}><Copy className="size-4" />Copy to counter sale</Link></Button>}{canDownload && <Button variant="outline" onClick={() => void download()} disabled={downloading}>{downloading ? <SparkRing /> : <Download className="size-4" />}{downloading ? "Preparing…" : "Download PI"}</Button>}<Button onClick={() => void send()} disabled={busy}>{busy && <SparkRing />}{busy ? "Sending…" : "Send priced quote"}</Button></div></div>
     </div>}
   </article>;
 }

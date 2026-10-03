@@ -52,6 +52,22 @@ export type CounterProduct = {
   rackLocation: string | null;
 };
 
+export function mapCounterProduct(row: Row, priceTier: string): CounterProduct {
+  const tiers = ((row['price_tiers'] ?? []) as Row[]).filter((tier) => tier['tier'] === priceTier).sort((a, b) => Number(a['min_qty']) - Number(b['min_qty']));
+  const images = ((row['product_images'] ?? []) as Row[]).sort((a, b) => Number(a['sort_order']) - Number(b['sort_order']));
+  const image = images[0]?.['url'] ? String(images[0]['url']) : null;
+  return {
+    id: String(row['id']),
+    sku: String(row['sku']),
+    name: String(row['name']),
+    stock: Number(row['stock']),
+    retailPrice: row['price'] == null ? null : Number(row['price']),
+    wholesalePrice: tiers[0]?.['price'] == null ? (row['price'] == null ? null : Number(row['price'])) : Number(tiers[0]['price']),
+    image: productThumbnailUrl(image),
+    rackLocation: row['rack_location'] ? String(row['rack_location']) : null,
+  };
+}
+
 export type CounterPaymentVendor = {
   id: string;
   name: string;
@@ -160,12 +176,7 @@ export const searchCounterProducts = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await query.order("name").limit(30);
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as Row[]).map((row) => {
-      const tiers = ((row['price_tiers'] ?? []) as Row[]).filter((tier) => tier['tier'] === customer.price_tier).sort((a, b) => Number(a['min_qty']) - Number(b['min_qty']));
-      const images = ((row['product_images'] ?? []) as Row[]).sort((a, b) => Number(a['sort_order']) - Number(b['sort_order']));
-      const image = images[0]?.['url'] ? String(images[0]['url']) : null;
-      return { id: String(row['id']), sku: String(row['sku']), name: String(row['name']), stock: Number(row['stock']), retailPrice: row['price'] == null ? null : Number(row['price']), wholesalePrice: tiers[0]?.['price'] == null ? (row['price'] == null ? null : Number(row['price'])) : Number(tiers[0]['price']), image: productThumbnailUrl(image), rackLocation: row['rack_location'] ? String(row['rack_location']) : null };
-    });
+    return ((rows ?? []) as Row[]).map((row) => mapCounterProduct(row, customer.price_tier));
   });
 
 export const listCounterSales = createServerFn({ method: "POST" })

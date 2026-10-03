@@ -1,4 +1,5 @@
 # Current task
+- [x] Copy accepted wholesale quotes into a reviewable Counter Sales draft without auto-creating the sale.
 - [x] Add a staff-only CSV outreach list with manual WhatsApp handoff, progress tracking, and audited server-controlled writes.
 - [x] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.
 - [x] Keep the customer account content aligned to the site width without horizontal overflow.
