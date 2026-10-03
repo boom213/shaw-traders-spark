@@ -49,6 +49,7 @@ import { Route as ManageEnquiriesRouteImport } from './routes/manage.enquiries'
 import { Route as ManageHomeRouteImport } from './routes/manage.home'
 import { Route as ManageImportRouteImport } from './routes/manage.import'
 import { Route as ManageOrdersRouteImport } from './routes/manage.orders'
+import { Route as ManageOutreachRouteImport } from './routes/manage.outreach'
 import { Route as ManagePaymentReportsRouteImport } from './routes/manage.payment-reports'
 import { Route as ManageQuotesRouteImport } from './routes/manage.quotes'
 import { Route as ManageRazorpayReviewRouteImport } from './routes/manage.razorpay-review'
@@ -285,6 +286,11 @@ const ManageOrdersRoute = ManageOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => ManageRoute,
 } as any)
+const ManageOutreachRoute = ManageOutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
+  getParentRoute: () => ManageRoute,
+} as any)
 const ManagePaymentReportsRoute = ManagePaymentReportsRouteImport.update({
   id: '/payment-reports',
   path: '/payment-reports',
@@ -508,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRouteWithChildren
+  '/manage/outreach': typeof ManageOutreachRoute
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/quotes': typeof ManageQuotesRoute
   '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
@@ -581,6 +588,7 @@ export interface FileRoutesByTo {
   '/manage/enquiries': typeof ManageEnquiriesRoute
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
+  '/manage/outreach': typeof ManageOutreachRoute
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/quotes': typeof ManageQuotesRoute
   '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
@@ -659,6 +667,7 @@ export interface FileRoutesById {
   '/manage/home': typeof ManageHomeRoute
   '/manage/import': typeof ManageImportRoute
   '/manage/orders': typeof ManageOrdersRouteWithChildren
+  '/manage/outreach': typeof ManageOutreachRoute
   '/manage/payment-reports': typeof ManagePaymentReportsRoute
   '/manage/quotes': typeof ManageQuotesRoute
   '/manage/razorpay-review': typeof ManageRazorpayReviewRoute
@@ -738,6 +747,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/outreach'
     | '/manage/payment-reports'
     | '/manage/quotes'
     | '/manage/razorpay-review'
@@ -811,6 +821,7 @@ export interface FileRouteTypes {
     | '/manage/enquiries'
     | '/manage/home'
     | '/manage/import'
+    | '/manage/outreach'
     | '/manage/payment-reports'
     | '/manage/quotes'
     | '/manage/razorpay-review'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/manage/home'
     | '/manage/import'
     | '/manage/orders'
+    | '/manage/outreach'
     | '/manage/payment-reports'
     | '/manage/quotes'
     | '/manage/razorpay-review'
@@ -1253,6 +1265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ManageOrdersRouteImport
       parentRoute: typeof ManageRoute
     }
+    '/manage/outreach': {
+      id: '/manage/outreach'
+      path: '/outreach'
+      fullPath: '/manage/outreach'
+      preLoaderRoute: typeof ManageOutreachRouteImport
+      parentRoute: typeof ManageRoute
+    }
     '/manage/payment-reports': {
       id: '/manage/payment-reports'
       path: '/payment-reports'
@@ -1542,6 +1561,7 @@ interface ManageRouteChildren {
   ManageHomeRoute: typeof ManageHomeRoute
   ManageImportRoute: typeof ManageImportRoute
   ManageOrdersRoute: typeof ManageOrdersRouteWithChildren
+  ManageOutreachRoute: typeof ManageOutreachRoute
   ManagePaymentReportsRoute: typeof ManagePaymentReportsRoute
   ManageQuotesRoute: typeof ManageQuotesRoute
   ManageRazorpayReviewRoute: typeof ManageRazorpayReviewRoute
@@ -1570,6 +1590,7 @@ const ManageRouteChildren: ManageRouteChildren = {
   ManageHomeRoute: ManageHomeRoute,
   ManageImportRoute: ManageImportRoute,
   ManageOrdersRoute: ManageOrdersRouteWithChildren,
+  ManageOutreachRoute: ManageOutreachRoute,
   ManagePaymentReportsRoute: ManagePaymentReportsRoute,
   ManageQuotesRoute: ManageQuotesRoute,
   ManageRazorpayReviewRoute: ManageRazorpayReviewRoute,

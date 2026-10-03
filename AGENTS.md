@@ -32,3 +32,4 @@
 - CSV exports use BOM/CRLF, filtered data capped at 10,000 rows, Reports permission, and audits.
 - Razorpay review is Owner+ read-only. Counter Sales may exceed stock. Quote drafts submit atomically; rates stay private. PIs are not tax invoices and hide payment/rack data.
 - Courier tracking URLs come from the shared verified registry; derive missing links server-side and preserve explicit staff overrides.
+- Outreach is assisted manual WhatsApp work: server-controlled records may prefill text and links, but never auto-send or attach media.

@@ -958,6 +958,80 @@ export type Database = {
           },
         ]
       }
+      outreach_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          link_url: string | null
+          list_id: string
+          message: string
+          name: string | null
+          phone: string
+          sent_at: string | null
+          sent_by: string | null
+          skip_reason: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          list_id: string
+          message: string
+          name?: string | null
+          phone: string
+          sent_at?: string | null
+          sent_by?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          list_id?: string
+          message?: string
+          name?: string | null
+          phone?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_contacts_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_lists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          total: number
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          total?: number
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          total?: number
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       payment_events: {
         Row: {
           booking_id: string | null
@@ -2927,6 +3001,10 @@ export type Database = {
           public_token: string
           total: number
         }[]
+      }
+      create_outreach_list: {
+        Args: { p_contacts: Json; p_name: string; p_uploaded_by: string }
+        Returns: string
       }
       create_quote_request: {
         Args: { p_customer_note?: string; p_lines: Json; p_profile_id: string }
