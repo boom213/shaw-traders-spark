@@ -484,6 +484,20 @@
       "when": 1791010935426,
       "tag": "0068_reassert_product_column_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1791018252762,
+      "tag": "0069_staff_outreach_lists",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1791018693915,
+      "tag": "0070_outreach_summary_queries",
+      "breakpoints": true
     }
   ]
 }

@@ -958,6 +958,80 @@ export type Database = {
           },
         ]
       }
+      outreach_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          link_url: string | null
+          list_id: string
+          message: string
+          name: string | null
+          phone: string
+          sent_at: string | null
+          sent_by: string | null
+          skip_reason: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          list_id: string
+          message: string
+          name?: string | null
+          phone: string
+          sent_at?: string | null
+          sent_by?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          list_id?: string
+          message?: string
+          name?: string | null
+          phone?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          skip_reason?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_contacts_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_lists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          total: number
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          total?: number
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          total?: number
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       payment_events: {
         Row: {
           booking_id: string | null
@@ -2928,6 +3002,10 @@ export type Database = {
           total: number
         }[]
       }
+      create_outreach_list: {
+        Args: { p_contacts: Json; p_name: string; p_uploaded_by: string }
+        Returns: string
+      }
       create_quote_request: {
         Args: { p_customer_note?: string; p_lines: Json; p_profile_id: string }
         Returns: {
@@ -2952,6 +3030,19 @@ export type Database = {
       grant_staff_owner: { Args: { p_profile_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       is_trade: { Args: { _user_id: string }; Returns: boolean }
+      list_outreach_lists: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          pending: number
+          sent: number
+          skipped: number
+          total: number
+          uploaded_by: string
+        }[]
+      }
       log_search_miss: { Args: { p_term: string }; Returns: undefined }
       manage_customer_page: {
         Args: { p_limit?: number; p_offset?: number; p_query?: string }
@@ -3083,6 +3174,14 @@ export type Database = {
           refunded: number
           status: string
           total_count: number
+        }[]
+      }
+      outreach_list_counts: {
+        Args: { p_list_id: string }
+        Returns: {
+          pending: number
+          sent: number
+          skipped: number
         }[]
       }
       payment_report_summary: {

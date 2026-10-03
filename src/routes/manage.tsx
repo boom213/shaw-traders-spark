@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileCheck2, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, ReceiptText, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
+import { AlertTriangle, Banknote, BellRing, Bike, Boxes, Briefcase, CalendarCheck, ChartNoAxesCombined, ChevronDown, FileCheck2, FileSpreadsheet, Globe, LayoutDashboard, LogOut, PackageSearch, PanelLeftClose, PanelLeftOpen, PhoneCall, QrCode, Receipt, ReceiptText, Send, Settings, ShieldCheck, Star, Store, Truck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -61,6 +61,7 @@ const NAV: { to: keyof typeof import("@/lib/staff-permissions").MANAGE_ROUTE_CAP
   { to: "/manage/import", label: "CSV Price List", icon: FileSpreadsheet, exact: false, capability: "catalogue", group: "Catalog" },
   { to: "/manage/scooters", label: "Vehicle Catalogue", icon: Bike, exact: false, capability: "catalogue", group: "Catalog" },
   { to: "/manage/customers", label: "Customers", icon: Users, exact: false, capability: "operations", group: "Customers" },
+  { to: "/manage/outreach", label: "Outreach", icon: Send, exact: false, capability: "operations", group: "Customers" },
   { to: "/manage/trade", label: "Trade & Credit", icon: Briefcase, exact: false, capability: "trade", group: "Customers" },
   { to: "/manage/reviews", label: "Reviews", icon: Star, exact: false, capability: "operations", group: "Customers" },
   { to: "/manage/bookings", label: "Bookings & Service", icon: CalendarCheck, exact: false, capability: "operations", group: "Customers" },

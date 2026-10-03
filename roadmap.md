@@ -1,4 +1,5 @@
 # Current task
+- [x] Add a staff-only CSV outreach list with manual WhatsApp handoff, progress tracking, and audited server-controlled writes.
 - [x] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.
 - [x] Keep the customer account content aligned to the site width without horizontal overflow.
 - [x] Add secure Proforma Invoice PDFs with optional GST for priced wholesale quotes.
