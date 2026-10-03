@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MessageCircle, SkipForward, Trash2, Upload } from "lucide-react";
+import { ArrowLeft, Download, MessageCircle, SkipForward, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -14,6 +14,7 @@ import { ListPager } from "@/components/manage/ListPager";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { buildOutreachWhatsAppUrl, deleteOutreachList, listOutreachLists, markOutreachSent, markOutreachSkipped, outreachContacts, uploadOutreachCsv, type OutreachContact, type OutreachListSummary, type OutreachStatus } from "@/lib/outreach.functions";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
+import { downloadOutreachTemplate } from "@/lib/outreach-template";
 
 export const Route = createFileRoute("/manage/outreach")({
   head: () => ({ meta: [
@@ -90,9 +91,14 @@ function OutreachPage() {
           </div>
           <div>
             <span className="mb-1.5 block text-sm font-medium">CSV file</span>
-            <Button type="button" variant="outline" className="w-full justify-start" onClick={() => inputRef.current?.click()}>
-              <Upload className="size-4" /> {fileName || "Choose CSV"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" className="min-w-0 flex-1 justify-start" onClick={() => inputRef.current?.click()}>
+                <Upload className="size-4" /> <span className="truncate">{fileName || "Choose CSV"}</span>
+              </Button>
+              <Button type="button" variant="outline" onClick={downloadOutreachTemplate}>
+                <Download className="size-4" /> Download CSV template
+              </Button>
+            </div>
             <input ref={inputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => void pickFile(event.target.files?.[0])} />
           </div>
         </div>
@@ -100,7 +106,10 @@ function OutreachPage() {
           {uploading ? <SparkRing /> : <Upload className="size-4" />} {uploading ? "Importing…" : "Upload list"}
         </Button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Required CSV columns: phone and message. Optional: name and link. Maximum 5,000 contacts.</p>
+      <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+        <p>Phone and message are required; name and link are optional. Column order does not matter. Links must start with https://.</p>
+        <p>Each row has its own message. In Excel, a formula such as <code className="font-mono">=&quot;Namaste &quot;&amp;A2&amp;&quot;, ...&quot;</code> can fill a personalised message column. Maximum 5,000 contacts.</p>
+      </div>
       {summary && <div className="mt-4 border-l-4 border-primary bg-surface p-3 text-sm" role="status">
         <p className="font-semibold">{summary.imported} imported · {summary.rejected.length} rejected · {summary.duplicatesSkipped} duplicates skipped</p>
         {summary.rejected.length > 0 && <ul className="mt-2 space-y-1 text-xs text-destructive">{summary.rejected.map((item) => <li key={`${item.row}-${item.reason}`}>Row {item.row}: {item.reason}</li>)}</ul>}
