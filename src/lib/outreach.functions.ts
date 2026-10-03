@@ -64,26 +64,18 @@ export type OutreachListSummary = {
 
 export const listOutreachLists = createServerFn({ method: "POST" }).handler(async (): Promise<OutreachListSummary[]> => {
   const { sb } = await outreachAdmin();
-  const { data: lists, error } = await sb.from("outreach_lists").select("id, name, uploaded_by, total, created_at").order("created_at", { ascending: false }).limit(500);
+  const { data: lists, error } = await sb.rpc("list_outreach_lists");
   if (error) throw new Error(error.message);
-  return Promise.all(((lists ?? []) as Row[]).map(async (list) => {
-    const id = String(list['id']);
-    const counts = await Promise.all((["pending", "sent", "skipped"] as const).map(async (status) => {
-      const { count, error: countError } = await sb.from("outreach_contacts").select("id", { count: "exact", head: true }).eq("list_id", id).eq("status", status);
-      if (countError) throw new Error(countError.message);
-      return count ?? 0;
-    }));
-    return {
-      id,
+  return ((lists ?? []) as Row[]).map((list) => ({
+      id: String(list['id']),
       name: String(list['name']),
       uploadedBy: list['uploaded_by'] ? String(list['uploaded_by']) : null,
       total: Number(list['total'] ?? 0),
-      pending: counts[0] ?? 0,
-      sent: counts[1] ?? 0,
-      skipped: counts[2] ?? 0,
+      pending: Number(list['pending'] ?? 0),
+      sent: Number(list['sent'] ?? 0),
+      skipped: Number(list['skipped'] ?? 0),
       createdAt: String(list['created_at']),
-    };
-  }));
+    }));
 });
 
 export type OutreachContact = {
@@ -113,11 +105,9 @@ export const outreachContacts = createServerFn({ method: "POST" })
     const from = data.page * 8;
     const { data: rows, count, error } = await query.order("created_at").range(from, from + 7);
     if (error) throw new Error(error.message);
-    const countValues = await Promise.all((["pending", "sent", "skipped"] as const).map(async (status) => {
-      const { count: statusCount, error: countError } = await sb.from("outreach_contacts").select("id", { count: "exact", head: true }).eq("list_id", data.listId).eq("status", status);
-      if (countError) throw new Error(countError.message);
-      return statusCount ?? 0;
-    }));
+    const { data: countRows, error: countError } = await sb.rpc("outreach_list_counts", { p_list_id: data.listId });
+    if (countError) throw new Error(countError.message);
+    const countValues = countRows?.[0];
     return {
       items: ((rows ?? []) as Row[]).map((row) => ({
         id: String(row['id']), name: row['name'] ? String(row['name']) : null, phone: String(row['phone']), message: String(row['message']),
@@ -126,7 +116,11 @@ export const outreachContacts = createServerFn({ method: "POST" })
         sentBy: row['sent_by'] ? String(row['sent_by']) : null,
       })),
       total: count ?? 0,
-      counts: { pending: countValues[0] ?? 0, sent: countValues[1] ?? 0, skipped: countValues[2] ?? 0 },
+      counts: {
+        pending: Number(countValues?.pending ?? 0),
+        sent: Number(countValues?.sent ?? 0),
+        skipped: Number(countValues?.skipped ?? 0),
+      },
     };
   });
 
