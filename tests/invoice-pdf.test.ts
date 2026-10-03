@@ -109,7 +109,7 @@ describe("invoice PDF", () => {
       humanId: "CS-260926-1093",
       business: {
         legalName: "Shaw Traders EV",
-        billingAddress: "CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403",
+        billingAddress: "CG2W+WH6, SH 14, Budbud, Sukdal, West Bengal 713403",
         gstin: "19ABCDE1234F1Z5",
       },
     }));
