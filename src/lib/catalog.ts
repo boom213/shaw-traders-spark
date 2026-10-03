@@ -169,7 +169,7 @@ export const BUSINESS = {
   tagline: "Complete EV Parts & Accessories",
   phone: "7501849610",
   phoneIntl: "917501849610",
-  address: "CG2W+WGV, near Debi Radha Marriage Hall, Budbud, West Bengal 713403",
+  address: "CG2W+WH6, SH 14, Budbud, Sukdal, West Bengal 713403",
   site: "https://shawtradersev.com",
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",

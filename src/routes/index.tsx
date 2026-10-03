@@ -66,8 +66,8 @@ export const Route = createFileRoute("/")({
 
           address: {
             "@type": "PostalAddress",
-            streetAddress: "CG2W+WGV, near Debi Radha Marriage Hall",
-            addressLocality: "Budbud",
+            streetAddress: "CG2W+WH6, SH 14",
+            addressLocality: "Budbud, Sukdal",
             addressRegion: "West Bengal",
             postalCode: "713403",
             addressCountry: "IN",
