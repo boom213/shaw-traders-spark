@@ -62,14 +62,7 @@ export type Review = {
 };
 
 export type OrderStatus =
-  | "order_confirmed"
-  | "processing"
-  | "packed"
-  | "shipped"
-  | "out_for_delivery"
-  | "delivered"
-  | "cancelled"
-  | "returned";
+  "order_confirmed" | "processing" | "packed" | "shipped" | "out_for_delivery" | "delivered" | "cancelled" | "returned";
 
 export const ORDER_FLOW: { value: OrderStatus; label: string }[] = [
   { value: "order_confirmed", label: "Order Confirmed" },
@@ -89,21 +82,23 @@ export const ALL_STATUSES = [...ORDER_FLOW, ...ORDER_EXTRA];
 
 export const statusLabel = (s: string) => ALL_STATUSES.find((x) => x.value === s)?.label ?? s;
 
-export const paymentStatusLabel = (status: string) => ({
-  paid: "Paid",
-  pending: "Payment pending",
-  failed: "Payment failed",
-  refunded: "Refunded",
-  cod_pending: "Pay on delivery",
-}[status] ?? status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()));
+export const paymentStatusLabel = (status: string) =>
+  ({
+    paid: "Paid",
+    pending: "Payment pending",
+    failed: "Payment failed",
+    refunded: "Refunded",
+    cod_pending: "Pay on delivery",
+  })[status] ?? status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-export const paymentHeadline = (status: string) => ({
-  paid: "Thank you, your order is confirmed",
-  pending: "Your order is awaiting payment confirmation",
-  failed: "Payment failed for this order",
-  refunded: "This payment has been refunded",
-  cod_pending: "Your order is confirmed — pay on delivery",
-}[status] ?? "Order payment status updated");
+export const paymentHeadline = (status: string) =>
+  ({
+    paid: "Thank you, your order is confirmed",
+    pending: "Your order is awaiting payment confirmation",
+    failed: "Payment failed for this order",
+    refunded: "This payment has been refunded",
+    cod_pending: "Your order is confirmed — pay on delivery",
+  })[status] ?? "Order payment status updated";
 
 export type OrderItemView = {
   id: string;
@@ -169,18 +164,14 @@ export const BUSINESS = {
   tagline: "Complete EV Parts & Accessories",
   phone: "7501849610",
   phoneIntl: "917501849610",
-  address: "CG2W+WH6, SH 14, Budbud, Sukdal, West Bengal 713403",
+  address: "Shaw Traders Bud Bud, Sukantanagar, Purba Bardhaman, West Bengal,713403",
   site: "https://shawtradersev.com",
   /** Square logo used by search engines and social cards. */
   logo: "https://shawtradersev.com/app-icon-512.png",
   /** 1200x630 share banner used as the site-wide default og:image. */
   banner: "https://shawtradersev.com/og-image.png",
-  sameAs: [
-    "https://www.facebook.com/shawtradersev/",
-    "https://www.instagram.com/shawtradersev/",
-  ],
+  sameAs: ["https://www.facebook.com/shawtradersev/", "https://www.instagram.com/shawtradersev/"],
 };
-
 
 export const whatsappLink = (message: string) =>
   `https://wa.me/${BUSINESS.phoneIntl}?text=${encodeURIComponent(message)}`;
@@ -216,4 +207,3 @@ export const breadcrumbLd = (trail: { name: string; path: string }[]) => ({
     })),
   }),
 });
-

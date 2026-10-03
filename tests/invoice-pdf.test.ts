@@ -54,14 +54,16 @@ describe("invoice PDF", () => {
   });
 
   it("creates a legally distinct proforma invoice without changing the tax invoice default", async () => {
-    const bytes = await createInvoicePdf(invoice({
-      docType: "proforma",
-      humanId: "QT-260930-1001",
-      validUntil: "2026-10-31T18:29:59.000Z",
-      paymentMethod: null,
-      paymentStatus: "",
-      shippingMethod: null,
-    }));
+    const bytes = await createInvoicePdf(
+      invoice({
+        docType: "proforma",
+        humanId: "QT-260930-1001",
+        validUntil: "2026-10-31T18:29:59.000Z",
+        paymentMethod: null,
+        paymentStatus: "",
+        shippingMethod: null,
+      }),
+    );
     await saveQaPdf("proforma-gst-invoice.pdf", bytes);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getTitle()).toBe("Proforma Invoice QT-260930-1001");
@@ -70,16 +72,18 @@ describe("invoice PDF", () => {
   });
 
   it("creates a no-GST proforma invoice", async () => {
-    const bytes = await createInvoicePdf(invoice({
-      docType: "proforma",
-      humanId: "QT-260930-1002",
-      gstRate: 0,
-      gstIncluded: false,
-      taxAmount: 0,
-      subtotal: 12000,
-      total: 12000,
-      validUntil: "2026-10-31T18:29:59.000Z",
-    }));
+    const bytes = await createInvoicePdf(
+      invoice({
+        docType: "proforma",
+        humanId: "QT-260930-1002",
+        gstRate: 0,
+        gstIncluded: false,
+        taxAmount: 0,
+        subtotal: 12000,
+        total: 12000,
+        validUntil: "2026-10-31T18:29:59.000Z",
+      }),
+    );
     await saveQaPdf("proforma-no-gst-invoice.pdf", bytes);
     expect((await PDFDocument.load(bytes)).getTitle()).toBe("Proforma Invoice QT-260930-1002");
   });
@@ -99,31 +103,43 @@ describe("invoice PDF", () => {
   });
 
   it("keeps a long legal name inside a valid customer invoice", async () => {
-    const bytes = await createInvoicePdf(invoice({ business: { legalName: "Shaw Traders Electric Mobility Components and Vehicles Private Limited", billingAddress: "Defence Colony, Bud Bud\nBardhaman, West Bengal 713403", gstin: "19ABCDE1234F1Z5" } }));
+    const bytes = await createInvoicePdf(
+      invoice({
+        business: {
+          legalName: "Shaw Traders Electric Mobility Components and Vehicles Private Limited",
+          billingAddress: "Defence Colony, Bud Bud\nBardhaman, West Bengal 713403",
+          gstin: "19ABCDE1234F1Z5",
+        },
+      }),
+    );
     await saveQaPdf("long-legal-name-invoice.pdf", bytes);
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
   });
 
   it("keeps a long billing address out of the invoice details block", async () => {
-    const bytes = await createInvoicePdf(invoice({
-      humanId: "CS-260926-1093",
-      business: {
-        legalName: "Shaw Traders EV",
-        billingAddress: "CG2W+WH6, SH 14, Budbud, Sukdal, West Bengal 713403",
-        gstin: "19ABCDE1234F1Z5",
-      },
-    }));
+    const bytes = await createInvoicePdf(
+      invoice({
+        humanId: "CS-260926-1093",
+        business: {
+          legalName: "Shaw Traders EV",
+          billingAddress: "Shaw Traders Bud Bud, Sukantanagar, Purba Bardhaman, West Bengal,713403",
+          gstin: "19ABCDE1234F1Z5",
+        },
+      }),
+    );
     await saveQaPdf("long-billing-address-invoice.pdf", bytes);
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
   });
 
   it("keeps a six-figure total separate from its label", async () => {
-    const bytes = await createInvoicePdf(invoice({
-      subtotal: 84_745.76,
-      total: 100_000,
-      taxAmount: 15_254.24,
-      items: [{ name: "Electric scooter", qty: 1, price: 100_000, productId: "scooter" }],
-    }));
+    const bytes = await createInvoicePdf(
+      invoice({
+        subtotal: 84_745.76,
+        total: 100_000,
+        taxAmount: 15_254.24,
+        items: [{ name: "Electric scooter", qty: 1, price: 100_000, productId: "scooter" }],
+      }),
+    );
     await saveQaPdf("six-figure-total-invoice.pdf", bytes);
     expect((await PDFDocument.load(bytes)).getPageCount()).toBe(1);
   });
@@ -135,11 +151,12 @@ describe("invoice PDF", () => {
       price: 125.5,
       productId: `product-${index + 1}`,
       rackLocation: index % 2 ? null : `Rack A-${index + 1}`,
-      image: index === 0
-        ? "https://invalid.invalid/missing.jpg"
-        : index === 1
-          ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII="
-          : null,
+      image:
+        index === 0
+          ? "https://invalid.invalid/missing.jpg"
+          : index === 1
+            ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII="
+            : null,
     }));
     const bytes = await createInvoicePdf(invoice({ staffCopy: true, items }));
     await saveQaPdf("staff-invoice.pdf", bytes);
@@ -149,11 +166,23 @@ describe("invoice PDF", () => {
   });
 
   it("converts WebP product photos for a staff copy", async () => {
-    const webp = "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAAAwAgCdASoIAAYAAUAmJaACdLoB+AH4AAToAAD+rhf/TRRhTH3Jv/uDfZFz/zQAAAA=";
-    const bytes = await createInvoicePdf(invoice({
-      staffCopy: true,
-      items: [{ name: "Uploaded WebP product", qty: 1, price: 12000, productId: "battery", image: webp, rackLocation: "Rack A-1" }],
-    }));
+    const webp =
+      "data:image/webp;base64,UklGRjwAAABXRUJQVlA4IDAAAAAwAgCdASoIAAYAAUAmJaACdLoB+AH4AAToAAD+rhf/TRRhTH3Jv/uDfZFz/zQAAAA=";
+    const bytes = await createInvoicePdf(
+      invoice({
+        staffCopy: true,
+        items: [
+          {
+            name: "Uploaded WebP product",
+            qty: 1,
+            price: 12000,
+            productId: "battery",
+            image: webp,
+            rackLocation: "Rack A-1",
+          },
+        ],
+      }),
+    );
     await saveQaPdf("staff-invoice-webp.pdf", bytes);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
@@ -161,18 +190,23 @@ describe("invoice PDF", () => {
   });
 
   it("uses the current catalogue photo when an order photo snapshot is broken", async () => {
-    const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII=";
-    const bytes = await createInvoicePdf(invoice({
-      staffCopy: true,
-      items: [{
-        name: "Product with a replaced photo",
-        qty: 1,
-        price: 12000,
-        productId: "battery",
-        image: "https://invalid.invalid/old-order-photo.webp",
-        fallbackImage: png,
-      }],
-    }));
+    const png =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2n6QAAAAASUVORK5CYII=";
+    const bytes = await createInvoicePdf(
+      invoice({
+        staffCopy: true,
+        items: [
+          {
+            name: "Product with a replaced photo",
+            qty: 1,
+            price: 12000,
+            productId: "battery",
+            image: "https://invalid.invalid/old-order-photo.webp",
+            fallbackImage: png,
+          },
+        ],
+      }),
+    );
     await saveQaPdf("staff-invoice-photo-fallback.pdf", bytes);
     const pdf = await PDFDocument.load(bytes);
     expect(pdf.getSubject()).toBe("Staff Invoice — Internal Use Only");
