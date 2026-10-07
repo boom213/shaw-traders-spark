@@ -13,8 +13,8 @@ export function ScooterShowcase({ models }: { models: VehicleModel[] }) {
       <CarouselContent className="-ml-3">
         {models.map((v) => (
           <CarouselItem key={v.id} className="basis-4/5 pl-3 sm:basis-1/2 lg:basis-1/3">
-            <div className="h-full overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
-              <Link to="/scooters/$slug" params={{ slug: v.slug }} className="block">
+            <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]">
+              <Link to="/scooters/$slug" params={{ slug: v.slug }} className="block shrink-0">
                 <div className="aspect-4/3 w-full overflow-hidden bg-surface">
                   {v.images[0] ? (
                     <img src={productThumbnailUrl(v.images[0], "card") ?? v.images[0]} alt={v.name} width={640} height={480} loading="lazy" decoding="async" className="size-full object-cover" />
@@ -23,9 +23,9 @@ export function ScooterShowcase({ models }: { models: VehicleModel[] }) {
                   )}
                 </div>
               </Link>
-              <div className="space-y-2 p-4">
+              <div className="flex flex-1 flex-col gap-2 p-4">
                 {v.extraSpecs?.['demo'] === "true" && (
-                  <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
+                  <span className="inline-flex self-start rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-semibold text-amber-900">
                     Sample data
                   </span>
                 )}
@@ -46,11 +46,13 @@ export function ScooterShowcase({ models }: { models: VehicleModel[] }) {
                   </span>
                   {v.price.onRoad > 0 && <span className="ml-1 text-xs text-muted-foreground">on-road</span>}
                 </p>
-                <Button asChild size="sm" className="mt-1 w-full">
+                <div className="mt-auto pt-1">
+                <Button asChild size="sm" className="w-full">
                   <Link to="/scooters/$slug" params={{ slug: v.slug }}>
                     View & book
                   </Link>
                 </Button>
+                </div>
               </div>
             </div>
           </CarouselItem>
