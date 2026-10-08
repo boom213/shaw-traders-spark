@@ -7,3 +7,5 @@ Shaw Traders EV shop address:Shaw Traders Bud Bud, Sukantanagar, Purba Bardhaman
 ## Memories
 
 - [Shop address](mem://facts/shop-address) — Official address for the site and business documents
+
+- [Showroom sales](mem://features/showroom-sales) — Release 1 scope and receipt/handover safeguards

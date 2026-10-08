@@ -1,4 +1,6 @@
 # Current task
+- [ ] Add showroom sales, agreed-price adjustment, void-only receipts, and guarded handover within Bookings & Service.
+- [ ] Verify showroom permissions, balances, and existing online booking compatibility.
 - [x] Copy accepted wholesale quotes into a reviewable Counter Sales draft without auto-creating the sale.
 - [x] Add a staff-only CSV outreach list with manual WhatsApp handoff, progress tracking, and audited server-controlled writes.
 - [x] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.

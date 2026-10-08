@@ -186,6 +186,65 @@ export type Database = {
           },
         ]
       }
+      booking_receipts: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          id: string
+          method: string
+          note: string | null
+          payer_type: string
+          received_on: string
+          recorded_by: string
+          recorded_by_name: string
+          reference: string | null
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          id?: string
+          method: string
+          note?: string | null
+          payer_type: string
+          received_on?: string
+          recorded_by: string
+          recorded_by_name: string
+          reference?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          id?: string
+          method?: string
+          note?: string | null
+          payer_type?: string
+          received_on?: string
+          recorded_by?: string
+          recorded_by_name?: string
+          reference?: string | null
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_receipts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           blurb: string | null
@@ -2479,9 +2538,13 @@ export type Database = {
           address: string | null
           alternate_phone: string | null
           balance_due: number
+          blocked_reason: string | null
           colour: string | null
           created_at: string
+          created_by_name: string | null
           customer_name: string
+          discount_amount: number
+          discount_reason: string | null
           email: string | null
           expected_delivery: string | null
           human_id: string
@@ -2499,6 +2562,7 @@ export type Database = {
           provider_order_id: string | null
           provider_payment_id: string | null
           public_token: string
+          sale_kind: string
           status: Database["public"]["Enums"]["booking_status"]
           token_amount: number
           updated_at: string
@@ -2508,9 +2572,13 @@ export type Database = {
           address?: string | null
           alternate_phone?: string | null
           balance_due?: number
+          blocked_reason?: string | null
           colour?: string | null
           created_at?: string
+          created_by_name?: string | null
           customer_name: string
+          discount_amount?: number
+          discount_reason?: string | null
           email?: string | null
           expected_delivery?: string | null
           human_id: string
@@ -2528,6 +2596,7 @@ export type Database = {
           provider_order_id?: string | null
           provider_payment_id?: string | null
           public_token?: string
+          sale_kind?: string
           status?: Database["public"]["Enums"]["booking_status"]
           token_amount?: number
           updated_at?: string
@@ -2537,9 +2606,13 @@ export type Database = {
           address?: string | null
           alternate_phone?: string | null
           balance_due?: number
+          blocked_reason?: string | null
           colour?: string | null
           created_at?: string
+          created_by_name?: string | null
           customer_name?: string
+          discount_amount?: number
+          discount_reason?: string | null
           email?: string | null
           expected_delivery?: string | null
           human_id?: string
@@ -2557,6 +2630,7 @@ export type Database = {
           provider_order_id?: string | null
           provider_payment_id?: string | null
           public_token?: string
+          sale_kind?: string
           status?: Database["public"]["Enums"]["booking_status"]
           token_amount?: number
           updated_at?: string
@@ -2625,6 +2699,7 @@ export type Database = {
       }
       vehicle_registrations: {
         Row: {
+          battery_number: string | null
           booking_id: string | null
           chassis_number: string | null
           created_at: string
@@ -2641,6 +2716,7 @@ export type Database = {
           warranty_start: string | null
         }
         Insert: {
+          battery_number?: string | null
           booking_id?: string | null
           chassis_number?: string | null
           created_at?: string
@@ -2657,6 +2733,7 @@ export type Database = {
           warranty_start?: string | null
         }
         Update: {
+          battery_number?: string | null
           booking_id?: string | null
           chassis_number?: string | null
           created_at?: string
@@ -2883,6 +2960,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_booking_agreed_price: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_booking_id: string
+          p_discount: number
+          p_discount_reason: string
+          p_lines: Json
+        }
+        Returns: boolean
+      }
       best_sellers: {
         Args: { p_days?: number; p_limit?: number }
         Returns: {
@@ -2909,6 +2997,7 @@ export type Database = {
           variant: string
         }[]
       }
+      booking_outstanding: { Args: { p_booking_id: string }; Returns: number }
       build_service_schedule: {
         Args: { p_registration: string }
         Returns: number
@@ -3013,6 +3102,19 @@ export type Database = {
           quote_id: string
         }[]
       }
+      create_showroom_booking: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_customer: Json
+          p_discount: number
+          p_discount_reason: string
+          p_expected_delivery: string
+          p_lines: Json
+          p_product_id: string
+        }
+        Returns: Json
+      }
       customer_tier: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["price_tier"]
@@ -3026,6 +3128,21 @@ export type Database = {
           p_tier: Database["public"]["Enums"]["price_tier"]
         }
         Returns: undefined
+      }
+      deliver_booking_with_balance: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_battery: string
+          p_booking_id: string
+          p_chassis: string
+          p_delivered: string
+          p_motor: string
+          p_override_reason: string
+          p_registration: string
+          p_warranty: string
+        }
+        Returns: string
       }
       grant_staff_owner: { Args: { p_profile_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
@@ -3239,6 +3356,20 @@ export type Database = {
         Args: { p_supplier_id: string }
         Returns: undefined
       }
+      record_booking_receipt: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_amount: number
+          p_booking_id: string
+          p_method: string
+          p_note: string
+          p_payer_type: string
+          p_received_on: string
+          p_reference: string
+        }
+        Returns: string
+      }
       record_counter_sale_payment: {
         Args: {
           p_actor_id: string
@@ -3373,6 +3504,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      showroom_lines_total: { Args: { p_lines: Json }; Returns: number }
       staff_bootstrap_needed: { Args: never; Returns: boolean }
       staff_role: {
         Args: { _user_id: string }
@@ -3450,6 +3582,15 @@ export type Database = {
       }
       trade_balance: { Args: { _profile_id: string }; Returns: number }
       trade_overdue: { Args: { _profile_id: string }; Returns: boolean }
+      void_booking_receipt: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_reason: string
+          p_receipt_id: string
+        }
+        Returns: boolean
+      }
       void_counter_sale_payment: {
         Args: {
           p_actor_id: string

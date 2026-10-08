@@ -1,0 +1,6 @@
+---
+name: Showroom sales Release 1
+description: Showroom sales scope and financial safeguards
+type: feature
+---
+Showroom sales live in Bookings & Service. Staff may sell at catalogue price; Manager+ adjusts prices and discounts with reasons and voids receipts. Receipts are never deleted. Outstanding equals agreed total minus confirmed online token minus valid receipts. Showroom handover with unpaid balance requires Owner+ and a reason; online handovers remain allowed and audited. Record battery serials without erasing existing serials on empty input. Do not change public scooter booking, online token payment meaning, stock, or existing SQL signatures. Release 1 excludes invoices, per-unit inventory, exchange valuation integration, and lender-disbursement tracking.
