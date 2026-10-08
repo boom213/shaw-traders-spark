@@ -33,3 +33,4 @@
 - Razorpay review is Owner+ read-only. Counter Sales may exceed stock. Quote drafts submit atomically; rates stay private. PIs are not tax invoices and hide payment/rack data.
 - Courier tracking URLs come from the shared verified registry; derive missing links server-side and preserve explicit staff overrides.
 - Outreach is assisted manual WhatsApp work: server-controlled records may prefill text and links, but never auto-send or attach media.
+- Showroom sales reuse vehicle_bookings; service-only SQL routines lock bookings for receipts, agreed-price revisions and handover so online token state stays untouched and receipt history cannot be deleted.
