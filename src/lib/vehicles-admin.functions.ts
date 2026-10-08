@@ -5,13 +5,23 @@ import { catalogueSaleLines, type SaleLine } from "@/lib/showroom";
 import { listVehicles } from "@/lib/vehicles.functions";
 import type { VehiclePrice, VehicleSpecs } from "@/lib/vehicles";
 
-const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
+const text = (v: unknown, max: number) =>
+  String(v ?? "")
+    .trim()
+    .slice(0, max);
 const num = (v: unknown) => (v === undefined || v === null || v === "" ? null : Number(v));
 const money = (v: unknown) => Math.max(0, Number(v ?? 0) || 0);
 const dateOrNull = (v: unknown) => (/^\d{4}-\d{2}-\d{2}$/.test(String(v ?? "")) ? String(v) : null);
 const uuid = (v: unknown) => (/^[0-9a-f-]{36}$/i.test(String(v ?? "")) ? String(v) : null);
 
-const BOOKING_STATUSES = ["booked", "allotted", "rto_in_progress", "ready_for_delivery", "delivered", "cancelled"];
+const BOOKING_STATUSES = [
+  "booked",
+  "allotted",
+  "rto_in_progress",
+  "ready_for_delivery",
+  "delivered",
+  "cancelled",
+];
 
 export type AdminVehicleRow = {
   id: string;
@@ -28,35 +38,42 @@ export type AdminVehicleRow = {
 };
 
 /** Every scooter model the shop lists, including drafts and hidden ones. */
-export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(async (): Promise<AdminVehicleRow[]> => {
-  const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff({ capability: "catalogue" });
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("products")
-    .select("id, slug, name, brand, description, status, stock, specs, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)")
-    .eq("product_kind", "vehicle")
-    .order("name")
-    .limit(200);
+export const listVehiclesAdmin = createServerFn({ method: "POST" }).handler(
+  async (): Promise<AdminVehicleRow[]> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "catalogue" });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("products")
+      .select(
+        "id, slug, name, brand, description, status, stock, specs, product_images(url, sort_order), vehicle_specs(*), vehicle_pricing(*)",
+      )
+      .eq("product_kind", "vehicle")
+      .order("name")
+      .limit(200);
 
-  const one = (v: unknown) => (Array.isArray(v) ? ((v[0] as Record<string, any>) ?? null) : ((v as Record<string, any>) ?? null));
-  return (data ?? []).map((r) => ({
-    id: String(r.id),
-    slug: String(r.slug),
-    name: String(r.name),
-    brand: r.brand,
-    description: r.description ?? null,
-    status: String(r.status),
-    stock: Number(r.stock ?? 0),
-    isDemo: String(((r.specs ?? {}) as Record<string, unknown>)["demo"] ?? "") === "true",
-    images: ((r.product_images ?? []) as { url: string; sort_order: number }[])
-      .slice()
-      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-      .map((i) => i.url),
-    specs: mapSpecs(one(r.vehicle_specs)),
-    price: mapPrice(one(r.vehicle_pricing)),
-  }));
-});
+    const one = (v: unknown) =>
+      Array.isArray(v)
+        ? ((v[0] as Record<string, any>) ?? null)
+        : ((v as Record<string, any>) ?? null);
+    return (data ?? []).map((r) => ({
+      id: String(r.id),
+      slug: String(r.slug),
+      name: String(r.name),
+      brand: r.brand,
+      description: r.description ?? null,
+      status: String(r.status),
+      stock: Number(r.stock ?? 0),
+      isDemo: String(((r.specs ?? {}) as Record<string, unknown>)["demo"] ?? "") === "true",
+      images: ((r.product_images ?? []) as { url: string; sort_order: number }[])
+        .slice()
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map((i) => i.url),
+      specs: mapSpecs(one(r.vehicle_specs)),
+      price: mapPrice(one(r.vehicle_pricing)),
+    }));
+  },
+);
 
 export type SaveVehicleInput = {
   id?: string;
@@ -81,7 +98,9 @@ export const saveVehicle = createServerFn({ method: "POST" })
 
     const name = text(data?.name, 160);
     if (!name) return { ok: false, error: "Give the model a name." };
-    const status = ["draft", "visible", "hidden"].includes(String(data?.status)) ? String(data?.status) : "draft";
+    const status = ["draft", "visible", "hidden"].includes(String(data?.status))
+      ? String(data?.status)
+      : "draft";
 
     let id = uuid(data?.id);
     if (!id) {
@@ -101,7 +120,8 @@ export const saveVehicle = createServerFn({ method: "POST" })
         } as never)
         .select("id")
         .single();
-      if (error || !created) return { ok: false, error: error?.message ?? "Could not save this model." };
+      if (error || !created)
+        return { ok: false, error: error?.message ?? "Could not save this model." };
       id = created.id;
     } else {
       await supabaseAdmin
@@ -160,7 +180,10 @@ export const saveVehicle = createServerFn({ method: "POST" })
 
 /** Attach a photo to a model. */
 export const addVehiclePhoto = createServerFn({ method: "POST" })
-  .inputValidator((data: { productId: string; url: string }) => ({ productId: uuid(data?.productId), url: text(data?.url, 400) }))
+  .inputValidator((data: { productId: string; url: string }) => ({
+    productId: uuid(data?.productId),
+    url: text(data?.url, 400),
+  }))
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff({ capability: "catalogue" });
@@ -170,19 +193,28 @@ export const addVehiclePhoto = createServerFn({ method: "POST" })
       .from("product_images")
       .select("id", { count: "exact", head: true })
       .eq("product_id", data.productId);
-    await supabaseAdmin.from("product_images").insert({ product_id: data.productId, url: data.url, sort_order: count ?? 0 } as never);
+    await supabaseAdmin
+      .from("product_images")
+      .insert({ product_id: data.productId, url: data.url, sort_order: count ?? 0 } as never);
     return { ok: true };
   });
 
 /** Remove one photo from a model. */
 export const removeVehiclePhoto = createServerFn({ method: "POST" })
-  .inputValidator((data: { productId: string; url: string }) => ({ productId: uuid(data?.productId), url: text(data?.url, 400) }))
+  .inputValidator((data: { productId: string; url: string }) => ({
+    productId: uuid(data?.productId),
+    url: text(data?.url, 400),
+  }))
   .handler(async ({ data }): Promise<{ ok: boolean }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff({ capability: "catalogue" });
     if (!data.productId || !data.url) return { ok: false };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("product_images").delete().eq("product_id", data.productId).eq("url", data.url);
+    await supabaseAdmin
+      .from("product_images")
+      .delete()
+      .eq("product_id", data.productId)
+      .eq("url", data.url);
     return { ok: true };
   });
 
@@ -190,7 +222,9 @@ export const removeVehiclePhoto = createServerFn({ method: "POST" })
 export const setVehicleStatus = createServerFn({ method: "POST" })
   .inputValidator((data: { id: string; status: string }) => ({
     id: uuid(data?.id),
-    status: ["draft", "visible", "hidden"].includes(String(data?.status)) ? String(data?.status) : "",
+    status: ["draft", "visible", "hidden"].includes(String(data?.status))
+      ? String(data?.status)
+      : "",
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
@@ -203,19 +237,28 @@ export const setVehicleStatus = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("product_kind", "vehicle");
     if (error) return { ok: false, error: error.message };
-    await logAudit(supabaseAdmin as never, staff, "vehicle.status", "products", data.id, { status: data.status });
+    await logAudit(supabaseAdmin as never, staff, "vehicle.status", "products", data.id, {
+      status: data.status,
+    });
     return { ok: true };
   });
 
 /** Turn the "Sample data" badge on a model on or off. */
 export const setVehicleDemo = createServerFn({ method: "POST" })
-  .inputValidator((data: { id: string; isDemo: boolean }) => ({ id: uuid(data?.id), isDemo: Boolean(data?.isDemo) }))
+  .inputValidator((data: { id: string; isDemo: boolean }) => ({
+    id: uuid(data?.id),
+    isDemo: Boolean(data?.isDemo),
+  }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff({ capability: "catalogue" });
     if (!data.id) return { ok: false, error: "Model not found." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin.from("products").select("specs").eq("id", data.id).maybeSingle();
+    const { data: row } = await supabaseAdmin
+      .from("products")
+      .select("specs")
+      .eq("id", data.id)
+      .maybeSingle();
     const specs = { ...((row?.specs ?? {}) as Record<string, unknown>) };
     if (data.isDemo) specs["demo"] = "true";
     else delete specs["demo"];
@@ -225,7 +268,9 @@ export const setVehicleDemo = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("product_kind", "vehicle");
     if (error) return { ok: false, error: error.message };
-    await logAudit(supabaseAdmin as never, staff, "vehicle.demo", "products", data.id, { isDemo: data.isDemo });
+    await logAudit(supabaseAdmin as never, staff, "vehicle.demo", "products", data.id, {
+      isDemo: data.isDemo,
+    });
     return { ok: true };
   });
 
@@ -242,17 +287,21 @@ export const deleteVehicle = createServerFn({ method: "POST" })
       .from("vehicle_bookings")
       .select("id", { count: "exact", head: true })
       .eq("product_id", data.id);
-    if ((count ?? 0) > 0) return { ok: false, error: "This model has bookings. Hide it instead of deleting." };
+    if ((count ?? 0) > 0)
+      return { ok: false, error: "This model has bookings. Hide it instead of deleting." };
 
     await supabaseAdmin.from("product_images").delete().eq("product_id", data.id);
     await supabaseAdmin.from("vehicle_specs").delete().eq("product_id", data.id);
     await supabaseAdmin.from("vehicle_pricing").delete().eq("product_id", data.id);
-    const { error } = await supabaseAdmin.from("products").delete().eq("id", data.id).eq("product_kind", "vehicle");
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", data.id)
+      .eq("product_kind", "vehicle");
     if (error) return { ok: false, error: error.message };
     await logAudit(supabaseAdmin as never, staff, "vehicle.delete", "products", data.id, {});
     return { ok: true };
   });
-
 
 export type BookingRow = {
   id: string;
@@ -285,7 +334,10 @@ export type BookingRow = {
 
 /** The booking pipeline. */
 export const listBookings = createServerFn({ method: "POST" })
-  .inputValidator((data: { status?: string; page?: number } | undefined) => ({ status: text(data?.status, 30) || "open", page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .inputValidator((data: { status?: string; page?: number } | undefined) => ({
+    status: text(data?.status, 30) || "open",
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+  }))
   .handler(async ({ data }): Promise<{ items: BookingRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff();
@@ -293,19 +345,30 @@ export const listBookings = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("vehicle_bookings")
-      .select("*, products(name), vehicle_registrations(id, chassis_number, motor_number, battery_number, registration_number, warranty_start)", { count: "exact" })
+      .select(
+        "*, products(name), vehicle_registrations(id, chassis_number, motor_number, battery_number, registration_number, warranty_start)",
+        { count: "exact" },
+      )
       .order("created_at", { ascending: false })
       .range(data.page * 8, data.page * 8 + 7);
     if (data.status === "open") query = query.not("status", "in", "(delivered,cancelled)");
     else if (data.status === "needs_review") query = query.eq("needs_payment_review", true);
-    else if (data.status === "unpaid_48h") query = query.eq("sale_kind", "online").neq("payment_status", "paid").neq("status", "cancelled").lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
-    else if (BOOKING_STATUSES.includes(data.status)) query = query.eq("status", data.status as never);
+    else if (data.status === "unpaid_48h")
+      query = query
+        .eq("sale_kind", "online")
+        .neq("payment_status", "paid")
+        .neq("status", "cancelled")
+        .lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+    else if (BOOKING_STATUSES.includes(data.status))
+      query = query.eq("status", data.status as never);
 
     const { data: rows, count } = await query;
     const items = (rows ?? []).map((r) => {
-      const reg = (Array.isArray(r.vehicle_registrations) ? r.vehicle_registrations[0] : r.vehicle_registrations) as
-        | Record<string, any>
-        | null;
+      const reg = (
+        Array.isArray(r.vehicle_registrations)
+          ? r.vehicle_registrations[0]
+          : r.vehicle_registrations
+      ) as Record<string, any> | null;
       return {
         id: String(r.id),
         humanId: String(r.human_id),
@@ -326,11 +389,11 @@ export const listBookings = createServerFn({ method: "POST" })
         balanceDue: Number(r.balance_due ?? 0),
         expectedDelivery: r.expected_delivery,
         createdAt: String(r.created_at),
-        registrationId: reg ? String(reg['id']) : null,
-        chassisNumber: reg?.['chassis_number'] ?? null,
-        motorNumber: reg?.['motor_number'] ?? null,
-        registrationNumber: reg?.['registration_number'] ?? null,
-        warrantyStart: reg?.['warranty_start'] ?? null,
+        registrationId: reg ? String(reg["id"]) : null,
+        chassisNumber: reg?.["chassis_number"] ?? null,
+        motorNumber: reg?.["motor_number"] ?? null,
+        registrationNumber: reg?.["registration_number"] ?? null,
+        warrantyStart: reg?.["warranty_start"] ?? null,
         needsPaymentReview: Boolean(r.needs_payment_review),
         paymentReviewNote: r.payment_review_note ?? null,
       };
@@ -339,11 +402,15 @@ export const listBookings = createServerFn({ method: "POST" })
   });
 
 export const resolveBookingPaymentReview = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string; note: string }) => ({ bookingId: uuid(data?.bookingId), note: text(data?.note, 300) }))
+  .inputValidator((data: { bookingId: string; note: string }) => ({
+    bookingId: uuid(data?.bookingId),
+    note: text(data?.note, 300),
+  }))
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const actor = await requireStaff({ capability: "operations" });
-    if (!data.bookingId || data.note.length < 3) return { ok: false as const, error: "Add a short resolution note." };
+    if (!data.bookingId || data.note.length < 3)
+      return { ok: false as const, error: "Add a short resolution note." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: resolved, error } = await supabaseAdmin.rpc("resolve_booking_payment_review", {
       p_booking_id: data.bookingId,
@@ -351,24 +418,35 @@ export const resolveBookingPaymentReview = createServerFn({ method: "POST" })
       p_actor: actor.name,
     });
     if (error) return { ok: false as const, error: error.message };
-    if (!resolved) return { ok: false as const, error: "This payment review was already resolved." };
-    await logAudit(supabaseAdmin as never, actor, "booking.payment_review_resolved", "vehicle_bookings", data.bookingId, { note: data.note });
+    if (!resolved)
+      return { ok: false as const, error: "This payment review was already resolved." };
+    await logAudit(
+      supabaseAdmin as never,
+      actor,
+      "booking.payment_review_resolved",
+      "vehicle_bookings",
+      data.bookingId,
+      { note: data.note },
+    );
     return { ok: true as const };
   });
 
 /** Move a booking along its track and tell the customer. */
 export const setBookingStatus = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string; status: string; note?: string; expectedDelivery?: string }) => ({
-    bookingId: uuid(data?.bookingId),
-    status: BOOKING_STATUSES.includes(String(data?.status)) ? String(data?.status) : "",
-    note: text(data?.note, 300),
-    expectedDelivery: dateOrNull(data?.expectedDelivery),
-  }))
+  .inputValidator(
+    (data: { bookingId: string; status: string; note?: string; expectedDelivery?: string }) => ({
+      bookingId: uuid(data?.bookingId),
+      status: BOOKING_STATUSES.includes(String(data?.status)) ? String(data?.status) : "",
+      note: text(data?.note, 300),
+      expectedDelivery: dateOrNull(data?.expectedDelivery),
+    }),
+  )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff();
     if (!data.bookingId || !data.status) return { ok: false, error: "Pick a stage." };
-    if (data.status === "delivered") return { ok: false, error: "Use Record handover to deliver this booking." };
+    if (data.status === "delivered")
+      return { ok: false, error: "Use Record handover to deliver this booking." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     await supabaseAdmin
@@ -381,8 +459,20 @@ export const setBookingStatus = createServerFn({ method: "POST" })
       .eq("id", data.bookingId);
     await supabaseAdmin
       .from("booking_events")
-      .insert({ booking_id: data.bookingId, status: data.status as never, note: data.note || null, created_by: staff.name } as never);
-    await logAudit(supabaseAdmin as never, staff, "booking.status", "vehicle_bookings", data.bookingId, { status: data.status });
+      .insert({
+        booking_id: data.bookingId,
+        status: data.status as never,
+        note: data.note || null,
+        created_by: staff.name,
+      } as never);
+    await logAudit(
+      supabaseAdmin as never,
+      staff,
+      "booking.status",
+      "vehicle_bookings",
+      data.bookingId,
+      { status: data.status },
+    );
 
     const { notifyBookingStatus } = await import("@/lib/vehicle-notify.server");
     await notifyBookingStatus(data.bookingId, data.status, data.note || null);
@@ -391,19 +481,60 @@ export const setBookingStatus = createServerFn({ method: "POST" })
 
 /** Record the machine handed over, start the warranty and build the service plan. */
 export const recordDelivery = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string; chassisNumber: string; motorNumber: string; registrationNumber?: string; batteryNumber?: string; warrantyStart?: string; deliveredOn?: string; unpaidOverrideReason?: string }) => ({
-    bookingId: uuid(data?.bookingId), chassisNumber: text(data?.chassisNumber, 60), motorNumber: text(data?.motorNumber, 60), registrationNumber: text(data?.registrationNumber, 40), batteryNumber: text(data?.batteryNumber, 80), warrantyStart: dateOrNull(data?.warrantyStart), deliveredOn: dateOrNull(data?.deliveredOn), unpaidOverrideReason: text(data?.unpaidOverrideReason, 400),
-  }))
+  .inputValidator(
+    (data: {
+      bookingId: string;
+      chassisNumber: string;
+      motorNumber: string;
+      registrationNumber?: string;
+      batteryNumber?: string;
+      warrantyStart?: string;
+      deliveredOn?: string;
+      unpaidOverrideReason?: string;
+    }) => ({
+      bookingId: uuid(data?.bookingId),
+      chassisNumber: text(data?.chassisNumber, 60),
+      motorNumber: text(data?.motorNumber, 60),
+      registrationNumber: text(data?.registrationNumber, 40),
+      batteryNumber: text(data?.batteryNumber, 80),
+      warrantyStart: dateOrNull(data?.warrantyStart),
+      deliveredOn: dateOrNull(data?.deliveredOn),
+      unpaidOverrideReason: text(data?.unpaidOverrideReason, 400),
+    }),
+  )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff({ capability: "operations" });
-    if (!data.bookingId || !data.chassisNumber || !data.motorNumber) return { ok: false, error: "Chassis and motor number are both needed." };
+    if (!data.bookingId || !data.chassisNumber || !data.motorNumber)
+      return { ok: false, error: "Chassis and motor number are both needed." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: reg, error } = await supabaseAdmin.rpc("deliver_booking_with_balance", { p_booking_id: data.bookingId, p_chassis: data.chassisNumber, p_motor: data.motorNumber, p_registration: data.registrationNumber, p_battery: data.batteryNumber, p_warranty: data.warrantyStart ?? undefined, p_delivered: data.deliveredOn ?? undefined, p_override_reason: data.unpaidOverrideReason, p_actor_id: staff.userId, p_actor_name: staff.name });
+    const { data: reg, error } = await supabaseAdmin.rpc("deliver_booking_with_balance", {
+      p_booking_id: data.bookingId,
+      p_chassis: data.chassisNumber,
+      p_motor: data.motorNumber,
+      p_registration: data.registrationNumber,
+      p_battery: data.batteryNumber,
+      p_warranty: data.warrantyStart ?? (null as never),
+      p_delivered: data.deliveredOn ?? (null as never),
+      p_override_reason: data.unpaidOverrideReason,
+      p_actor_id: staff.userId,
+      p_actor_name: staff.name,
+    });
     if (error) return { ok: false, error: error.message };
-    await logAudit(supabaseAdmin as never, staff, "booking.delivered", "vehicle_registrations", reg, { chassis: data.chassisNumber, overrideReason: data.unpaidOverrideReason });
+    await logAudit(
+      supabaseAdmin as never,
+      staff,
+      "booking.delivered",
+      "vehicle_registrations",
+      reg,
+      { chassis: data.chassisNumber, overrideReason: data.unpaidOverrideReason },
+    );
     const { notifyBookingStatus } = await import("@/lib/vehicle-notify.server");
-    await notifyBookingStatus(data.bookingId, "delivered", "Your warranty starts today. Service reminders will come on WhatsApp.");
+    await notifyBookingStatus(
+      data.bookingId,
+      "delivered",
+      "Your warranty starts today. Service reminders will come on WhatsApp.",
+    );
     return { ok: true };
   });
 
@@ -421,69 +552,101 @@ export type LeadRow = {
 
 /** Test rides, finance enquiries, exchange valuations and service bookings in one queue. */
 export const listLeads = createServerFn({ method: "POST" })
-  .inputValidator((data: { kind?: string; page?: number } | undefined) => ({ kind: text(data?.kind, 20) || "test_ride", page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
+  .inputValidator((data: { kind?: string; page?: number } | undefined) => ({
+    kind: text(data?.kind, 20) || "test_ride",
+    page: Math.max(0, Math.floor(Number(data?.page ?? 0))),
+  }))
   .handler(async ({ data }): Promise<{ items: LeadRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const sel = "*, products(name)";
-    const model = (r: Record<string, any>) => (r['products'] as { name?: string } | null)?.name ?? null;
+    const model = (r: Record<string, any>) =>
+      (r["products"] as { name?: string } | null)?.name ?? null;
 
     if (data.kind === "finance") {
-      const { data: rows, count } = await supabaseAdmin.from("finance_enquiries").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
-      return { items: (rows ?? []).map((r) => ({
-        id: String(r.id),
-        kind: "finance",
-        name: String(r.name),
-        phone: String(r.phone),
-        alternatePhone: r.alternate_phone,
-        model: model(r as Record<string, any>),
-        detail: `Down payment ₹${r.down_payment ?? "-"} · ${r.tenure_months ?? "-"} months · income ₹${r.monthly_income ?? "-"} · ${r.employment ?? ""}`,
-        status: String(r.status),
-        createdAt: String(r.created_at),
-      })), total: count ?? 0 };
+      const { data: rows, count } = await supabaseAdmin
+        .from("finance_enquiries")
+        .select(sel, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(data.page * 8, data.page * 8 + 7);
+      return {
+        items: (rows ?? []).map((r) => ({
+          id: String(r.id),
+          kind: "finance",
+          name: String(r.name),
+          phone: String(r.phone),
+          alternatePhone: r.alternate_phone,
+          model: model(r as Record<string, any>),
+          detail: `Down payment ₹${r.down_payment ?? "-"} · ${r.tenure_months ?? "-"} months · income ₹${r.monthly_income ?? "-"} · ${r.employment ?? ""}`,
+          status: String(r.status),
+          createdAt: String(r.created_at),
+        })),
+        total: count ?? 0,
+      };
     }
     if (data.kind === "exchange") {
-      const { data: rows, count } = await supabaseAdmin.from("exchange_valuations").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
-      return { items: (rows ?? []).map((r) => ({
-        id: String(r.id),
-        kind: "exchange",
-        name: String(r.name),
-        phone: String(r.phone),
-        alternatePhone: null,
-        model: model(r as Record<string, any>),
-        detail: `${r.current_brand ?? ""} ${r.current_model ?? ""} ${r.year ?? ""} · ${r.km_run ?? "-"} km · ${r.condition ?? ""}${r.quoted_value ? ` · quoted ₹${r.quoted_value}` : ""}`,
-        status: String(r.status),
-        createdAt: String(r.created_at),
-      })), total: count ?? 0 };
+      const { data: rows, count } = await supabaseAdmin
+        .from("exchange_valuations")
+        .select(sel, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(data.page * 8, data.page * 8 + 7);
+      return {
+        items: (rows ?? []).map((r) => ({
+          id: String(r.id),
+          kind: "exchange",
+          name: String(r.name),
+          phone: String(r.phone),
+          alternatePhone: null,
+          model: model(r as Record<string, any>),
+          detail: `${r.current_brand ?? ""} ${r.current_model ?? ""} ${r.year ?? ""} · ${r.km_run ?? "-"} km · ${r.condition ?? ""}${r.quoted_value ? ` · quoted ₹${r.quoted_value}` : ""}`,
+          status: String(r.status),
+          createdAt: String(r.created_at),
+        })),
+        total: count ?? 0,
+      };
     }
     if (data.kind === "service") {
-      const { data: rows, count } = await supabaseAdmin.from("service_bookings").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
-      return { items: (rows ?? []).map((r) => ({
+      const { data: rows, count } = await supabaseAdmin
+        .from("service_bookings")
+        .select(sel, { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(data.page * 8, data.page * 8 + 7);
+      return {
+        items: (rows ?? []).map((r) => ({
+          id: String(r.id),
+          kind: "service",
+          name: String(r.name),
+          phone: String(r.phone),
+          alternatePhone: r.alternate_phone,
+          model: model(r as Record<string, any>),
+          detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""} — ${r.issue ?? ""}`,
+          status: String(r.status),
+          createdAt: String(r.created_at),
+        })),
+        total: count ?? 0,
+      };
+    }
+
+    const { data: rows, count } = await supabaseAdmin
+      .from("test_ride_requests")
+      .select(sel, { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(data.page * 8, data.page * 8 + 7);
+    return {
+      items: (rows ?? []).map((r) => ({
         id: String(r.id),
-        kind: "service",
+        kind: "test_ride",
         name: String(r.name),
         phone: String(r.phone),
         alternatePhone: r.alternate_phone,
         model: model(r as Record<string, any>),
-        detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""} — ${r.issue ?? ""}`,
+        detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""}${r.note ? ` — ${r.note}` : ""}`,
         status: String(r.status),
         createdAt: String(r.created_at),
-      })), total: count ?? 0 };
-    }
-
-    const { data: rows, count } = await supabaseAdmin.from("test_ride_requests").select(sel, { count: "exact" }).order("created_at", { ascending: false }).range(data.page * 8, data.page * 8 + 7);
-    return { items: (rows ?? []).map((r) => ({
-      id: String(r.id),
-      kind: "test_ride",
-      name: String(r.name),
-      phone: String(r.phone),
-      alternatePhone: r.alternate_phone,
-      model: model(r as Record<string, any>),
-      detail: `${r.preferred_date ?? "any day"} ${r.slot ?? ""}${r.note ? ` — ${r.note}` : ""}`,
-      status: String(r.status),
-      createdAt: String(r.created_at),
-    })), total: count ?? 0 };
+      })),
+      total: count ?? 0,
+    };
   });
 
 const LEAD_TABLES: Record<string, string> = {
@@ -495,13 +658,15 @@ const LEAD_TABLES: Record<string, string> = {
 
 /** Mark a lead done, or note what was agreed. */
 export const updateLead = createServerFn({ method: "POST" })
-  .inputValidator((data: { kind: string; id: string; status?: string; note?: string; quotedValue?: number }) => ({
-    kind: text(data?.kind, 20),
-    id: uuid(data?.id),
-    status: text(data?.status, 20),
-    note: text(data?.note, 500),
-    quotedValue: num(data?.quotedValue),
-  }))
+  .inputValidator(
+    (data: { kind: string; id: string; status?: string; note?: string; quotedValue?: number }) => ({
+      kind: text(data?.kind, 20),
+      id: uuid(data?.id),
+      status: text(data?.status, 20),
+      note: text(data?.note, 500),
+      quotedValue: num(data?.quotedValue),
+    }),
+  )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff();
@@ -513,11 +678,15 @@ export const updateLead = createServerFn({ method: "POST" })
       .update({
         ...(data.status ? { status: data.status } : {}),
         ...(data.note ? { note: data.note } : {}),
-        ...(data.kind === "exchange" && data.quotedValue !== null ? { quoted_value: data.quotedValue } : {}),
+        ...(data.kind === "exchange" && data.quotedValue !== null
+          ? { quoted_value: data.quotedValue }
+          : {}),
         handled_by: staff.name,
       } as never)
       .eq("id", data.id);
-    await logAudit(supabaseAdmin as never, staff, `${data.kind}.update`, table, data.id, { status: data.status });
+    await logAudit(supabaseAdmin as never, staff, `${data.kind}.update`, table, data.id, {
+      status: data.status,
+    });
     return { ok: true };
   });
 
@@ -533,45 +702,60 @@ export type ServiceDueRow = {
 };
 
 /** Services falling due, soonest first. */
-export const listServiceDue = createServerFn({ method: "POST" }).handler(async (): Promise<ServiceDueRow[]> => {
-  const { requireStaff } = await import("@/lib/staff.server");
-  await requireStaff();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: rows } = await supabaseAdmin
-    .from("service_schedule")
-    .select("id, label, due_on, registration_id, vehicle_registrations(owner_name, phone, registration_number, products(name))")
-    .eq("status", "due")
-    .order("due_on")
-    .limit(100);
-  return (rows ?? []).map((r) => {
-    const reg = (r as { vehicle_registrations?: Record<string, any> | null }).vehicle_registrations;
-    return {
-      id: String(r.id),
-      registrationId: String(r.registration_id),
-      label: String(r.label),
-      dueOn: String(r.due_on),
-      owner: String(reg?.['owner_name'] ?? ""),
-      phone: String(reg?.['phone'] ?? ""),
-      model: (reg?.['products'] as { name?: string } | null)?.name ?? null,
-      registrationNumber: reg?.['registration_number'] ?? null,
-    };
-  });
-});
+export const listServiceDue = createServerFn({ method: "POST" }).handler(
+  async (): Promise<ServiceDueRow[]> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("service_schedule")
+      .select(
+        "id, label, due_on, registration_id, vehicle_registrations(owner_name, phone, registration_number, products(name))",
+      )
+      .eq("status", "due")
+      .order("due_on")
+      .limit(100);
+    return (rows ?? []).map((r) => {
+      const reg = (r as { vehicle_registrations?: Record<string, any> | null })
+        .vehicle_registrations;
+      return {
+        id: String(r.id),
+        registrationId: String(r.registration_id),
+        label: String(r.label),
+        dueOn: String(r.due_on),
+        owner: String(reg?.["owner_name"] ?? ""),
+        phone: String(reg?.["phone"] ?? ""),
+        model: (reg?.["products"] as { name?: string } | null)?.name ?? null,
+        registrationNumber: reg?.["registration_number"] ?? null,
+      };
+    });
+  },
+);
 
 /** Write up a service that was carried out. */
 export const addServiceRecord = createServerFn({ method: "POST" })
-  .inputValidator((data: { registrationId: string; scheduleId?: string; workDone: string; odometer?: number; cost?: number; nextDueOn?: string }) => ({
-    registrationId: uuid(data?.registrationId),
-    scheduleId: uuid(data?.scheduleId),
-    workDone: text(data?.workDone, 1000),
-    odometer: num(data?.odometer),
-    cost: num(data?.cost),
-    nextDueOn: dateOrNull(data?.nextDueOn),
-  }))
+  .inputValidator(
+    (data: {
+      registrationId: string;
+      scheduleId?: string;
+      workDone: string;
+      odometer?: number;
+      cost?: number;
+      nextDueOn?: string;
+    }) => ({
+      registrationId: uuid(data?.registrationId),
+      scheduleId: uuid(data?.scheduleId),
+      workDone: text(data?.workDone, 1000),
+      odometer: num(data?.odometer),
+      cost: num(data?.cost),
+      nextDueOn: dateOrNull(data?.nextDueOn),
+    }),
+  )
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff();
-    if (!data.registrationId || !data.workDone) return { ok: false, error: "Say what work was done." };
+    if (!data.registrationId || !data.workDone)
+      return { ok: false, error: "Say what work was done." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("service_records").insert({
       registration_id: data.registrationId,
@@ -587,62 +771,188 @@ export const addServiceRecord = createServerFn({ method: "POST" })
         .update({ status: "done", completed_at: new Date().toISOString() } as never)
         .eq("id", data.scheduleId);
     }
-    await logAudit(supabaseAdmin as never, staff, "service.record", "service_records", data.registrationId, {});
+    await logAudit(
+      supabaseAdmin as never,
+      staff,
+      "service.record",
+      "service_records",
+      data.registrationId,
+      {},
+    );
     return { ok: true };
   });
 
-export type ShowroomSaleInput = { productId: string; customer: { name: string; phone: string; alternatePhone?: string; address?: string }; lines: SaleLine[]; discount: number; discountReason?: string; expectedDelivery?: string };
+export type ShowroomSaleInput = {
+  productId: string;
+  customer: { name: string; phone: string; alternatePhone?: string; address?: string };
+  lines: SaleLine[];
+  discount: number;
+  discountReason?: string;
+  expectedDelivery?: string;
+};
 export const createShowroomSale = createServerFn({ method: "POST" })
   .inputValidator((data: ShowroomSaleInput) => data)
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff({ capability: "operations" });
-    if (!uuid(data.productId) || !data.customer.name.trim() || !/^\d{10}$/.test(data.customer.phone) || (data.customer.alternatePhone && !/^[6-9]\d{9}$/.test(data.customer.alternatePhone))) return { ok: false as const, error: "Enter customer name and valid phone numbers." };
-    if (!Number.isFinite(data.discount) || data.discount < 0) return { ok: false as const, error: "Invalid discount." };
+    if (
+      !uuid(data.productId) ||
+      !data.customer.name.trim() ||
+      !/^\d{10}$/.test(data.customer.phone) ||
+      (data.customer.alternatePhone && !/^[6-9]\d{9}$/.test(data.customer.alternatePhone))
+    )
+      return { ok: false as const, error: "Enter customer name and valid phone numbers." };
+    if (!Number.isFinite(data.discount) || data.discount < 0)
+      return { ok: false as const, error: "Invalid discount." };
     if (!roleAtLeast(staff.role, "manager")) {
-      const model = (await listVehicles()).find(v => v.id === data.productId);
-      if (!model || JSON.stringify(data.lines) !== JSON.stringify(catalogueSaleLines(model)) || data.discount !== 0) return { ok: false as const, error: "Staff must use the catalogue price; a Manager can adjust it." };
+      const model = (await listVehicles()).find((v) => v.id === data.productId);
+      if (
+        !model ||
+        JSON.stringify(data.lines) !== JSON.stringify(catalogueSaleLines(model)) ||
+        data.discount !== 0
+      )
+        return {
+          ok: false as const,
+          error: "Staff must use the catalogue price; a Manager can adjust it.",
+        };
     }
-    if (data.discount > 0 && text(data.discountReason, 400).length < 3) return { ok: false as const, error: "Add a discount reason." };
+    if (data.discount > 0 && text(data.discountReason, 400).length < 3)
+      return { ok: false as const, error: "Add a discount reason." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: sale, error } = await supabaseAdmin.rpc("create_showroom_booking", { p_product_id: data.productId, p_customer: data.customer, p_lines: data.lines, p_discount: data.discount, p_discount_reason: text(data.discountReason,400), p_expected_delivery: dateOrNull(data.expectedDelivery) ?? undefined, p_actor_id: staff.userId, p_actor_name: staff.name });
+    const { data: sale, error } = await supabaseAdmin.rpc("create_showroom_booking", {
+      p_product_id: data.productId,
+      p_customer: data.customer,
+      p_lines: data.lines,
+      p_discount: data.discount,
+      p_discount_reason: text(data.discountReason, 400),
+      p_expected_delivery: dateOrNull(data.expectedDelivery) ?? (null as never),
+      p_actor_id: staff.userId,
+      p_actor_name: staff.name,
+    });
     if (error) return { ok: false as const, error: error.message };
-    await logAudit(supabaseAdmin as never, staff, "booking.showroom_created", "vehicle_bookings", null, { sale });
+    await logAudit(
+      supabaseAdmin as never,
+      staff,
+      "booking.showroom_created",
+      "vehicle_bookings",
+      null,
+      { sale },
+    );
     return { ok: true as const, sale };
   });
 export const adjustBookingAgreedPrice = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string; lines: SaleLine[]; discount: number; discountReason?: string }) => data)
+  .inputValidator(
+    (data: { bookingId: string; lines: SaleLine[]; discount: number; discountReason?: string }) =>
+      data,
+  )
   .handler(async ({ data }) => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff({ capability: "operations", manager: true });
-    const id = uuid(data.bookingId); if (!id) return { ok: false, error: "Unknown booking." };
+    const id = uuid(data.bookingId);
+    if (!id) return { ok: false, error: "Unknown booking." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.rpc("adjust_booking_agreed_price", { p_booking_id: id, p_lines: data.lines, p_discount: data.discount, p_discount_reason: text(data.discountReason,400), p_actor_id: staff.userId, p_actor_name: staff.name });
+    const { error } = await supabaseAdmin.rpc("adjust_booking_agreed_price", {
+      p_booking_id: id,
+      p_lines: data.lines,
+      p_discount: data.discount,
+      p_discount_reason: text(data.discountReason, 400),
+      p_actor_id: staff.userId,
+      p_actor_name: staff.name,
+    });
     if (error) return { ok: false, error: error.message };
-    await logAudit(supabaseAdmin as never, staff, "booking.agreed_price", "vehicle_bookings", id, { lines: data.lines, discount: data.discount }); return { ok: true };
+    await logAudit(supabaseAdmin as never, staff, "booking.agreed_price", "vehicle_bookings", id, {
+      lines: data.lines,
+      discount: data.discount,
+    });
+    return { ok: true };
   });
-export type BookingReceipt = { id: string; amount: number; payer_type: string; method: string; reference: string | null; note: string | null; received_on: string; recorded_by_name: string; voided_at: string | null; void_reason: string | null };
-export const listBookingReceipts = createServerFn({ method: "POST" }).inputValidator((data: { bookingId: string }) => data).handler(async ({ data }): Promise<{ receipts: BookingReceipt[]; outstanding: number }> => {
-  const { requireStaff } = await import("@/lib/staff.server"); await requireStaff({ capability: "operations" });
-  const id = uuid(data.bookingId); if (!id) throw new Error("Unknown booking");
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [rows, balance] = await Promise.all([supabaseAdmin.from("booking_receipts").select("id, amount, payer_type, method, reference, note, received_on, recorded_by_name, voided_at, void_reason").eq("booking_id", id).order("created_at", { ascending: false }), supabaseAdmin.rpc("booking_outstanding", { p_booking_id: id })]);
-  if (rows.error || balance.error) throw new Error(rows.error?.message ?? balance.error?.message);
-  return { receipts: rows.data ?? [], outstanding: Number(balance.data ?? 0) };
-});
+export type BookingReceipt = {
+  id: string;
+  amount: number;
+  payer_type: string;
+  method: string;
+  reference: string | null;
+  note: string | null;
+  received_on: string;
+  recorded_by_name: string;
+  voided_at: string | null;
+  void_reason: string | null;
+};
+export const listBookingReceipts = createServerFn({ method: "POST" })
+  .inputValidator((data: { bookingId: string }) => data)
+  .handler(async ({ data }): Promise<{ receipts: BookingReceipt[]; outstanding: number }> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "operations" });
+    const id = uuid(data.bookingId);
+    if (!id) throw new Error("Unknown booking");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [rows, balance] = await Promise.all([
+      supabaseAdmin
+        .from("booking_receipts")
+        .select(
+          "id, amount, payer_type, method, reference, note, received_on, recorded_by_name, voided_at, void_reason",
+        )
+        .eq("booking_id", id)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin.rpc("booking_outstanding", { p_booking_id: id }),
+    ]);
+    if (rows.error || balance.error) throw new Error(rows.error?.message ?? balance.error?.message);
+    return { receipts: rows.data ?? [], outstanding: Number(balance.data ?? 0) };
+  });
 export const recordBookingReceipt = createServerFn({ method: "POST" })
-.inputValidator((data: { bookingId: string; amount: number; payerType: string; method: string; reference?: string; receivedOn?: string; note?: string }) => data)
-.handler(async ({ data }) => {
-  const { requireStaff, logAudit } = await import("@/lib/staff.server"); const staff = await requireStaff({ capability: "operations" });
-  const id = uuid(data.bookingId); if (!id || !Number.isFinite(data.amount) || data.amount <= 0) return { ok: false, error: "Enter a positive receipt amount." };
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: receipt, error } = await supabaseAdmin.rpc("record_booking_receipt", { p_booking_id: id, p_amount: data.amount, p_payer_type: data.payerType, p_method: text(data.method,60), p_reference: text(data.reference,160), p_received_on: dateOrNull(data.receivedOn) ?? undefined, p_note: text(data.note,400), p_actor_id: staff.userId, p_actor_name: staff.name });
-  if (error) return { ok: false, error: error.message }; await logAudit(supabaseAdmin as never, staff, "booking.receipt", "booking_receipts", receipt, { amount: data.amount, bookingId: id }); return { ok: true };
-});
-export const voidBookingReceipt = createServerFn({ method: "POST" }).inputValidator((data: { receiptId: string; reason: string }) => data).handler(async ({ data }) => {
-  const { requireStaff, logAudit } = await import("@/lib/staff.server"); const staff = await requireStaff({ capability: "operations", manager: true });
-  const id = uuid(data.receiptId); if (!id || text(data.reason,400).length < 3) return { ok: false, error: "Add a void reason." };
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.rpc("void_booking_receipt", { p_receipt_id: id, p_reason: text(data.reason,400), p_actor_id: staff.userId, p_actor_name: staff.name });
-  if (error) return { ok: false, error: error.message }; await logAudit(supabaseAdmin as never, staff, "booking.receipt_void", "booking_receipts", id, { reason: data.reason }); return { ok: true };
-});
+  .inputValidator(
+    (data: {
+      bookingId: string;
+      amount: number;
+      payerType: string;
+      method: string;
+      reference?: string;
+      receivedOn?: string;
+      note?: string;
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff({ capability: "operations" });
+    const id = uuid(data.bookingId);
+    if (!id || !Number.isFinite(data.amount) || data.amount <= 0)
+      return { ok: false, error: "Enter a positive receipt amount." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: receipt, error } = await supabaseAdmin.rpc("record_booking_receipt", {
+      p_booking_id: id,
+      p_amount: data.amount,
+      p_payer_type: data.payerType,
+      p_method: text(data.method, 60),
+      p_reference: text(data.reference, 160),
+      p_received_on: dateOrNull(data.receivedOn) ?? (null as never),
+      p_note: text(data.note, 400),
+      p_actor_id: staff.userId,
+      p_actor_name: staff.name,
+    });
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "booking.receipt", "booking_receipts", receipt, {
+      amount: data.amount,
+      bookingId: id,
+    });
+    return { ok: true };
+  });
+export const voidBookingReceipt = createServerFn({ method: "POST" })
+  .inputValidator((data: { receiptId: string; reason: string }) => data)
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff({ capability: "operations", manager: true });
+    const id = uuid(data.receiptId);
+    if (!id || text(data.reason, 400).length < 3) return { ok: false, error: "Add a void reason." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("void_booking_receipt", {
+      p_receipt_id: id,
+      p_reason: text(data.reason, 400),
+      p_actor_id: staff.userId,
+      p_actor_name: staff.name,
+    });
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "booking.receipt_void", "booking_receipts", id, {
+      reason: data.reason,
+    });
+    return { ok: true };
+  });

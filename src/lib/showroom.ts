@@ -1,11 +1,23 @@
 import type { VehicleModel } from "@/lib/vehicles";
 
-export const SALE_LINE_KINDS = ["vehicle", "rto", "insurance", "accessory", "subsidy", "discount", "finance_fee"] as const;
-export type SaleLine = { label: string; amount: number; kind: typeof SALE_LINE_KINDS[number] };
+export const SALE_LINE_KINDS = [
+  "vehicle",
+  "rto",
+  "insurance",
+  "accessory",
+  "subsidy",
+  "discount",
+  "finance_fee",
+] as const;
+export type SaleLine = { label: string; amount: number; kind: (typeof SALE_LINE_KINDS)[number] };
 export function catalogueSaleLines(vehicle: VehicleModel): SaleLine[] {
   return [
     { label: "Ex-showroom", amount: vehicle.price.exShowroom, kind: "vehicle" },
-    { label: "RTO", amount: vehicle.specs.registrationRequired ? vehicle.price.rto : 0, kind: "rto" },
+    {
+      label: "RTO",
+      amount: vehicle.specs.registrationRequired ? vehicle.price.rto : 0,
+      kind: "rto",
+    },
     { label: "Insurance", amount: vehicle.price.insurance, kind: "insurance" },
     { label: "Accessories", amount: vehicle.price.accessories, kind: "accessory" },
     { label: "Subsidy", amount: -vehicle.price.subsidy, kind: "subsidy" },
