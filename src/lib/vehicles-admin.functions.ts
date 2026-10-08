@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { mapPrice, mapSpecs } from "@/lib/vehicle-map";
+import { roleAtLeast } from "@/lib/staff-permissions";
+import { catalogueSaleLines, type SaleLine } from "@/lib/showroom";
+import { listVehicles } from "@/lib/vehicles.functions";
 import type { VehiclePrice, VehicleSpecs } from "@/lib/vehicles";
 
 const text = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -261,6 +264,11 @@ export type BookingRow = {
   colour: string | null;
   status: string;
   paymentStatus: string;
+  saleKind: string;
+  discountAmount: number;
+  discountReason: string | null;
+  priceBreakdown: unknown;
+  batteryNumber: string | null;
   onRoadTotal: number;
   tokenAmount: number;
   balanceDue: number;
@@ -285,12 +293,12 @@ export const listBookings = createServerFn({ method: "POST" })
 
     let query = supabaseAdmin
       .from("vehicle_bookings")
-      .select("*, products(name), vehicle_registrations(id, chassis_number, motor_number, registration_number, warranty_start)", { count: "exact" })
+      .select("*, products(name), vehicle_registrations(id, chassis_number, motor_number, battery_number, registration_number, warranty_start)", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(data.page * 8, data.page * 8 + 7);
     if (data.status === "open") query = query.not("status", "in", "(delivered,cancelled)");
     else if (data.status === "needs_review") query = query.eq("needs_payment_review", true);
-    else if (data.status === "unpaid_48h") query = query.neq("payment_status", "paid").neq("status", "cancelled").lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
+    else if (data.status === "unpaid_48h") query = query.eq("sale_kind", "online").neq("payment_status", "paid").neq("status", "cancelled").lt("created_at", new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString());
     else if (BOOKING_STATUSES.includes(data.status)) query = query.eq("status", data.status as never);
 
     const { data: rows, count } = await query;
@@ -308,6 +316,11 @@ export const listBookings = createServerFn({ method: "POST" })
         colour: r.colour,
         status: String(r.status),
         paymentStatus: String(r.payment_status),
+        saleKind: String(r.sale_kind ?? "online"),
+        discountAmount: Number(r.discount_amount ?? 0),
+        discountReason: r.discount_reason,
+        priceBreakdown: r.price_breakdown,
+        batteryNumber: reg?.["battery_number"] ?? null,
         onRoadTotal: Number(r.on_road_total ?? 0),
         tokenAmount: Number(r.token_amount ?? 0),
         balanceDue: Number(r.balance_due ?? 0),
@@ -355,6 +368,7 @@ export const setBookingStatus = createServerFn({ method: "POST" })
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
     const staff = await requireStaff();
     if (!data.bookingId || !data.status) return { ok: false, error: "Pick a stage." };
+    if (data.status === "delivered") return { ok: false, error: "Use Record handover to deliver this booking." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     await supabaseAdmin
@@ -377,65 +391,19 @@ export const setBookingStatus = createServerFn({ method: "POST" })
 
 /** Record the machine handed over, start the warranty and build the service plan. */
 export const recordDelivery = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string; chassisNumber: string; motorNumber: string; registrationNumber?: string; warrantyStart?: string; deliveredOn?: string }) => ({
-    bookingId: uuid(data?.bookingId),
-    chassisNumber: text(data?.chassisNumber, 60),
-    motorNumber: text(data?.motorNumber, 60),
-    registrationNumber: text(data?.registrationNumber, 40),
-    warrantyStart: dateOrNull(data?.warrantyStart),
-    deliveredOn: dateOrNull(data?.deliveredOn),
+  .inputValidator((data: { bookingId: string; chassisNumber: string; motorNumber: string; registrationNumber?: string; batteryNumber?: string; warrantyStart?: string; deliveredOn?: string; unpaidOverrideReason?: string }) => ({
+    bookingId: uuid(data?.bookingId), chassisNumber: text(data?.chassisNumber, 60), motorNumber: text(data?.motorNumber, 60), registrationNumber: text(data?.registrationNumber, 40), batteryNumber: text(data?.batteryNumber, 80), warrantyStart: dateOrNull(data?.warrantyStart), deliveredOn: dateOrNull(data?.deliveredOn), unpaidOverrideReason: text(data?.unpaidOverrideReason, 400),
   }))
   .handler(async ({ data }): Promise<{ ok: boolean; error?: string }> => {
     const { requireStaff, logAudit } = await import("@/lib/staff.server");
-    const staff = await requireStaff();
-    if (!data.bookingId) return { ok: false, error: "Unknown booking." };
-    if (!data.chassisNumber || !data.motorNumber) return { ok: false, error: "Chassis and motor number are both needed." };
-
+    const staff = await requireStaff({ capability: "operations" });
+    if (!data.bookingId || !data.chassisNumber || !data.motorNumber) return { ok: false, error: "Chassis and motor number are both needed." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: booking } = await supabaseAdmin
-      .from("vehicle_bookings")
-      .select("id, product_id, profile_id, customer_name, phone")
-      .eq("id", data.bookingId)
-      .maybeSingle();
-    if (!booking) return { ok: false, error: "Unknown booking." };
-
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: reg, error } = await supabaseAdmin
-      .from("vehicle_registrations")
-      .upsert(
-        {
-          booking_id: booking.id,
-          product_id: booking.product_id,
-          profile_id: booking.profile_id,
-          owner_name: booking.customer_name,
-          phone: booking.phone,
-          chassis_number: data.chassisNumber,
-          motor_number: data.motorNumber,
-          registration_number: data.registrationNumber || null,
-          warranty_start: data.warrantyStart ?? today,
-          delivered_on: data.deliveredOn ?? today,
-          updated_at: new Date().toISOString(),
-        } as never,
-        { onConflict: "booking_id" },
-      )
-      .select("id")
-      .single();
-    if (error || !reg) return { ok: false, error: error?.message ?? "Could not save these numbers." };
-
-    await supabaseAdmin.rpc("build_service_schedule", { p_registration: reg.id });
-    await supabaseAdmin
-      .from("vehicle_bookings")
-      .update({ status: "delivered" as never, updated_at: new Date().toISOString() } as never)
-      .eq("id", booking.id);
-    await supabaseAdmin
-      .from("booking_events")
-      .insert({ booking_id: booking.id, status: "delivered" as never, note: "Vehicle handed over", created_by: staff.name } as never);
-    await logAudit(supabaseAdmin as never, staff, "booking.delivered", "vehicle_registrations", reg.id, {
-      chassis: data.chassisNumber,
-    });
-
+    const { data: reg, error } = await supabaseAdmin.rpc("deliver_booking_with_balance", { p_booking_id: data.bookingId, p_chassis: data.chassisNumber, p_motor: data.motorNumber, p_registration: data.registrationNumber, p_battery: data.batteryNumber, p_warranty: data.warrantyStart ?? undefined, p_delivered: data.deliveredOn ?? undefined, p_override_reason: data.unpaidOverrideReason, p_actor_id: staff.userId, p_actor_name: staff.name });
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "booking.delivered", "vehicle_registrations", reg, { chassis: data.chassisNumber, overrideReason: data.unpaidOverrideReason });
     const { notifyBookingStatus } = await import("@/lib/vehicle-notify.server");
-    await notifyBookingStatus(booking.id, "delivered", "Your warranty starts today. Service reminders will come on WhatsApp.");
+    await notifyBookingStatus(data.bookingId, "delivered", "Your warranty starts today. Service reminders will come on WhatsApp.");
     return { ok: true };
   });
 
@@ -622,3 +590,59 @@ export const addServiceRecord = createServerFn({ method: "POST" })
     await logAudit(supabaseAdmin as never, staff, "service.record", "service_records", data.registrationId, {});
     return { ok: true };
   });
+
+export type ShowroomSaleInput = { productId: string; customer: { name: string; phone: string; alternatePhone?: string; address?: string }; lines: SaleLine[]; discount: number; discountReason?: string; expectedDelivery?: string };
+export const createShowroomSale = createServerFn({ method: "POST" })
+  .inputValidator((data: ShowroomSaleInput) => data)
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff({ capability: "operations" });
+    if (!uuid(data.productId) || !data.customer.name.trim() || !/^\d{10}$/.test(data.customer.phone) || (data.customer.alternatePhone && !/^[6-9]\d{9}$/.test(data.customer.alternatePhone))) return { ok: false as const, error: "Enter customer name and valid phone numbers." };
+    if (!Number.isFinite(data.discount) || data.discount < 0) return { ok: false as const, error: "Invalid discount." };
+    if (!roleAtLeast(staff.role, "manager")) {
+      const model = (await listVehicles()).find(v => v.id === data.productId);
+      if (!model || JSON.stringify(data.lines) !== JSON.stringify(catalogueSaleLines(model)) || data.discount !== 0) return { ok: false as const, error: "Staff must use the catalogue price; a Manager can adjust it." };
+    }
+    if (data.discount > 0 && text(data.discountReason, 400).length < 3) return { ok: false as const, error: "Add a discount reason." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: sale, error } = await supabaseAdmin.rpc("create_showroom_booking", { p_product_id: data.productId, p_customer: data.customer, p_lines: data.lines, p_discount: data.discount, p_discount_reason: text(data.discountReason,400), p_expected_delivery: dateOrNull(data.expectedDelivery) ?? undefined, p_actor_id: staff.userId, p_actor_name: staff.name });
+    if (error) return { ok: false as const, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "booking.showroom_created", "vehicle_bookings", null, { sale });
+    return { ok: true as const, sale };
+  });
+export const adjustBookingAgreedPrice = createServerFn({ method: "POST" })
+  .inputValidator((data: { bookingId: string; lines: SaleLine[]; discount: number; discountReason?: string }) => data)
+  .handler(async ({ data }) => {
+    const { requireStaff, logAudit } = await import("@/lib/staff.server");
+    const staff = await requireStaff({ capability: "operations", manager: true });
+    const id = uuid(data.bookingId); if (!id) return { ok: false, error: "Unknown booking." };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("adjust_booking_agreed_price", { p_booking_id: id, p_lines: data.lines, p_discount: data.discount, p_discount_reason: text(data.discountReason,400), p_actor_id: staff.userId, p_actor_name: staff.name });
+    if (error) return { ok: false, error: error.message };
+    await logAudit(supabaseAdmin as never, staff, "booking.agreed_price", "vehicle_bookings", id, { lines: data.lines, discount: data.discount }); return { ok: true };
+  });
+export type BookingReceipt = { id: string; amount: number; payer_type: string; method: string; reference: string | null; note: string | null; received_on: string; recorded_by_name: string; voided_at: string | null; void_reason: string | null };
+export const listBookingReceipts = createServerFn({ method: "POST" }).inputValidator((data: { bookingId: string }) => data).handler(async ({ data }): Promise<{ receipts: BookingReceipt[]; outstanding: number }> => {
+  const { requireStaff } = await import("@/lib/staff.server"); await requireStaff({ capability: "operations" });
+  const id = uuid(data.bookingId); if (!id) throw new Error("Unknown booking");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const [rows, balance] = await Promise.all([supabaseAdmin.from("booking_receipts").select("id, amount, payer_type, method, reference, note, received_on, recorded_by_name, voided_at, void_reason").eq("booking_id", id).order("created_at", { ascending: false }), supabaseAdmin.rpc("booking_outstanding", { p_booking_id: id })]);
+  if (rows.error || balance.error) throw new Error(rows.error?.message ?? balance.error?.message);
+  return { receipts: rows.data ?? [], outstanding: Number(balance.data ?? 0) };
+});
+export const recordBookingReceipt = createServerFn({ method: "POST" })
+.inputValidator((data: { bookingId: string; amount: number; payerType: string; method: string; reference?: string; receivedOn?: string; note?: string }) => data)
+.handler(async ({ data }) => {
+  const { requireStaff, logAudit } = await import("@/lib/staff.server"); const staff = await requireStaff({ capability: "operations" });
+  const id = uuid(data.bookingId); if (!id || !Number.isFinite(data.amount) || data.amount <= 0) return { ok: false, error: "Enter a positive receipt amount." };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: receipt, error } = await supabaseAdmin.rpc("record_booking_receipt", { p_booking_id: id, p_amount: data.amount, p_payer_type: data.payerType, p_method: text(data.method,60), p_reference: text(data.reference,160), p_received_on: dateOrNull(data.receivedOn) ?? undefined, p_note: text(data.note,400), p_actor_id: staff.userId, p_actor_name: staff.name });
+  if (error) return { ok: false, error: error.message }; await logAudit(supabaseAdmin as never, staff, "booking.receipt", "booking_receipts", receipt, { amount: data.amount, bookingId: id }); return { ok: true };
+});
+export const voidBookingReceipt = createServerFn({ method: "POST" }).inputValidator((data: { receiptId: string; reason: string }) => data).handler(async ({ data }) => {
+  const { requireStaff, logAudit } = await import("@/lib/staff.server"); const staff = await requireStaff({ capability: "operations", manager: true });
+  const id = uuid(data.receiptId); if (!id || text(data.reason,400).length < 3) return { ok: false, error: "Add a void reason." };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.rpc("void_booking_receipt", { p_receipt_id: id, p_reason: text(data.reason,400), p_actor_id: staff.userId, p_actor_name: staff.name });
+  if (error) return { ok: false, error: error.message }; await logAudit(supabaseAdmin as never, staff, "booking.receipt_void", "booking_receipts", id, { reason: data.reason }); return { ok: true };
+});
