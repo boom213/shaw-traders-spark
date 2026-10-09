@@ -280,7 +280,7 @@ export const exportBookingsCsv = createServerFn({ method: "POST" })
     let query = context.sb
       .from("vehicle_bookings")
       .select(
-        "human_id, created_at, customer_name, phone, on_road_total, token_amount, balance_due, status, payment_status, expected_delivery, products(name), vehicle_registrations(chassis_number, motor_number, registration_number)",
+        "human_id, created_at, customer_name, phone, sale_kind, discount_amount, on_road_total, token_amount, balance_due, status, payment_status, expected_delivery, products(name), vehicle_registrations(chassis_number, motor_number, registration_number)",
       )
       .order("created_at", { ascending: false })
       .range(0, CSV_EXPORT_LIMIT);
@@ -309,6 +309,8 @@ export const exportBookingsCsv = createServerFn({ method: "POST" })
           "Model",
           "Customer",
           "Phone",
+          "Sale kind",
+          "Discount amount",
           "On-road total",
           "Token paid",
           "Balance due",
@@ -330,6 +332,8 @@ export const exportBookingsCsv = createServerFn({ method: "POST" })
             row["products"]?.["name"],
             row["customer_name"],
             row["phone"],
+            row["sale_kind"],
+            Number(row["discount_amount"] ?? 0),
             Number(row["on_road_total"]),
             Number(row["token_amount"]),
             Number(row["balance_due"]),
