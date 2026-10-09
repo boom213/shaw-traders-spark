@@ -4,6 +4,7 @@ import { roleAtLeast } from "@/lib/staff-permissions";
 import { catalogueSaleLines, type SaleLine } from "@/lib/showroom";
 import { listVehicles } from "@/lib/vehicles.functions";
 import type { VehiclePrice, VehicleSpecs } from "@/lib/vehicles";
+import type { Json } from "@/integrations/supabase/types";
 
 const text = (v: unknown, max: number) =>
   String(v ?? "")
@@ -316,7 +317,7 @@ export type BookingRow = {
   saleKind: string;
   discountAmount: number;
   discountReason: string | null;
-  priceBreakdown: unknown;
+  priceBreakdown: Json;
   batteryNumber: string | null;
   onRoadTotal: number;
   tokenAmount: number;

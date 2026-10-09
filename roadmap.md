@@ -114,3 +114,7 @@
 - [x] Keep the persistent top category navigation edge-safe with dedicated overflow controls.
 - [x] Align storefront search with visible parts and category terms.
 - [x] Recognize a freshly established recovery session after the email link removes its one-time token.
+
+## Rider home screen
+- [ ] Confirm whether the Rider screen belongs in this EV storefront or a separate ride-booking app before changing the homepage.
+- [ ] Confirm Mapbox browser/server credentials and saved places availability; implement map, draggable sheet, routing and configurable fares without booking submission.
