@@ -458,14 +458,12 @@ export const setBookingStatus = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       } as never)
       .eq("id", data.bookingId);
-    await supabaseAdmin
-      .from("booking_events")
-      .insert({
-        booking_id: data.bookingId,
-        status: data.status as never,
-        note: data.note || null,
-        created_by: staff.name,
-      } as never);
+    await supabaseAdmin.from("booking_events").insert({
+      booking_id: data.bookingId,
+      status: data.status as never,
+      note: data.note || null,
+      created_by: staff.name,
+    } as never);
     await logAudit(
       supabaseAdmin as never,
       staff,
