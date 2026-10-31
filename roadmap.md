@@ -1,6 +1,6 @@
 # Current task
-- [ ] Add showroom sales, agreed-price adjustment, void-only receipts, and guarded handover within Bookings & Service.
-- [ ] Verify showroom permissions, balances, and existing online booking compatibility.
+- [x] Add showroom sales, agreed-price adjustment, void-only receipts, and guarded handover within Bookings & Service.
+- [x] Verify showroom permissions, balances, and existing online booking compatibility (197 tests; signed-in sale creation/readback verified; no real Razorpay payment charged).
 - [x] Copy accepted wholesale quotes into a reviewable Counter Sales draft without auto-creating the sale.
 - [x] Add a staff-only CSV outreach list with manual WhatsApp handoff, progress tracking, and audited server-controlled writes.
 - [x] Replace hand-entered courier tracking links with a courier picker, AWB-based link generation, and safe manual overrides.
@@ -116,5 +116,5 @@
 - [x] Recognize a freshly established recovery session after the email link removes its one-time token.
 
 ## Rider home screen
-- [ ] Confirm whether the Rider screen belongs in this EV storefront or a separate ride-booking app before changing the homepage.
-- [ ] Confirm Mapbox browser/server credentials and saved places availability; implement map, draggable sheet, routing and configurable fares without booking submission.
+- [x] Default to a separate /rider screen, preserving the EV homepage after the placement question was skipped.
+- [ ] Build /rider once the user approves replacing the linked Google Maps provider and supplies Mapbox public/browser and private/server credentials; saved_places needs an additive owner-scoped table.
