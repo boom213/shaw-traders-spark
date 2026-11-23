@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, dehydrate, hydrate } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { RouteError, reportRouteError } from "@/components/site/RouteError";
 import { routeTree } from "./routeTree.gen";
@@ -27,6 +27,13 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: RouteError,
     defaultOnCatch: (error) => reportRouteError(error, "default_on_catch"),
+    // Hand the server's query cache (categories, shop settings, products…) to
+    // the browser with the page, so it does not fetch the same data again on
+    // every refresh. Sent as JSON text: the cached values are plain database rows.
+    dehydrate: () => ({ queryCache: JSON.stringify(dehydrate(queryClient)) }),
+    hydrate: (dehydrated: { queryCache: string }) => {
+      hydrate(queryClient, JSON.parse(dehydrated.queryCache));
+    },
   });
 
   return router;
