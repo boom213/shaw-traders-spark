@@ -1,9 +1,9 @@
 # Current task
 - [x] Show category names in Hindi/Bengali from the database, editable in Categories.
 - [x] Hide the duplicate visor and projector-light products (not deleted).
-- [ ] Wipe all sales test data and delete the duplicate visor (owner confirmed).
+- [x] Wipe all sales test data and delete the duplicate visor (owner confirmed).
 - [x] ₹199 / MRP ₹555 prices confirmed correct by the owner — left unchanged.
-- [ ] Block duplicate product names in the database — after the hidden duplicates are removed.
+- [ ] Block duplicate product names in the database — waiting on whether to delete the hidden second projector light.
 - [x] Add showroom sales, agreed-price adjustment, void-only receipts, and guarded handover within Bookings & Service.
 - [x] Verify showroom permissions, balances, and existing online booking compatibility (197 tests; signed-in sale creation/readback verified; no real Razorpay payment charged).
 - [x] Copy accepted wholesale quotes into a reviewable Counter Sales draft without auto-creating the sale.
