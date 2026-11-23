@@ -49,3 +49,4 @@
 - Only visitor-facing, read-only data may use the per-instance `createTtlCache` (currently the homepage feed, 30s); never cache reads that staff screens show after an edit, or "Saved" would look undone.
 - The router dehydrates the per-request QueryClient into the page (src/router.tsx); server loaders must only cache public data — never per-user or staff data — because it is embedded in the HTML.
 - Counter Sales product search reuses search_product_ids (categories, typos, vehicle models) plus plain name/SKU/brand/model/shelf matches, lists out-of-stock items after in-stock ones, and searches as staff type (250 ms pause).
+- Counter Sales search shows the top 4 matches as a keyboard combobox (CounterProductSearch); suggestions appear only for results of exactly the typed text, so Enter never adds a stale item.

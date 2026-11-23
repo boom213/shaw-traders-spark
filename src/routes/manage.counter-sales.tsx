@@ -13,6 +13,7 @@ import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { ListPager } from "@/components/manage/ListPager";
 import { ExportCsvButton } from "@/components/manage/ExportCsvButton";
 import { AddWholesalerDialog } from "@/components/manage/AddWholesalerDialog";
+import { CounterProductSearch } from "@/components/manage/CounterProductSearch";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cancelCounterSale, counterCustomerDetail, counterSaleInvoice, counterSaleSetup, counterSaleStaffInvoice, createCounterSale, listCounterSales, recordCounterPayment, searchCounterCustomers, searchCounterProducts, setChequeStatus, voidCounterSalePayment, type CounterPayment, type CounterProduct, type CounterSale } from "@/lib/counter-sales.functions";
@@ -147,10 +148,16 @@ function CounterSalesPage() {
     onError: (error) => toast.error(error.message),
   });
 
-  function addProduct(product: CounterProduct) {
+  /** Adds one of the product to the bill; returns false when it cannot be added. */
+  function addProduct(product: CounterProduct): boolean {
     const price = product.wholesalePrice ?? product.retailPrice;
-    if (price == null) return toast.error("This product has no wholesale or retail price.");
+    if (price == null) {
+      toast.error("This product has no wholesale or retail price.");
+      return false;
+    }
     setCart((current) => current.some((item) => item.id === product.id) ? current.map((item) => item.id === product.id ? { ...item, qty: item.qty + 1 } : item) : [...current, { ...product, qty: 1, unitPrice: price }]);
+    toast.success(`Added ${product.name}`, { id: "counter-add", duration: 1500 });
+    return true;
   }
 
   function applyQuoteDraft(draft: CounterSaleQuoteDraft) {
@@ -202,7 +209,7 @@ function CounterSalesPage() {
 
           <Card title="2. Add products" icon={<PackagePlus className="size-4" />}>
             {!customerId ? <p className="text-sm text-muted-foreground">Select a wholesale customer first.</p> : <>
-              <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); setSearchTerm(productQuery.trim()); }}><Input aria-label="Search sale products" value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search name, SKU, category, brand or shelf" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form>
+              <CounterProductSearch value={productQuery} onValueChange={setProductQuery} searchedFor={searchTerm} results={products} loading={searching} onSearchNow={setSearchTerm} onPick={addProduct} money={money} />
               <div className="mt-3 max-h-80 divide-y overflow-y-auto rounded-lg border">
                 {searching && products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">Searching products…</p> : products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No available products found.</p> : products.map((product) => <div key={product.id} className="flex items-center gap-3 p-3"><img src={product.image ?? placeholderFor("parts")} alt="" width={48} height={48} loading="lazy" decoding="async" className="size-12 shrink-0 rounded border object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.sku} · Stock {product.stock}{product.rackLocation ? ` · ${product.rackLocation}` : ""}</p><p className="mt-1 text-sm font-semibold text-primary">{product.wholesalePrice == null ? "No wholesale price" : money(product.wholesalePrice)}</p></div><Button size="sm" variant="outline" onClick={() => addProduct(product)}><Plus className="size-4" /> Add</Button></div>)}
               </div>
