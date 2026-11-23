@@ -15,6 +15,8 @@ export type Product = {
   slug: string;
   category: string; // category slug
   categoryName?: string;
+  categoryNameHi?: string;
+  categoryNameBn?: string;
   /** How this part may be bought, when it overrides the category and the site. */
   orderingMode?: OrderingMode;
   categoryOrderingMode?: OrderingMode;

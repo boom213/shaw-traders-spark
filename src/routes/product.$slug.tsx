@@ -29,7 +29,7 @@ import { productQuery } from "@/lib/queries";
 import { uploadReviewPhoto } from "@/lib/photo-upload";
 import { notifyWhenInStock, submitReview } from "@/lib/shop-extras.functions";
 import { imageFor, isPlaceholder } from "@/lib/placeholders";
-import { useT } from "@/lib/i18n";
+import { useCategoryName, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/product/$slug")({
   loader: async ({ context, params }) => {
@@ -157,6 +157,7 @@ export const Route = createFileRoute("/product/$slug")({
 });
 
 function ProductPage() {
+  const categoryName = useCategoryName();
   const t = useT();
   const { slug } = Route.useParams();
   const { data } = useSuspenseQuery(productQuery(slug));
@@ -276,7 +277,7 @@ function ProductPage() {
         {product.category && product.categoryName ? (
           <>
             <Link to="/category/$slug" params={{ slug: product.category }} className="hover:text-foreground">
-              {product.categoryName}
+              {categoryName({ name: product.categoryName, ...(product.categoryNameHi ? { nameHi: product.categoryNameHi } : {}), ...(product.categoryNameBn ? { nameBn: product.categoryNameBn } : {}) })}
             </Link>{" "}
             /{" "}
           </>
@@ -645,7 +646,7 @@ function ProductPage() {
             params={{ slug: product.category }}
             className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary"
           >
-            More {product.categoryName}
+            More {categoryName({ name: product.categoryName, ...(product.categoryNameHi ? { nameHi: product.categoryNameHi } : {}), ...(product.categoryNameBn ? { nameBn: product.categoryNameBn } : {}) })}
           </Link>
         )}
         <Link to="/shop" className="rounded-full border border-border bg-card px-4 py-2 font-medium hover:border-primary">

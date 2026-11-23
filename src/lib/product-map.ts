@@ -7,7 +7,7 @@ import { isOrderingMode } from "@/lib/ordering";
  * must never reach a customer, an API response, the sitemap or structured data.
  */
 export const PRODUCT_SELECT =
-  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, created_at, categories!inner(slug, name, ordering_mode), product_images(url, sort_order), product_compatibility(vehicle_model, year_from, year_to, variant)";
+  "id, sku, slug, name, subcategory, brand, model, price, mrp, stock, description, specs, voltage, ah, wattage, warranty, weight, dimensions, shipping_info, box_contents, hsn_code, ordering_mode, status, created_at, categories!inner(slug, name, name_hi, name_bn, ordering_mode), product_images(url, sort_order), product_compatibility(vehicle_model, year_from, year_to, variant)";
 
 type Row = Record<string, any>;
 
@@ -38,6 +38,8 @@ export function mapProduct(row: Row): Product {
     slug: String(row['slug']),
     category: String(cat?.['slug'] ?? ""),
     ...(cat?.['name'] ? { categoryName: String(cat['name']) } : {}),
+    ...(cat?.['name_hi'] ? { categoryNameHi: String(cat['name_hi']) } : {}),
+    ...(cat?.['name_bn'] ? { categoryNameBn: String(cat['name_bn']) } : {}),
     ...(isOrderingMode(cat?.['ordering_mode']) ? { categoryOrderingMode: cat!['ordering_mode'] } : {}),
     ...(isOrderingMode(row['ordering_mode']) ? { orderingMode: row['ordering_mode'] } : {}),
     ...(row['subcategory'] ? { subcategory: String(row['subcategory']) } : {}),
