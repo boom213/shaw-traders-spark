@@ -38,3 +38,4 @@
 - Staff password sign-in and attempt logging run server-side (`staffPasswordSignIn`); allowlisted super-admin access requires a confirmed email — clients must not write auth records.
 - Cron routes authenticate with `authenticateCronRequest` (private cron secret), never the publishable key — that key is public.
 - CSV cells go through `csvCell`, which neutralizes leading formula characters — exports contain customer-typed text.
+- `product_enquiries` and `stock_alerts` are written only by server functions (no anon/authenticated INSERT) — direct writes skipped validation and could flood the inbox.
