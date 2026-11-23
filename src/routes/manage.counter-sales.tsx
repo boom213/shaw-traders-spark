@@ -196,7 +196,8 @@ function CounterSalesPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,.75fr)]">
-        <div className="space-y-5">
+        {/* min-w-0: long customer names in the dropdown must not widen the page on phones. */}
+        <div className="min-w-0 space-y-5">
           <Card title="1. Wholesale customer" icon={<UserRound className="size-4" />}>
             <div className="mb-2 flex flex-col gap-2 sm:flex-row"><form className="flex min-w-0 flex-1 gap-2" onSubmit={(event) => { event.preventDefault(); setCustomerTerm(customerQuery.trim()); }}><Input aria-label="Search wholesale customers" value={customerQuery} onChange={(event) => setCustomerQuery(event.target.value)} placeholder="Search name, phone or email" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form><AddWholesalerDialog onDone={async (created) => { await queryClient.invalidateQueries({ queryKey: ["counter-customers"] }); if (created.status === "approved") setCustomerId(created.profileId); }} /></div>
             <select aria-label="Wholesale customer" value={customerId} onChange={(event) => setCustomerId(event.target.value)} disabled={setupPending || customersFetching} className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm">
@@ -223,7 +224,7 @@ function CounterSalesPage() {
           </Card>
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
           <Card title="Sale summary" icon={<Banknote className="size-4" />}>
             <label className="text-sm font-medium">Document type</label><div className="mt-2 grid grid-cols-2 gap-2"><Button type="button" variant={invoiceKind === "gst" ? "default" : "outline"} onClick={() => setInvoiceKind("gst")} disabled={!setup?.gst.enabled}>GST invoice</Button><Button type="button" variant={invoiceKind === "non_gst" ? "default" : "outline"} onClick={() => setInvoiceKind("non_gst")}>Non-GST bill</Button></div>
             {invoiceKind === "gst" && setup?.gst.enabled && <p className="mt-2 text-xs text-muted-foreground">GST {setup.gst.rate}% · {setup.gst.included ? "included in prices" : "added to prices"}</p>}
