@@ -15,7 +15,7 @@ export const Route = createFileRoute("/track")({
   head: () => ({
     meta: [
       { title: "Track Your Order — Shaw Traders EV" },
-      { name: "description", content: "Enter your Shaw Traders EV order number and phone to see the current status of your EV spare parts delivery." },
+      { name: "description", content: "Enter your Shaw Traders EV order number and phone number to see the current status of your EV spare parts delivery." },
       { property: "og:title", content: "Track Your Order — Shaw Traders EV" },
       { property: "og:description", content: "Check where your EV parts order has reached." },
       { property: "og:type", content: "website" },
@@ -41,7 +41,7 @@ function TrackPage() {
 
   const track = async () => {
     setBusy(true);
-    const res = await findOrder({ data: { humanId: id, phoneLast4: phone } });
+    const res = await findOrder({ data: { humanId: id, phone } });
     setBusy(false);
     if ("error" in res) {
       toast.error(res.error);
@@ -55,10 +55,10 @@ function TrackPage() {
       <SectionHeading
         as="h1"
         title="Track your order"
-        subtitle="Enter the order number from your confirmation (e.g. STE-260908-1234) and the last 4 digits of your phone number."
+        subtitle="Enter the order number from your confirmation (e.g. STE-260908-1234) and the phone number you used when ordering."
       />
       <form
-        className="grid max-w-xl gap-3 sm:grid-cols-[1fr_140px_auto] sm:items-end"
+        className="grid max-w-xl gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end"
         onSubmit={(e) => {
           e.preventDefault();
           void track();
@@ -69,8 +69,8 @@ function TrackPage() {
           <Input placeholder="STE-260908-1234" value={id} onChange={(e) => setId(e.target.value.toUpperCase())} />
         </div>
         <div className="grid gap-1.5">
-          <Label className="text-xs">Phone last 4</Label>
-          <Input inputMode="numeric" maxLength={4} placeholder="1234" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Label className="text-xs">Phone number</Label>
+          <Input type="tel" inputMode="numeric" maxLength={14} placeholder="98XXXXXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <Button type="submit" disabled={busy}>{busy ? <SparkRing /> : null}{busy ? "Checking…" : "Track"}</Button>
       </form>

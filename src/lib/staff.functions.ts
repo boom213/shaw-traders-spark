@@ -221,13 +221,14 @@ export const claimSuperAdmin = createServerFn({ method: "POST" })
 
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const { publicClient } = await import("@/lib/supabase-public.server");
-    const origin = getRequestHeader("origin");
+    const { trustedSiteOrigin } = await import("@/lib/site-origin");
+    const origin = trustedSiteOrigin(getRequestHeader("origin"), String(process.env['PUBLIC_SITE_URL'] ?? ""));
     const { data: created, error } = await publicClient().auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         data: { full_name: data.name },
-        ...(origin && /^https?:\/\//.test(origin) ? { emailRedirectTo: `${origin}/manage-login` } : {}),
+        emailRedirectTo: `${origin}/manage-login`,
       },
     });
     if (error) {

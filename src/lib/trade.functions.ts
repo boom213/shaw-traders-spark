@@ -215,7 +215,9 @@ export const deleteTradeDocument = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
     const path = (app as Record<string, string | null> | null)?.[data.field] ?? null;
-    if (path) await supabaseAdmin.storage.from("trade-docs").remove([path]);
+    // The stored path is editable by the applicant, so only ever delete files inside their own folder.
+    const { isOwnTradeDocPath } = await import("@/lib/trade-doc-path");
+    if (path && isOwnTradeDocPath(path, account.userId)) await supabaseAdmin.storage.from("trade-docs").remove([path]);
     if (app) await supabaseAdmin.from("trade_applications").update({ [data.field]: null } as never).eq("id", (app as unknown as { id: string }).id);
     return { ok: true as const };
   });

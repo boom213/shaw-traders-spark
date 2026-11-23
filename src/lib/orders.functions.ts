@@ -102,25 +102,39 @@ export const getOrder = createServerFn({ method: "POST" })
     return { state: "verify", phoneHint: digits ? `••••••${digits.slice(-2)}` : "your phone number" };
   });
 
-/** Track page: order number plus the last four digits of the phone used. */
+/**
+ * Track page: order number plus the full phone number used on the order.
+ * Signed-in owners and staff may skip the phone check. The last four digits
+ * alone were too easy to guess, so guests must prove the whole number.
+ */
 export const findOrder = createServerFn({ method: "POST" })
-  .inputValidator((data: { humanId: string; phoneLast4: string }) => ({
-    humanId: String(data?.humanId ?? "").trim().toUpperCase(),
-    phoneLast4: last4(data?.phoneLast4),
+  .inputValidator((data: { humanId: string; phone: string }) => ({
+    humanId: String(data?.humanId ?? "").trim().toUpperCase().slice(0, 40),
+    phone: String(data?.phone ?? "").replace(/\D/g, "").slice(-10),
   }))
   .handler(async ({ data }): Promise<{ id: string; token: string } | { error: string }> => {
-    if (!data.humanId || data.phoneLast4.length !== 4) {
-      return { error: "Enter your order number and the last 4 digits of your phone number." };
-    }
+    if (!data.humanId) return { error: "Enter your order number and the phone number used on the order." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
-      .select("id, public_token, contact_phone, address")
+      .select("id, public_token, contact_phone, address, profile_id")
       .eq("human_id", data.humanId)
       .maybeSingle();
-    if (!row) return { error: "No order found with that number." };
-    const digits = String(row.contact_phone ?? (row.address as Record<string, string>)?.['phone'] ?? "").replace(/\D/g, "");
-    if (digits.slice(-4) !== data.phoneLast4) return { error: "That phone number does not match this order." };
+
+    const { currentUserId } = await import("@/lib/auth.server");
+    const userId = await currentUserId();
+    if (row && userId && row.profile_id === userId) return { id: String(row.id), token: String(row.public_token) };
+    if (row && userId) {
+      const { staffContext } = await import("@/lib/staff.server");
+      if (await staffContext()) return { id: String(row.id), token: String(row.public_token) };
+    }
+
+    if (data.phone.length !== 10) return { error: "Enter your order number and the full 10-digit phone number used on the order." };
+    const digits = String(row?.contact_phone ?? (row?.address as Record<string, string> | undefined)?.['phone'] ?? "").replace(/\D/g, "").slice(-10);
+    // Same reply for a wrong number or an unknown order, so neither can be probed separately.
+    if (!row || digits.length !== 10 || digits !== data.phone) {
+      return { error: "We couldn't find an order with that number and phone. Check both and try again." };
+    }
     return { id: String(row.id), token: String(row.public_token) };
   });
 

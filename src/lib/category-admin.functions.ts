@@ -66,9 +66,11 @@ export const saveCategory = createServerFn({ method: "POST" })
     if (!data.slug) return { ok: false as const, error: "Enter a valid category URL slug." };
     if (!isCategoryIconKey(data.icon)) return { ok: false as const, error: "Choose an icon from the list." };
 
-    let duplicateQuery = sb.from("categories").select("id").or(`slug.eq.${data.slug},name.ilike.${data.name}`);
-    if (data.id) duplicateQuery = duplicateQuery.neq("id", data.id);
-    const { data: duplicate } = await duplicateQuery.limit(1).maybeSingle();
+    // Compare in code rather than building a filter string from the typed name.
+    const { data: existing, error: existingError } = await sb.from("categories").select("id, slug, name");
+    if (existingError) return { ok: false as const, error: "Could not check existing categories. Please try again." };
+    const wanted = data.name.toLowerCase();
+    const duplicate = (existing ?? []).find((c) => c.id !== data.id && (c.slug === data.slug || String(c.name).trim().toLowerCase() === wanted));
     if (duplicate) return { ok: false as const, error: "A category with that name or URL slug already exists." };
 
     const row = { name: data.name, name_hi: data.nameHi || null, name_bn: data.nameBn || null, slug: data.slug, blurb: data.blurb || null, icon: data.icon };

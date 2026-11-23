@@ -69,7 +69,7 @@ export async function tierPrice(productId: string, tier: PriceTier, qty: number)
 }
 
 /** Short-lived signed link to a private identity document, for staff only. */
-export async function signedDocUrl(path: string | null, seconds = 300): Promise<string | null> {
+export async function signedDocUrl(path: string | null, seconds = 60): Promise<string | null> {
   if (!path) return null;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.storage.from("trade-docs").createSignedUrl(path, seconds);

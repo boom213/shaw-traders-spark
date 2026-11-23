@@ -19,6 +19,7 @@ import {
   addTradeInternalNote,
   decideTradeApplication,
   listTradeApplications,
+  openTradeDocument,
   outstandingReport,
   setTradeTerms,
 } from "@/lib/trade-admin.functions";
@@ -194,6 +195,23 @@ function PaymentBox({ profileId, onDone }: { profileId: string; onDone: () => Pr
 
 type App = Awaited<ReturnType<typeof listTradeApplications>>["items"][number];
 
+/** Opens a fresh one-minute link; the tab is opened first so pop-up blockers allow it. */
+async function openDocument(applicationId: string, field: string) {
+  const tab = window.open("", "_blank");
+  const res = await openTradeDocument({ data: { applicationId, field } });
+  if ("error" in res) {
+    tab?.close();
+    toast.error(res.error);
+    return;
+  }
+  if (tab) {
+    tab.opener = null;
+    tab.location.href = res.url;
+  } else {
+    window.location.href = res.url;
+  }
+}
+
 function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void> }) {
   const [note, setNote] = useState("");
   const [tier, setTier] = useState(app.tier === "retail" ? "trade" : app.tier);
@@ -254,16 +272,15 @@ function ApplicationCard({ app, onDone }: { app: App; onDone: () => Promise<void
 
       <div className="flex flex-wrap gap-2">
         {app.documents.map((d) =>
-          d.url ? (
-            <a
+          d.available ? (
+            <button
+              type="button"
               key={d.label}
               className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs hover:bg-surface"
-              href={d.url}
-              target="_blank"
-              rel="noreferrer"
+              onClick={() => void openDocument(app.id, d.field)}
             >
               {d.label} <ExternalLink className="size-3" />
-            </a>
+            </button>
           ) : (
             <span key={d.label} className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground">
               {d.label}: missing

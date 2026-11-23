@@ -14,7 +14,7 @@ export type TradeApplicationRow = {
   decisionNote: string | null;
   reviewer: string | null;
   createdAt: string;
-  documents: { label: string; url: string | null }[];
+  documents: { label: string; field: string; available: boolean }[];
   businessType: string | null;
   yearsInBusiness: string | null;
   staffCount: string | null;
@@ -46,14 +46,39 @@ export const addTradeInternalNote = createServerFn({ method: "POST" })
     return { ok: !error };
   });
 
-/** The trade application queue, with short-lived links to the documents. */
+/** A one-minute link to one application document, issued after a fresh staff check. */
+export const openTradeDocument = createServerFn({ method: "POST" })
+  .inputValidator((data: { applicationId: string; field: string }) => ({
+    applicationId: String(data?.applicationId ?? ""),
+    field: String(data?.field ?? ""),
+  }))
+  .handler(async ({ data }): Promise<{ url: string } | { error: string }> => {
+    const { requireStaff } = await import("@/lib/staff.server");
+    await requireStaff({ capability: "trade" });
+    const { DOC_FIELDS } = await import("@/lib/trade.functions");
+    if (!/^[0-9a-f-]{36}$/i.test(data.applicationId) || !DOC_FIELDS.some((d) => d.field === data.field)) {
+      return { error: "Document not found." };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("trade_applications")
+      .select("id, " + data.field)
+      .eq("id", data.applicationId)
+      .maybeSingle();
+    const path = (row as Record<string, string | null> | null)?.[data.field] ?? null;
+    const { signedDocUrl } = await import("@/lib/trade.server");
+    const url = await signedDocUrl(path, 60);
+    return url ? { url } : { error: "Document not found." };
+  });
+
+/** The trade application queue; documents open through openTradeDocument. */
 export const listTradeApplications = createServerFn({ method: "POST" })
   .inputValidator((data: { status?: string; page?: number } | undefined) => ({ status: String(data?.status ?? "pending"), page: Math.max(0, Math.floor(Number(data?.page ?? 0))) }))
   .handler(async ({ data }): Promise<{ items: TradeApplicationRow[]; total: number }> => {
     const { requireStaff } = await import("@/lib/staff.server");
     await requireStaff({ capability: "trade" });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { signedDocUrl, tradeBalance } = await import("@/lib/trade.server");
+    const { tradeBalance } = await import("@/lib/trade.server");
     const { DOC_FIELDS } = await import("@/lib/trade.functions");
 
     let query = supabaseAdmin
@@ -70,12 +95,12 @@ export const listTradeApplications = createServerFn({ method: "POST" })
       (rows ?? []).map(async (r) => {
         const profile = (r as { profiles?: { price_tier?: string; credit_limit?: number; payment_terms_days?: number } | null }).profiles;
         const credit = await tradeBalance(String(r.profile_id));
-        const documents = await Promise.all(
-          DOC_FIELDS.map(async (d) => ({
-            label: d.label,
-            url: await signedDocUrl((r as unknown as Record<string, string | null>)[d.field] ?? null),
-          })),
-        );
+        // Links are made only when staff open a document, so revoked staff cannot reuse old links.
+        const documents = DOC_FIELDS.map((d) => ({
+          label: d.label,
+          field: d.field,
+          available: Boolean((r as unknown as Record<string, string | null>)[d.field]),
+        }));
         return {
           id: String(r.id),
           profileId: String(r.profile_id),
@@ -475,7 +500,9 @@ export const listTradePricing = createServerFn({ method: "POST" })
       .select("id, sku, name, price, trade_only, min_order_qty, order_multiple, price_tiers(tier, min_qty, price)")
       .order("name")
       .limit(60);
-    if (data.search) query = query.or(`name.ilike.%${data.search}%,sku.ilike.%${data.search}%`);
+    const { ilikeAny } = await import("@/lib/postgrest-filter");
+    const searchFilter = ilikeAny(["name", "sku"], data.search);
+    if (searchFilter) query = query.or(searchFilter);
     const { data: rows } = await query;
     return (rows ?? []).map((r) => ({
       id: String(r.id),

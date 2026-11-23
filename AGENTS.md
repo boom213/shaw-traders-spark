@@ -42,3 +42,6 @@
 - Server functions must check the `error` of every primary database write and return a failure (never `ok: true`) when it fails; only audit/event/notification logs may be best-effort — silent failures showed staff false "Saved" messages.
 - Category labels on the storefront go through `useCategoryName` (optional `name_hi`/`name_bn`, falling back to `name`) — category names come from the database, not the translation file.
 - Product names are unique ignoring case/spacing/punctuation (index `products_name_key_unique`); product saves map that error through `productSaveError` so staff see a clear message.
+- Free-text search inside PostgREST `.or()` filters goes through `ilikeAny`/`safeSearchTerm` (`src/lib/postgrest-filter.ts`), never raw string interpolation — typed text could otherwise add or change filters.
+- Email redirect targets built from request headers go through `trustedSiteOrigin` — an Origin header is attacker-controlled.
+- Customers never insert `orders`/`order_items` directly (no INSERT grant/policy); orders come only from the checkout RPCs, and money/tier helpers (`trade_balance`, `trade_overdue`, `tier_price`, `customer_tier`) are service-role-only.

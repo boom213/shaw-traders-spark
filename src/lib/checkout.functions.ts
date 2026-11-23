@@ -257,13 +257,14 @@ export const verifyPayment = createServerFn({ method: "POST" })
       .eq("id", data.orderId)
       .maybeSingle();
     if (!order) return { paid: false, error: "Unknown order." };
-    if (order.payment_status === "paid") return { paid: true };
+    // Prove the caller holds Razorpay's signed proof for this order before revealing anything about it.
     if (order.provider_order_id !== data.razorpayOrderId) return { paid: false, error: "Payment does not match this order." };
 
     const { verifyCheckoutSignature } = await import("@/lib/razorpay.server");
     if (!verifyCheckoutSignature(data.razorpayOrderId, data.paymentId, data.signature)) {
       return { paid: false, error: "We could not verify this payment. If money was taken it will be confirmed shortly." };
     }
+    if (order.payment_status === "paid") return { paid: true };
 
     const { data: markedPaid, error: markError } = await supabaseAdmin.rpc("mark_order_paid", { p_order_id: data.orderId, p_payment_id: data.paymentId });
     if (markError) return { paid: false, error: "Payment was confirmed, but the order needs staff review." };
