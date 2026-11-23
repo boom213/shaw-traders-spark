@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { productSaveError } from "@/lib/product-duplicates";
 import { csvCell } from "@/lib/csv";
 
 type Row = Record<string, any>;
@@ -317,7 +318,7 @@ export const updateCatalogueProduct = createServerFn({ method: "POST" })
       shipping_info: optional(data.shippingInfo), box_contents: optional(data.boxContents), hsn_code: optional(data.hsnCode),
     };
     const { error } = await sb.from("products").update(patch as never).eq("id", data.id).eq("product_kind", "part");
-    if (error) return { ok: false as const, error: error.code === "23505" ? "That SKU or product URL is already in use." : error.message };
+    if (error) return { ok: false as const, error: productSaveError(error, "That SKU or product URL is already in use.") };
     const { error: clearTierError } = await sb.from("price_tiers").delete().eq("product_id", data.id).eq("tier", "trade").eq("min_qty", 1);
     if (clearTierError) return { ok: false as const, error: clearTierError.message };
     if (data.wholesalePrice !== null) {
@@ -409,8 +410,7 @@ export const createCatalogueProduct = createServerFn({ method: "POST" })
       product_kind: "part",
     } as never).select("id").single();
     if (error) {
-      const duplicate = error.code === "23505";
-      return { ok: false as const, error: duplicate ? "That product code is already in use." : error.message };
+      return { ok: false as const, error: productSaveError(error, "That product code is already in use.") };
     }
     if (data.wholesalePrice !== null) {
       const { error: tierError } = await sb.from("price_tiers").insert({

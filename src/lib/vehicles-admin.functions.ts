@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { productSaveError } from "@/lib/product-duplicates";
 import { mapPrice, mapSpecs } from "@/lib/vehicle-map";
 import { roleAtLeast } from "@/lib/staff-permissions";
 import { catalogueSaleLines, type SaleLine } from "@/lib/showroom";
@@ -122,7 +123,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error || !created)
-        return { ok: false, error: error?.message ?? "Could not save this model." };
+        return { ok: false, error: error ? productSaveError(error, "That model's code or web address is already in use.") : "Could not save this model." };
       id = created.id;
     } else {
       const { data: updated, error } = await supabaseAdmin
@@ -138,7 +139,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
         .eq("id", id)
         .eq("product_kind", "vehicle")
         .select("id");
-      if (error) return { ok: false, error: error.message || "Could not save this model." };
+      if (error) return { ok: false, error: productSaveError(error, "That model's code or web address is already in use.") };
       if (!updated?.length) return { ok: false, error: "Model not found. Refresh and try again." };
     }
 

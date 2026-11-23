@@ -526,6 +526,13 @@
       "when": 1795455197523,
       "tag": "0074_category_translated_names",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1795455655288,
+      "tag": "0075_products_unique_name_key",
+      "breakpoints": true
     }
   ]
 }
