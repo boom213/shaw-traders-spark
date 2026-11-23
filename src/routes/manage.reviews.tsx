@@ -74,7 +74,7 @@ function ReviewsPage() {
             {t.label}
           </button>
         ))}
-        {can(staff.role, "reports") && <ExportCsvButton dateRange onExport={(range) => exportReviewsCsv({ data: { status: tab, ...range } })} />}
+        {can(staff.role, "reports") && <ExportCsvButton rowCount={data?.total} dateRange onExport={(range) => exportReviewsCsv({ data: { status: tab, ...range } })} />}
       </div>
 
       {isPending ? (

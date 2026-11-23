@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csvCell, toCsv } from "@/lib/csv";
+import { canExportCsv, csvCell, toCsv } from "@/lib/csv";
 
 describe("CSV utilities", () => {
   it("adds a BOM, CRLF rows, and safely quotes spreadsheet values", () => {
@@ -31,5 +31,17 @@ describe("CSV formula neutralizing", () => {
     expect(csvCell(-500)).toBe('"-500"');
     expect(csvCell("-500.25")).toBe('"-500.25"');
     expect(csvCell("+919876543210")).toBe('"+919876543210"');
+  });
+});
+
+describe("canExportCsv", () => {
+  it("disables export when the list has no rows", () => {
+    expect(canExportCsv(0)).toBe(false);
+  });
+  it("disables export while the list is still loading", () => {
+    expect(canExportCsv(undefined)).toBe(false);
+  });
+  it("allows export when at least one row is listed", () => {
+    expect(canExportCsv(1)).toBe(true);
   });
 });

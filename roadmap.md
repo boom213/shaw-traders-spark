@@ -133,3 +133,6 @@
 - [x] Hindi: header, filters, bottom tabs, account menu.
 - [x] Mobile: Filter & Sort button covering Buy now; double search bar.
 - [x] .env / Maps key restriction — explain (user action in Google Cloud).
+
+- [x] Disable Export CSV when the list has no rows
+- [x] Speed up homepage refresh (30s homepage feed cache)

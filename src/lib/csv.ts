@@ -6,6 +6,11 @@ export type CsvExportResult = {
 };
 
 export const CSV_EXPORT_LIMIT = 10_000;
+
+/** CSV download is only offered once the list has loaded and has at least one row. */
+export function canExportCsv(rowCount: number | undefined): boolean {
+  return typeof rowCount === "number" && rowCount > 0;
+}
 export const CSV_EXPORT_CHUNK = 1_000;
 
 /**

@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SparkRing } from "@/components/site/SparkLoaders";
-import type { CsvExportResult } from "@/lib/csv";
+import { canExportCsv, type CsvExportResult } from "@/lib/csv";
 
 export type CsvDateRange = { from?: string; to?: string };
 
-export function ExportCsvButton({ onExport, disabled = false, dateRange = false }: { onExport: (range?: CsvDateRange) => Promise<CsvExportResult>; disabled?: boolean; dateRange?: boolean }) {
+/**
+ * `rowCount` is the number of rows the page currently lists for the same
+ * filters. `undefined` means the list is still loading. The button stays
+ * disabled until there is at least one row to export.
+ */
+export function ExportCsvButton({ onExport, rowCount, disabled = false, dateRange = false }: { onExport: (range?: CsvDateRange) => Promise<CsvExportResult>; rowCount: number | undefined; disabled?: boolean; dateRange?: boolean }) {
   const [working, setWorking] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -18,6 +23,10 @@ export function ExportCsvButton({ onExport, disabled = false, dateRange = false 
     try {
       if (from && to && from > to) throw new Error("From date must be before To date.");
       const result = await onExport({ from: from || undefined, to: to || undefined });
+      if (result.rows === 0) {
+        toast.info(from || to ? "Nothing to export for these dates." : "Nothing to export yet.");
+        return;
+      }
       const url = URL.createObjectURL(new Blob([result.csv], { type: "text/csv;charset=utf-8" }));
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -32,11 +41,12 @@ export function ExportCsvButton({ onExport, disabled = false, dateRange = false 
       setWorking(false);
     }
   };
-  const exportButton = <Button type="button" variant="outline" size="sm" disabled={disabled || working} onClick={() => void run()}>{working ? <SparkRing /> : <Download className="size-4" />} Export CSV</Button>;
+  const empty = !canExportCsv(rowCount);
+  const exportButton = <Button type="button" variant="outline" size="sm" disabled={disabled || empty || working} title={empty ? (rowCount === undefined ? "Loading…" : "No data to export") : undefined} onClick={() => void run()}>{working ? <SparkRing /> : <Download className="size-4" />} Export CSV</Button>;
   if (!dateRange) return exportButton;
   return <div className="flex items-center gap-1">
     <Popover>
-      <PopoverTrigger asChild><Button type="button" variant="outline" size="icon" aria-label="Choose export date range"><CalendarDays className="size-4" /></Button></PopoverTrigger>
+      <PopoverTrigger asChild><Button type="button" variant="outline" size="icon" disabled={disabled || empty} aria-label="Choose export date range"><CalendarDays className="size-4" /></Button></PopoverTrigger>
       <PopoverContent className="pointer-events-auto w-72 space-y-3 p-4" align="end">
         <p className="text-sm font-semibold">Export period</p>
         <div className="grid grid-cols-2 gap-2"><label className="text-xs font-medium text-muted-foreground">From<Input type="date" value={from} max={to || undefined} onChange={(event) => setFrom(event.target.value)} /></label><label className="text-xs font-medium text-muted-foreground">To<Input type="date" value={to} min={from || undefined} onChange={(event) => setTo(event.target.value)} /></label></div>

@@ -53,7 +53,7 @@ function ManageOrders() {
       <div className="relative"><CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" aria-label="Orders from" type="date" value={from} onChange={(event) => changeFilter(setFrom, event.target.value)} /></div>
       <Input aria-label="Orders to" type="date" min={from || undefined} value={to} onChange={(event) => changeFilter(setTo, event.target.value)} />
       <Button type="submit" variant="outline">Search</Button>
-      {canExport && <ExportCsvButton onExport={() => exportOrdersCsv({ data: { q: term, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter, from, to } })} />}
+      {canExport && <ExportCsvButton rowCount={orders?.total} onExport={() => exportOrdersCsv({ data: { q: term, status: statusFilter === "all" ? "" : statusFilter, paymentStatus: paymentFilter === "all" ? "" : paymentFilter, from, to } })} />}
     </form>
     {ordersQuery.isPending && <div className="h-72 animate-pulse rounded-lg bg-muted" />}
     {!ordersQuery.isPending && !(orders?.items.length) && <div className="rounded-lg border border-dashed border-border bg-surface p-8 text-center text-sm text-muted-foreground"><p>No online retail orders match these filters.</p>{showCounterSales && <Link to="/manage/counter-sales" className="mt-2 inline-block underline underline-offset-4 hover:text-foreground">Looking for a counter sale? View wholesale counter sales.</Link>}</div>}

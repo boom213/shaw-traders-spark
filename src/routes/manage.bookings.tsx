@@ -211,6 +211,7 @@ function ManageBookings() {
             </Select>
             {can(staff.role, "reports") && (
               <ExportCsvButton
+                rowCount={bookings?.total}
                 dateRange
                 onExport={(range) => exportBookingsCsv({ data: { status: filter, ...range } })}
               />

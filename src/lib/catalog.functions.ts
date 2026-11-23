@@ -3,6 +3,7 @@ import { publicClient } from "@/lib/supabase-public.server";
 import { PRODUCT_SELECT, mapProduct } from "@/lib/product-map";
 import { normaliseSearch } from "@/lib/search-terms";
 import type { Category, Product, Review } from "@/lib/catalog";
+import { createTtlCache } from "@/lib/ttl-cache";
 
 export type ProductFilters = {
   q?: string;
@@ -357,7 +358,20 @@ async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, l
   return ids.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p));
 }
 
-export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
+/**
+ * The homepage feed is the same for every visitor, so each server instance
+ * reuses it for 30 seconds instead of re-reading six tables on every refresh.
+ * Staff edits reach the homepage within that window. An empty-looking feed
+ * (likely a failed read) is never kept.
+ */
+const HOME_FEED_TTL_MS = 30_000;
+const homeFeedCache = createTtlCache<Awaited<ReturnType<typeof loadHomeFeed>>>(HOME_FEED_TTL_MS);
+
+export const homeFeed = createServerFn({ method: "GET" }).handler(() =>
+  homeFeedCache.get(loadHomeFeed, (feed) => feed.latest.length > 0 && feed.categories.length > 0),
+);
+
+async function loadHomeFeed() {
   const sb = publicClient();
   const [{ data: latest }, { data: deals }, cats, { data: slides }, bestSellers, { data: coupons }] = await Promise.all([
     sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").order("created_at", { ascending: false }).limit(12),
@@ -414,7 +428,7 @@ export const homeFeed = createServerFn({ method: "GET" }).handler(async () => {
     bestSellers,
     offers,
   };
-});
+}
 
 
 /** Offers page: discounted parts sorted by saving, best sellers and new arrivals. */

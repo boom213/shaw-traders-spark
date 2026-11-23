@@ -45,3 +45,5 @@
 - Free-text search inside PostgREST `.or()` filters goes through `ilikeAny`/`safeSearchTerm` (`src/lib/postgrest-filter.ts`), never raw string interpolation — typed text could otherwise add or change filters.
 - Email redirect targets built from request headers go through `trustedSiteOrigin` — an Origin header is attacker-controlled.
 - Customers never insert `orders`/`order_items` directly (no INSERT grant/policy); orders come only from the checkout RPCs, and money/tier helpers (`trade_balance`, `trade_overdue`, `tier_price`, `customer_tier`) are service-role-only.
+- Export CSV buttons take the page's `rowCount` and stay disabled until the list has rows (`canExportCsv`) — downloading an empty file confused staff.
+- Only visitor-facing, read-only data may use the per-instance `createTtlCache` (currently the homepage feed, 30s); never cache reads that staff screens show after an edit, or "Saved" would look undone.

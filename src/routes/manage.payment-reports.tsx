@@ -91,7 +91,7 @@ function PaymentReportsPage() {
   return <div className="space-y-7">
     <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
       <div><div className="flex items-center gap-2"><BarChart3 className="size-6 text-primary" /><h2 className="font-display text-2xl font-bold">Payment Reports</h2></div><p className="mt-1 text-sm text-muted-foreground">Actual counter-sale receipts with online payments reconciled separately.</p></div>
-       <div className="flex gap-2"><ExportCsvButton disabled={!validRange} onExport={() => getCsv({ data: { from, to } })} /><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <SparkRing /> : <Download className="size-4" />} PDF</Button></div>
+       <div className="flex gap-2"><ExportCsvButton rowCount={data ? data.counter.total + data.online.total : undefined} disabled={!validRange} onExport={() => getCsv({ data: { from, to } })} /><Button disabled={Boolean(exporting) || !validRange} onClick={() => void exportReport("pdf")}>{exporting === "pdf" ? <SparkRing /> : <Download className="size-4" />} PDF</Button></div>
     </header>
 
     <section className="space-y-3 border-b border-border pb-6">
