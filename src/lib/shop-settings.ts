@@ -48,12 +48,27 @@ export const DEFAULT_SETTINGS: ShopSettings = {
 
 export const COD_UNAVAILABLE_MESSAGE = "Cash on Delivery is currently not available. Please pay online.";
 
+/** Retry brief backend wake-ups so one failed read does not blank every page. */
+async function loadSettingsWithRetry() {
+  const delays = [400, 1200, 2500];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await getPublicShopSettings();
+    } catch (error) {
+      const delay = delays[attempt];
+      if (delay === undefined) throw error;
+      console.warn(`Shop settings read failed (attempt ${attempt + 1}); retrying`, error);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
 export const shopSettingsQuery = () =>
   queryOptions({
     queryKey: ["shop-settings"],
     staleTime: 30_000,
     queryFn: async (): Promise<ShopSettings> => {
-      const data = await getPublicShopSettings();
+      const data = await loadSettingsWithRetry();
       if (!data) return DEFAULT_SETTINGS;
       return {
         orderingMode: isOrderingMode(data.ordering_mode) ? data.ordering_mode : "full",
