@@ -163,20 +163,64 @@ export const counterCustomerDetail = createServerFn({ method: "POST" })
     return { id: String(profile.id), name: displayName(profile), contactName: String(profile.full_name ?? ""), email: String(profile.email ?? ""), phone: String(profile.phone ?? ""), priceTier: profile.price_tier === "distributor" ? "distributor" : "trade", creditLimit: Number(profile.credit_limit ?? 0), paymentTermsDays: Number(profile.payment_terms_days ?? 0), balance: Number(balance ?? 0), overdue: Boolean(overdue), address: address ? Object.fromEntries(Object.entries(address).filter(([, value]) => value != null)) as Record<string, string> : null };
   });
 
+/** Same score cut-off the storefront search uses for "close enough" matches. */
+const COUNTER_SEARCH_MIN_SCORE = 0.28;
+
+/**
+ * Orders billing search results: ranked storefront-search hits first (they
+ * understand categories, typos and vehicle models), then any extra plain-text
+ * matches (shelf, scooters), with in-stock items ahead of out-of-stock ones.
+ */
+export function orderCounterResults<T extends { id: string; stock: number }>(rankedIds: string[], rows: T[], limit = 30): T[] {
+  const rank = new Map(rankedIds.map((id, i) => [id, i]));
+  const position = (row: T) => rank.get(row.id) ?? rankedIds.length;
+  return [...rows]
+    .sort((a, b) => Number(b.stock > 0) - Number(a.stock > 0) || position(a) - position(b))
+    .slice(0, limit);
+}
+
 export const searchCounterProducts = createServerFn({ method: "POST" })
   .inputValidator((data: { q?: string; customerId?: string }) => ({ q: String(data?.q ?? "").trim().slice(0, 120), customerId: String(data?.customerId ?? "") }))
   .handler(async ({ data }): Promise<CounterProduct[]> => {
     const { sb } = await counterAdmin();
-    const { data: customer } = await sb.from("profiles").select("price_tier, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle();
-    if (!customer || customer.customer_type !== "trade" || !customer.trade_approved_at) return [];
-    let query = sb.from("products").select("id, sku, name, price, stock, rack_location, product_images(url, sort_order), price_tiers(tier, price, min_qty)").eq("status", "visible").gt("stock", 0);
-    if (data.q) {
-      const term = data.q.replace(/[%,()]/g, " ");
-      query = query.or(`name.ilike.%${term}%,sku.ilike.%${term}%,brand.ilike.%${term}%,model.ilike.%${term}%,rack_location.ilike.%${term}%`);
+    const select = "id, sku, name, price, stock, rack_location, product_images(url, sort_order), price_tiers(tier, price, min_qty)";
+    const customerLookup = sb.from("profiles").select("price_tier, customer_type, trade_approved_at").eq("id", data.customerId).maybeSingle();
+
+    if (!data.q) {
+      const [{ data: customer }, { data: rows, error }] = await Promise.all([
+        customerLookup,
+        sb.from("products").select(select).eq("status", "visible").gt("stock", 0).order("name").limit(30),
+      ]);
+      if (!customer || customer.customer_type !== "trade" || !customer.trade_approved_at) return [];
+      if (error) throw new Error(error.message);
+      return ((rows ?? []) as Row[]).map((row) => mapCounterProduct(row, customer.price_tier));
     }
-    const { data: rows, error } = await query.order("name").limit(30);
+
+    // Counter Sales may exceed stock, so out-of-stock items are listed too.
+    const [{ normaliseSearch }, { ilikeAny }] = await Promise.all([import("@/lib/search-terms"), import("@/lib/postgrest-filter")]);
+    const textFilter = ilikeAny(["name", "sku", "brand", "model", "rack_location"], data.q);
+    const [{ data: customer }, { data: hits }, { data: textRows, error }] = await Promise.all([
+      customerLookup,
+      sb.rpc("search_product_ids", { p_term: normaliseSearch(data.q), p_limit: 60 }),
+      textFilter
+        ? sb.from("products").select(select).eq("status", "visible").or(textFilter).order("name").limit(30)
+        : Promise.resolve({ data: [] as Row[], error: null }),
+    ]);
+    if (!customer || customer.customer_type !== "trade" || !customer.trade_approved_at) return [];
     if (error) throw new Error(error.message);
-    return ((rows ?? []) as Row[]).map((row) => mapCounterProduct(row, customer.price_tier));
+
+    const rankedIds = ((hits ?? []) as { id: string; score: number }[])
+      .filter((hit) => hit.score >= COUNTER_SEARCH_MIN_SCORE)
+      .map((hit) => String(hit.id));
+    const rows = new Map(((textRows ?? []) as Row[]).map((row) => [String(row['id']), row]));
+    const missing = rankedIds.filter((id) => !rows.has(id)).slice(0, 30);
+    if (missing.length > 0) {
+      const { data: rankedRows, error: rankedError } = await sb.from("products").select(select).eq("status", "visible").in("id", missing);
+      if (rankedError) throw new Error(rankedError.message);
+      for (const row of (rankedRows ?? []) as Row[]) rows.set(String(row['id']), row);
+    }
+    const products = [...rows.values()].map((row) => mapCounterProduct(row, customer.price_tier));
+    return orderCounterResults(rankedIds, products);
   });
 
 export const listCounterSales = createServerFn({ method: "POST" })

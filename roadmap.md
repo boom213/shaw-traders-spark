@@ -136,3 +136,4 @@
 
 - [x] Disable Export CSV when the list has no rows
 - [x] Speed up homepage refresh (30s homepage feed cache)
+- [x] Counter Sales billing search: category/typo-aware, includes stock-0 items, searches as you type

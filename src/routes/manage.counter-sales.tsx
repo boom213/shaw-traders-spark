@@ -71,7 +71,8 @@ function CounterSalesPage() {
   const { data: setup, isPending: setupPending } = useQuery({ queryKey: ["counter-sale-setup"], queryFn: () => counterSaleSetup() });
   const { data: customers = [], isFetching: customersFetching } = useQuery({ queryKey: ["counter-customers", customerTerm], queryFn: () => searchCounterCustomers({ data: { q: customerTerm } }), ...MANAGE_QUERY_OPTIONS });
   const { data: customer } = useQuery({ queryKey: ["counter-customer", customerId], queryFn: () => counterCustomerDetail({ data: { customerId } }), enabled: Boolean(customerId), ...MANAGE_QUERY_OPTIONS });
-  const { data: products = [], isFetching: searching } = useQuery({ queryKey: ["counter-products", customerId, searchTerm], queryFn: () => searchCounterProducts({ data: { customerId, q: searchTerm } }), enabled: Boolean(customerId), staleTime: 15_000 });
+  // Keep the previous results on screen while the next search loads, so billing never flashes empty.
+  const { data: products = [], isFetching: searching } = useQuery({ queryKey: ["counter-products", customerId, searchTerm], queryFn: () => searchCounterProducts({ data: { customerId, q: searchTerm } }), enabled: Boolean(customerId), staleTime: 15_000, placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === customerId ? previous : undefined) });
   const { data: salesData, isPending: salesPending, isFetching: salesFetching } = useQuery({ queryKey: ["counter-sales", saleTerm, salePage], queryFn: () => listCounterSales({ data: { q: saleTerm, page: salePage } }), placeholderData: (previous) => previous, ...MANAGE_QUERY_OPTIONS });
   const sales = salesData?.items ?? [];
   const subtotal = cart.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
@@ -87,6 +88,14 @@ function CounterSalesPage() {
     else { setCart([]); setSkippedQuoteLines([]); }
     setSearchTerm(""); setProductQuery("");
   }, [customerId]);
+
+  // Search as staff type: wait for a short pause, then look up products.
+  useEffect(() => {
+    const next = productQuery.trim();
+    if (next === searchTerm) return;
+    const timer = window.setTimeout(() => setSearchTerm(next), 250);
+    return () => window.clearTimeout(timer);
+  }, [productQuery, searchTerm]);
   useEffect(() => {
     if (!quote || handledQuote.current === quote) return;
     handledQuote.current = quote;
@@ -193,9 +202,9 @@ function CounterSalesPage() {
 
           <Card title="2. Add products" icon={<PackagePlus className="size-4" />}>
             {!customerId ? <p className="text-sm text-muted-foreground">Select a wholesale customer first.</p> : <>
-              <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); setSearchTerm(productQuery.trim()); }}><Input aria-label="Search sale products" value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search name, SKU, brand or shelf" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form>
+              <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); setSearchTerm(productQuery.trim()); }}><Input aria-label="Search sale products" value={productQuery} onChange={(event) => setProductQuery(event.target.value)} placeholder="Search name, SKU, category, brand or shelf" /><Button type="submit" variant="outline"><Search className="size-4" /> Search</Button></form>
               <div className="mt-3 max-h-80 divide-y overflow-y-auto rounded-lg border">
-                {searching ? <p className="p-4 text-sm text-muted-foreground">Searching products…</p> : products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No available products found.</p> : products.map((product) => <div key={product.id} className="flex items-center gap-3 p-3"><img src={product.image ?? placeholderFor("parts")} alt="" width={48} height={48} loading="lazy" decoding="async" className="size-12 shrink-0 rounded border object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.sku} · Stock {product.stock}{product.rackLocation ? ` · ${product.rackLocation}` : ""}</p><p className="mt-1 text-sm font-semibold text-primary">{product.wholesalePrice == null ? "No wholesale price" : money(product.wholesalePrice)}</p></div><Button size="sm" variant="outline" onClick={() => addProduct(product)}><Plus className="size-4" /> Add</Button></div>)}
+                {searching && products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">Searching products…</p> : products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No available products found.</p> : products.map((product) => <div key={product.id} className="flex items-center gap-3 p-3"><img src={product.image ?? placeholderFor("parts")} alt="" width={48} height={48} loading="lazy" decoding="async" className="size-12 shrink-0 rounded border object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{product.name}</p><p className="text-xs text-muted-foreground">{product.sku} · Stock {product.stock}{product.rackLocation ? ` · ${product.rackLocation}` : ""}</p><p className="mt-1 text-sm font-semibold text-primary">{product.wholesalePrice == null ? "No wholesale price" : money(product.wholesalePrice)}</p></div><Button size="sm" variant="outline" onClick={() => addProduct(product)}><Plus className="size-4" /> Add</Button></div>)}
               </div>
             </>}
           </Card>
