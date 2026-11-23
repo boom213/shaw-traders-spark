@@ -505,6 +505,13 @@
       "when": 1791439434831,
       "tag": "0071_showroom_sales",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795450210922,
+      "tag": "0072_lock_release_order_to_server",
+      "breakpoints": true
     }
   ]
 }

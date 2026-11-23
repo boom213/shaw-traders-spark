@@ -301,4 +301,14 @@ describe("release_order", () => {
     expect(released.data).toBe(false);
     expect(await stockOf(id)).toBe(4);
   });
+
+  it("does not let a visitor cancel someone's unpaid order directly", async () => {
+    const id = await makeProduct(1000, 5);
+    const { row } = await placeOrder([{ product_id: id, qty: 1 }], "UPI");
+    const anonKey = process.env['SUPABASE_PUBLISHABLE_KEY'] ?? process.env['VITE_SUPABASE_PUBLISHABLE_KEY'] ?? "";
+    const anon = createClient(url, anonKey, { auth: { persistSession: false } });
+    const attempt = await anon.rpc("release_order", { p_order_id: row.order_id, p_reason: "not mine" });
+    expect(attempt.error).toBeTruthy();
+    expect(await stockOf(id)).toBe(4);
+  });
 });
