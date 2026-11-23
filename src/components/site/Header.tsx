@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { SearchBox } from "@/components/site/SearchBox";
-import { LanguageSwitch } from "@/components/site/LanguageSwitch";
 import { useT, useCategoryName } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
@@ -191,7 +190,6 @@ export function Header() {
                 </Link>
               ))}
             </nav></>}
-            <LanguageSwitch className="mt-6 px-3" />
           </SheetContent>
         </Sheet>
 
@@ -204,7 +202,6 @@ export function Header() {
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-1">
-          <LanguageSwitch className="hidden lg:block" />
           <AccountMenu />
           {user && wishlistReady && !isStaff && (
             <Link

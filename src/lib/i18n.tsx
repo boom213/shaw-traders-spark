@@ -382,10 +382,14 @@ const LanguageContext = createContext<Ctx>({ lang: "en", setLang: () => {}, t: (
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
 
-  // Read after hydration so the server and client first render match.
+  // The language picker was removed: the site shows English only, so drop any
+  // earlier saved choice instead of leaving past visitors stuck in Hindi/Bengali.
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY) as Lang | null;
-    if (saved && saved in DICT) setLangState(saved);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* private browsing */
+    }
   }, []);
 
   useEffect(() => {
