@@ -6,7 +6,8 @@ import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { useT, type TranslationKey } from "@/lib/i18n";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { staffSession } from "@/lib/staff.functions";
-import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteAccess } from "@/hooks/useQuoteAccess";
 
 const cartItem = { to: "/cart", key: "nav.cart" as TranslationKey, icon: ShoppingCart } as const;
 const accountItem = { to: "/account", key: "nav.account" as TranslationKey, icon: User } as const;

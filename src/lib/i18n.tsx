@@ -377,7 +377,9 @@ const DICT: Record<Lang, Record<TranslationKey, string>> = { en: EN, bn: BN, hi:
 
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (key: TranslationKey) => string };
 
-const LanguageContext = createContext<Ctx>({ lang: "en", setLang: () => {}, t: (k) => EN[k] });
+const LanguageContext = (import.meta.hot?.data.languageContext as ReturnType<typeof createContext<Ctx>> | undefined)
+  ?? createContext<Ctx>({ lang: "en", setLang: () => {}, t: (k) => EN[k] });
+if (import.meta.hot) import.meta.hot.data.languageContext = LanguageContext;
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");

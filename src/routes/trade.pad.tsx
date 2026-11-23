@@ -9,7 +9,8 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { canonical, formatINR } from "@/lib/catalog";
 import { bulkLookup, type PadLine } from "@/lib/trade.functions";
-import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteAccess } from "@/hooks/useQuoteAccess";
 import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/trade/pad")({

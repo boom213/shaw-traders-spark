@@ -13,7 +13,8 @@ import { categoriesQuery } from "@/lib/queries";
 import { AccountMenu } from "@/components/site/AccountMenu";
 import { categoryIcon } from "@/components/site/category-icons";
 import { staffSession } from "@/lib/staff.functions";
-import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteList } from "@/hooks/useQuoteList";
+import { useQuoteAccess } from "@/hooks/useQuoteAccess";
 
 function CategoryNavigation({ categories }: { categories: Category[] }) {
   const categoryName = useCategoryName();

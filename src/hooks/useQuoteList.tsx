@@ -1,7 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
-import { useTradeAccount } from "@/hooks/useTrade";
-import { useStore } from "@/hooks/useStore";
 import { addQuoteLines, EMPTY_QUOTE_DRAFT, normalizeQuoteDraft, normalizeQuoteQty, QUOTE_DRAFT_KEY, type QuoteDraft, type QuoteDraftLine } from "@/lib/quote-draft";
 
 type QuoteListContextValue = QuoteDraft & {
@@ -14,7 +11,11 @@ type QuoteListContextValue = QuoteDraft & {
   clear: () => void;
 };
 
-const QuoteListContext = createContext<QuoteListContextValue | null>(null);
+// Reuse one container across preview quick refreshes; a fresh copy would make
+// already-mounted parts throw "must be used inside QuoteListProvider".
+const QuoteListContext = (import.meta.hot?.data.quoteListContext as ReturnType<typeof createContext<QuoteListContextValue | null>> | undefined)
+  ?? createContext<QuoteListContextValue | null>(null);
+if (import.meta.hot) import.meta.hot.data.quoteListContext = QuoteListContext;
 
 function readDraft(): QuoteDraft {
   try {
@@ -65,17 +66,4 @@ export function useQuoteList() {
   const value = useContext(QuoteListContext);
   if (!value) throw new Error("useQuoteList must be used inside QuoteListProvider");
   return value;
-}
-
-export function useQuoteAccess() {
-  const { authReady, user } = useStore();
-  const purchase = usePurchaseAccess();
-  const trade = useTradeAccount(authReady && Boolean(user));
-  const controlReady = authReady && (!user || (purchase.ready && trade.ready));
-  return {
-    ready: controlReady,
-    allowed: controlReady && purchase.reason === "trade" && trade.isTrade,
-    reason: purchase.reason,
-    account: trade.account,
-  };
 }

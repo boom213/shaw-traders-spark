@@ -13,7 +13,7 @@ import { useStore } from "@/hooks/useStore";
 import { useTierPrices } from "@/hooks/useTrade";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { usePurchaseAccess } from "@/hooks/usePurchaseAccess";
-import { useQuoteAccess } from "@/hooks/useQuoteList";
+import { useQuoteAccess } from "@/hooks/useQuoteAccess";
 import { useT } from "@/lib/i18n";
 import { canonical, formatINR } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
