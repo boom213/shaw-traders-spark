@@ -77,6 +77,8 @@ export const getOrder = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<OrderLookup> => {
     if (!/^[0-9a-f-]{36}$/i.test(data.token)) return { state: "notfound" };
+    const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+    await releaseStaleOrdersSoon();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
@@ -127,6 +129,8 @@ export const myOrders = createServerFn({ method: "GET" }).handler(async (): Prom
   const { currentUserId } = await import("@/lib/auth.server");
   const userId = await currentUserId();
   if (!userId) return [];
+  const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+  await releaseStaleOrdersSoon();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: rows } = await supabaseAdmin
     .from("orders")

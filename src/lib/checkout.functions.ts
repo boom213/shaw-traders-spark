@@ -302,13 +302,20 @@ export const retryPayment = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: order } = await supabaseAdmin
       .from("orders")
-      .select("id, human_id, total, payment_status")
+      .select("id, human_id, total, payment_status, placed_at, stock_released")
       .eq("id", data.orderId)
       .eq("profile_id", purchase.userId)
       .maybeSingle();
     if (!order) return { error: "Unknown order." };
     if (order.payment_status === "paid") return { error: "This order is already paid." };
     if (order.payment_status !== "pending") return { error: "This order can no longer be paid online." };
+    // Reservations expire after 30 minutes; with no background job, expire it here.
+    if (Date.now() - new Date(order.placed_at).getTime() > 30 * 60 * 1000) {
+      if (!order.stock_released) {
+        await supabaseAdmin.rpc("release_order", { p_order_id: order.id, p_reason: "Online payment was not completed within 30 minutes" });
+      }
+      return { error: "This unpaid order expired after 30 minutes. Please place a new order." };
+    }
 
     const { createRazorpayOrder, razorpayKeys } = await import("@/lib/razorpay.server");
     const created = await createRazorpayOrder({
