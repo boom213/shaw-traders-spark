@@ -24,7 +24,7 @@ export function MobileTabBar() {
   const commerceItem = quoteAccess.allowed ? quoteItem : mode === "full" && quoteAccess.reason !== "staff" && quoteAccess.reason !== "trade" ? cartItem : null;
   const items = [
     { to: "/", key: "nav.home" as TranslationKey, icon: Home },
-    { to: "/shop" as const, key: "nav.shop" as TranslationKey, shortLabel: "Products", icon: ShoppingBag },
+    { to: "/shop" as const, key: "nav.shop" as TranslationKey, shortKey: "nav.products" as TranslationKey, icon: ShoppingBag },
     ...(quoteAccess.ready && !isStaff && commerceItem ? [commerceItem] : []),
     accountItem,
   ];
@@ -35,7 +35,7 @@ export function MobileTabBar() {
       <ul className={`grid ${gridColumns}`}>
         {items.map((item) => {
           const { to, key, icon: Icon } = item;
-          const label = "shortLabel" in item ? item.shortLabel : t(key);
+          const label = "shortKey" in item && item.shortKey ? t(item.shortKey) : t(key);
           return (
           <li key={to}>
             {to === "/account" ? <AccountMenu variant="tab" /> : <Link

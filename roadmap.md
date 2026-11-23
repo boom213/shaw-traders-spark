@@ -118,3 +118,13 @@
 ## Rider home screen
 - [x] Default to a separate /rider screen, preserving the EV homepage after the placement question was skipped.
 - [ ] Build /rider once the user approves replacing the linked Google Maps provider and supplies Mapbox public/browser and private/server credentials; saved_places needs an additive owner-scoped table.
+
+## Audit fixes (Nov 23)
+- [x] robots.txt sitemap → .com; lock direct enquiry/stock-alert inserts.
+- [x] Form rate limit — skipped at user's request.
+- [x] Remove scheduled jobs: release unpaid orders on cart/checkout/Manager orders load; reminder buttons in Daily Summary.
+- [x] Anti-framing and hardening headers.
+- [x] Shop: first page of products rendered on the server; Previous/Next as real links.
+- [x] Hindi: header, filters, bottom tabs, account menu.
+- [x] Mobile: Filter & Sort button covering Buy now; double search bar.
+- [x] .env / Maps key restriction — explain (user action in Google Cloud).

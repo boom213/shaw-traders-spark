@@ -113,6 +113,8 @@ export const manageOrders = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ items: ManageOrder[]; total: number }> => {
     const sb = await admin("online-orders");
+    const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+    await releaseStaleOrdersSoon();
     const { data: pageRows, error: pageError } = await sb.rpc("manage_order_page", {
       p_query: data.q,
       p_offset: data.page * data.pageSize,
@@ -837,6 +839,20 @@ export const dailySummaryPreview = createServerFn({ method: "POST" }).handler(as
       createdAt: String(n.created_at),
     })),
   };
+});
+
+/** Send WhatsApp reminders for carts left behind a few hours ago (manual, no schedule). */
+export const sendCartRemindersNow = createServerFn({ method: "POST" }).handler(async () => {
+  await adminAs("reports");
+  const { sendAbandonedCartReminders } = await import("@/lib/reminders.server");
+  return sendAbandonedCartReminders();
+});
+
+/** Send due scooter service reminders (manual, no schedule). */
+export const sendServiceRemindersNow = createServerFn({ method: "POST" }).handler(async () => {
+  await adminAs("reports");
+  const { sendServiceReminders } = await import("@/lib/vehicle-notify.server");
+  return sendServiceReminders();
 });
 
 /** Send today's summary to the owner right now. */

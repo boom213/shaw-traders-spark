@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
-import { dailySummaryPreview, sendSummaryNow } from "@/lib/manage-data.functions";
+import { dailySummaryPreview, sendCartRemindersNow, sendServiceRemindersNow, sendSummaryNow } from "@/lib/manage-data.functions";
 import { formatINR } from "@/lib/catalog";
 
 export const Route = createFileRoute("/manage/summary")({
@@ -24,6 +24,19 @@ function SummaryPage() {
       void refetch();
     },
     onError: () => toast.error("Could not send the summary"),
+  });
+
+  const sendCart = useServerFn(sendCartRemindersNow);
+  const sendService = useServerFn(sendServiceRemindersNow);
+  const cartReminders = useMutation({
+    mutationFn: () => sendCart(),
+    onSuccess: (r) => { toast.success(`${r.sent} cart ${r.sent === 1 ? "reminder" : "reminders"} sent`); void refetch(); },
+    onError: () => toast.error("Could not send cart reminders"),
+  });
+  const serviceReminders = useMutation({
+    mutationFn: () => sendService(),
+    onSuccess: (r) => { toast.success(`${r.sent} service ${r.sent === 1 ? "reminder" : "reminders"} sent`); void refetch(); },
+    onError: () => toast.error("Could not send service reminders"),
   });
 
   if (isPending || !data) return <SparkCharge label="Loading today's numbers…" />;
@@ -47,9 +60,23 @@ function SummaryPage() {
           <pre className="mt-3 whitespace-pre-wrap rounded-xl bg-surface p-4 text-sm leading-relaxed">{data.body}</pre>
           <p className="mt-3 text-xs text-muted-foreground">
             {data.whatsappReady
-              ? "This goes to your WhatsApp automatically every evening."
+              ? "Press the button whenever you want today's numbers on your WhatsApp."
               : "WhatsApp is not connected yet, so this is only shown here for now."}
           </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="font-display text-base font-bold">Customer reminders</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Nothing is sent automatically. Press a button to send WhatsApp reminders now; customers already reminded are skipped.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button size="sm" variant="outline" disabled={cartReminders.isPending} onClick={() => cartReminders.mutate()}>
+              {cartReminders.isPending ? <SparkRing /> : null}Send abandoned-cart reminders
+            </Button>
+            <Button size="sm" variant="outline" disabled={serviceReminders.isPending} onClick={() => serviceReminders.mutate()}>
+              {serviceReminders.isPending ? <SparkRing /> : null}Send scooter service reminders
+            </Button>
+          </div>
         </div>
       </div>
 

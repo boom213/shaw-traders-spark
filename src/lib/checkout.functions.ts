@@ -72,8 +72,17 @@ const friendly = (message: string) =>
 
 /** Is online payment available (are the Razorpay keys saved)? */
 export const paymentsAvailable = createServerFn({ method: "GET" }).handler(async () => {
+  const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+  await releaseStaleOrdersSoon();
   const { razorpayKeys } = await import("@/lib/razorpay.server");
   return { online: razorpayKeys().configured };
+});
+
+/** Free stock held by unpaid orders older than 30 minutes (called when the cart opens). */
+export const releaseExpiredReservations = createServerFn({ method: "POST" }).handler(async () => {
+  const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+  await releaseStaleOrdersSoon();
+  return { ok: true as const };
 });
 
 /** Return only the signed-in customer's saved delivery addresses. */
@@ -122,6 +131,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     const { currentUserId } = await import("@/lib/auth.server");
     const userId = await currentUserId();
     if (!userId) return { error: "Please sign in to place an order." };
+    // Free stock from expired unpaid reservations before checking availability.
+    const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
+    await releaseStaleOrdersSoon();
     const { retailPurchaseAccess } = await import("@/lib/purchase-access.server");
     const purchase = await retailPurchaseAccess();
     if (!purchase.eligible) return { error: "Online checkout is available only to retail customer accounts." };

@@ -156,9 +156,9 @@ export function Header() {
             <nav className="grid gap-1 text-sm">
               {[
                 { to: "/shop", label: t("nav.shop") },
-                { to: "/trade", label: "Trade Account" },
+                { to: "/trade", label: t("nav.tradeAccount") },
                 { to: "/bulk", label: t("nav.bulk") },
-                { to: "/service", label: "Service" },
+                { to: "/service", label: t("nav.service") },
                 { to: "/track", label: t("nav.track") },
                 { to: "/about", label: t("nav.about") },
                 { to: "/contact", label: t("nav.contact") },
@@ -265,11 +265,11 @@ export function Header() {
       <nav className="hidden border-t border-border lg:block" aria-label="Store navigation">
         <div className="container-page flex h-11 items-center justify-center gap-4">
           {[
-            { to: "/shop", label: "Shop" },
-            { to: "/trade", label: "Trade" },
-            { to: "/bulk", label: "Bulk Orders" },
-            { to: "/service", label: "Service" },
-            { to: "/contact", label: "Contact" },
+            { to: "/shop", label: t("nav.shopShort") },
+            { to: "/trade", label: t("nav.trade") },
+            { to: "/bulk", label: t("nav.bulkShort") },
+            { to: "/service", label: t("nav.service") },
+            { to: "/contact", label: t("nav.contact") },
           ].map((item) => (
             <Link
               key={item.to}

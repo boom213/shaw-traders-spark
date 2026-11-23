@@ -50,7 +50,7 @@ describe("customer shopping access", () => {
   it("shows Shopping only after a non-staff result", () => {
     const menu = readFileSync("src/components/site/AccountMenu.tsx", "utf8");
     expect(menu).toContain("staff && !staff.signedIn");
-    expect(menu).toContain(">Shopping</DropdownMenuLabel>");
+    expect(menu).toContain('>{t("account.shopping")}</DropdownMenuLabel>');
   });
 
   it("keeps Shop visible to staff while hiding their other customer-shopping shortcuts", () => {
@@ -58,7 +58,7 @@ describe("customer shopping access", () => {
     expect(header).toContain('queryKey: ["account-staff-session", user?.id]');
     expect(header).toContain("const isStaff = Boolean(staff?.signedIn)");
     expect(header).toContain('{ to: "/shop", label: t("nav.shop") }');
-    expect(header).toContain('{ to: "/shop", label: "Shop" }');
+    expect(header).toContain('{ to: "/shop", label: t("nav.shopShort") }');
     expect(header).not.toContain('...(!isStaff ? [{ to: "/shop" as const');
     expect(header).toContain("!isStaff && (categories ?? []).length > 0");
     expect(header).toContain("user && wishlistReady && !isStaff");
@@ -86,7 +86,7 @@ describe("customer shopping access", () => {
     const customerLinksGate = menu.indexOf("{staff && !staff.signedIn && <>", profileIndex);
     expect(profileIndex).toBeGreaterThan(-1);
     expect(customerLinksGate).toBeGreaterThan(profileIndex);
-    for (const label of ["My orders", "Wishlist", "Track an order"]) {
+    for (const label of ['t("account.myOrders")', 't("nav.wishlist")', 't("account.trackOrder")']) {
       expect(menu.indexOf(label)).toBeGreaterThan(customerLinksGate);
     }
   });
@@ -114,7 +114,7 @@ describe("customer shopping access", () => {
 
   it("hides customer trade links from staff and leaves staff trade administration separate", () => {
     const menu = readFileSync("src/components/site/AccountMenu.tsx", "utf8");
-    const tradeLabel = menu.indexOf(">Trade & wholesale</DropdownMenuLabel>");
+    const tradeLabel = menu.indexOf('>{t("account.trade")}</DropdownMenuLabel>');
     const tradeGate = menu.lastIndexOf("{staff && !staff.signedIn && <>", tradeLabel);
     expect(tradeGate).toBeGreaterThan(-1);
     expect(tradeLabel).toBeGreaterThan(tradeGate);

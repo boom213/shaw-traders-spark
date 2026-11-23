@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { MessageCircle, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -8,14 +8,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SectionHeading } from "@/components/site/Empty";
 import { SparkCharge } from "@/components/site/SparkLoaders";
 import { ProductCard } from "@/components/site/ProductCard";
-import { SearchBox } from "@/components/site/SearchBox";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
 import { clearSavedVehicle, useVehicle } from "@/hooks/useVehicle";
+import { useT } from "@/lib/i18n";
+import type { ProductFilters } from "@/lib/catalog.functions";
 
 type ShopSearch = {
   q?: string;
@@ -34,6 +35,24 @@ type ShopSearch = {
 
 const PAGE_SIZE = 24;
 
+/** Turn the address-bar filters into the product query (shared by server load and browser). */
+function filtersFor(search: ShopSearch): ProductFilters {
+  return {
+    ...(search.q ? { q: search.q } : {}),
+    ...(search.category ? { category: search.category } : {}),
+    ...(search.brand ? { brand: search.brand } : {}),
+    ...(search.voltage ? { voltage: search.voltage } : {}),
+    ...(search.ah ? { ah: search.ah } : {}),
+    ...(search.model ? { model: search.model } : {}),
+    ...(search.min !== undefined ? { min: search.min } : {}),
+    ...(search.max !== undefined ? { max: search.max } : {}),
+    ...(search.inStock ? { inStock: true } : {}),
+    ...(search.sort ? { sort: search.sort } : {}),
+    page: Math.max(0, (search.page ?? 1) - 1),
+    pageSize: PAGE_SIZE,
+  };
+}
+
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => ({
     q: typeof search['q'] === "string" ? search['q'] : undefined,
@@ -49,6 +68,15 @@ export const Route = createFileRoute("/shop")({
     all: search['all'] === true || search['all'] === "true" ? true : undefined,
     page: search['page'] ? Number(search['page']) : undefined,
   }),
+  loaderDeps: ({ search }) => ({ filters: filtersFor(search) }),
+  // Load the first page on the server so product names are in the page HTML.
+  loader: async ({ context, deps }) => {
+    try {
+      return { filters: deps.filters, initial: await context.queryClient.ensureQueryData(productsQuery(deps.filters)) };
+    } catch {
+      return { filters: deps.filters, initial: null };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Shop EV Spare Parts — Shaw Traders EV" },
@@ -78,6 +106,7 @@ export const Route = createFileRoute("/shop")({
 });
 
 function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<ShopSearch>) => void }) {
+  const t = useT();
   const { data: categories } = useQuery(categoriesQuery());
   const { data: facets } = useQuery(facetsQuery());
   const brands = facets?.brands ?? [];
@@ -88,25 +117,25 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
   return (
     <div className="filters-panel grid gap-5 text-sm">
       <div className="grid gap-2">
-        <Label className="font-semibold">Category</Label>
+        <Label className="font-semibold">{t("shop.category")}</Label>
         <Select value={search.category ?? "all"} onValueChange={(v) => apply({ category: v === "all" ? undefined : v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="all">{t("shop.allCategories")}</SelectItem>
             {(categories ?? []).map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">Brand</Label>
+        <Label className="font-semibold">{t("shop.brand")}</Label>
         {brands.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Brands appear once products are added.</p>
+          <p className="text-xs text-muted-foreground">{t("shop.brandsEmpty")}</p>
         ) : (
           <Select value={search.brand ?? "all"} onValueChange={(v) => apply({ brand: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value="all">All brands</SelectItem>
+              <SelectItem value="all">{t("shop.allBrands")}</SelectItem>
               {brands.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -114,23 +143,23 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">Price (₹)</Label>
+        <Label className="font-semibold">{t("shop.price")}</Label>
         <div className="flex items-center gap-2">
-          <Input type="number" placeholder="Min" value={search.min ?? ""} onChange={(e) => apply({ min: e.target.value ? Number(e.target.value) : undefined })} />
+          <Input type="number" placeholder={t("shop.min")} value={search.min ?? ""} onChange={(e) => apply({ min: e.target.value ? Number(e.target.value) : undefined })} />
           <span className="text-muted-foreground">–</span>
-          <Input type="number" placeholder="Max" value={search.max ?? ""} onChange={(e) => apply({ max: e.target.value ? Number(e.target.value) : undefined })} />
+          <Input type="number" placeholder={t("shop.max")} value={search.max ?? ""} onChange={(e) => apply({ max: e.target.value ? Number(e.target.value) : undefined })} />
         </div>
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">Vehicle / Model</Label>
+        <Label className="font-semibold">{t("shop.vehicle")}</Label>
         {models.length === 0 ? (
-          <Input placeholder="e.g. scooter model" value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
+          <Input placeholder={t("shop.modelPlaceholder")} value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
         ) : (
           <Select value={search.model ?? "all"} onValueChange={(v) => apply({ model: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value="all">Any vehicle</SelectItem>
+              <SelectItem value="all">{t("shop.anyVehicle")}</SelectItem>
               {models.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -138,14 +167,14 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">Voltage</Label>
+        <Label className="font-semibold">{t("shop.voltage")}</Label>
         {voltages.length === 0 ? (
           <Input placeholder="e.g. 48V" value={search.voltage ?? ""} onChange={(e) => apply({ voltage: e.target.value || undefined })} />
         ) : (
           <Select value={search.voltage ?? "all"} onValueChange={(v) => apply({ voltage: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value="all">Any voltage</SelectItem>
+              <SelectItem value="all">{t("shop.anyVoltage")}</SelectItem>
               {voltages.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -153,14 +182,14 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">Battery capacity (Ah)</Label>
+        <Label className="font-semibold">{t("shop.capacity")}</Label>
         {ahs.length === 0 ? (
           <Input placeholder="e.g. 32Ah" value={search.ah ?? ""} onChange={(e) => apply({ ah: e.target.value || undefined })} />
         ) : (
           <Select value={search.ah ?? "all"} onValueChange={(v) => apply({ ah: v === "all" ? undefined : v })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
-              <SelectItem value="all">Any capacity</SelectItem>
+              <SelectItem value="all">{t("shop.anyCapacity")}</SelectItem>
               {ahs.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -169,7 +198,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
 
       <label className="flex items-center gap-2 font-medium">
         <Checkbox checked={!!search.inStock} onCheckedChange={(c) => apply({ inStock: c === true ? true : undefined })} />
-        In stock only
+        {t("shop.inStockOnly")}
       </label>
     </div>
   );
@@ -197,22 +226,14 @@ function Shop() {
   const apply = (patch: Partial<ShopSearch>) =>
     navigate({ search: (prev) => ({ ...prev, ...patch, page: undefined }) });
 
-  const page = Math.max(0, (search.page ?? 1) - 1);
+  const t = useT();
+  const loaded = Route.useLoaderData();
+  const filters = filtersFor(search);
+  const page = filters.page ?? 0;
+  const sameFilters = JSON.stringify(loaded.filters) === JSON.stringify(filters);
   const { data, isPending } = useQuery({
-    ...productsQuery({
-      ...(search.q ? { q: search.q } : {}),
-      ...(search.category ? { category: search.category } : {}),
-      ...(search.brand ? { brand: search.brand } : {}),
-      ...(search.voltage ? { voltage: search.voltage } : {}),
-      ...(search.ah ? { ah: search.ah } : {}),
-      ...(search.model ? { model: search.model } : {}),
-      ...(search.min !== undefined ? { min: search.min } : {}),
-      ...(search.max !== undefined ? { max: search.max } : {}),
-      ...(search.inStock ? { inStock: true } : {}),
-      ...(search.sort ? { sort: search.sort } : {}),
-      page,
-      pageSize: PAGE_SIZE,
-    }),
+    ...productsQuery(filters),
+    ...(sameFilters && loaded.initial ? { initialData: loaded.initial } : {}),
     placeholderData: keepPreviousData,
   });
 
@@ -231,64 +252,64 @@ function Shop() {
     <div className="container-page py-8">
       <SectionHeading
         as="h1"
-        title={search.q ? `Results for “${search.q}”` : "Shop All Products"}
-        subtitle={isPending ? "Loading products…" : `${total} product${total === 1 ? "" : "s"}`}
+        title={search.q ? `${t("shop.resultsFor")} “${search.q}”` : t("nav.shop")}
+        subtitle={isPending ? t("shop.loading") : `${total} ${total === 1 ? t("shop.productOne") : t("shop.productMany")}`}
       />
 
       {vehicle && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm">
           <span>
             {search.model
-              ? `Showing parts that fit your ${search.model}`
-              : `Showing all parts — your scooter is a ${vehicle.model}`}
+              ? `${t("shop.fitsYour")} ${search.model}`
+              : `${t("shop.allPartsYour")} ${vehicle.model}`}
           </span>
           {search.model ? (
             <Button size="sm" variant="outline" onClick={() => navigate({ search: (prev) => ({ ...prev, model: undefined, all: true, page: undefined }) })}>
-              All parts
+              {t("shop.allParts")}
             </Button>
           ) : (
             <Button size="sm" variant="outline" onClick={() => navigate({ search: (prev) => ({ ...prev, model: vehicle.model, all: undefined, page: undefined }) })}>
-              Only parts that fit
+              {t("shop.onlyFit")}
             </Button>
           )}
         </div>
       )}
 
-      <div className="mb-6 lg:hidden">
-        <SearchBox />
-      </div>
-
       <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
         <aside className="hidden lg:block">
           <div className="sticky top-32 border-r border-border pr-6">
-            <h3 className="eyebrow mb-5">Filters</h3>
+            <h3 className="eyebrow mb-5">{t("shop.filters")}</h3>
             <Filters search={search} apply={apply} />
           </div>
         </aside>
 
         <div>
+          <div className="mb-4 lg:hidden">
+            <Button variant="outline" className="w-full" onClick={() => setSheet(true)}>
+              <SlidersHorizontal className="size-4" /> {t("shop.filterSort")}
+            </Button>
+          </div>
           <div className="mb-4 hidden items-center justify-end lg:flex">
             <Select value={search.sort ?? "relevance"} onValueChange={(v) => apply({ sort: v === "relevance" ? undefined : v })}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="relevance">Sort: Relevance</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="relevance">{t("shop.sortPrefix")}: {t("shop.sortRelevance")}</SelectItem>
+                <SelectItem value="price-asc">{t("shop.priceAsc")}</SelectItem>
+                <SelectItem value="price-desc">{t("shop.priceDesc")}</SelectItem>
+                <SelectItem value="newest">{t("shop.newest")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {isPending ? (
-            <SparkCharge label="Loading products…" />
+            <SparkCharge label={t("shop.loading")} />
           ) : results.length === 0 ? (
             <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-card)]">
               <h2 className="font-display text-xl font-bold">
-                {term ? `Nothing found for “${term}”` : "No matching products"}
+                {term ? `${t("shop.nothingFound")} “${term}”` : t("shop.noMatch")}
               </h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                We may still have this part at the counter. Send us the part name or a photo of the old one on WhatsApp and we
-                will check for you.
+                {t("shop.noMatchBody")}
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-3">
                 <Button asChild>
@@ -301,14 +322,14 @@ function Shop() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <MessageCircle className="size-4" /> Ask on WhatsApp
+                    <MessageCircle className="size-4" /> {t("shop.askWhatsapp")}
                   </a>
                 </Button>
                 <Button variant="outline" asChild>
-                  <a href={`tel:${BUSINESS.phone}`}>Call {BUSINESS.phone}</a>
+                  <a href={`tel:${BUSINESS.phone}`}>{t("shop.call")} {BUSINESS.phone}</a>
                 </Button>
                 <Button variant="ghost" onClick={() => navigate({ search: {} })}>
-                  Clear all filters
+                  {t("shop.clearFilters")}
                 </Button>
               </div>
             </div>
@@ -319,23 +340,27 @@ function Shop() {
               </div>
               {pages > 1 && (
                 <div className="mt-8 flex items-center justify-center gap-3">
-                  <Button
-                    variant="outline"
-                    disabled={page === 0}
-                    onClick={() => navigate({ search: (prev) => ({ ...prev, page: page }) })}
-                  >
-                    Previous
-                  </Button>
+                  {page === 0 ? (
+                    <Button variant="outline" disabled>{t("shop.previous")}</Button>
+                  ) : (
+                    <Button variant="outline" asChild>
+                      <Link to="/shop" search={(prev) => ({ ...prev, page: page === 1 ? undefined : page })} rel="prev">
+                        {t("shop.previous")}
+                      </Link>
+                    </Button>
+                  )}
                   <span className="text-sm text-muted-foreground">
-                    Page {page + 1} of {pages}
+                    {t("shop.page")} {page + 1} {t("shop.of")} {pages}
                   </span>
-                  <Button
-                    variant="outline"
-                    disabled={page + 1 >= pages}
-                    onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 2 }) })}
-                  >
-                    Next
-                  </Button>
+                  {page + 1 >= pages ? (
+                    <Button variant="outline" disabled>{t("shop.next")}</Button>
+                  ) : (
+                    <Button variant="outline" asChild>
+                      <Link to="/shop" search={(prev) => ({ ...prev, page: page + 2 })} rel="next">
+                        {t("shop.next")}
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               )}
             </>
@@ -344,28 +369,23 @@ function Shop() {
       </div>
 
       <Sheet open={sheet} onOpenChange={setSheet}>
-        <SheetTrigger asChild>
-          <Button className="fixed bottom-20 left-1/2 z-30 -translate-x-1/2 rounded-full shadow-[var(--shadow-lift)] lg:hidden">
-            <SlidersHorizontal className="size-4" /> Filter & Sort
-          </Button>
-        </SheetTrigger>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3">
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-border" aria-hidden />
-          <h3 className="mb-4 font-display text-lg font-semibold">Filter & Sort</h3>
+          <h3 className="mb-4 font-display text-lg font-semibold">{t("shop.filterSort")}</h3>
           <div className="mb-6 grid gap-2">
-            <Label className="font-semibold">Sort by</Label>
+            <Label className="font-semibold">{t("shop.sortBy")}</Label>
             <Select value={search.sort ?? "relevance"} onValueChange={(v) => apply({ sort: v === "relevance" ? undefined : v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="relevance">Relevance</SelectItem>
-                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="relevance">{t("shop.sortRelevance")}</SelectItem>
+                <SelectItem value="price-asc">{t("shop.priceAsc")}</SelectItem>
+                <SelectItem value="price-desc">{t("shop.priceDesc")}</SelectItem>
+                <SelectItem value="newest">{t("shop.newest")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <Filters search={search} apply={apply} />
-          <Button className="mt-6 w-full" onClick={() => setSheet(false)}>Show {total} results</Button>
+          <Button className="mt-6 w-full" onClick={() => setSheet(false)}>{t("shop.showResults")} ({total})</Button>
         </SheetContent>
       </Sheet>
     </div>

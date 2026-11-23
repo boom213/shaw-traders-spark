@@ -21,3 +21,20 @@ export async function releaseStaleOrders(): Promise<{ released: number; failed: 
   }
   return { released, failed };
 }
+let lastSweep = 0;
+
+/**
+ * Release expired unpaid reservations when shoppers or staff next open the
+ * cart, checkout or order list, instead of on a background schedule. Runs at
+ * most once a minute per server instance; failures never block the page.
+ */
+export async function releaseStaleOrdersSoon(): Promise<void> {
+  const now = Date.now();
+  if (now - lastSweep < 60_000) return;
+  lastSweep = now;
+  try {
+    await releaseStaleOrders();
+  } catch (error) {
+    console.error("stale order sweep failed", error);
+  }
+}

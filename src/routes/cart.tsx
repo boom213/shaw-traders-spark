@@ -18,6 +18,7 @@ import { useT } from "@/lib/i18n";
 import { canonical, formatINR } from "@/lib/catalog";
 import { homeQuery, productsByIdsQuery } from "@/lib/queries";
 import { previewCoupon } from "@/lib/shop-extras.functions";
+import { releaseExpiredReservations } from "@/lib/checkout.functions";
 import { productThumbnailUrl } from "@/lib/product-photo";
 
 export const COUPON_KEY = "shaw-ev-coupon";
@@ -106,6 +107,10 @@ export function readCoupon(): AppliedCoupon | undefined {
 
 function CartPage() {
   const t = useT();
+  // Expired unpaid reservations are released here instead of by a schedule.
+  useEffect(() => {
+    void releaseExpiredReservations().catch(() => undefined);
+  }, []);
   const { mode: siteMode } = useSiteOrdering();
   const quoteAccess = useQuoteAccess();
   const purchase = usePurchaseAccess();

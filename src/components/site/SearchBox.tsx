@@ -53,8 +53,8 @@ export function SearchBox({ className, autoFocus }: { className?: string; autoFo
           onBlur={() => {
             blurTimer.current = setTimeout(() => setOpen(false), 140);
           }}
-          placeholder="Search battery, charger, motor, bike model…"
-          aria-label="Search products"
+          placeholder={t("search.placeholder")}
+          aria-label={t("search.label")}
           className="h-11 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:bg-background"
         />
       </form>
