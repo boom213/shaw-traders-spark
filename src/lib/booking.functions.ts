@@ -169,14 +169,17 @@ export const verifyBookingPayment = createServerFn({ method: "POST" })
 
 /** Read-only reconciliation state after Razorpay returns to the browser. */
 export const bookingPaymentState = createServerFn({ method: "POST" })
-  .inputValidator((data: { bookingId: string }) => ({ bookingId: String(data?.bookingId ?? "") }))
+  .inputValidator((data: { bookingId: string; token: string }) => ({ bookingId: String(data?.bookingId ?? ""), token: String(data?.token ?? "") }))
   .handler(async ({ data }) => {
-    if (!/^[0-9a-f-]{36}$/i.test(data.bookingId)) return { status: "unknown" as const };
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuid.test(data.bookingId) || !uuid.test(data.token)) return { status: "unknown" as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // The caller must hold the booking's secret link token returned when it was created.
     const { data: row } = await supabaseAdmin
       .from("vehicle_bookings")
       .select("payment_status, human_id, public_token, token_amount, needs_payment_review")
       .eq("id", data.bookingId)
+      .eq("public_token", data.token)
       .maybeSingle();
     if (!row) return { status: "unknown" as const };
     return {

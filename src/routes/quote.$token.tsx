@@ -54,7 +54,7 @@ function QuotePage() {
 
   const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
     armed: pollArmed && Boolean(pendingOrder),
-    check: () => pendingOrder ? readPaymentState({ data: { orderId: pendingOrder.orderId } }) : Promise.resolve({ status: "unknown" as const }),
+    check: () => pendingOrder ? readPaymentState({ data: { orderId: pendingOrder.orderId, token: pendingOrder.token } }) : Promise.resolve({ status: "unknown" as const }),
     isConfirmed: (result) => result.status === "paid",
     onConfirmed: () => {
       if (!pendingOrder) return;
@@ -121,7 +121,7 @@ function QuotePage() {
       return;
     }
     setBusy(false);
-    await abandon({ data: { orderId: res.orderId } });
+    await abandon({ data: { orderId: res.orderId, token: res.token } });
     toast.error(result.status === "dismissed" ? "Payment window closed." : result.message);
   };
 
@@ -155,7 +155,7 @@ function QuotePage() {
         {pollArmed && <p className="mt-3 text-xs font-medium text-primary">We are still checking quietly in the background.</p>}
         <Button className="mt-5" variant="outline" onClick={async () => {
           setPollArmed(false);
-          await abandon({ data: { orderId: pendingOrder.orderId } });
+          await abandon({ data: { orderId: pendingOrder.orderId, token: pendingOrder.token } });
           setPendingOrder(null);
           setConfirmationMessage(null);
         }}>Cancel this order</Button>

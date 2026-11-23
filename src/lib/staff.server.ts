@@ -49,8 +49,9 @@ export async function staffContext(): Promise<StaffContext | null> {
     .maybeSingle();
   const name = profile?.full_name ?? user.email ?? "Staff";
 
-  // Anyone on the allowlist is a super admin from their first sign-in onwards.
-  if (isSuperAdminEmail(email)) {
+  // Anyone on the allowlist is a super admin from their first sign-in onwards,
+  // but only once they have proven they own the mailbox.
+  if (isSuperAdminEmail(email) && user.email_confirmed_at) {
     if (!profile) {
       await supabaseAdmin.from("profiles").upsert({ id: user.id, full_name: name, email } as never);
     }

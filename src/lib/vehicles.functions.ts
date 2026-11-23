@@ -249,23 +249,35 @@ export const serviceHistory = createServerFn({ method: "POST" })
     phone: phone10(data?.phone),
     reference: text(data?.reference, 40).toUpperCase(),
   }))
-  .handler(async ({ data }): Promise<ServiceHistoryView | { error: string }> => {
+  .handler(async ({ data }): Promise<ServiceHistoryView | { error: string; signIn?: true }> => {
+    // Service history is private: only the signed-in owner of the vehicle may read it.
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const { publicClient } = await import("@/lib/supabase-public.server");
+    const bearer = getRequestHeader("authorization")?.replace(/^Bearer\s+/i, "").trim();
+    const { data: auth } = bearer ? await publicClient().auth.getUser(bearer) : { data: { user: null } };
+    const user = auth.user;
+    if (!user) return { error: "Please sign in to see your service history.", signIn: true };
+
     if (data.phone.length !== 10 || data.reference.length < 4) {
       return { error: "Enter the mobile number used at the shop and your registration or chassis number." };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("vehicle_registrations")
-      .select("id, chassis_number, registration_number, warranty_start, products(name)")
+      .select("id, profile_id, chassis_number, registration_number, warranty_start, products(name), vehicle_bookings(profile_id)")
       .eq("phone", data.phone)
       .limit(10);
 
-    const match = (rows ?? []).find(
-      (r) =>
+    const verifiedPhone = user.phone && user.phone_confirmed_at ? phone10(user.phone) : "";
+    const match = (rows ?? []).find((r) => {
+      const sameVehicle =
         String(r.registration_number ?? "").toUpperCase().replace(/\s/g, "") === data.reference.replace(/\s/g, "") ||
-        String(r.chassis_number ?? "").toUpperCase().endsWith(data.reference),
-    );
-    if (!match) return { error: "We could not find that vehicle. Please check the numbers, or call the shop." };
+        String(r.chassis_number ?? "").toUpperCase().endsWith(data.reference);
+      if (!sameVehicle) return false;
+      const booking = (r as { vehicle_bookings?: { profile_id: string | null } | null }).vehicle_bookings;
+      return r.profile_id === user.id || booking?.profile_id === user.id || (verifiedPhone !== "" && verifiedPhone === data.phone);
+    });
+    if (!match) return { error: "We could not find that vehicle on your account. Please check the numbers, or call the shop to link it." };
 
     const [{ data: due }, { data: records }] = await Promise.all([
       supabaseAdmin.from("service_schedule").select("label, due_on, due_km").eq("registration_id", match.id).eq("status", "due").order("due_on"),

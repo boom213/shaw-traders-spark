@@ -99,7 +99,7 @@ function BookingForm({ slug, colours, tokenAmount, modelName }: { slug: string; 
 
   const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
     armed: pollArmed && Boolean(pendingBooking),
-    check: () => pendingBooking ? readBookingPayment({ data: { bookingId: pendingBooking.bookingId } }) : Promise.resolve({ status: "unknown" as const }),
+    check: () => pendingBooking ? readBookingPayment({ data: { bookingId: pendingBooking.bookingId, token: pendingBooking.token } }) : Promise.resolve({ status: "unknown" as const }),
     isConfirmed: (result) => result.status === "paid",
     onConfirmed: () => {
       if (!pendingBooking) return;

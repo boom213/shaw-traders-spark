@@ -34,3 +34,7 @@
 - Courier tracking URLs come from the shared verified registry; derive missing links server-side and preserve explicit staff overrides.
 - Outreach is assisted manual WhatsApp work: server-controlled records may prefill text and links, but never auto-send or attach media.
 - Showroom sales reuse vehicle_bookings; service-only SQL routines lock bookings for receipts, agreed-price revisions and handover so online token state stays untouched and receipt history cannot be deleted.
+- Guest-reachable order/booking status or cancel server functions must match the record's `public_token`, never an id alone — ids leak in URLs and logs.
+- Staff password sign-in and attempt logging run server-side (`staffPasswordSignIn`); allowlisted super-admin access requires a confirmed email — clients must not write auth records.
+- Cron routes authenticate with `authenticateCronRequest` (private cron secret), never the publishable key — that key is public.
+- CSV cells go through `csvCell`, which neutralizes leading formula characters — exports contain customer-typed text.

@@ -130,44 +130,63 @@ export const staffSession = createServerFn({ method: "POST" }).handler(async () 
     : { signedIn: false as const };
 });
 
+type AdminClient = Awaited<ReturnType<typeof adminClient>>;
+
+/** Minutes until another attempt is allowed, or 0 when the email is not locked. */
+async function staffLockMinutes(sb: AdminClient, email: string): Promise<number> {
+  const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
+  const { data: rows } = await sb
+    .from("auth_attempts")
+    .select("ok, created_at")
+    .eq("identifier", email)
+    .eq("kind", "staff_signin")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const failures = (rows ?? []).filter((r) => !r.ok);
+  if (failures.length < MAX_FAILURES) return 0;
+  const newest = new Date(String(failures[0]?.created_at ?? Date.now())).getTime();
+  return Math.max(1, Math.ceil((newest + WINDOW_MINUTES * 60_000 - Date.now()) / 60_000));
+}
+
 /** Rate limit: five failed sign-ins per email per 15 minutes. */
 export const staffSignInAllowed = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string }) => ({ email: lower(data?.email) }))
   .handler(async ({ data }) => {
     if (!data.email) return { allowed: false as const, waitMinutes: 0 };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const since = new Date(Date.now() - WINDOW_MINUTES * 60_000).toISOString();
-    const { data: rows } = await supabaseAdmin
-      .from("auth_attempts")
-      .select("ok, created_at")
-      .eq("identifier", data.email)
-      .eq("kind", "staff_signin")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    const failures = (rows ?? []).filter((r) => !r.ok);
-    if (failures.length < MAX_FAILURES) return { allowed: true as const, waitMinutes: 0 };
-    const newest = new Date(String(failures[0]?.created_at ?? Date.now())).getTime();
-    const waitMinutes = Math.max(1, Math.ceil((newest + WINDOW_MINUTES * 60_000 - Date.now()) / 60_000));
-    return { allowed: false as const, waitMinutes };
+    const waitMinutes = await staffLockMinutes(await adminClient(), data.email);
+    return waitMinutes ? { allowed: false as const, waitMinutes } : { allowed: true as const, waitMinutes: 0 };
   });
 
-/** Log the outcome of a staff sign-in attempt. */
-export const recordStaffSignIn = createServerFn({ method: "POST" })
-  .inputValidator((data: { email: string; ok: boolean }) => ({ email: lower(data?.email), ok: Boolean(data?.ok) }))
-  .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("auth_attempts").insert({ identifier: data.email, kind: "staff_signin", ok: data.ok });
-    if (data.ok) {
-      await supabaseAdmin
-        .from("auth_attempts")
-        .delete()
-        .eq("identifier", data.email)
-        .eq("kind", "staff_signin")
-        .eq("ok", false);
+/**
+ * Staff password sign-in, checked on the server so the attempt log reflects
+ * the real outcome and callers cannot write or clear attempt records.
+ */
+export const staffPasswordSignIn = createServerFn({ method: "POST" })
+  .inputValidator((data: { email: string; password: string }) => ({
+    email: lower(data?.email).slice(0, 255),
+    password: String(data?.password ?? "").slice(0, 200),
+  }))
+  .handler(async ({ data }): Promise<
+    | { ok: true; accessToken: string; refreshToken: string }
+    | { ok: false; waitMinutes: number; error: string }
+  > => {
+    if (!data.email || !data.password) return { ok: false, waitMinutes: 0, error: "Enter your staff email and password." };
+    const sb = await adminClient();
+    const waitMinutes = await staffLockMinutes(sb, data.email);
+    if (waitMinutes) {
+      return { ok: false, waitMinutes, error: `Too many failed attempts. Try again in about ${waitMinutes} minute(s).` };
     }
-    return { ok: true as const };
+
+    const { publicClient } = await import("@/lib/supabase-public.server");
+    const { data: signed, error } = await publicClient().auth.signInWithPassword({ email: data.email, password: data.password });
+    const ok = !error && Boolean(signed.session);
+    await sb.from("auth_attempts").insert({ identifier: data.email, kind: "staff_signin", ok });
+    if (!ok || !signed.session) {
+      return { ok: false, waitMinutes: 0, error: "That email and password do not match a staff account." };
+    }
+    await sb.from("auth_attempts").delete().eq("identifier", data.email).eq("kind", "staff_signin").eq("ok", false);
+    return { ok: true, accessToken: signed.session.access_token, refreshToken: signed.session.refresh_token };
   });
 
 async function adminClient() {
@@ -175,22 +194,23 @@ async function adminClient() {
   return supabaseAdmin;
 }
 
-async function ensureProfile(sb: Awaited<ReturnType<typeof adminClient>>, id: string, name: string, email: string) {
+async function ensureProfile(sb: AdminClient, id: string, name: string, email: string) {
   await sb.from("profiles").upsert({ id, full_name: name, email } as never);
 }
 
 /**
- * A permanent super admin setting their password for the first time. Only
- * addresses on the SUPER_ADMIN_EMAILS allowlist can use this, and only while
- * they have no account yet.
+ * A permanent super admin opening their account for the first time. Only
+ * addresses on the SUPER_ADMIN_EMAILS allowlist can use this. The account is
+ * created unconfirmed and a confirmation email is sent; super admin access is
+ * granted only after the owner of that mailbox confirms and signs in.
  */
 export const claimSuperAdmin = createServerFn({ method: "POST" })
   .inputValidator((data: { email: string; password: string; name: string }) => ({
-    email: lower(data?.email),
-    password: String(data?.password ?? ""),
-    name: clean(data?.name),
+    email: lower(data?.email).slice(0, 255),
+    password: String(data?.password ?? "").slice(0, 200),
+    name: clean(data?.name).slice(0, 100),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ error: string } | { ok: true; confirmEmail: true }> => {
     const { isSuperAdminEmail } = await import("@/lib/staff.server");
     if (!isSuperAdminEmail(data.email)) {
       return { error: "This email is not allowed to open the manager panel." };
@@ -198,31 +218,27 @@ export const claimSuperAdmin = createServerFn({ method: "POST" })
     if (data.password.length < 8) return { error: "Use a password of at least 8 characters." };
     if (data.name.length < 2) return { error: "Enter your name." };
 
-    const sb = await adminClient();
-    const { data: created, error } = await sb.auth.admin.createUser({
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const { publicClient } = await import("@/lib/supabase-public.server");
+    const origin = getRequestHeader("origin");
+    const { data: created, error } = await publicClient().auth.signUp({
       email: data.email,
       password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.name },
+      options: {
+        data: { full_name: data.name },
+        ...(origin && /^https?:\/\//.test(origin) ? { emailRedirectTo: `${origin}/manage-login` } : {}),
+      },
     });
-    if (error || !created.user) {
-      return { error: /already/i.test(error?.message ?? "") ? "You already have an account — sign in with your password." : error?.message ?? "Could not create the account." };
+    if (error) {
+      return { error: /already/i.test(error.message) ? "You already have an account — sign in with your password." : "Could not create the account. Please try again." };
     }
-
-    await ensureProfile(sb, created.user.id, data.name, data.email);
-    const { error: roleError } = await sb
-      .from("staff_roles")
-      .upsert({ profile_id: created.user.id, role: "super_admin" } as never, { onConflict: "profile_id,role" });
-    if (roleError) return { error: roleError.message };
-
-    await sb.from("audit_log").insert({
-      actor: `${data.name} <${data.email}> (super_admin)`,
-      action: "staff.super_admin_activated",
-      entity: "staff_roles",
-      entity_id: created.user.id,
-      diff: { role: "super_admin" } as never,
-    });
-    return { ok: true as const };
+    // Never activate an account that skipped mailbox confirmation.
+    if (created.session) {
+      const sb = await adminClient();
+      if (created.user) await sb.auth.admin.deleteUser(created.user.id);
+      return { error: "Email confirmation must be switched on before a super admin account can be opened." };
+    }
+    return { ok: true as const, confirmEmail: true as const };
   });
 
 /** Everyone with access to the manager panel, deduplicated before filtering and paging. */

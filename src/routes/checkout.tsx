@@ -160,7 +160,7 @@ function CheckoutPage() {
       return;
     }
     setPending(stored);
-    void readPaymentState({ data: { orderId: stored.orderId } }).then(async (latest) => {
+    void readPaymentState({ data: { orderId: stored.orderId, token: stored.token } }).then(async (latest) => {
       if (latest.status === "paid") {
         await clearCart();
         window.localStorage.removeItem(COUPON_KEY);
@@ -180,7 +180,7 @@ function CheckoutPage() {
 
   const { phase: confirmationPhase } = usePaymentConfirmation<{ status: string }>({
     armed: pollArmed && Boolean(pending),
-    check: () => pending ? readPaymentState({ data: { orderId: pending.orderId } }) : Promise.resolve({ status: "unknown" as const }),
+    check: () => pending ? readPaymentState({ data: { orderId: pending.orderId, token: pending.token } }) : Promise.resolve({ status: "unknown" as const }),
     isConfirmed: (result) => result.status === "paid",
     onConfirmed: () => {
       if (!pending) return;
@@ -356,7 +356,7 @@ function CheckoutPage() {
   const tryAgain = async () => {
     if (!pending) return;
     setPlacing(true);
-    const latest = await readPaymentState({ data: { orderId: pending.orderId } });
+    const latest = await readPaymentState({ data: { orderId: pending.orderId, token: pending.token } });
     if (latest.status === "paid") {
       setPlacing(false);
       await finish(pending, `Payment received · order ${pending.humanId}`);
@@ -371,7 +371,7 @@ function CheckoutPage() {
   const cancelOrder = async () => {
     if (!pending) return;
     setPollArmed(false);
-    await abandon({ data: { orderId: pending.orderId } });
+    await abandon({ data: { orderId: pending.orderId, token: pending.token } });
     window.sessionStorage.removeItem(PENDING_CHECKOUT_KEY);
     setPending(null);
     setFailure(null);

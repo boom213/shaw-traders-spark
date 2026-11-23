@@ -256,15 +256,19 @@ export const verifyPayment = createServerFn({ method: "POST" })
   });
 
 /** Current payment state, used by the retry screen. */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Payment state for an order; the caller must hold the order's secret link token. */
 export const paymentState = createServerFn({ method: "POST" })
-  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .inputValidator((data: { orderId: string; token: string }) => ({ orderId: String(data?.orderId ?? ""), token: String(data?.token ?? "") }))
   .handler(async ({ data }) => {
-    if (!/^[0-9a-f-]{36}$/i.test(data.orderId)) return { status: "unknown" as const };
+    if (!UUID_RE.test(data.orderId) || !UUID_RE.test(data.token)) return { status: "unknown" as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("orders")
       .select("payment_status, human_id, total, public_token")
       .eq("id", data.orderId)
+      .eq("public_token", data.token)
       .maybeSingle();
     if (!row) return { status: "unknown" as const };
     return {
@@ -312,10 +316,18 @@ export const retryPayment = createServerFn({ method: "POST" })
 
 /** Customer closed or cancelled the payment: put the reserved stock back. */
 export const abandonPayment = createServerFn({ method: "POST" })
-  .inputValidator((data: { orderId: string }) => ({ orderId: String(data?.orderId ?? "") }))
+  .inputValidator((data: { orderId: string; token: string }) => ({ orderId: String(data?.orderId ?? ""), token: String(data?.token ?? "") }))
   .handler(async ({ data }) => {
-    if (!/^[0-9a-f-]{36}$/i.test(data.orderId)) return { ok: false as const };
+    if (!UUID_RE.test(data.orderId) || !UUID_RE.test(data.token)) return { ok: false as const };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.rpc("release_order", { p_order_id: data.orderId, p_reason: "Payment cancelled by the customer" });
+    // Only the holder of the order's secret token may cancel it, and only while payment is still pending.
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, payment_status")
+      .eq("id", data.orderId)
+      .eq("public_token", data.token)
+      .maybeSingle();
+    if (!order || order.payment_status !== "pending") return { ok: false as const };
+    await supabaseAdmin.rpc("release_order", { p_order_id: order.id, p_reason: "Payment cancelled by the customer" });
     return { ok: true as const };
   });

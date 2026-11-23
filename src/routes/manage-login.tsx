@@ -8,7 +8,7 @@ import { SparkRing } from "@/components/site/SparkLoaders";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { claimSuperAdmin, recordStaffSignIn, staffSession, staffSignInAllowed } from "@/lib/staff.functions";
+import { claimSuperAdmin, staffPasswordSignIn, staffSession } from "@/lib/staff.functions";
 import { manageFallbackForRole } from "@/lib/staff-permissions";
 
 export const Route = createFileRoute("/manage-login")({
@@ -29,8 +29,7 @@ export const Route = createFileRoute("/manage-login")({
 
 function ManageLogin() {
   const router = useRouter();
-  const allowed = useServerFn(staffSignInAllowed);
-  const record = useServerFn(recordStaffSignIn);
+  const passwordSignIn = useServerFn(staffPasswordSignIn);
   const claim = useServerFn(claimSuperAdmin);
   const session = useServerFn(staffSession);
 
@@ -45,21 +44,16 @@ function ManageLogin() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const gate = await allowed({ data: { email } });
-    if (!gate.allowed) {
+    const res = await passwordSignIn({ data: { email, password } });
+    if (!res.ok) {
       setBusy(false);
-      setError(
-        gate.waitMinutes
-          ? `Too many failed attempts. Try again in about ${gate.waitMinutes} minute(s).`
-          : "Enter your staff email address.",
-      );
+      setError(res.error);
       return;
     }
-    const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    await record({ data: { email, ok: !authError } });
+    const { error: authError } = await supabase.auth.setSession({ access_token: res.accessToken, refresh_token: res.refreshToken });
     setBusy(false);
     if (authError) {
-      setError("That email and password do not match a staff account.");
+      setError("Could not start your session. Please try again.");
       return;
     }
     const staff = await session();
@@ -76,15 +70,10 @@ function ManageLogin() {
       setError(res.error);
       return;
     }
-    const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (authError) {
-      toast.success("Account created. Please sign in.");
-      setFirstTime(false);
-      return;
-    }
-    const staff = await session();
-    await router.navigate({ to: staff.signedIn ? manageFallbackForRole(staff.role) : "/manage" });
+    setPassword("");
+    setFirstTime(false);
+    toast.success("Check your email and confirm your address, then sign in here.");
   }
 
   return (

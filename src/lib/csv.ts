@@ -8,8 +8,20 @@ export type CsvExportResult = {
 export const CSV_EXPORT_LIMIT = 10_000;
 export const CSV_EXPORT_CHUNK = 1_000;
 
+/**
+ * Text starting with =, +, -, @, tab or carriage return is run as a formula by
+ * spreadsheet apps. Prefix it with an apostrophe so it shows as plain text.
+ * Real numbers (including negative amounts) are left untouched.
+ */
+export function neutralizeFormula(text: string): string {
+  if (!/^[=+\-@\t\r]/.test(text)) return text;
+  if (/^[-+]?\d+(\.\d+)?$/.test(text)) return text;
+  return `'${text}`;
+}
+
 export function csvCell(value: unknown): string {
-  const text = value === null || value === undefined ? "" : String(value);
+  const raw = value === null || value === undefined ? "" : String(value);
+  const text = typeof value === "number" ? raw : neutralizeFormula(raw);
   return `"${text.replace(/"/g, '""')}"`;
 }
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { cloneElement, useRef, useState, type ReactElement } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ function ServicePage() {
   const [look, setLook] = useState({ phone: "", reference: "" });
   const [history, setHistory] = useState<ServiceHistoryView | null>(null);
   const [lookMsg, setLookMsg] = useState<string | null>(null);
+  const [lookNeedsSignIn, setLookNeedsSignIn] = useState(false);
   const bookErrors = bookSubmitted ? validateNameAndPhones(book) : {};
 
   return (
@@ -96,13 +97,21 @@ function ServicePage() {
               setHistory(null);
               setLookMsg(null);
               const r = await serviceHistory({ data: look });
-              if ("error" in r) setLookMsg(r.error);
-              else setHistory(r);
+              if ("error" in r) {
+                setLookMsg(r.error);
+                setLookNeedsSignIn(Boolean(r.signIn));
+              } else {
+                setLookNeedsSignIn(false);
+                setHistory(r);
+              }
             }}
           >
             Show my history
           </Button>
           {lookMsg && <p className="text-sm font-medium text-destructive">{lookMsg}</p>}
+          {lookNeedsSignIn && (
+            <Button asChild size="sm" className="justify-self-start"><Link to="/account">Sign in</Link></Button>
+          )}
 
           {history && (
             <div className="grid gap-4 text-sm">

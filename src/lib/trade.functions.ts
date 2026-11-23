@@ -380,7 +380,8 @@ export const myPriceList = createServerFn({ method: "POST" }).handler(async (): 
       .filter((t) => t.product_id === id && Number(t.min_qty) <= qty)
       .sort((a, b) => Number(b.min_qty) - Number(a.min_qty))[0]?.price ?? null;
 
-  const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const { csvCell } = await import("@/lib/csv");
+  const esc = (v: unknown) => csvCell(v ?? "");
   const header = ["Part number", "Name", "Brand", "Category", "MRP", "Your price 1-9", "Your price 10-49", "Your price 50+", "Min qty", "Multiples of", "In stock"];
   const body = (rows ?? []).map((r) =>
     [
