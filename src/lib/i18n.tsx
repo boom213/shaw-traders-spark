@@ -24,6 +24,7 @@ const EN = {
   "nav.about": "About",
   "nav.contact": "Contact",
   "nav.categories": "Categories",
+  "nav.others": "Others",
   "nav.home": "Home",
   "nav.search": "Search",
   "nav.cart": "Cart",
@@ -144,6 +145,7 @@ const BN: Record<TranslationKey, string> = {
   "nav.about": "আমাদের সম্পর্কে",
   "nav.contact": "যোগাযোগ",
   "nav.categories": "ক্যাটাগরি",
+  "nav.others": "অন্যান্য",
   "nav.home": "হোম",
   "nav.search": "খুঁজুন",
   "nav.cart": "কার্ট",
@@ -262,6 +264,7 @@ const HI: Record<TranslationKey, string> = {
   "nav.about": "हमारे बारे में",
   "nav.contact": "संपर्क",
   "nav.categories": "श्रेणियाँ",
+  "nav.others": "अन्य",
   "nav.home": "होम",
   "nav.search": "खोजें",
   "nav.cart": "कार्ट",
@@ -408,3 +411,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 export const useLanguage = () => useContext(LanguageContext);
 export const useT = () => useContext(LanguageContext).t;
+
+/** Category names come from the database; staff may add Hindi/Bengali versions. */
+export type NamedCategory = { name: string; nameHi?: string; nameBn?: string };
+export function categoryLabel(category: NamedCategory, lang: Lang): string {
+  const local = lang === "hi" ? category.nameHi : lang === "bn" ? category.nameBn : undefined;
+  return local?.trim() || category.name;
+}
+export function useCategoryName() {
+  const { lang } = useContext(LanguageContext);
+  return useCallback((category: NamedCategory) => categoryLabel(category, lang), [lang]);
+}

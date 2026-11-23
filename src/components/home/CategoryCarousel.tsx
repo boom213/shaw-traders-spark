@@ -5,10 +5,13 @@ import { categoryIcon } from "@/components/site/category-icons";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { categoriesQuery } from "@/lib/queries";
 import type { Category } from "@/lib/catalog";
+import { useCategoryName, useT } from "@/lib/i18n";
 
 /** Scrollable row of every part category. */
 export function CategoryCarousel({ categories, limit, showOthers = false }: { categories?: Category[]; limit?: number; showOthers?: boolean }) {
   const { data } = useQuery({ ...categoriesQuery(), enabled: !categories });
+  const categoryName = useCategoryName();
+  const t = useT();
   const all = categories ?? data ?? [];
   const list = limit === undefined ? all : all.slice(0, limit);
   if (list.length === 0) return null;
@@ -26,7 +29,7 @@ export function CategoryCarousel({ categories, limit, showOthers = false }: { ca
                 className="group flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-border bg-card p-3 text-center shadow-[var(--shadow-card)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary hover:shadow-[var(--shadow-lift)] motion-reduce:transform-none motion-reduce:transition-none"
               >
                 <Icon className="mb-3 size-8 text-foreground transition-colors group-hover:text-primary" strokeWidth={1.5} />
-                <span className="line-clamp-2 text-xs font-extrabold uppercase leading-snug text-foreground">{c.name}</span>
+                <span className="line-clamp-2 text-xs font-extrabold uppercase leading-snug text-foreground">{categoryName(c)}</span>
               </Link>
             </CarouselItem>
           );
@@ -38,7 +41,7 @@ export function CategoryCarousel({ categories, limit, showOthers = false }: { ca
               className="group flex aspect-square w-full flex-col items-center justify-center rounded-lg border border-foreground bg-foreground p-3 text-center text-background shadow-[var(--shadow-card)] transition-[background-color,border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-primary hover:bg-primary hover:text-primary-foreground hover:shadow-[var(--shadow-lift)] motion-reduce:transform-none motion-reduce:transition-none"
             >
               <LayoutGrid className="mb-3 size-8" strokeWidth={1.5} />
-              <span className="text-xs font-extrabold uppercase leading-snug">Others</span>
+              <span className="text-xs font-extrabold uppercase leading-snug">{t("nav.others")}</span>
             </Link>
           </CarouselItem>
         )}

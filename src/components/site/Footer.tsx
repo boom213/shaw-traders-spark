@@ -3,12 +3,14 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import { BUSINESS, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery } from "@/lib/queries";
+import { useCategoryName } from "@/lib/i18n";
 import { shopSettingsQuery } from "@/lib/shop-settings";
 import { reopenConsent } from "@/components/site/CookieConsent";
 import { SocialLinks } from "@/components/site/SocialLinks";
 
 export function Footer() {
   const { data: categories } = useSuspenseQuery(categoriesQuery());
+  const categoryName = useCategoryName();
   const { data: settings } = useSuspenseQuery(shopSettingsQuery());
   const legalName = settings?.legalName || BUSINESS.name;
 
@@ -54,7 +56,7 @@ export function Footer() {
             {(categories ?? []).slice(0, 7).map((c) => (
               <li key={c.slug}>
                 <Link to="/category/$slug" params={{ slug: c.slug }} className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">
-                  {c.name}
+                  {categoryName(c)}
                 </Link>
               </li>
             ))}

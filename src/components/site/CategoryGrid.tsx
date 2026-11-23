@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { categoriesQuery } from "@/lib/queries";
 import { categoryIcon } from "@/components/site/category-icons";
+import { useCategoryName } from "@/lib/i18n";
 
 export function CategoryGrid({ limit }: { limit?: number }) {
   const { data, isPending } = useQuery(categoriesQuery());
+  const categoryName = useCategoryName();
   const list = (data ?? []).slice(0, limit ?? undefined);
 
   if (isPending) {
@@ -41,7 +43,7 @@ export function CategoryGrid({ limit }: { limit?: number }) {
               <Icon className="size-5" strokeWidth={1.5} />
             </span>
             <span className="mt-auto">
-              <span className="block text-sm font-semibold leading-snug">{c.name}</span>
+              <span className="block text-sm font-semibold leading-snug">{categoryName(c)}</span>
               <span className="block text-xs text-muted-foreground">{c.blurb}</span>
             </span>
             <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">

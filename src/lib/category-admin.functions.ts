@@ -7,6 +7,8 @@ export type AdminCategory = {
   id: string;
   slug: string;
   name: string;
+  nameHi: string;
+  nameBn: string;
   blurb: string;
   icon: string;
   sortOrder: number;
@@ -28,7 +30,7 @@ export const listAdminCategories = createServerFn({ method: "POST" }).handler(as
   const { sb } = await ownerAdmin();
   const { data, error } = await sb
     .from("categories")
-    .select("id, slug, name, blurb, icon, sort_order, products(id)")
+    .select("id, slug, name, name_hi, name_bn, blurb, icon, sort_order, products(id)")
     .order("sort_order")
     .order("name");
   if (error) throw new Error(error.message);
@@ -38,6 +40,8 @@ export const listAdminCategories = createServerFn({ method: "POST" }).handler(as
       id: String(item['id']),
       slug: String(item['slug']),
       name: String(item['name']),
+      nameHi: String(item['name_hi'] ?? ""),
+      nameBn: String(item['name_bn'] ?? ""),
       blurb: String(item['blurb'] ?? ""),
       icon: String(item['icon'] ?? "package"),
       sortOrder: Number(item['sort_order'] ?? 0),
@@ -47,9 +51,11 @@ export const listAdminCategories = createServerFn({ method: "POST" }).handler(as
 });
 
 export const saveCategory = createServerFn({ method: "POST" })
-  .inputValidator((input: { id?: string; name: string; slug: string; blurb?: string; icon: string }) => ({
+  .inputValidator((input: { id?: string; name: string; nameHi?: string; nameBn?: string; slug: string; blurb?: string; icon: string }) => ({
     id: clean(input?.id, 40),
     name: clean(input?.name, 100),
+    nameHi: clean(input?.nameHi, 100),
+    nameBn: clean(input?.nameBn, 100),
     slug: slugify(input?.slug),
     blurb: clean(input?.blurb, 240),
     icon: clean(input?.icon, 40),
@@ -65,9 +71,9 @@ export const saveCategory = createServerFn({ method: "POST" })
     const { data: duplicate } = await duplicateQuery.limit(1).maybeSingle();
     if (duplicate) return { ok: false as const, error: "A category with that name or URL slug already exists." };
 
-    const row = { name: data.name, slug: data.slug, blurb: data.blurb || null, icon: data.icon };
+    const row = { name: data.name, name_hi: data.nameHi || null, name_bn: data.nameBn || null, slug: data.slug, blurb: data.blurb || null, icon: data.icon };
     if (data.id) {
-      const { data: before } = await sb.from("categories").select("name, slug, blurb, icon").eq("id", data.id).maybeSingle();
+      const { data: before } = await sb.from("categories").select("name, name_hi, name_bn, slug, blurb, icon").eq("id", data.id).maybeSingle();
       if (!before) return { ok: false as const, error: "Category not found." };
       const { error } = await sb.from("categories").update(row).eq("id", data.id);
       if (error) return { ok: false as const, error: error.code === "23505" ? "That category URL is already in use." : error.message };

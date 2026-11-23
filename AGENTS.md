@@ -40,3 +40,4 @@
 - CSV cells go through `csvCell`, which neutralizes leading formula characters — exports contain customer-typed text.
 - `product_enquiries` and `stock_alerts` are written only by server functions (no anon/authenticated INSERT) — direct writes skipped validation and could flood the inbox.
 - Server functions must check the `error` of every primary database write and return a failure (never `ok: true`) when it fails; only audit/event/notification logs may be best-effort — silent failures showed staff false "Saved" messages.
+- Category labels on the storefront go through `useCategoryName` (optional `name_hi`/`name_bn`, falling back to `name`) — category names come from the database, not the translation file.

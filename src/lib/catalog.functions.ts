@@ -40,7 +40,7 @@ const cleanFilters = (input: ProductFilters | undefined): ProductFilters => ({
 async function loadCategories(): Promise<Category[]> {
   const sb = publicClient();
   const [{ data: cats }, { data: prods }] = await Promise.all([
-    sb.from("categories").select("slug, name, blurb, icon, image_url, sort_order").order("sort_order"),
+    sb.from("categories").select("slug, name, name_hi, name_bn, blurb, icon, image_url, sort_order").order("sort_order"),
     sb.from("products").select("category_id, categories!inner(slug)").eq("status", "visible").eq("product_kind", "part"),
   ]);
   const counts = new Map<string, number>();
@@ -51,6 +51,8 @@ async function loadCategories(): Promise<Category[]> {
   return (cats ?? []).map((c) => ({
     slug: c.slug,
     name: c.name,
+    ...(c.name_hi ? { nameHi: c.name_hi } : {}),
+    ...(c.name_bn ? { nameBn: c.name_bn } : {}),
     blurb: c.blurb ?? "",
       icon: c.icon ?? null,
     ...(c.image_url ? { imageUrl: c.image_url } : {}),
@@ -66,13 +68,15 @@ export const getCategory = createServerFn({ method: "GET" })
     const sb = publicClient();
     const { data: row } = await sb
       .from("categories")
-      .select("slug, name, blurb, icon, image_url")
+      .select("slug, name, name_hi, name_bn, blurb, icon, image_url")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!row) return null;
     return {
       slug: row.slug,
       name: row.name,
+      ...(row.name_hi ? { nameHi: row.name_hi } : {}),
+      ...(row.name_bn ? { nameBn: row.name_bn } : {}),
       blurb: row.blurb ?? "",
       icon: row.icon ?? null,
       ...(row.image_url ? { imageUrl: row.image_url } : {}),

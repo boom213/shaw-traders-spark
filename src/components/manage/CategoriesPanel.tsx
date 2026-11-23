@@ -13,8 +13,8 @@ import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
 import { deleteCategory, listAdminCategories, reorderCategories, saveCategory, type AdminCategory } from "@/lib/category-admin.functions";
 import { CATEGORY_ICON_KEYS, CATEGORY_ICON_LABELS } from "@/lib/category-icon-keys";
 
-type Draft = { id: string; name: string; slug: string; blurb: string; icon: string };
-const EMPTY: Draft = { id: "", name: "", slug: "", blurb: "", icon: "package" };
+type Draft = { id: string; name: string; nameHi: string; nameBn: string; slug: string; blurb: string; icon: string };
+const EMPTY: Draft = { id: "", name: "", nameHi: "", nameBn: "", slug: "", blurb: "", icon: "package" };
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 export function CategoriesPanel() {
@@ -85,7 +85,7 @@ export function CategoriesPanel() {
               <div className="flex items-center justify-end gap-1">
                 <Button variant="outline" size="icon" aria-label={`Move ${category.name} up`} disabled={index === 0} onClick={() => void move(index, -1)}><ArrowUp className="size-4" /></Button>
                 <Button variant="outline" size="icon" aria-label={`Move ${category.name} down`} disabled={index === categories.length - 1} onClick={() => void move(index, 1)}><ArrowDown className="size-4" /></Button>
-                <Button variant="outline" size="icon" aria-label={`Edit ${category.name}`} onClick={() => { setSlugEdited(true); setDraft({ id: category.id, name: category.name, slug: category.slug, blurb: category.blurb, icon: category.icon }); }}><Pencil className="size-4" /></Button>
+                <Button variant="outline" size="icon" aria-label={`Edit ${category.name}`} onClick={() => { setSlugEdited(true); setDraft({ id: category.id, name: category.name, nameHi: category.nameHi, nameBn: category.nameBn, slug: category.slug, blurb: category.blurb, icon: category.icon }); }}><Pencil className="size-4" /></Button>
                 <Button variant="ghost" size="icon" aria-label={`Delete ${category.name}`} disabled={deletingId === category.id} onClick={() => void remove(category)}>{deletingId === category.id ? <SparkRing /> : <Trash2 className="size-4 text-destructive" />}</Button>
               </div>
             </div>
@@ -105,6 +105,11 @@ function CategoryDialog({ draft, slugEdited, saving, onClose, onChange, onNameCh
         <DialogHeader><DialogTitle>{draft?.id ? "Edit category" : "Add category"}</DialogTitle><DialogDescription>This category will be available in the shop and product forms.</DialogDescription></DialogHeader>
         {draft && <div className="grid gap-4 py-2">
           <div className="grid gap-1.5"><Label htmlFor="category-name">Name</Label><Input id="category-name" value={draft.name} maxLength={100} onChange={(event) => onNameChange(event.target.value)} /></div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-1.5"><Label htmlFor="category-name-hi">Hindi name <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="category-name-hi" lang="hi" value={draft.nameHi} maxLength={100} onChange={(event) => onChange({ nameHi: event.target.value })} /></div>
+            <div className="grid gap-1.5"><Label htmlFor="category-name-bn">Bengali name <span className="font-normal text-muted-foreground">(optional)</span></Label><Input id="category-name-bn" lang="bn" value={draft.nameBn} maxLength={100} onChange={(event) => onChange({ nameBn: event.target.value })} /></div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">Shown when a customer picks that language. Left empty, the English name is used.</p>
           <div className="grid gap-1.5"><Label htmlFor="category-slug">URL slug</Label><Input id="category-slug" value={draft.slug} maxLength={160} onChange={(event) => { onSlugEdited(); onChange({ slug: slugify(event.target.value) }); }} /><p className="text-xs text-muted-foreground">{slugEdited ? "Custom URL slug" : "Created automatically from the name"}</p></div>
           <div className="grid gap-1.5"><Label htmlFor="category-blurb">Description</Label><Textarea id="category-blurb" value={draft.blurb} maxLength={240} rows={3} onChange={(event) => onChange({ blurb: event.target.value })} /></div>
           <div className="grid gap-1.5"><Label>Icon</Label><Select value={draft.icon} onValueChange={(icon) => onChange({ icon })}><SelectTrigger><span className="flex items-center gap-2"><Icon className="size-4" /><SelectValue /></span></SelectTrigger><SelectContent>{CATEGORY_ICON_KEYS.map((key) => { const OptionIcon = CATEGORY_ICON_REGISTRY[key]; return <SelectItem key={key} value={key}><span className="flex items-center gap-2"><OptionIcon className="size-4" />{CATEGORY_ICON_LABELS[key]}</span></SelectItem>; })}</SelectContent></Select></div>

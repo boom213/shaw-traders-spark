@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useVehicle } from "@/hooks/useVehicle";
 import { categoriesQuery, vehicleTreeQuery } from "@/lib/queries";
+import { useCategoryName } from "@/lib/i18n";
 
 export function FindPartsWidget() {
   const navigate = useNavigate();
   const { data: tree } = useSuspenseQuery(vehicleTreeQuery());
   const { data: categories } = useSuspenseQuery(categoriesQuery());
+  const categoryName = useCategoryName();
   const { vehicle, setVehicle } = useVehicle();
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -103,7 +105,7 @@ export function FindPartsWidget() {
             <SelectContent className="max-h-72">
               {(categories ?? []).map((c) => (
                 <SelectItem key={c.slug} value={c.slug}>
-                  {c.name}
+                  {categoryName(c)}
                 </SelectItem>
               ))}
             </SelectContent>

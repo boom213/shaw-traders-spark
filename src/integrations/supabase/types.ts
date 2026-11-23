@@ -253,6 +253,8 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          name_bn: string | null
+          name_hi: string | null
           ordering_mode: Database["public"]["Enums"]["ordering_mode"] | null
           slug: string
           sort_order: number
@@ -264,6 +266,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          name_bn?: string | null
+          name_hi?: string | null
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           slug: string
           sort_order?: number
@@ -275,6 +279,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          name_bn?: string | null
+          name_hi?: string | null
           ordering_mode?: Database["public"]["Enums"]["ordering_mode"] | null
           slug?: string
           sort_order?: number

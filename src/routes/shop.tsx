@@ -15,7 +15,7 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
 import { clearSavedVehicle, useVehicle } from "@/hooks/useVehicle";
-import { useT } from "@/lib/i18n";
+import { useT, useCategoryName } from "@/lib/i18n";
 import type { ProductFilters } from "@/lib/catalog.functions";
 
 type ShopSearch = {
@@ -108,6 +108,7 @@ export const Route = createFileRoute("/shop")({
 function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<ShopSearch>) => void }) {
   const t = useT();
   const { data: categories } = useQuery(categoriesQuery());
+  const categoryName = useCategoryName();
   const { data: facets } = useQuery(facetsQuery());
   const brands = facets?.brands ?? [];
   const voltages = facets?.voltages ?? [];
@@ -122,7 +123,7 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("shop.allCategories")}</SelectItem>
-            {(categories ?? []).map((c) => <SelectItem key={c.slug} value={c.slug}>{c.name}</SelectItem>)}
+            {(categories ?? []).map((c) => <SelectItem key={c.slug} value={c.slug}>{categoryName(c)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>

@@ -1,4 +1,9 @@
 # Current task
+- [x] Show category names in Hindi/Bengali from the database, editable in Categories.
+- [x] Hide the duplicate visor and projector-light products (not deleted).
+- [ ] Wipe sales test data from the uploaded cleanup file — waiting on the owner's confirmation.
+- [ ] Fix the ₹199 / MRP ₹555 placeholder prices — waiting on the owner's choice.
+- [ ] Block duplicate product names in the database — after the hidden duplicates are removed.
 - [x] Add showroom sales, agreed-price adjustment, void-only receipts, and guarded handover within Bookings & Service.
 - [x] Verify showroom permissions, balances, and existing online booking compatibility (197 tests; signed-in sale creation/readback verified; no real Razorpay payment charged).
 - [x] Copy accepted wholesale quotes into a reviewable Counter Sales draft without auto-creating the sale.
@@ -47,7 +52,7 @@
 - [x] Separate retail online orders from wholesale counter sales in data, counts, labels, and empty states.
 - [x] Add permission-aware Online Orders and Counter Sales tabs to both order pages.
 - [x] Make Razorpay payments recoverable and auditable across checkout, quotes, scooter bookings, late-payment review, and refunds.
-- [ ] Replace insecure scheduled callbacks after secure database values are available.
+- [x] Remove scheduled callbacks entirely (no jobs remain in the scheduler).
 - [x] Add Suppliers & Purchases with an auditable payable ledger, filters, exports, and separated QR totals.
 - [x] Redesign Staff Access with compact paginated staff and audit views while preserving authorization.
 

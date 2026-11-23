@@ -5,6 +5,7 @@ import { EmptyCatalogue, ProductGridSkeleton, SectionHeading } from "@/component
 import { ProductCard } from "@/components/site/ProductCard";
 import { canonical } from "@/lib/catalog";
 import { categoriesQuery, categoryQuery, productsQuery } from "@/lib/queries";
+import { useCategoryName } from "@/lib/i18n";
 
 export const Route = createFileRoute("/category/$slug")({
   loader: async ({ context, params }) => {
@@ -59,6 +60,7 @@ function CategoryPage() {
   const { data: category } = useSuspenseQuery(categoryQuery(slug));
   const { data, isPending } = useQuery(productsQuery({ category: slug, pageSize: 48 }));
   const { data: categories } = useQuery(categoriesQuery());
+  const categoryName = useCategoryName();
   const products = data?.items ?? [];
 
   if (!category) return null;
@@ -67,13 +69,13 @@ function CategoryPage() {
     <div className="container-page py-10">
       <nav className="mb-5 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/categories" className="hover:text-foreground">Categories</Link> /{" "}
-        <span className="text-foreground">{category.name}</span>
+        <span className="text-foreground">{categoryName(category)}</span>
       </nav>
-      <SectionHeading as="h1" title={category.name} subtitle={category.blurb} />
+      <SectionHeading as="h1" title={categoryName(category)} subtitle={category.blurb} />
       {isPending ? (
         <ProductGridSkeleton count={8} />
       ) : products.length === 0 ? (
-        <EmptyCatalogue title={`${category.name} listings coming soon`} />
+        <EmptyCatalogue title={`${categoryName(category)} listings coming soon`} />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {products.map((p) => <ProductCard key={p.id} product={p} />)}
@@ -93,7 +95,7 @@ function CategoryPage() {
         <div className="hide-scrollbar flex gap-2 overflow-x-auto">
           {(categories ?? []).filter((c) => c.slug !== category.slug).map((c) => (
             <Link key={c.slug} to="/category/$slug" params={{ slug: c.slug }} className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-sm hover:border-primary">
-              {c.name}
+              {categoryName(c)}
             </Link>
           ))}
         </div>

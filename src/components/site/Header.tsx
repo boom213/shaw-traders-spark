@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { SearchBox } from "@/components/site/SearchBox";
 import { LanguageSwitch } from "@/components/site/LanguageSwitch";
-import { useT } from "@/lib/i18n";
+import { useT, useCategoryName } from "@/lib/i18n";
 import { useStore } from "@/hooks/useStore";
 import { useSiteOrdering } from "@/hooks/useOrderingMode";
 import { BUSINESS, NAV_CATEGORIES, whatsappLink, type Category } from "@/lib/catalog";
@@ -17,6 +17,7 @@ import { staffSession } from "@/lib/staff.functions";
 import { useQuoteAccess, useQuoteList } from "@/hooks/useQuoteList";
 
 function CategoryNavigation({ categories }: { categories: Category[] }) {
+  const categoryName = useCategoryName();
   const railRef = useRef<HTMLDivElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [canScrollBack, setCanScrollBack] = useState(false);
@@ -86,7 +87,7 @@ function CategoryNavigation({ categories }: { categories: Category[] }) {
                 }}
               >
                 <Icon className="size-4 shrink-0 text-foreground" strokeWidth={1.7} />
-                <span className="whitespace-nowrap">{category.name}</span>
+                <span className="whitespace-nowrap">{categoryName(category)}</span>
               </Link>
             );
           })}
@@ -125,6 +126,7 @@ function Logo() {
 
 export function Header() {
   const t = useT();
+  const categoryName = useCategoryName();
   const { lists, user, wishlistReady } = useStore();
   const cartCount = lists.cart.reduce((n, c) => n + c.qty, 0);
   const quoteAccess = useQuoteAccess();
@@ -185,7 +187,7 @@ export function Header() {
                   onClick={() => setMenu(false)}
                   className="rounded-lg px-3 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  {c.name}
+                  {categoryName(c)}
                 </Link>
               ))}
             </nav></>}

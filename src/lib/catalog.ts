@@ -43,6 +43,8 @@ export type Product = {
 export type Category = {
   slug: string;
   name: string;
+  nameHi?: string;
+  nameBn?: string;
   blurb: string;
   icon?: string | null;
   imageUrl?: string;

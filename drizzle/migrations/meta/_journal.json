@@ -519,6 +519,13 @@
       "when": 1795451427172,
       "tag": "0073_lock_enquiry_alert_inserts_to_server",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1795455197523,
+      "tag": "0074_category_translated_names",
+      "breakpoints": true
     }
   ]
 }
