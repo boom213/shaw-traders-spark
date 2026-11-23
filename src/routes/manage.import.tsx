@@ -32,6 +32,7 @@ function ImportPage() {
     setBusy(true);
     const res = await exportCatalogueCsv();
     setBusy(false);
+    if (res.rows === 0) return toast.info("No products to export yet.");
     const url = URL.createObjectURL(new Blob([res.csv], { type: "text/csv" }));
     const a = document.createElement("a");
     a.href = url;

@@ -131,6 +131,7 @@ function TradePage() {
 
   const downloadList = async () => {
     const res = await myPriceList();
+    if (res.rows === 0) return toast.info("No parts in your price list yet.");
     const blob = new Blob([res.csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

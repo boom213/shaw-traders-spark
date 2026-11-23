@@ -351,7 +351,7 @@ export const bulkLookup = createServerFn({ method: "POST" })
   });
 
 /** The customer's own price list as a spreadsheet (CSV opens in Excel). */
-export const myPriceList = createServerFn({ method: "POST" }).handler(async (): Promise<{ tier: string; csv: string }> => {
+export const myPriceList = createServerFn({ method: "POST" }).handler(async (): Promise<{ tier: string; csv: string; rows: number }> => {
   const { tradeAccount } = await import("@/lib/trade.server");
   const account = await tradeAccount();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -402,7 +402,7 @@ export const myPriceList = createServerFn({ method: "POST" }).handler(async (): 
       .map(esc)
       .join(","),
   );
-  return { tier: account.tier, csv: [header.map(esc).join(","), ...body].join("\n") };
+  return { tier: account.tier, csv: [header.map(esc).join(","), ...body].join("\n"), rows: body.length };
 });
 
 /** Items from a previous order, ready to drop back into the cart. */
