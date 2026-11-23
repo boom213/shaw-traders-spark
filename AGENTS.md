@@ -39,3 +39,4 @@
 - No scheduled jobs (cost): expired unpaid reservations are released via `releaseStaleOrdersSoon` when cart/checkout/Manager orders load; reminders and the daily summary are Manager buttons. Any future cron route must use `authenticateCronRequest`, never the publishable key.
 - CSV cells go through `csvCell`, which neutralizes leading formula characters — exports contain customer-typed text.
 - `product_enquiries` and `stock_alerts` are written only by server functions (no anon/authenticated INSERT) — direct writes skipped validation and could flood the inbox.
+- Server functions must check the `error` of every primary database write and return a failure (never `ok: true`) when it fails; only audit/event/notification logs may be best-effort — silent failures showed staff false "Saved" messages.

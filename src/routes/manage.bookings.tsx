@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import { formatINR } from "@/lib/catalog";
 import { MANAGE_QUERY_OPTIONS } from "@/lib/manage-query";
 import { BOOKING_FLOW, bookingStatusLabel } from "@/lib/vehicles";
@@ -172,7 +173,11 @@ function ManageBookings() {
 
   const move = useMutation({
     mutationFn: (v: { bookingId: string; status: string }) => setBookingStatus({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+    onSuccess: (r) => {
+      if (!r.ok) toast.error(r.error ?? "Could not move this booking.");
+      void qc.invalidateQueries({ queryKey: ["bookings"] });
+    },
+    onError: () => toast.error("Could not move this booking."),
   });
 
   return (
@@ -391,9 +396,11 @@ function ManageBookings() {
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  await addServiceRecord({
+                  const r = await addServiceRecord({
                     data: { registrationId: s.registrationId, scheduleId: s.id, workDone: s.label },
                   });
+                  if (r.ok) toast.success("Marked as serviced.");
+                  else toast.error(r.error ?? "Could not record this service.");
                   void qc.invalidateQueries({ queryKey: ["service-due"] });
                 }}
               >

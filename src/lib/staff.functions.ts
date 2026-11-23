@@ -195,7 +195,8 @@ async function adminClient() {
 }
 
 async function ensureProfile(sb: AdminClient, id: string, name: string, email: string) {
-  await sb.from("profiles").upsert({ id, full_name: name, email } as never);
+  const { error } = await sb.from("profiles").upsert({ id, full_name: name, email } as never);
+  return error;
 }
 
 /**
@@ -301,8 +302,11 @@ export const inviteStaff = createServerFn({ method: "POST" })
     }
     if (!userId) return { error: error?.message ?? "Could not create that account." };
 
-    await ensureProfile(sb, userId, data.name, data.email);
-    await sb.from("staff_roles").delete().eq("profile_id", userId);
+    const profileError = await ensureProfile(sb, userId, data.name, data.email);
+    if (profileError) return { error: profileError.message };
+    // Clear old roles first; if that fails, stop so the person never ends up holding two roles.
+    const { error: clearError } = await sb.from("staff_roles").delete().eq("profile_id", userId);
+    if (clearError) return { error: clearError.message };
     const { error: roleError } = await sb
       .from("staff_roles")
       .upsert({ profile_id: userId, role: data.role }, { onConflict: "profile_id,role" });
@@ -369,7 +373,8 @@ export const changeStaffRole = createServerFn({ method: "POST" })
     const currentRole = person[0]?.role;
     if (currentRole === data.role) return { ok: true as const };
 
-    await sb.from("staff_roles").delete().eq("profile_id", data.profileId);
+    const { error: clearError } = await sb.from("staff_roles").delete().eq("profile_id", data.profileId);
+    if (clearError) return { error: clearError.message };
     const { error } = await sb
       .from("staff_roles")
       .upsert({ profile_id: data.profileId, role: data.role }, { onConflict: "profile_id,role" });

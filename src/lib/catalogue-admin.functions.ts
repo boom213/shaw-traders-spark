@@ -547,7 +547,8 @@ export const setProductImages = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { sb, actor, logAudit } = await adminAs();
-    await sb.from("product_images").delete().eq("product_id", data.id);
+    const { error: clearError } = await sb.from("product_images").delete().eq("product_id", data.id);
+    if (clearError) return { ok: false as const, error: clearError.message };
     if (data.urls.length > 0) {
       const { error } = await sb
         .from("product_images")
@@ -751,6 +752,7 @@ export const applyCatalogueCsv = createServerFn({ method: "POST" })
 
     const touched = new Set(res.changes.map((c) => c.sku));
     let saved = 0;
+    const failed: string[] = [];
     for (const r of res.rows) {
       if (!touched.has(r.sku)) continue;
       const p = res.byId.get(r.sku);
@@ -763,13 +765,19 @@ export const applyCatalogueCsv = createServerFn({ method: "POST" })
       if (r.reorder !== undefined) patch['reorder_threshold'] = r.reorder;
       if (r.hsn !== undefined) patch['hsn_code'] = r.hsn;
       if (Object.keys(patch).length === 0) continue;
-      await sb.from("products").update(patch as never).eq("id", String(p['id']));
-      saved++;
+      const { error } = await sb.from("products").update(patch as never).eq("id", String(p['id']));
+      if (error) failed.push(r.sku);
+      else saved++;
     }
     await logAudit(sb as never, actor, "products.csv_import", "products", null, {
       saved,
+      failed: failed.slice(0, 50),
       changes: res.changes.slice(0, 50),
     });
+    if (failed.length > 0) {
+      const list = failed.slice(0, 10).join(", ") + (failed.length > 10 ? ` and ${failed.length - 10} more` : "");
+      return { ok: false as const, error: `${saved} products updated, but ${failed.length} could not be saved: ${list}. Please import again.` };
+    }
     return { ok: true as const, saved, skipped: res.unknown.length };
   });
 

@@ -189,10 +189,11 @@ export const startCheckout = createServerFn({ method: "POST" })
       | undefined;
     if (!row) return { error: "Could not place the order. Please try again." };
 
-    await supabaseAdmin
+    const { error: phoneError } = await supabaseAdmin
       .from("orders")
       .update({ alternate_phone: data.address.alternatePhone || null })
       .eq("id", row.order_id);
+    if (phoneError) console.error("Could not save the alternate phone on order", row.human_id, phoneError.message);
     const payLater = data.paymentMethod === "Cash on Delivery" || data.paymentMethod === "Credit (account)";
     if (payLater) {
       const { notifyOrderPlaced } = await import("@/lib/notify.server");
@@ -218,10 +219,15 @@ export const startCheckout = createServerFn({ method: "POST" })
       return { error: created.error };
     }
 
-    await supabaseAdmin
+    const { error: linkError } = await supabaseAdmin
       .from("orders")
       .update({ provider_order_id: created.order.id, payment_provider: "razorpay" })
       .eq("id", row.order_id);
+    // Without this link the payment could not be matched back to the order, so stop before the customer pays.
+    if (linkError) {
+      await supabaseAdmin.rpc("release_order", { p_order_id: row.order_id, p_reason: "Payment could not be started" });
+      return { error: "Could not start the payment. Please try again." };
+    }
 
     return {
       orderId: row.order_id,
@@ -325,7 +331,8 @@ export const retryPayment = createServerFn({ method: "POST" })
     });
     if ("error" in created) return { error: created.error };
 
-    await supabaseAdmin.from("orders").update({ provider_order_id: created.order.id }).eq("id", order.id);
+    const { error: linkError } = await supabaseAdmin.from("orders").update({ provider_order_id: created.order.id }).eq("id", order.id);
+    if (linkError) return { error: "Could not start the payment. Please try again." };
     return {
       keyId: razorpayKeys().keyId,
       razorpayOrderId: created.order.id,

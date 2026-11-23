@@ -453,6 +453,7 @@ export const saveProducts = createServerFn({ method: "POST" })
     const { data: before } = await sb.from("products").select("id, name, price, mrp, stock, brand").in("id", ids);
     const beforeById = new Map((before ?? []).map((b) => [String(b.id), b]));
     const changes: Record<string, unknown>[] = [];
+    const failed: string[] = [];
     for (const u of data.updates) {
       const patch: Record<string, unknown> = {};
       if (u.price !== undefined) patch['price'] = u.price;
@@ -461,20 +462,24 @@ export const saveProducts = createServerFn({ method: "POST" })
       if (u.brand !== undefined) patch['brand'] = u.brand;
       const prev = beforeById.get(u.id);
       if (Object.keys(patch).length > 0) {
-        await sb.from("products").update(patch as never).eq("id", u.id);
-        changes.push({ product: prev?.name ?? u.id, id: u.id, from: prev ?? null, to: patch });
+        const { error } = await sb.from("products").update(patch as never).eq("id", u.id);
+        if (error) failed.push(String(prev?.name ?? u.id));
+        else changes.push({ product: prev?.name ?? u.id, id: u.id, from: prev ?? null, to: patch });
       }
       if (u.image !== undefined) {
-        await sb.from("product_images").delete().eq("product_id", u.id).eq("sort_order", 0);
-        if (u.image.trim()) {
-          await sb.from("product_images").insert({ product_id: u.id, url: u.image.trim(), sort_order: 0 });
-        }
+        const { error: clearError } = await sb.from("product_images").delete().eq("product_id", u.id).eq("sort_order", 0);
+        const { error: imageError } = clearError || !u.image.trim()
+          ? { error: clearError }
+          : await sb.from("product_images").insert({ product_id: u.id, url: u.image.trim(), sort_order: 0 });
+        if (imageError) failed.push(`${String(prev?.name ?? u.id)} (photo)`);
       }
     }
     await logAudit(sb as never, actor, "products.updated", "products", null, {
       count: data.updates.length,
       changes: changes.slice(0, 50),
+      failed: failed.slice(0, 50),
     });
+    if (failed.length > 0) return { saved: data.updates.length - failed.length, error: `Could not save: ${failed.slice(0, 10).join(", ")}` };
     return { saved: data.updates.length };
   });
 
@@ -681,7 +686,7 @@ export const decideOrderRequest = createServerFn({ method: "POST" })
     await requireRetailOrder(sb, actor.role, String(req.order_id));
     if (req.status !== "pending") return { ok: false as const, error: "This request was already answered." };
 
-    await sb
+    const { error: decideError } = await sb
       .from("order_requests")
       .update({
         status: data.approve ? "approved" : "rejected",
@@ -690,16 +695,20 @@ export const decideOrderRequest = createServerFn({ method: "POST" })
         decision_note: data.note || null,
       } as never)
       .eq("id", req.id);
+    if (decideError) return { ok: false as const, error: "Could not save your decision. Please try again." };
 
     if (data.approve) {
       const next = req.kind === "return" ? "returned" : "cancelled";
-      await sb
+      const { error: orderError } = await sb
         .from("orders")
         .update({
           status: next as never,
           ...(req.kind === "return" ? { return_reason: data.note || null } : { cancel_reason: data.note || null }),
         } as never)
         .eq("id", req.order_id);
+      if (orderError) {
+        return { ok: false as const, error: "The request was approved, but the order status did not change. Please update the order status by hand." };
+      }
       await sb.from("order_events").insert({
         order_id: req.order_id,
         status: next as never,
@@ -752,7 +761,7 @@ export const recordRefund = createServerFn({ method: "POST" })
       providerRefundId = res.refund.id;
     }
 
-    await sb.from("refunds").insert({
+    const { error: refundError } = await sb.from("refunds").insert({
       order_id: order.id,
       amount: data.amount,
       method,
@@ -762,6 +771,14 @@ export const recordRefund = createServerFn({ method: "POST" })
       note: data.note || null,
       created_by: actor.name,
     } as never);
+    if (refundError) {
+      return {
+        ok: false as const,
+        error: providerRefundId
+          ? `Razorpay refunded ${data.amount} (refund ${providerRefundId}), but it could not be recorded here. Do not refund again — note this refund ID and contact support.`
+          : "Could not record the refund. Please try again.",
+      };
+    }
 
     const { error: syncError } = await sb.rpc("sync_order_refund_total", { p_order_id: order.id });
     if (syncError) return { ok: false as const, error: "The refund was recorded, but its total needs staff review." };

@@ -108,10 +108,12 @@ export const startBooking = createServerFn({ method: "POST" })
     });
     if ("error" in created) return { error: created.error };
 
-    await supabaseAdmin
+    const { error: linkError } = await supabaseAdmin
       .from("vehicle_bookings")
       .update({ provider_order_id: created.order.id, payment_provider: "razorpay" })
       .eq("id", booking.id);
+    // Without this link the payment could not be matched back to the booking, so stop before the customer pays.
+    if (linkError) return { error: "Could not start the payment. Please try again." };
 
     return {
       bookingId: booking.id,

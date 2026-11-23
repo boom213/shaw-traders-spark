@@ -301,9 +301,10 @@ export const deleteVehicle = createServerFn({ method: "POST" })
     if ((count ?? 0) > 0)
       return { ok: false, error: "This model has bookings. Hide it instead of deleting." };
 
-    await supabaseAdmin.from("product_images").delete().eq("product_id", data.id);
-    await supabaseAdmin.from("vehicle_specs").delete().eq("product_id", data.id);
-    await supabaseAdmin.from("vehicle_pricing").delete().eq("product_id", data.id);
+    for (const table of ["product_images", "vehicle_specs", "vehicle_pricing"] as const) {
+      const { error: childError } = await supabaseAdmin.from(table).delete().eq("product_id", data.id);
+      if (childError) return { ok: false, error: childError.message };
+    }
     const { error } = await supabaseAdmin
       .from("products")
       .delete()
@@ -460,14 +461,17 @@ export const setBookingStatus = createServerFn({ method: "POST" })
       return { ok: false, error: "Use Record handover to deliver this booking." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    await supabaseAdmin
+    const { data: moved, error: moveError } = await supabaseAdmin
       .from("vehicle_bookings")
       .update({
         status: data.status as never,
         ...(data.expectedDelivery ? { expected_delivery: data.expectedDelivery } : {}),
         updated_at: new Date().toISOString(),
       } as never)
-      .eq("id", data.bookingId);
+      .eq("id", data.bookingId)
+      .select("id");
+    if (moveError) return { ok: false, error: moveError.message };
+    if (!moved?.length) return { ok: false, error: "Booking not found." };
     await supabaseAdmin.from("booking_events").insert({
       booking_id: data.bookingId,
       status: data.status as never,
@@ -766,7 +770,7 @@ export const addServiceRecord = createServerFn({ method: "POST" })
     if (!data.registrationId || !data.workDone)
       return { ok: false, error: "Say what work was done." };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("service_records").insert({
+    const { error: recordError } = await supabaseAdmin.from("service_records").insert({
       registration_id: data.registrationId,
       work_done: data.workDone,
       odometer: data.odometer,
@@ -774,11 +778,13 @@ export const addServiceRecord = createServerFn({ method: "POST" })
       next_due_on: data.nextDueOn,
       created_by: staff.name,
     } as never);
+    if (recordError) return { ok: false, error: recordError.message };
     if (data.scheduleId) {
-      await supabaseAdmin
+      const { error: scheduleError } = await supabaseAdmin
         .from("service_schedule")
         .update({ status: "done", completed_at: new Date().toISOString() } as never)
         .eq("id", data.scheduleId);
+      if (scheduleError) return { ok: false, error: "The service was recorded, but it is still shown as due." };
     }
     await logAudit(
       supabaseAdmin as never,

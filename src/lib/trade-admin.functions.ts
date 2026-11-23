@@ -210,10 +210,11 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
       }
     }
 
-    await supabaseAdmin.from("profiles").upsert(
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
       { id: userId, phone: e164, full_name: data.contactPerson || null, customer_type: "trade", business_name: data.businessName } as never,
       { onConflict: "id" },
     );
+    if (profileError) return { ok: false as const, error: "Could not save the customer's details." };
 
     const { data: existing } = await supabaseAdmin.from("trade_applications").select("id, status").eq("profile_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (existing?.status === "approved") return { ok: false as const, error: "This number already has an approved trade account." };
@@ -231,7 +232,8 @@ export const createTradeAccountManually = createServerFn({ method: "POST" })
     };
     let appId: string;
     if (existing) {
-      await supabaseAdmin.from("trade_applications").update(row as never).eq("id", existing.id);
+      const { error: updateError } = await supabaseAdmin.from("trade_applications").update(row as never).eq("id", existing.id);
+      if (updateError) return { ok: false as const, error: "Could not save the application." };
       appId = String(existing.id);
     } else {
       const { data: ins, error } = await supabaseAdmin.from("trade_applications").insert(row as never).select("id").single();
@@ -437,16 +439,19 @@ export const setProductTier = createServerFn({ method: "POST" })
     const actor = await requireStaff({ superAdmin: true });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    await supabaseAdmin.from("price_tiers").delete().eq("product_id", data.productId).eq("tier", data.tier as never);
+    const { error: clearError } = await supabaseAdmin.from("price_tiers").delete().eq("product_id", data.productId).eq("tier", data.tier as never);
+    if (clearError) return { ok: false as const, error: clearError.message };
     if (data.slabs.length > 0) {
-      await supabaseAdmin.from("price_tiers").insert(
+      const { error: slabError } = await supabaseAdmin.from("price_tiers").insert(
         data.slabs.map((s) => ({ product_id: data.productId, tier: data.tier, min_qty: s.minQty, price: s.price })) as never,
       );
+      if (slabError) return { ok: false as const, error: slabError.message };
     }
-    await supabaseAdmin
+    const { error: productError } = await supabaseAdmin
       .from("products")
       .update({ min_order_qty: data.minOrderQty, order_multiple: data.orderMultiple, trade_only: data.tradeOnly } as never)
       .eq("id", data.productId);
+    if (productError) return { ok: false as const, error: productError.message };
 
     await logAudit(supabaseAdmin as never, actor, "trade.tier.product", "products", data.productId, {
       tier: data.tier,
