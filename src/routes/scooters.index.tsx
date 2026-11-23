@@ -47,7 +47,7 @@ function ModelCard({ v, picked, onPick }: { v: VehicleModel; picked: boolean; on
         )}
         {v.brand && <p className="text-xs uppercase tracking-wide text-muted-foreground">{v.brand}</p>}
         <h3 className="font-display text-lg font-bold leading-tight">
-          <Link to="/scooters/$slug" params={{ slug: v.slug }}>{v.name}</Link>
+          <Link to="/scooters/$slug" params={{ slug: v.slug }} className="inline-flex min-h-8 items-center">{v.name}</Link>
         </h3>
         <p className="text-sm text-muted-foreground">
           {[v.specs.certifiedRange && `${v.specs.certifiedRange} range`, v.specs.topSpeed && `${v.specs.topSpeed} top speed`]
@@ -62,7 +62,7 @@ function ModelCard({ v, picked, onPick }: { v: VehicleModel; picked: boolean; on
           <Button asChild size="sm" className="flex-1">
             <Link to="/scooters/$slug" params={{ slug: v.slug }}>View & book</Link>
           </Button>
-          <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+          <label className="flex min-h-8 cursor-pointer items-center gap-1.5 px-1 text-xs text-muted-foreground">
             <Checkbox checked={picked} onCheckedChange={onPick} aria-label={`Compare ${v.name}`} />
             Compare
           </label>

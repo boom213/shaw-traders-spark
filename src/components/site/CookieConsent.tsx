@@ -56,7 +56,7 @@ export function CookieConsent() {
       <div className="pointer-events-auto mx-auto flex max-w-3xl items-center justify-between gap-2 rounded-lg border border-border bg-card p-2.5 shadow-[var(--shadow-lift)] sm:p-3">
         <p className="min-w-0 text-xs leading-snug text-muted-foreground sm:text-sm">
           Cookies keep you signed in and remember your cart. Analytics is optional.{" "}
-          <Link to="/privacy" className="font-medium text-foreground underline underline-offset-2">
+          <Link to="/privacy" className="-my-2 inline-block py-2 font-medium text-foreground underline underline-offset-2">
             Privacy Policy
           </Link>
         </p>

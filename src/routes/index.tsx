@@ -179,7 +179,7 @@ function Home() {
               <h2 className="font-display text-2xl font-bold sm:text-3xl">Everything You Need for Your EV</h2>
               <Link
                 to="/categories"
-                className="mt-2 inline-block text-xs font-semibold text-primary hover:underline sm:absolute sm:right-0 sm:top-2"
+                className="mt-1 inline-flex min-h-8 items-center text-xs font-semibold text-primary hover:underline sm:absolute sm:right-0 sm:top-0"
               >
                 View all →
               </Link>

@@ -125,7 +125,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
         return { ok: false, error: error?.message ?? "Could not save this model." };
       id = created.id;
     } else {
-      await supabaseAdmin
+      const { data: updated, error } = await supabaseAdmin
         .from("products")
         .update({
           name,
@@ -135,7 +135,11 @@ export const saveVehicle = createServerFn({ method: "POST" })
           stock: Math.max(0, Number(data?.stock ?? 0) || 0),
           updated_at: new Date().toISOString(),
         } as never)
-        .eq("id", id);
+        .eq("id", id)
+        .eq("product_kind", "vehicle")
+        .select("id");
+      if (error) return { ok: false, error: error.message || "Could not save this model." };
+      if (!updated?.length) return { ok: false, error: "Model not found. Refresh and try again." };
     }
 
     const colours = String(data?.specs?.coloursText ?? (data?.specs?.colours ?? []).join(", "))
@@ -145,7 +149,7 @@ export const saveVehicle = createServerFn({ method: "POST" })
       .slice(0, 12);
     const registrationRequired = data?.specs?.registrationRequired !== false;
 
-    await supabaseAdmin.from("vehicle_specs").upsert({
+    const { error: specsError } = await supabaseAdmin.from("vehicle_specs").upsert({
       product_id: id,
       variant: text(data?.specs?.variant, 80) || null,
       colours,
@@ -163,8 +167,10 @@ export const saveVehicle = createServerFn({ method: "POST" })
       service_interval_km: Math.max(100, Number(data?.specs?.serviceIntervalKm ?? 3000) || 3000),
       updated_at: new Date().toISOString(),
     } as never);
+    if (specsError)
+      return { ok: false, id: id!, error: `Model saved, but the specifications did not save: ${specsError.message}` };
 
-    await supabaseAdmin.from("vehicle_pricing").upsert({
+    const { error: pricingError } = await supabaseAdmin.from("vehicle_pricing").upsert({
       product_id: id,
       ex_showroom: money(data?.price?.exShowroom),
       rto: registrationRequired ? money(data?.price?.rto) : 0,
@@ -174,6 +180,8 @@ export const saveVehicle = createServerFn({ method: "POST" })
       token_amount: money(data?.price?.tokenAmount),
       updated_at: new Date().toISOString(),
     } as never);
+    if (pricingError)
+      return { ok: false, id: id!, error: `Model saved, but the price did not save: ${pricingError.message}` };
 
     await logAudit(supabaseAdmin as never, staff, "vehicle.save", "products", id, { name, status });
     return { ok: true, id: id! };
@@ -194,9 +202,10 @@ export const addVehiclePhoto = createServerFn({ method: "POST" })
       .from("product_images")
       .select("id", { count: "exact", head: true })
       .eq("product_id", data.productId);
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("product_images")
       .insert({ product_id: data.productId, url: data.url, sort_order: count ?? 0 } as never);
+    if (error) return { ok: false };
     return { ok: true };
   });
 
@@ -211,11 +220,12 @@ export const removeVehiclePhoto = createServerFn({ method: "POST" })
     await requireStaff({ capability: "catalogue" });
     if (!data.productId || !data.url) return { ok: false };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("product_images")
       .delete()
       .eq("product_id", data.productId)
       .eq("url", data.url);
+    if (error) return { ok: false };
     return { ok: true };
   });
 

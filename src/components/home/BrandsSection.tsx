@@ -13,7 +13,7 @@ export function BrandsSection() {
 
   return (
     <section className="container-page py-8 lg:py-12">
-      <SectionHeading title="Parts for Major EV Brands" subtitle="Find genuine parts and accessories for the electric scooter and bike brands we stock." action={<Link to="/brand" className="text-sm font-semibold text-primary hover:underline">View all brands →</Link>} />
+      <SectionHeading title="Parts for Major EV Brands" subtitle="Find genuine parts and accessories for the electric scooter and bike brands we stock." action={<Link to="/brand" className="inline-flex min-h-8 items-center text-sm font-semibold text-primary hover:underline">View all brands →</Link>} />
       {brands.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted-foreground">
           Brand list is being updated. Contact us on WhatsApp to check the brands currently in stock.

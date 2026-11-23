@@ -1,6 +1,0 @@
----
-name: Rider home screen
-description: Requested Rider map interface and fare rules
-type: feature
----
-Use Mapbox GL JS and browser geolocation with permission state and fallback city centre. Draggable bottom sheet: destination autocomplete, editable reverse-geocoded pickup, Home/Work from saved_places. Route shows km and ETA. Bike fare: base INR15 + INR7/km, minimum INR25. Auto: base INR25 + INR11/km, minimum INR40. Cab: base INR50 + INR14/km, minimum INR80. Final fare rounded to nearest rupee. All fares in one editable config. Three selectable cards side by side, highlighted selection, pinned Book <type> action. Do not wire booking submission. User intends to provide MAPBOX_TOKEN securely; never expose a private token to browser code.

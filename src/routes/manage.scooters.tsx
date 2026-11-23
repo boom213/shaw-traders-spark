@@ -61,8 +61,11 @@ function ManageScooters() {
       }),
     onSuccess: (r) => {
       setMsg(r.ok ? "Saved." : (r.error ?? "Could not save."));
-      if (r.ok) void refresh();
+      // A new model can be created before its specs or price fail; keep its id so a retry updates it instead of adding a duplicate.
+      if (r.id) setForm((f) => (f.id ? f : { ...f, id: r.id }));
+      if (r.ok || r.id) void refresh();
     },
+    onError: (e) => setMsg(e instanceof Error ? e.message : "Could not save."),
   });
 
   const act = async (id: string, run: () => Promise<{ ok: boolean; error?: string }>) => {
@@ -135,7 +138,8 @@ function ManageScooters() {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       const url = await uploadProductPhoto(v.id, file);
-                      await addVehiclePhoto({ data: { productId: v.id, url } });
+                      const r = await addVehiclePhoto({ data: { productId: v.id, url } });
+                      setMsg(r.ok ? "Photo added." : "Could not add this photo. Please try again.");
                       void refresh();
                     }}
                   />

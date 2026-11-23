@@ -25,7 +25,7 @@ export function Footer() {
             <MapPin className="mt-0.5 size-4 shrink-0" />
             {BUSINESS.address}
           </p>
-          <a href={`tel:${BUSINESS.phone}`} className="mt-2 flex items-center gap-2 text-sm font-medium hover:text-primary">
+          <a href={`tel:${BUSINESS.phone}`} className="mt-2 flex min-h-8 items-center gap-2 text-sm font-medium hover:text-primary">
             <Phone className="size-4" /> {BUSINESS.phone}
           </a>
           <a
@@ -38,7 +38,7 @@ export function Footer() {
             Contact us on WhatsApp
           </a>
           {settings?.supportEmail && (
-            <a href={`mailto:${settings.supportEmail}`} className="mt-2 block text-sm text-muted-foreground hover:text-foreground">
+            <a href={`mailto:${settings.supportEmail}`} className="mt-2 flex min-h-8 items-center text-sm text-muted-foreground hover:text-foreground">
               {settings.supportEmail}
             </a>
           )}
@@ -50,10 +50,10 @@ export function Footer() {
 
         <div>
           <h4 className="text-sm font-semibold">Shop</h4>
-          <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
+          <ul className="mt-3 grid gap-0.5 text-sm text-muted-foreground">
             {(categories ?? []).slice(0, 7).map((c) => (
               <li key={c.slug}>
-                <Link to="/category/$slug" params={{ slug: c.slug }} className="hover:text-foreground">
+                <Link to="/category/$slug" params={{ slug: c.slug }} className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">
                   {c.name}
                 </Link>
               </li>
@@ -63,29 +63,29 @@ export function Footer() {
 
         <div>
           <h4 className="text-sm font-semibold">Customer</h4>
-          <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            <li><Link to="/account" className="hover:text-foreground">My Account</Link></li>
-            <li><Link to="/track" className="hover:text-foreground">Track Order</Link></li>
-            <li><Link to="/cart" className="hover:text-foreground">Cart</Link></li>
-            <li><Link to="/offers" className="hover:text-foreground">Offers</Link></li>
-            <li><Link to="/service" className="hover:text-foreground">Service & History</Link></li>
-            <li><Link to="/about" className="hover:text-foreground">About Shaw Traders</Link></li>
-            <li><Link to="/bulk" className="hover:text-foreground">Bulk Order Enquiry (one-off quote)</Link></li>
-            <li><Link to="/trade" className="hover:text-foreground">Trade / Wholesale Account (trade prices &amp; credit)</Link></li>
+          <ul className="mt-3 grid gap-0.5 text-sm text-muted-foreground">
+            <li><Link to="/account" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">My Account</Link></li>
+            <li><Link to="/track" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Track Order</Link></li>
+            <li><Link to="/cart" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Cart</Link></li>
+            <li><Link to="/offers" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Offers</Link></li>
+            <li><Link to="/service" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Service & History</Link></li>
+            <li><Link to="/about" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">About Shaw Traders</Link></li>
+            <li><Link to="/bulk" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Bulk Order Enquiry (one-off quote)</Link></li>
+            <li><Link to="/trade" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Trade / Wholesale Account (trade prices &amp; credit)</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-sm font-semibold">Policies</h4>
-          <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-            <li><Link to="/returns" className="hover:text-foreground">Returns, Replacement & Refund</Link></li>
-            <li><Link to="/shipping" className="hover:text-foreground">Shipping Policy</Link></li>
-            <li><Link to="/warranty" className="hover:text-foreground">Warranty Policy</Link></li>
-            <li><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link></li>
-            <li><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></li>
-            <li><Link to="/contact" className="hover:text-foreground">Contact & Grievance Officer</Link></li>
+          <ul className="mt-3 grid gap-0.5 text-sm text-muted-foreground">
+            <li><Link to="/returns" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Returns, Replacement & Refund</Link></li>
+            <li><Link to="/shipping" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Shipping Policy</Link></li>
+            <li><Link to="/warranty" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Warranty Policy</Link></li>
+            <li><Link to="/privacy" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Privacy Policy</Link></li>
+            <li><Link to="/terms" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Terms of Service</Link></li>
+            <li><Link to="/contact" className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">Contact & Grievance Officer</Link></li>
             <li>
-              <button type="button" onClick={reopenConsent} className="hover:text-foreground">
+              <button type="button" onClick={reopenConsent} className="inline-flex min-h-8 min-w-8 items-center text-left hover:text-foreground">
                 Cookie settings
               </button>
             </li>
