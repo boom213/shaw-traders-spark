@@ -70,13 +70,10 @@ export const Route = createFileRoute("/shop")({
   }),
   loaderDeps: ({ search }) => ({ filters: filtersFor(search) }),
   // Load the first page on the server so product names are in the page HTML.
-  // Filter options load alongside (never fails the page) so the browser does
-  // not request them separately after it appears.
+  // Filter options are not awaited: they are the slowest read and only fill
+  // the filter panel, so the browser loads them after the page appears.
   loader: async ({ context, deps }) => {
-    const [initial] = await Promise.all([
-      context.queryClient.ensureQueryData(productsQuery(deps.filters)).catch(() => null),
-      context.queryClient.prefetchQuery(facetsQuery()),
-    ]);
+    const initial = await context.queryClient.ensureQueryData(productsQuery(deps.filters)).catch(() => null);
     return { filters: deps.filters, initial };
   },
   head: () => ({

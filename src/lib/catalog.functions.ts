@@ -196,8 +196,21 @@ export const vehicleTree = createServerFn({ method: "GET" }).handler(
   },
 );
 
+type Facets = { brands: string[]; voltages: string[]; ahs: string[]; models: string[] };
+
+/**
+ * Filter options are the same for every visitor and change only when the
+ * catalogue does, so each server instance reuses them for 10 minutes instead
+ * of reading every product on each request. An empty result is never kept.
+ */
+const FACETS_TTL_MS = 10 * 60_000;
+const facetsCache = createTtlCache<Facets>(FACETS_TTL_MS);
+
 export const listFacets = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ brands: string[]; voltages: string[]; ahs: string[]; models: string[] }> => {
+  (): Promise<Facets> => facetsCache.get(loadFacets, (f) => f.brands.length + f.voltages.length > 0),
+);
+
+async function loadFacets(): Promise<Facets> {
     const sb = publicClient();
     const [{ data: prods }, { data: compat }] = await Promise.all([
       sb.from("products").select("brand, voltage, ah").eq("status", "visible").eq("product_kind", "part").order("id", { ascending: true }).limit(3000),
@@ -219,8 +232,7 @@ export const listFacets = createServerFn({ method: "GET" }).handler(
       ahs: [...ahs].sort((a, b) => parseFloat(a) - parseFloat(b) || a.localeCompare(b)),
       models: [...models].sort(),
     };
-  },
-);
+}
 
 export const getProduct = createServerFn({ method: "GET" })
   .inputValidator((data: { slug: string }) => ({ slug: String(data?.slug ?? "") }))
