@@ -50,3 +50,5 @@
 - The router dehydrates the per-request QueryClient into the page (src/router.tsx); server loaders must only cache public data — never per-user or staff data — because it is embedded in the HTML.
 - Counter Sales product search reuses search_product_ids (categories, typos, vehicle models) plus plain name/SKU/brand/model/shelf matches, lists out-of-stock items after in-stock ones, and searches as staff type (250 ms pause).
 - Counter Sales search shows the top 4 matches as a keyboard combobox (CounterProductSearch); suggestions appear only for results of exactly the typed text, so Enter never adds a stale item.
+
+- Shop settings and header categories never throw: a failed read renders DEFAULT_SETTINGS (loadFailed) or an empty list, marked stale so the browser fetches them again; the settings read times out after 4 s. Why: the root loader runs on every page, so one failed read used to crash the whole site.

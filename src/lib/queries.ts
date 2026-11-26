@@ -15,7 +15,12 @@ import { listVehicles } from "@/lib/vehicles.functions";
 import { productBrands } from "@/lib/catalogue-admin.functions";
 
 export const categoriesQuery = () =>
-  queryOptions({ queryKey: ["categories"], queryFn: () => listCategories(), staleTime: 5 * 60_000 });
+  queryOptions({
+    queryKey: ["categories"],
+    queryFn: () => listCategories(),
+    // An empty list means the database could not be read: try again soon.
+    staleTime: (query) => (query.state.data?.length ? 5 * 60_000 : 0),
+  });
 
 export const productBrandsQuery = () =>
   queryOptions({ queryKey: ["product-brands"], queryFn: () => productBrands(), staleTime: 5 * 60_000 });

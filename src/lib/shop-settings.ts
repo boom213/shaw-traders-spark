@@ -22,6 +22,8 @@ export type ShopSettings = {
   grievanceEmail: string | null;
   grievancePhone: string | null;
   policyUpdatedAt: string | null;
+  /** True when the database could not be read and these are the defaults. */
+  loadFailed?: boolean;
 };
 
 export const DEFAULT_SETTINGS: ShopSettings = {
@@ -48,27 +50,27 @@ export const DEFAULT_SETTINGS: ShopSettings = {
 
 export const COD_UNAVAILABLE_MESSAGE = "Cash on Delivery is currently not available. Please pay online.";
 
-/** Retry brief backend wake-ups so one failed read does not blank every page. */
-async function loadSettingsWithRetry() {
-  const delays = [400, 1200, 2500];
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await getPublicShopSettings();
-    } catch (error) {
-      const delay = delays[attempt];
-      if (delay === undefined) throw error;
-      console.warn(`Shop settings read failed (attempt ${attempt + 1}); retrying`, error);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+/**
+ * Every page renders with shop settings, so a failed read must never take the
+ * site down. Defaults are shown instead and fetched again straight away.
+ */
+async function loadSettings() {
+  try {
+    return { data: await getPublicShopSettings(), failed: false };
+  } catch (error) {
+    console.error("Shop settings read failed; showing defaults", error);
+    return { data: null, failed: true };
   }
 }
 
 export const shopSettingsQuery = () =>
   queryOptions({
     queryKey: ["shop-settings"],
-    staleTime: 30_000,
+    // Defaults from a failed read are refreshed on the next mount.
+    staleTime: (query) => (query.state.data?.loadFailed ? 0 : 30_000),
     queryFn: async (): Promise<ShopSettings> => {
-      const data = await loadSettingsWithRetry();
+      const { data, failed } = await loadSettings();
+      if (failed) return { ...DEFAULT_SETTINGS, loadFailed: true };
       if (!data) return DEFAULT_SETTINGS;
       return {
         orderingMode: isOrderingMode(data.ordering_mode) ? data.ordering_mode : "full",

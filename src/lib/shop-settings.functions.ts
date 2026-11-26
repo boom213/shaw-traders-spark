@@ -6,6 +6,7 @@ export const getPublicShopSettings = createServerFn({ method: "GET" }).handler(a
   const { data, error } = await supabaseAdmin
     .from("shop_settings")
     .select("ordering_mode, browse_banner, show_showroom_section, gst_enabled, gst_rate, prices_include_gst, gstin, legal_name, billing_address, cod_enabled, cod_limit, min_order_value, cod_min_order_value, cod_pincodes, support_email, grievance_officer_name, grievance_officer_email, grievance_officer_phone, policy_updated_at")
+    .abortSignal(AbortSignal.timeout(4_000))
     .maybeSingle();
 
   if (error) throw new Error("Could not load shop settings");
