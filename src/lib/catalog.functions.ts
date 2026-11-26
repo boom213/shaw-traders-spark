@@ -4,6 +4,7 @@ import { PRODUCT_SELECT, mapProduct } from "@/lib/product-map";
 import { normaliseSearch } from "@/lib/search-terms";
 import type { Category, Product, Review } from "@/lib/catalog";
 import { createTtlCache } from "@/lib/ttl-cache";
+import { edgeCachedJson } from "@/lib/edge-cache";
 
 export type ProductFilters = {
   q?: string;
@@ -379,8 +380,15 @@ async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, l
 const HOME_FEED_TTL_MS = 30_000;
 const homeFeedCache = createTtlCache<Awaited<ReturnType<typeof loadHomeFeed>>>(HOME_FEED_TTL_MS);
 
+const HOME_FEED_EDGE_SECONDS = 60;
+const keepHomeFeed = (feed: Awaited<ReturnType<typeof loadHomeFeed>>) =>
+  feed.latest.length > 0 && feed.categories.length > 0;
+
 export const homeFeed = createServerFn({ method: "GET" }).handler(() =>
-  homeFeedCache.get(loadHomeFeed, (feed) => feed.latest.length > 0 && feed.categories.length > 0),
+  homeFeedCache.get(
+    () => edgeCachedJson("home-feed-v1", HOME_FEED_EDGE_SECONDS, loadHomeFeed, keepHomeFeed),
+    keepHomeFeed,
+  ),
 );
 
 async function loadHomeFeed() {

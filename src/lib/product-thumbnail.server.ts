@@ -75,28 +75,65 @@ async function createPngThumbnail(bytes: Uint8Array, suppliedType: string, maxSi
   return new Uint8Array(encode([buffer], resized.width, resized.height, 0));
 }
 
-export async function loadOrCreateProductThumbnail(thumbnailPath: string): Promise<ThumbnailPayload | null> {
+/** PNG thumbnails above this size are checked against the original once. */
+const OVERSIZED_THUMBNAIL_BYTES = 60_000;
+
+export async function loadOrCreateProductThumbnail(
+  thumbnailPath: string,
+): Promise<ThumbnailPayload | null> {
   const originalPath = originalPathFromThumbnail(thumbnailPath);
   const variant = thumbnailVariantFromPath(thumbnailPath);
   if (!originalPath || !variant || !originalPath.length || originalPath.includes("..")) return null;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const bucket = supabaseAdmin.storage.from("product-photos");
-  const existing = await bucket.download(productThumbnailStoragePath(originalPath, variant));
-  if (existing.data) return { bytes: new Uint8Array(await existing.data.arrayBuffer()), type: existing.data.type || "image/webp" };
+  const storedPath = productThumbnailStoragePath(originalPath, variant);
+  const existing = await bucket.download(storedPath);
+  if (existing.data) {
+    const bytes = new Uint8Array(await existing.data.arrayBuffer());
+    const type = existing.data.type || "image/webp";
+    // Older thumbnails were always PNG, which can be bigger than a WebP original.
+    // Replace those once with the smaller original (size checked without downloading it).
+    if (type.includes("png") && bytes.byteLength > OVERSIZED_THUMBNAIL_BYTES) {
+      const { data: info } = await bucket.info(originalPath).catch(() => ({ data: null }));
+      const original =
+        info?.size && info.size < bytes.byteLength ? await bucket.download(originalPath) : null;
+      if (original?.data && original.data.size < bytes.byteLength) {
+        const originalBytes = new Uint8Array(await original.data.arrayBuffer());
+        const originalType = original.data.type || "image/webp";
+        await bucket
+          .upload(storedPath, originalBytes, {
+            contentType: originalType,
+            cacheControl: "31536000",
+            upsert: true,
+          })
+          .catch(() => undefined);
+        return { bytes: originalBytes, type: originalType };
+      }
+    }
+    return { bytes, type };
+  }
 
   const original = await bucket.download(originalPath);
   if (!original.data) return null;
   const originalBytes = new Uint8Array(await original.data.arrayBuffer());
+  const originalType = original.data.type || "image/webp";
   try {
-    const thumbnail = await createPngThumbnail(originalBytes, original.data.type, PRODUCT_THUMBNAIL_SIZES[variant]);
-    if (!thumbnail) return { bytes: originalBytes, type: original.data.type };
-    await bucket.upload(productThumbnailStoragePath(originalPath, variant), thumbnail, {
-      contentType: "image/png",
+    const thumbnail = await createPngThumbnail(
+      originalBytes,
+      original.data.type,
+      PRODUCT_THUMBNAIL_SIZES[variant],
+    );
+    // Never serve a "thumbnail" bigger than the photo it shrinks: store the original instead.
+    const useOriginal = !thumbnail || thumbnail.byteLength >= originalBytes.byteLength;
+    const bytes = useOriginal ? originalBytes : thumbnail;
+    const type = useOriginal ? originalType : "image/png";
+    await bucket.upload(storedPath, bytes, {
+      contentType: type,
       cacheControl: "31536000",
       upsert: false,
     });
-    return { bytes: thumbnail, type: "image/png" };
+    return { bytes, type };
   } catch {
-    return { bytes: originalBytes, type: original.data.type };
+    return { bytes: originalBytes, type: originalType };
   }
 }

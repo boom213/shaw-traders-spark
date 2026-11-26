@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { originalPathFromThumbnail } from "@/lib/product-photo";
+import { edgeCachedResponse } from "@/lib/edge-cache";
 
 /**
  * Serves product photos from private storage so the shop can show them to
@@ -9,40 +10,56 @@ import { originalPathFromThumbnail } from "@/lib/product-photo";
 export const Route = createFileRoute("/api/public/photo/$")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
-        const raw = String((params as Record<string, string>)['_splat'] ?? "").replace(/^\/+/, "");
-        if (!raw || raw.includes("..")) return new Response("Not found", { status: 404 });
-
-        // Older product photo links have no bucket prefix, so product photos stay the default.
-        const first = raw.split("/")[0] ?? "";
-        const bucket = first === "review-photos" ? "review-photos" : "product-photos";
-        const path = first === "review-photos" ? raw.slice(first.length + 1) : raw;
-        if (!path) return new Response("Not found", { status: 404 });
-
-        if (bucket === "product-photos" && originalPathFromThumbnail(path)) {
-          const { loadOrCreateProductThumbnail } = await import("@/lib/product-thumbnail.server");
-          const thumbnail = await loadOrCreateProductThumbnail(path);
-          if (!thumbnail) return new Response("Not found", { status: 404 });
-          const body = thumbnail.bytes.buffer.slice(thumbnail.bytes.byteOffset, thumbnail.bytes.byteOffset + thumbnail.bytes.byteLength) as ArrayBuffer;
-          return new Response(body, {
-            headers: {
-              "Content-Type": thumbnail.type || "image/png",
-              "Cache-Control": "public, max-age=31536000, immutable",
-            },
-          });
-        }
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
-        if (error || !data) return new Response("Not found", { status: 404 });
-
-        return new Response(await data.arrayBuffer(), {
-          headers: {
-            "Content-Type": data.type || "image/webp",
-            "Cache-Control": "public, max-age=31536000, immutable",
-          },
-        });
-      },
+      // Product photo links never change (each upload gets a new name), so after
+      // the first request a Cloudflare data centre answers them without the
+      // server. Review photos are left out: staff can remove those.
+      GET: ({ params, request }) =>
+        isReviewPhoto(params)
+          ? servePhoto(params)
+          : edgeCachedResponse(request.url, () => servePhoto(params)),
     },
   },
 });
+
+function isReviewPhoto(params: unknown): boolean {
+  const raw = String((params as Record<string, string>)["_splat"] ?? "").replace(/^\/+/, "");
+  return raw.startsWith("review-photos/");
+}
+
+async function servePhoto(params: unknown): Promise<Response> {
+  const raw = String((params as Record<string, string>)["_splat"] ?? "").replace(/^\/+/, "");
+  if (!raw || raw.includes("..")) return new Response("Not found", { status: 404 });
+
+  // Older product photo links have no bucket prefix, so product photos stay the default.
+  const first = raw.split("/")[0] ?? "";
+  const bucket = first === "review-photos" ? "review-photos" : "product-photos";
+  const path = first === "review-photos" ? raw.slice(first.length + 1) : raw;
+  if (!path) return new Response("Not found", { status: 404 });
+
+  if (bucket === "product-photos" && originalPathFromThumbnail(path)) {
+    const { loadOrCreateProductThumbnail } = await import("@/lib/product-thumbnail.server");
+    const thumbnail = await loadOrCreateProductThumbnail(path);
+    if (!thumbnail) return new Response("Not found", { status: 404 });
+    const body = thumbnail.bytes.buffer.slice(
+      thumbnail.bytes.byteOffset,
+      thumbnail.bytes.byteOffset + thumbnail.bytes.byteLength,
+    ) as ArrayBuffer;
+    return new Response(body, {
+      headers: {
+        "Content-Type": thumbnail.type || "image/png",
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  }
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.storage.from(bucket).download(path);
+  if (error || !data) return new Response("Not found", { status: 404 });
+
+  return new Response(await data.arrayBuffer(), {
+    headers: {
+      "Content-Type": data.type || "image/webp",
+      "Cache-Control": "public, max-age=31536000, immutable",
+    },
+  });
+}
