@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { MessageCircle, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { SectionHeading } from "@/components/site/Empty";
-import { SparkCharge } from "@/components/site/SparkLoaders";
+import { SparkCharge, SparkRing } from "@/components/site/SparkLoaders";
+import { shopIsUpdating } from "@/lib/shop-loading";
 import { ProductCard } from "@/components/site/ProductCard";
 import { BUSINESS, canonical, whatsappLink } from "@/lib/catalog";
 import { categoriesQuery, facetsQuery, productsQuery } from "@/lib/queries";
@@ -231,10 +232,19 @@ function Shop() {
   const filters = filtersFor(search);
   const page = filters.page ?? 0;
   const sameFilters = JSON.stringify(loaded.filters) === JSON.stringify(filters);
-  const { data, isPending } = useQuery({
+  const { data, isPending, isFetching, isPlaceholderData } = useQuery({
     ...productsQuery(filters),
     ...(sameFilters && loaded.initial ? { initialData: loaded.initial } : {}),
     placeholderData: keepPreviousData,
+  });
+  // Next/Previous and filter changes keep the old products on screen until
+  // the new ones arrive; dim them and show a loader so the page never looks stuck.
+  const routerLoading = useRouterState({ select: (s) => s.isLoading });
+  const pendingPath = useRouterState({ select: (s) => s.location.pathname });
+  const updating = shopIsUpdating({
+    routerLoading,
+    pendingPath,
+    showingOldResults: isFetching && isPlaceholderData,
   });
 
   const results = data?.items ?? [];
@@ -334,10 +344,19 @@ function Shop() {
               </div>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            <div aria-busy={updating}>
+              <div
+                className={`grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 xl:grid-cols-4 ${updating ? "pointer-events-none opacity-50" : ""}`}
+              >
                 {results.map((p) => <ProductCard key={p.id} product={p} />)}
               </div>
+              {updating && (
+                <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center lg:bottom-8">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium shadow-[var(--shadow-card)]">
+                    <SparkRing label={t("shop.loading")} /> {t("shop.loading")}
+                  </span>
+                </div>
+              )}
               {pages > 1 && (
                 <div className="mt-8 flex items-center justify-center gap-3">
                   {page === 0 ? (
@@ -349,7 +368,8 @@ function Shop() {
                       </Link>
                     </Button>
                   )}
-                  <span className="text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                    {updating && <SparkRing size="sm" />}
                     {t("shop.page")} {page + 1} {t("shop.of")} {pages}
                   </span>
                   {page + 1 >= pages ? (
@@ -363,7 +383,7 @@ function Shop() {
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
