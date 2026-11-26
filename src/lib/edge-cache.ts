@@ -19,25 +19,48 @@ export function edgeCache(): EdgeCache | null {
     : null;
 }
 
+/** Response header that says how the edge cache answered (for checking it works). */
+export const EDGE_CACHE_HEADER = "X-Edge-Cache";
+
+/**
+ * Copy of a response with the edge-cache status header. Cached responses have
+ * read-only headers, so the header is always set on a copy.
+ */
+function withStatus(response: Response, status: string): Response {
+  const copy = new Response(response.body, response);
+  copy.headers.set(EDGE_CACHE_HEADER, status);
+  return copy;
+}
+
 /**
  * Serve a GET response from the edge cache, keyed by path (query ignored).
  * Only 200 responses marked `immutable` are stored, so errors are never kept.
+ * The X-Edge-Cache header reports what happened:
+ * HIT (served from the edge), MISS (built and stored), NOSTORE (built, not
+ * cacheable), ERROR (the edge cache refused) or OFF (no edge cache here).
  */
 export async function edgeCachedResponse(
   url: string,
   produce: () => Promise<Response>,
   cache: EdgeCache | null = edgeCache(),
 ): Promise<Response> {
-  if (!cache) return produce();
+  if (!cache) return withStatus(await produce(), "OFF");
   const { origin, pathname } = new URL(url);
   const key = new Request(origin + pathname);
-  const hit = await cache.match(key).catch(() => undefined);
-  if (hit) return hit;
+  let failed = false;
+  const hit = await cache.match(key).catch(() => {
+    failed = true;
+    return undefined;
+  });
+  if (hit) return withStatus(hit, "HIT");
   const response = await produce();
-  if (response.status === 200 && /immutable/.test(response.headers.get("Cache-Control") ?? "")) {
-    await cache.put(key, response.clone()).catch(() => undefined);
+  if (response.status !== 200 || !/immutable/.test(response.headers.get("Cache-Control") ?? "")) {
+    return withStatus(response, "NOSTORE");
   }
-  return response;
+  await cache.put(key, response.clone()).catch(() => {
+    failed = true;
+  });
+  return withStatus(response, failed ? "ERROR" : "MISS");
 }
 
 /**
