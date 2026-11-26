@@ -36,7 +36,7 @@
 - Showroom sales reuse vehicle_bookings; service-only SQL routines lock bookings for receipts, agreed-price revisions and handover so online token state stays untouched and receipt history cannot be deleted.
 - Guest-reachable order/booking status or cancel server functions must match the record's `public_token`, never an id alone — ids leak in URLs and logs.
 - Staff password sign-in and attempt logging run server-side (`staffPasswordSignIn`); allowlisted super-admin access requires a confirmed email — clients must not write auth records.
-- No scheduled jobs (cost): expired unpaid reservations are released via `releaseStaleOrdersSoon` when cart/checkout/Manager orders load; reminders and the daily summary are Manager buttons. Any future cron route must use `authenticateCronRequest`, never the publishable key.
+- Only one scheduled job exists (cost): the `keep-alive` ping to `/api/public/keep-alive` that stops the database sleeping. Expired unpaid reservations are released via `releaseStaleOrdersSoon` when cart/checkout/Manager orders load; reminders and the daily summary are Manager buttons. Every cron route must use `authenticateCronRequest`, never the publishable key.
 - CSV cells go through `csvCell`, which neutralizes leading formula characters — exports contain customer-typed text.
 - `product_enquiries` and `stock_alerts` are written only by server functions (no anon/authenticated INSERT) — direct writes skipped validation and could flood the inbox.
 - Server functions must check the `error` of every primary database write and return a failure (never `ok: true`) when it fails; only audit/event/notification logs may be best-effort — silent failures showed staff false "Saved" messages.

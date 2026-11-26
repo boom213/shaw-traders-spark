@@ -73,6 +73,7 @@ import { Route as TradeQuoteSubmitRouteImport } from './routes/trade.quote-submi
 import { Route as ApiPublicCatalogueRouteImport } from './routes/api/public/catalogue'
 import { Route as ApiPublicClientErrorRouteImport } from './routes/api/public/client-error'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
+import { Route as ApiPublicKeepAliveRouteImport } from './routes/api/public/keep-alive'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay-webhook'
 import { Route as ManageCustomersIndexRouteImport } from './routes/manage.customers.index'
 import { Route as ManageCustomersCustomerIdRouteImport } from './routes/manage.customers.$customerId'
@@ -402,6 +403,11 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicKeepAliveRoute = ApiPublicKeepAliveRouteImport.update({
+  id: '/api/public/keep-alive',
+  path: '/api/public/keep-alive',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRazorpayWebhookRoute =
   ApiPublicRazorpayWebhookRouteImport.update({
     id: '/api/public/razorpay-webhook',
@@ -511,6 +517,7 @@ export interface FileRoutesByFullPath {
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/keep-alive': typeof ApiPublicKeepAliveRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
@@ -581,6 +588,7 @@ export interface FileRoutesByTo {
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/keep-alive': typeof ApiPublicKeepAliveRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
@@ -656,6 +664,7 @@ export interface FileRoutesById {
   '/api/public/catalogue': typeof ApiPublicCatalogueRoute
   '/api/public/client-error': typeof ApiPublicClientErrorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/keep-alive': typeof ApiPublicKeepAliveRoute
   '/api/public/razorpay-webhook': typeof ApiPublicRazorpayWebhookRoute
   '/manage/customers/$customerId': typeof ManageCustomersCustomerIdRoute
   '/manage/orders/$orderId': typeof ManageOrdersOrderIdRoute
@@ -732,6 +741,7 @@ export interface FileRouteTypes {
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
+    | '/api/public/keep-alive'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
     | '/manage/orders/$orderId'
@@ -802,6 +812,7 @@ export interface FileRouteTypes {
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
+    | '/api/public/keep-alive'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
     | '/manage/orders/$orderId'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/api/public/catalogue'
     | '/api/public/client-error'
     | '/api/public/health'
+    | '/api/public/keep-alive'
     | '/api/public/razorpay-webhook'
     | '/manage/customers/$customerId'
     | '/manage/orders/$orderId'
@@ -922,6 +934,7 @@ export interface RootRouteChildren {
   ApiPublicCatalogueRoute: typeof ApiPublicCatalogueRoute
   ApiPublicClientErrorRoute: typeof ApiPublicClientErrorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicKeepAliveRoute: typeof ApiPublicKeepAliveRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiPublicPhotoSplatRoute: typeof ApiPublicPhotoSplatRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
@@ -1377,6 +1390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/keep-alive': {
+      id: '/api/public/keep-alive'
+      path: '/api/public/keep-alive'
+      fullPath: '/api/public/keep-alive'
+      preLoaderRoute: typeof ApiPublicKeepAliveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/razorpay-webhook': {
       id: '/api/public/razorpay-webhook'
       path: '/api/public/razorpay-webhook'
@@ -1577,6 +1597,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCatalogueRoute: ApiPublicCatalogueRoute,
   ApiPublicClientErrorRoute: ApiPublicClientErrorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicKeepAliveRoute: ApiPublicKeepAliveRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiPublicPhotoSplatRoute: ApiPublicPhotoSplatRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
