@@ -52,3 +52,5 @@
 - Counter Sales search shows the top 4 matches as a keyboard combobox (CounterProductSearch); suggestions appear only for results of exactly the typed text, so Enter never adds a stale item.
 
 - Shop settings and header categories never throw: a failed read renders DEFAULT_SETTINGS (loadFailed) or an empty list, marked stale so the browser fetches them again; the settings read times out after 4 s. Why: the root loader runs on every page, so one failed read used to crash the whole site.
+
+- SEO: product titles use productHeading (src/lib/seo.ts) so the shop's own brand is never repeated; categories with no visible parts are noindex and left out of sitemap.xml (same population as the category page: visible parts in that category); /account is noindex and not in the sitemap. Why: thin or private pages hurt search ranking.

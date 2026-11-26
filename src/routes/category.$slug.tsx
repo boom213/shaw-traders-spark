@@ -11,8 +11,8 @@ export const Route = createFileRoute("/category/$slug")({
   loader: async ({ context, params }) => {
     const category = await context.queryClient.ensureQueryData(categoryQuery(params.slug));
     if (!category) throw notFound();
-    await context.queryClient.ensureQueryData(productsQuery({ category: params.slug, pageSize: 48 }));
-    return { category };
+    const products = await context.queryClient.ensureQueryData(productsQuery({ category: params.slug, pageSize: 48 }));
+    return { category, listed: products.total > 0 };
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return { meta: [{ title: "Category not found — Shaw Traders EV" }, { name: "robots", content: "noindex" }] };
@@ -37,6 +37,8 @@ export const Route = createFileRoute("/category/$slug")({
         { property: "og:type", content: "website" },
         { property: "og:url", content: url },
         { name: "twitter:card", content: "summary_large_image" },
+        // Empty categories ("listings coming soon") stay out of Google until parts are listed.
+        ...(loaderData.listed ? [] : [{ name: "robots", content: "noindex, follow" }]),
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [{ type: "application/ld+json", children: JSON.stringify(breadcrumbs) }],

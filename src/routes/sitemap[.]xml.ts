@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BUSINESS } from "@/lib/catalog";
+import { listedCategorySlugs } from "@/lib/seo";
 
 const BASE = BUSINESS.site;
 
@@ -15,7 +16,6 @@ const STATIC_PAGES: { path: string; priority: string; changefreq: string }[] = [
   { path: "/brand", priority: "0.6", changefreq: "monthly" },
   { path: "/contact", priority: "0.6", changefreq: "monthly" },
   { path: "/trade", priority: "0.6", changefreq: "monthly" },
-  { path: "/account", priority: "0.5", changefreq: "monthly" },
   { path: "/track", priority: "0.4", changefreq: "monthly" },
   { path: "/returns", priority: "0.4", changefreq: "yearly" },
   { path: "/shipping", priority: "0.4", changefreq: "yearly" },
@@ -58,25 +58,35 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const { data: categories, error: catError } = await sb.from("categories").select("slug").order("slug");
           if (catError) throw new Error(catError.message);
-          for (const c of categories ?? []) {
-            entries.push(urlEntry(`/category/${c.slug}`, { priority: "0.8", changefreq: "daily" }));
-          }
+          const categoryEntries = entries.length;
+          const productRows: { categories: { slug: string } | null }[] = [];
 
           const pageSize = 1000;
           for (let page = 0; page < 20; page++) {
             const { data: products, error } = await sb
               .from("products")
-              .select("slug, updated_at")
+              .select("slug, updated_at, categories(slug)")
               .eq("status", "visible")
               .eq("product_kind", "part")
               .order("slug")
               .range(page * pageSize, page * pageSize + pageSize - 1);
             if (error) throw new Error(error.message);
             for (const p of products ?? []) {
+              productRows.push(p as unknown as { categories: { slug: string } | null });
               entries.push(urlEntry(`/product/${p.slug}`, { lastmod: p.updated_at, priority: "0.7", changefreq: "weekly" }));
             }
             if (!products || products.length < pageSize) break;
           }
+
+          // Only categories with listed parts: empty ones are noindex until stocked.
+          const listed = listedCategorySlugs(productRows);
+          entries.splice(
+            categoryEntries,
+            0,
+            ...(categories ?? [])
+              .filter((c) => listed.has(c.slug))
+              .map((c) => urlEntry(`/category/${c.slug}`, { priority: "0.8", changefreq: "daily" })),
+          );
 
           const { data: vehicles, error: vErr } = await sb
             .from("products")

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { productHeading } from "@/lib/seo";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { BellRing, CheckCircle2, MessageCircle, Minus, Package, Plus, ShieldCheck, Star, Truck, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -58,12 +59,12 @@ export const Route = createFileRoute("/product/$slug")({
   },
   head: ({ loaderData, params }) => {
     const name = loaderData?.name ?? params.slug.replace(/-/g, " ");
-    const brand = loaderData?.brand ? `${loaderData.brand} ` : "";
+    const heading = productHeading(loaderData?.brand, name);
     const priceBit = loaderData?.price ? ` at ${formatINR(loaderData.price)}` : "";
-    const title = `${brand}${name} — Shaw Traders EV`;
+    const title = `${heading} — Shaw Traders EV`;
     const description =
       (loaderData?.description || "").slice(0, 155) ||
-      `Buy ${brand}${name}${priceBit} at Shaw Traders EV, Bud Bud, Bardhaman. Specifications, vehicle compatibility, warranty and stock availability.`;
+      `Buy ${heading}${priceBit} at Shaw Traders EV, Bud Bud, Bardhaman. Specifications, vehicle compatibility, warranty and stock availability.`;
     const url = canonical(`/product/${params.slug}`);
     const image = loaderData?.image ?? "";
 

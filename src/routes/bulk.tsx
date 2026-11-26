@@ -14,7 +14,7 @@ import { errorCount, focusFirstInvalid, validateNameAndPhones, validationSummary
 export const Route = createFileRoute("/bulk")({
   head: () => ({
     meta: [
-      { title: "Dealer & Bulk Orders" },
+      { title: "Dealer & Bulk Orders — Shaw Traders EV" },
       { name: "description", content: "Bulk enquiry for e-rickshaw and EV workshops, dealers and fleet owners. Share your requirement and our Bud Bud team will quote." },
       { property: "og:title", content: "Bulk & Dealer Orders — Shaw Traders EV" },
       { property: "og:description", content: "Wholesale EV spare parts enquiries for workshops, dealers and fleets." },

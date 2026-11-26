@@ -45,6 +45,8 @@ export const Route = createFileRoute("/account")({
       { property: "og:description", content: "Create your free account or sign in with email, Google or mobile. Track orders and save EV parts at Shaw Traders EV." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      // Sign-in and personal pages have nothing for search results.
+      { name: "robots", content: "noindex, follow" },
     ],
     links: [{ rel: "canonical", href: canonical("/account") }],
   }),
