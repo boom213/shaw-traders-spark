@@ -363,7 +363,9 @@ export type OfferCoupon = {
 
 /** Best sellers by quantity sold over a recent window, newest orders only. */
 async function loadBestSellers(sb: ReturnType<typeof publicClient>, days = 90, limit = 12): Promise<Product[]> {
-  const { data: top } = await sb.rpc("best_sellers", { p_days: days, p_limit: limit });
+  // Sales totals are private: read them with the server key and return only the product list.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: top } = await supabaseAdmin.rpc("best_sellers", { p_days: days, p_limit: limit });
   const ids = ((top ?? []) as { product_id: string }[]).map((r) => r.product_id);
   if (ids.length === 0) return [];
   const { data: rows } = await sb.from("products").select(PRODUCT_SELECT).eq("status", "visible").eq("product_kind", "part").in("id", ids);

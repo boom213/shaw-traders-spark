@@ -48,7 +48,8 @@ export async function notifyBookingPlaced(bookingId: string): Promise<void> {
   }
 }
 
-export async function notifyBookingStatus(bookingId: string, status: string, note?: string | null): Promise<void> {
+/** Staff notes stay internal; customers get a fixed template only. */
+export async function notifyBookingStatus(bookingId: string, status: string, _note?: string | null): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendWhatsAppText } = await import("@/lib/whatsapp.server");
   const { data: b } = await supabaseAdmin
@@ -65,7 +66,7 @@ export async function notifyBookingStatus(bookingId: string, status: string, not
   await sendWhatsAppText({
     to: b.phone,
     kind: "booking.status",
-    body: `Booking ${b.human_id} (${model}) — ${bookingStatusLabel(status)}.${note ? `\n${note}` : ""}${extra}\n${BUSINESS.site}/booking/${b.public_token}`,
+    body: `Booking ${b.human_id} (${model}) — ${bookingStatusLabel(status)}.${extra}\n${BUSINESS.site}/booking/${b.public_token}`,
   });
 }
 

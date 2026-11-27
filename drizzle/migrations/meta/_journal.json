@@ -540,6 +540,13 @@
       "when": 1795456703623,
       "tag": "0076_harden_order_writes_and_private_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1795802399975,
+      "tag": "0077_tighten_finance_settings_and_helpers",
+      "breakpoints": true
     }
   ]
 }

@@ -246,12 +246,15 @@ export const myPrices = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows } = await supabaseAdmin
       .from("products")
-      .select("id, price, min_order_qty, order_multiple")
+      .select("id, price, min_order_qty, order_multiple, status, trade_only")
       .in("id", data.items.map((i) => i.productId));
+    // Retail callers only see prices for products the public storefront shows.
+    const tradeOrStaff = account.tier !== "retail" || Boolean(await (await import("@/lib/staff.server")).staffContext());
+    const visible = (rows ?? []).filter((r) => tradeOrStaff || (r.status === "visible" && !r.trade_only));
 
     const lines = await Promise.all(
       data.items.map(async (item) => {
-        const row = (rows ?? []).find((r) => r.id === item.productId);
+        const row = visible.find((r) => r.id === item.productId);
         const unit = account.tier === "retail" ? (row?.price ?? null) : await tierPrice(item.productId, account.tier, item.qty);
         return {
           productId: item.productId,

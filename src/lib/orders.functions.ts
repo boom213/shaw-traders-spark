@@ -129,6 +129,10 @@ export const findOrder = createServerFn({ method: "POST" })
       if (await staffContext()) return { id: String(row.id), token: String(row.public_token) };
     }
 
+    // Orders tied to an account are only opened by that signed-in customer (or staff), never by phone match.
+    if (row && row.profile_id) {
+      return { error: userId ? "We couldn't find an order with that number and phone. Check both and try again." : "Sign in to the account used for this order to track it." };
+    }
     if (data.phone.length !== 10) return { error: "Enter your order number and the full 10-digit phone number used on the order." };
     const digits = String(row?.contact_phone ?? (row?.address as Record<string, string> | undefined)?.['phone'] ?? "").replace(/\D/g, "").slice(-10);
     // Same reply for a wrong number or an unknown order, so neither can be probed separately.

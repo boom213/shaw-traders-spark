@@ -72,8 +72,6 @@ const friendly = (message: string) =>
 
 /** Is online payment available (are the Razorpay keys saved)? */
 export const paymentsAvailable = createServerFn({ method: "GET" }).handler(async () => {
-  const { releaseStaleOrdersSoon } = await import("@/lib/order-cleanup.server");
-  await releaseStaleOrdersSoon();
   const { razorpayKeys } = await import("@/lib/razorpay.server");
   return { online: razorpayKeys().configured };
 });
