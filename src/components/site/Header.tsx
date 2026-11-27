@@ -140,7 +140,10 @@ export function Header() {
   );
   const [menu, setMenu] = useState(false);
 
+  const categoryStrip = !isStaff && navCategories.length > 0 ? <CategoryNavigation categories={navCategories} /> : null;
+
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
       <div className="container-page grid h-16 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 lg:h-[4.5rem] lg:gap-7">
         <Sheet open={menu} onOpenChange={setMenu}>
@@ -283,7 +286,11 @@ export function Header() {
         </div>
       </nav>
 
-      {!isStaff && navCategories.length > 0 && <CategoryNavigation categories={navCategories} />}
+      {/* Desktop: categories stay pinned. Phones: only logo and search stay pinned,
+          so the category strip scrolls away and products get more of the screen. */}
+      {categoryStrip && <div className="hidden lg:block">{categoryStrip}</div>}
     </header>
+    {categoryStrip && <div className="border-b border-border bg-background lg:hidden">{categoryStrip}</div>}
+    </>
   );
 }

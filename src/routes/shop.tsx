@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { MessageCircle, SlidersHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -114,13 +114,15 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
   const voltages = facets?.voltages ?? [];
   const ahs = facets?.ahs ?? [];
   const models = facets?.models ?? [];
+  // Filters render twice (desktop sidebar and phone sheet), so ids must be unique.
+  const id = useId();
 
   return (
     <div className="filters-panel grid gap-5 text-sm">
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.category")}</Label>
+        <Label htmlFor={`${id}-category`} className="font-semibold">{t("shop.category")}</Label>
         <Select value={search.category ?? "all"} onValueChange={(v) => apply({ category: v === "all" ? undefined : v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger id={`${id}-category`}><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("shop.allCategories")}</SelectItem>
             {(categories ?? []).map((c) => <SelectItem key={c.slug} value={c.slug}>{categoryName(c)}</SelectItem>)}
@@ -129,12 +131,12 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.brand")}</Label>
+        <Label htmlFor={`${id}-brand`} className="font-semibold">{t("shop.brand")}</Label>
         {brands.length === 0 ? (
           <p className="text-xs text-muted-foreground">{t("shop.brandsEmpty")}</p>
         ) : (
           <Select value={search.brand ?? "all"} onValueChange={(v) => apply({ brand: v === "all" ? undefined : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${id}-brand`}><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">{t("shop.allBrands")}</SelectItem>
               {brands.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
@@ -144,21 +146,21 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.price")}</Label>
+        <Label htmlFor={`${id}-min`} className="font-semibold">{t("shop.price")}</Label>
         <div className="flex items-center gap-2">
-          <Input type="number" placeholder={t("shop.min")} value={search.min ?? ""} onChange={(e) => apply({ min: e.target.value ? Number(e.target.value) : undefined })} />
+          <Input id={`${id}-min`} type="number" placeholder={t("shop.min")} value={search.min ?? ""} onChange={(e) => apply({ min: e.target.value ? Number(e.target.value) : undefined })} />
           <span className="text-muted-foreground">–</span>
-          <Input type="number" placeholder={t("shop.max")} value={search.max ?? ""} onChange={(e) => apply({ max: e.target.value ? Number(e.target.value) : undefined })} />
+          <Input type="number" aria-label={t("shop.max")} placeholder={t("shop.max")} value={search.max ?? ""} onChange={(e) => apply({ max: e.target.value ? Number(e.target.value) : undefined })} />
         </div>
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.vehicle")}</Label>
+        <Label htmlFor={`${id}-vehicle`} className="font-semibold">{t("shop.vehicle")}</Label>
         {models.length === 0 ? (
-          <Input placeholder={t("shop.modelPlaceholder")} value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
+          <Input id={`${id}-vehicle`} placeholder={t("shop.modelPlaceholder")} value={search.model ?? ""} onChange={(e) => apply({ model: e.target.value || undefined })} />
         ) : (
           <Select value={search.model ?? "all"} onValueChange={(v) => apply({ model: v === "all" ? undefined : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${id}-vehicle`}><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">{t("shop.anyVehicle")}</SelectItem>
               {models.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -168,12 +170,12 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.voltage")}</Label>
+        <Label htmlFor={`${id}-voltage`} className="font-semibold">{t("shop.voltage")}</Label>
         {voltages.length === 0 ? (
-          <Input placeholder="e.g. 48V" value={search.voltage ?? ""} onChange={(e) => apply({ voltage: e.target.value || undefined })} />
+          <Input id={`${id}-voltage`} placeholder="e.g. 48V" value={search.voltage ?? ""} onChange={(e) => apply({ voltage: e.target.value || undefined })} />
         ) : (
           <Select value={search.voltage ?? "all"} onValueChange={(v) => apply({ voltage: v === "all" ? undefined : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${id}-voltage`}><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">{t("shop.anyVoltage")}</SelectItem>
               {voltages.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
@@ -183,12 +185,12 @@ function Filters({ search, apply }: { search: ShopSearch; apply: (s: Partial<Sho
       </div>
 
       <div className="grid gap-2">
-        <Label className="font-semibold">{t("shop.capacity")}</Label>
+        <Label htmlFor={`${id}-capacity`} className="font-semibold">{t("shop.capacity")}</Label>
         {ahs.length === 0 ? (
-          <Input placeholder="e.g. 32Ah" value={search.ah ?? ""} onChange={(e) => apply({ ah: e.target.value || undefined })} />
+          <Input id={`${id}-capacity`} placeholder="e.g. 32Ah" value={search.ah ?? ""} onChange={(e) => apply({ ah: e.target.value || undefined })} />
         ) : (
           <Select value={search.ah ?? "all"} onValueChange={(v) => apply({ ah: v === "all" ? undefined : v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger id={`${id}-capacity`}><SelectValue /></SelectTrigger>
             <SelectContent className="max-h-72">
               <SelectItem value="all">{t("shop.anyCapacity")}</SelectItem>
               {ahs.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}

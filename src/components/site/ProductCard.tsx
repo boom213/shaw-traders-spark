@@ -14,6 +14,7 @@ import { useCatalogueRateVisibility } from "@/hooks/useTrade";
 import { useVehicle } from "@/hooks/useVehicle";
 import { discountPct, formatINR, whatsappLink, type Product } from "@/lib/catalog";
 import { listImageFor } from "@/lib/placeholders";
+import { isShopOwnBrand } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export function ProductRating({ rating, count }: { rating?: number; count?: number }) {
@@ -98,7 +99,7 @@ export function ProductCard({ product }: { product: Product }) {
       </Link>
 
       <div className="flex flex-1 flex-col gap-1 p-3 sm:p-3.5">
-        {product.brand && (
+        {product.brand && !isShopOwnBrand(product.brand) && (
           <span className="eyebrow truncate">{product.brand}</span>
         )}
         <Link

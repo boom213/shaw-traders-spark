@@ -4,7 +4,7 @@ import { SectionHeading } from "@/components/site/Empty";
 import { facetsQuery } from "@/lib/queries";
 
 /**
- * Brand list at the very bottom of the home page. Owns its own facets query so
+ * "Shop by Brand" list on the home page (part brands from the catalogue). Owns its own facets query so
  * the request is deferred until a visitor scrolls this far.
  */
 export function BrandsSection() {
@@ -13,7 +13,7 @@ export function BrandsSection() {
 
   return (
     <section className="container-page py-8 lg:py-12">
-      <SectionHeading title="Parts for Major EV Brands" subtitle="Find genuine parts and accessories for the electric scooter and bike brands we stock." action={<Link to="/brand" className="inline-flex min-h-8 items-center text-sm font-semibold text-primary hover:underline">View all brands →</Link>} />
+      <SectionHeading title="Shop by Brand" subtitle="Genuine parts and accessories from the brands we stock." action={<Link to="/brand" className="inline-flex min-h-8 items-center text-sm font-semibold text-primary hover:underline">View all brands →</Link>} />
       {brands.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-surface px-6 py-10 text-center text-sm text-muted-foreground">
           Brand list is being updated. Contact us on WhatsApp to check the brands currently in stock.

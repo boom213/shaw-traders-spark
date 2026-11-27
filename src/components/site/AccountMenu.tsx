@@ -97,7 +97,7 @@ export function AccountMenu({ variant = "header" }: { variant?: "header" | "tab"
           aria-label={t("account.menu")}
         >
           <User className="size-5" />
-          <span className="max-w-24 truncate">{label}</span>
+          <span className={user ? "max-w-24 truncate" : "whitespace-nowrap"}>{label}</span>
           <ChevronDown className="size-3.5 text-muted-foreground" />
         </DropdownMenuTrigger>
       )}

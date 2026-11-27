@@ -3,6 +3,7 @@ import { productHeading } from "@/lib/seo";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { BellRing, CheckCircle2, MessageCircle, Minus, Package, Plus, ShieldCheck, Star, Truck, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useInView } from "@/hooks/useInView";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -191,6 +192,10 @@ function ProductPage() {
     staleTime: 60_000,
   });
 
+  // Phones: once the main Add to Cart / Buy Now buttons scroll out of view, a
+  // slim bar above the bottom menu keeps price and buying one tap away.
+  const [buyButtonsRef, buyButtonsVisible] = useInView();
+
   useEffect(() => {
     if (product) markViewed(product.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -272,8 +277,11 @@ function ProductPage() {
     toast.success(res.message);
   };
 
+  const showStickyBuy =
+    quoteAccess.ready && !quoteAccess.allowed && mode === "full" && product.price !== undefined && canBuildCart && product.stock > 0 && !hideCatalogueRates;
+
   return (
-    <div className="container-page py-8">
+    <div className={showStickyBuy ? "container-page py-8 pb-28 lg:pb-8" : "container-page py-8"}>
       <nav aria-label="Breadcrumb" className="mb-5 text-xs text-muted-foreground">
         <Link to="/" className="hover:text-foreground">Home</Link> / <Link to="/shop" className="hover:text-foreground">Shop EV Spare Parts</Link> /{" "}
         {product.category && product.categoryName ? (
@@ -391,7 +399,7 @@ function ProductPage() {
                 <Button className="flex-1" onClick={addToQuote}>{t("product.addToQuote")}</Button>
               </div>
             ) : mode === "full" && product.price !== undefined && (
-              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              <div ref={buyButtonsRef} className="mt-5 grid gap-2 sm:grid-cols-2">
                 {canBuildCart ? (
                   <>
                     <Button variant="outline" className="w-full" disabled={product.stock <= 0} onClick={() => add()}>Add to Cart</Button>
@@ -451,6 +459,7 @@ function ProductPage() {
                     <Input
                       inputMode="numeric"
                       placeholder="Your WhatsApp number"
+                      aria-label="Your WhatsApp number for the back-in-stock alert"
                       value={alertContact}
                       onChange={(e) => setAlertContact(e.target.value)}
                     />
@@ -468,6 +477,7 @@ function ProductPage() {
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="6-digit PIN code"
+                aria-label="Delivery PIN code"
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))}
               />
@@ -545,11 +555,25 @@ function ProductPage() {
           <div className="mt-6 grid gap-3">
             <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-sm">
               <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-              <span>{product.warranty ? `Warranty: ${product.warranty}` : "Warranty details are not listed for this product. Please ask us before purchase."}</span>
+              <span>
+                {product.warranty ? (
+                  `Warranty: ${product.warranty}`
+                ) : (
+                  <>
+                    See our <Link to="/warranty" className="font-medium underline underline-offset-2">warranty policy</Link>, or ask us about this part.
+                  </>
+                )}
+              </span>
             </div>
             <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-sm">
               <Truck className="mt-0.5 size-4 shrink-0 text-primary" />
-              <span>{product.shippingInfo || "Shipping and delivery details will be confirmed at checkout or on WhatsApp."}</span>
+              <span>
+                {product.shippingInfo || (
+                  <>
+                    Delivery charges and timing are shown at checkout. See our <Link to="/shipping" className="font-medium underline underline-offset-2">shipping policy</Link>.
+                  </>
+                )}
+              </span>
             </div>
           </div>
         </div>
@@ -605,14 +629,14 @@ function ProductPage() {
             <h3 className="font-display text-base font-bold">Write a review</h3>
             <div className="mt-3 grid gap-3">
               <Select value={review.rating} onValueChange={(v) => setReview({ ...review, rating: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="Your rating"><SelectValue /></SelectTrigger>
                 <SelectContent>{[5, 4, 3, 2, 1].map((r) => <SelectItem key={r} value={String(r)}>{r} star{r > 1 ? "s" : ""}</SelectItem>)}</SelectContent>
               </Select>
-              <Input placeholder="Headline (optional)" value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} />
-              <Textarea required rows={4} placeholder="Share your experience with this part" value={review.text} onChange={(e) => setReview({ ...review, text: e.target.value })} />
+              <Input aria-label="Review headline (optional)" placeholder="Headline (optional)" value={review.title} onChange={(e) => setReview({ ...review, title: e.target.value })} />
+              <Textarea required rows={4} aria-label="Your review" placeholder="Share your experience with this part" value={review.text} onChange={(e) => setReview({ ...review, text: e.target.value })} />
               <div className="grid gap-1.5">
-                <Label className="text-xs">Add photos (up to 3)</Label>
-                <Input type="file" accept="image/*" multiple onChange={(e) => void pickPhotos(e.target.files)} />
+                <Label htmlFor="review-photos" className="text-xs">Add photos (up to 3)</Label>
+                <Input id="review-photos" type="file" accept="image/*" multiple onChange={(e) => void pickPhotos(e.target.files)} />
                 {photos.length > 0 && (
                   <div className="mt-1 flex gap-2">
                     {photos.map((src) => (
@@ -659,6 +683,26 @@ function ProductPage() {
         </Link>
       </nav>
 
+      {showStickyBuy && !buyButtonsVisible && (
+        <div
+          className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background/95 px-4 py-2 shadow-[var(--shadow-lift)] backdrop-blur lg:hidden"
+          role="region"
+          aria-label="Buy this part"
+        >
+          <div className="mx-auto flex max-w-xl items-center gap-2">
+            <span className="mr-auto font-display text-lg font-bold">{formatINR(product.price ?? 0)}</span>
+            <Button size="sm" variant="outline" onClick={() => add()}>Add to Cart</Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (add()) void navigate({ to: "/checkout" });
+              }}
+            >
+              Buy Now
+            </Button>
+          </div>
+        </div>
+      )}
       <Dialog open={zoom} onOpenChange={setZoom}>
         <DialogContent className="max-w-3xl p-2">
           <img src={gallery[active] ?? gallery[0]} alt={product.name} className="max-h-[80vh] w-full rounded-xl object-contain" />

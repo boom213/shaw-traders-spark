@@ -112,7 +112,7 @@ function Home() {
     <div>
       <section className="border-b border-border bg-background">
         <div className="container-page py-3 sm:py-4">
-          <div className="relative min-h-[32rem] overflow-hidden rounded-xl bg-surface sm:min-h-[34rem] lg:min-h-[25.5rem]">
+          <div className="relative overflow-hidden rounded-xl bg-surface sm:min-h-[34rem] lg:min-h-[25.5rem]">
             <img
               src={storefrontHero}
               alt="Electric scooter and genuine EV parts from Shaw Traders EV"
@@ -122,12 +122,13 @@ function Home() {
               fetchPriority="high"
             />
             <div className="absolute inset-0 bg-background/80 lg:bg-[linear-gradient(90deg,var(--background)_0%,color-mix(in_oklch,var(--background)_96%,transparent)_34%,color-mix(in_oklch,var(--background)_48%,transparent)_53%,transparent_70%)]" />
-            <div className="relative flex min-h-[32rem] max-w-[42rem] flex-col justify-center px-5 py-8 sm:min-h-[34rem] sm:px-10 lg:min-h-[25.5rem] lg:px-16">
+            <div className="relative flex max-w-[42rem] flex-col justify-center px-5 py-6 sm:min-h-[34rem] sm:px-10 sm:py-8 lg:min-h-[25.5rem] lg:px-16">
               <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-[11px] font-semibold uppercase text-accent-foreground">
                 <span className="size-1.5 rounded-full bg-primary" /> Trusted EV parts showroom
               </p>
-              <h1 className="max-w-xl font-display text-[2.35rem] font-bold leading-[1.02] sm:text-5xl lg:text-[3.25rem]">
-                Shaw Traders EV —<br />
+              <h1 className="max-w-xl font-display text-[2rem] font-bold leading-[1.05] sm:text-5xl lg:text-[3.25rem]">
+                {/* Non-breaking space keeps the dash with the name on narrow phones. */}
+                Shaw Traders EV{"\u00a0"}—<br />
                 Everything Your
                 <br />
                 <span className="text-primary">EV Needs</span>
@@ -189,6 +190,22 @@ function Home() {
           <CategoryCarousel categories={home.categories} limit={6} showOthers />
         </section>
       )}
+
+      {/* Products straight after categories, so phone visitors see parts within the first screens. */}
+      <LazySection minHeight="24rem">
+        <section className="container-page py-4 lg:py-8">
+          <SectionHeading
+            title="New Arrivals"
+            subtitle="Fresh stock added recently by our counter team."
+            action={
+              <Button variant="ghost" asChild>
+                <Link to="/shop">Browse shop</Link>
+              </Button>
+            }
+          />
+          {home.latest.length === 0 ? <EmptyCatalogue /> : <ProductCarousel items={home.latest} label="New arrivals" />}
+        </section>
+      </LazySection>
 
       <BrandsSection />
 
@@ -254,20 +271,6 @@ function Home() {
         </section>
       )}
 
-      <LazySection minHeight="24rem">
-        <section className="container-page py-4 lg:py-8">
-          <SectionHeading
-            title="New Arrivals"
-            subtitle="Fresh stock added recently by our counter team."
-            action={
-              <Button variant="ghost" asChild>
-                <Link to="/shop">Browse shop</Link>
-              </Button>
-            }
-          />
-          {home.latest.length === 0 ? <EmptyCatalogue /> : <ProductCarousel items={home.latest} label="New arrivals" />}
-        </section>
-      </LazySection>
 
       {home.bestSellers.length > 0 && (
         <LazySection minHeight="24rem">
